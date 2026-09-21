@@ -19,4 +19,11 @@ jobs:
 
       - name: Push to GitLab
         run: |
-          git push --mirror https://oauth2:${{ secrets.GITLAB_TOKEN }}@${{ secrets.GITLAB_REPO_URL }}
+          # Thêm remote gitlab với token xác thực
+          git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@${{ secrets.GITLAB_REPO_URL }}
+          
+          # Đẩy toàn bộ các nhánh
+          git push gitlab --all --force
+          
+          # Đẩy toàn bộ các tags
+          git push gitlab --tags --force
