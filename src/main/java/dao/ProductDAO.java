@@ -1,4 +1,4 @@
-package com.cafe.dao;
+package dao;
 
 /**
  * ProductDAO - Tương tác dữ liệu sản phẩm / thực đơn

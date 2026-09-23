@@ -1,6 +1,6 @@
-package com.cafe.dao;
+package dao;
 
-import com.cafe.context.DBContext;
+import context.DBContext;
 import java.sql.Connection;
 import java.sql.SQLException;
 

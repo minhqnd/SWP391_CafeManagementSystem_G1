@@ -1,4 +1,4 @@
-package com.cafe.dao;
+package dao;
 
 /**
  * OrderDAO - Tương tác dữ liệu đơn hàng

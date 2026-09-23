@@ -1,4 +1,4 @@
-package com.cafe.model;
+package model;
 
 import java.io.Serializable;
 

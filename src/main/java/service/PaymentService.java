@@ -1,4 +1,4 @@
-package com.cafe.service.payment;
+package service;
 
 /**
  * Payment - External Services Interface

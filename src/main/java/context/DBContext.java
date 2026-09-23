@@ -1,4 +1,4 @@
-package com.cafe.context;
+package context;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -14,7 +14,7 @@ public class DBContext {
     private static final String PORT = "3306";
     private static final String DB_NAME = "cafe_management";
     private static final String USER = "root";
-    private static final String PASSWORD = "root";
+    private static final String PASSWORD = "1234";
 
     private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DB_NAME + "?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8";
 

@@ -1,4 +1,4 @@
-package com.cafe.dao;
+package dao;
 
 /**
  * UserDAO - Tương tác dữ liệu người dùng (tài khoản, phân quyền)
