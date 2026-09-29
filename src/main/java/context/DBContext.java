@@ -12,7 +12,7 @@ public class DBContext {
 
     private static final String HOST = "localhost";
     private static final String PORT = "3306";
-    private static final String DB_NAME = "cafe_management_db";
+    private static final String DB_NAME = "cafe_management_system";
     private static final String USER = "root";
     private static final String PASSWORD = "1234";
 
