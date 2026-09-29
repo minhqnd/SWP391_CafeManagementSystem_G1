@@ -452,3 +452,26 @@ CREATE TABLE shift_handover (
         ON UPDATE CASCADE
         ON DELETE RESTRICT
 );
+
+-- =====================================================
+-- 21. INIT DEFAULT ACCOUNTS FOR 5 ROLES (Password: 123456)
+-- =====================================================
+-- Note: Mật khẩu tạm thời để plain text '123456' để dễ test.
+
+INSERT INTO account (username, password_hash, status) VALUES 
+('admin', '123456', 'Active'),
+('cashier', '123456', 'Active'),
+('barista', '123456', 'Active'),
+('delivery', '123456', 'Active'),
+('customer', '123456', 'Active');
+
+-- Insert into staff (Admin, Cashier, Barista, Delivery Staff)
+INSERT INTO staff (account_id, full_name, role, status) VALUES 
+(1, 'System Admin', 'Admin', 'Active'),
+(2, 'Cashier NV01', 'Cashier', 'Active'),
+(3, 'Barista NV02', 'Barista', 'Active'),
+(4, 'Delivery NV03', 'Delivery Staff', 'Active');
+
+-- Insert into customer (Customer)
+INSERT INTO customer (account_id, full_name, phone) VALUES 
+(5, 'Loyal Customer', '0123456789');

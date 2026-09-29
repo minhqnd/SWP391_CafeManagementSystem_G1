@@ -8,5 +8,9 @@
 <body>
     <h1>Café Management System - SWP391</h1>
     <p>Project initialized successfully.</p>
+    
+    <a href="${pageContext.request.contextPath}/login" style="padding: 10px 20px; background-color: #A62122; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 15px;">
+        Đến trang Đăng nhập
+    </a>
 </body>
 </html>
