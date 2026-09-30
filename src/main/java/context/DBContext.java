@@ -16,7 +16,8 @@ public class DBContext {
     private static final String USER = "root";
     private static final String PASSWORD = "1234";
 
-    private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DB_NAME + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
+    private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DB_NAME
+            + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
 
     public static Connection getConnection() throws SQLException, ClassNotFoundException {
         Class.forName("com.mysql.cj.jdbc.Driver");
@@ -29,8 +30,10 @@ public class DBContext {
                 System.out.println("=========================================");
                 System.out.println(" SUCCESS: Connected to MySQL Database!");
                 System.out.println(" Catalog / Database: " + conn.getCatalog());
-                System.out.println(" Database Product: " + conn.getMetaData().getDatabaseProductName() + " " + conn.getMetaData().getDatabaseProductVersion());
-                System.out.println(" Driver Name: " + conn.getMetaData().getDriverName() + " " + conn.getMetaData().getDriverVersion());
+                System.out.println(" Database Product: " + conn.getMetaData().getDatabaseProductName() + " "
+                        + conn.getMetaData().getDatabaseProductVersion());
+                System.out.println(" Driver Name: " + conn.getMetaData().getDriverName() + " "
+                        + conn.getMetaData().getDriverVersion());
                 System.out.println("=========================================");
             }
         } catch (Exception e) {
