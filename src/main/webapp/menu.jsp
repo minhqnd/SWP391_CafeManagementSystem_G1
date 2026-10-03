@@ -35,6 +35,59 @@
             padding-bottom: 80px; /* Space for Sticky Bottom Cart */
         }
 
+        /* Menu Search Box */
+        .menu-search-container {
+            position: relative;
+            width: 100%;
+            max-width: 380px;
+        }
+        .menu-search-input {
+            background-color: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 0.6rem 2.8rem 0.6rem 2.8rem;
+            font-size: 0.9rem;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            color: var(--text-main);
+        }
+        .menu-search-input:focus {
+            background-color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3.5px rgba(139, 21, 40, 0.12);
+            outline: none;
+        }
+        .menu-search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+        }
+        .menu-search-btn-clear, .menu-search-btn-submit {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            padding: 0.25rem 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: color 0.18s;
+            text-decoration: none;
+        }
+        .menu-search-btn-clear:hover {
+            color: #e11d48;
+        }
+        .menu-search-btn-submit:hover {
+            color: var(--primary);
+        }
+
         /* Category Filter Pills */
         .category-filter-bar {
             display: flex;
@@ -303,8 +356,8 @@
     <!-- Main Content -->
     <main class="container-fluid px-4 px-lg-5 py-4">
 
-        <!-- Top Title & Stats Banner -->
-        <div class="d-flex align-items-baseline justify-content-between flex-wrap gap-2 mb-3">
+        <!-- Top Title & Search Bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
             <div>
                 <h1 class="h3 fw-bold mb-1" style="color: #0f172a;">
                     <c:choose>
@@ -325,13 +378,59 @@
                 <p class="text-muted small mb-0">Hương vị cà phê đặc sản và trà hảo hạng pha chế thủ công.</p>
             </div>
 
-            <c:if test="${not empty currentCategory || not empty currentKeyword}">
-                <a href="${pageContext.request.contextPath}/menu" class="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1">
-                    <span class="material-symbols-outlined fs-6">close</span>
-                    <span>Xoá bộ lọc</span>
-                </a>
-            </c:if>
+            <!-- Menu Search Box -->
+            <div class="menu-search-container flex-grow-1 flex-md-grow-0">
+                <form action="${pageContext.request.contextPath}/menu" method="GET" class="position-relative w-100">
+                    <c:if test="${not empty currentCategory}">
+                        <input type="hidden" name="category" value="${currentCategory}">
+                    </c:if>
+                    <span class="material-symbols-outlined menu-search-icon fs-5">search</span>
+                    <input type="search" name="keyword" value="${not empty currentKeyword ? currentKeyword : ''}" 
+                           class="form-control menu-search-input shadow-none" 
+                           placeholder="Tìm tên món, trà, cà phê..."
+                           autocomplete="off">
+                    <c:choose>
+                        <c:when test="${not empty currentKeyword}">
+                            <a href="${pageContext.request.contextPath}/menu${not empty currentCategory ? '?category=' : ''}${currentCategory}" 
+                               class="menu-search-btn-clear" title="Xoá tìm kiếm">
+                                <span class="material-symbols-outlined fs-5">close</span>
+                            </a>
+                        </c:when>
+                        <c:otherwise>
+                            <button type="submit" class="menu-search-btn-submit" title="Tìm kiếm">
+                                <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                            </button>
+                        </c:otherwise>
+                    </c:choose>
+                </form>
+            </div>
         </div>
+
+        <!-- Active Filter Indicator (if any) -->
+        <c:if test="${not empty currentCategory || not empty currentKeyword}">
+            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                <span class="text-muted small">Đang lọc:</span>
+                <c:if test="${not empty currentCategory}">
+                    <span class="badge bg-white text-dark border px-2.5 py-1.5 rounded-pill d-inline-flex align-items-center gap-1 shadow-sm" style="font-weight: 500;">
+                        <span>Danh mục: <c:forEach var="c" items="${categories}"><c:if test="${c.id == currentCategory}">${c.name}</c:if></c:forEach></span>
+                        <a href="${pageContext.request.contextPath}/menu${not empty currentKeyword ? '?keyword=' : ''}${currentKeyword}" class="text-muted text-decoration-none ms-1">
+                            <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
+                        </a>
+                    </span>
+                </c:if>
+                <c:if test="${not empty currentKeyword}">
+                    <span class="badge bg-white text-dark border px-2.5 py-1.5 rounded-pill d-inline-flex align-items-center gap-1 shadow-sm" style="font-weight: 500;">
+                        <span>Từ khóa: "${currentKeyword}"</span>
+                        <a href="${pageContext.request.contextPath}/menu${not empty currentCategory ? '?category=' : ''}${currentCategory}" class="text-muted text-decoration-none ms-1">
+                            <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
+                        </a>
+                    </span>
+                </c:if>
+                <a href="${pageContext.request.contextPath}/menu" class="btn btn-sm btn-link text-danger text-decoration-none p-0 ms-2 small fw-semibold">
+                    Xoá tất cả
+                </a>
+            </div>
+        </c:if>
 
         <!-- Minimalist Category Filter Pills Bar -->
         <div class="category-filter-bar mb-4">

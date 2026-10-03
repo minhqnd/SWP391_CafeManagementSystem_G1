@@ -35,33 +35,6 @@
         background-color: #900b1a;
         border-radius: 2px;
     }
-    .header-search-container {
-        position: relative;
-        max-width: 440px;
-        width: 100%;
-    }
-    .header-search-input {
-        background-color: #f1f3f5;
-        border: 1px solid transparent;
-        border-radius: 999px;
-        padding: 0.55rem 1rem 0.55rem 2.7rem;
-        font-size: 0.88rem;
-        transition: all 0.2s ease;
-    }
-    .header-search-input:focus {
-        background-color: #ffffff;
-        border-color: #900b1a;
-        box-shadow: 0 0 0 3px rgba(144, 11, 26, 0.12);
-        outline: none;
-    }
-    .header-search-icon {
-        position: absolute;
-        left: 0.9rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #868e96;
-        pointer-events: none;
-    }
 </style>
 
 <nav class="navbar navbar-expand-lg aura-navbar py-3">
@@ -104,17 +77,8 @@
                 </li>
             </ul>
 
-            <!-- Search Bar -->
-            <form action="${pageContext.request.contextPath}/menu" method="GET" class="d-flex mx-auto mx-lg-3 my-3 my-lg-0 flex-grow-1 header-search-container">
-                <span class="material-symbols-outlined header-search-icon fs-5">search</span>
-                <input type="search" name="keyword" value="${not empty param.keyword ? param.keyword : (not empty currentKeyword ? currentKeyword : '')}" 
-                       class="form-control header-search-input shadow-none" 
-                       placeholder="Tìm kiếm đồ uống, bánh ngọt hoặc combo..."
-                       autocomplete="off">
-            </form>
-
             <!-- Right Actions: Cart & Profile -->
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3 ms-lg-auto">
                 <!-- Cart Button -->
                 <a href="javascript:void(0)" onclick="typeof openCartModal === 'function' ? openCartModal() : (window.location.href='${pageContext.request.contextPath}/menu')" 
                    class="text-decoration-none text-dark d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-light border"
