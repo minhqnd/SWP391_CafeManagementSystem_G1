@@ -110,7 +110,7 @@
                         <a class="nav-link active text-primary-custom fw-semibold" href="#">Trang chủ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Menu & Đồ uống</a>
+                        <a class="nav-link" href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">Đơn hàng của tôi</a>
@@ -124,12 +124,12 @@
                 </ul>
 
                 <!-- Search Bar -->
-                <form class="d-flex mx-auto mx-lg-3 my-3 my-lg-0 flex-grow-1" style="max-width: 400px;">
+                <form action="${pageContext.request.contextPath}/menu" method="GET" class="d-flex mx-auto mx-lg-3 my-3 my-lg-0 flex-grow-1" style="max-width: 400px;">
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0 text-secondary-custom">
                             <span class="material-symbols-outlined fs-5">search</span>
                         </span>
-                        <input type="search" class="form-control bg-light border-0 shadow-none" placeholder="Tìm kiếm đồ uống, bánh ngọt hoặc combo...">
+                        <input type="search" name="keyword" class="form-control bg-light border-0 shadow-none" placeholder="Tìm kiếm đồ uống, bánh ngọt hoặc combo...">
                     </div>
                 </form>
 
@@ -197,7 +197,7 @@
                     </p>
                     
                     <div class="d-flex flex-wrap gap-3 mb-5">
-                        <a href="#" class="btn-custom-primary">
+                        <a href="${pageContext.request.contextPath}/menu" class="btn-custom-primary">
                             Khám phá toàn bộ Menu <span class="material-symbols-outlined fs-5">east</span>
                         </a>
                         <% if(session.getAttribute("user") == null) { %>
@@ -550,7 +550,7 @@
                 <p class="mb-0" style="color: #ffb4a9; font-size: 1.125rem;">Hơn 45 thức uống được cân chỉnh hoàn hảo từ đội ngũ Barista tâm huyết đang sẵn sàng phục vụ tại chi nhánh hoặc giao nóng hổi tận nơi.</p>
             </div>
             <div class="flex-shrink-0 mt-4 mt-md-0">
-                <a href="#" class="btn btn-light btn-lg fw-bold d-inline-flex align-items-center gap-2 px-4 py-3" style="color: var(--primary);">
+                <a href="${pageContext.request.contextPath}/menu" class="btn btn-light btn-lg fw-bold d-inline-flex align-items-center gap-2 px-4 py-3" style="color: var(--primary);">
                     Khám phá toàn bộ Menu <span class="material-symbols-outlined">restaurant_menu</span>
                 </a>
             </div>
