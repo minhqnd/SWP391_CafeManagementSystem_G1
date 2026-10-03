@@ -131,7 +131,7 @@
                                 Kích hoạt thẻ thành viên
                             </button>
                         <% } else { %>
-                            <a href="#" class="btn-custom-secondary">
+                            <a href="${pageContext.request.contextPath}/profile" class="btn-custom-secondary">
                                 <span class="material-symbols-outlined text-primary-custom fs-5">workspace_premium</span>
                                 Thẻ thành viên của bạn
                             </a>
@@ -368,7 +368,7 @@
                         <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Tặng 01 E-Voucher 20% tháng sinh nhật</li>
                         <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Đổi voucher món ăn kèm chỉ từ 50 Điểm</li>
                     </ul>
-                    <a href="#" class="btn btn-light w-100 fw-semibold mt-4">Xem chi tiết hạng Silver</a>
+                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-light w-100 fw-semibold mt-4">Xem chi tiết hạng Silver</a>
                 </div>
             </div>
             
@@ -392,7 +392,7 @@
                         <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Miễn phí nâng cấp Size 2 lần/tháng</li>
                         <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Ưu tiên pha chế giờ cao điểm tại quầy</li>
                     </ul>
-                    <a href="#" class="btn w-100 fw-semibold text-white mt-4" style="background-color: #95815a;">Đặc quyền Gold Member</a>
+                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn w-100 fw-semibold text-white mt-4" style="background-color: #95815a;">Đặc quyền Gold Member</a>
                 </div>
             </div>
             
@@ -416,7 +416,7 @@
                         <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> Miễn phí giao hàng không giới hạn khoảng cách</li>
                         <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> Lời mời tham dự Workshop Cà phê thử nếm</li>
                     </ul>
-                    <a href="#" class="btn btn-light w-100 fw-semibold mt-4 text-dark">Gia nhập Diamond Club</a>
+                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-light w-100 fw-semibold mt-4 text-dark">Gia nhập Diamond Club</a>
                 </div>
             </div>
         </div>
@@ -449,6 +449,15 @@
     <!-- Script Add To Cart -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Check for login query parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('login') === 'true') {
+                const authModal = new bootstrap.Modal(document.getElementById('authModal'));
+                authModal.show();
+                // Remove parameter from URL without refreshing
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
             const addButtons = document.querySelectorAll('.btn-add');
             addButtons.forEach(button => {
                 button.addEventListener('click', function() {

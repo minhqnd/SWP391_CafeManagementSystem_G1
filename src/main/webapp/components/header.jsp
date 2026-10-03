@@ -70,7 +70,14 @@
                     <a class="nav-link aura-nav-link text-muted" href="#" onclick="alert('Tính năng Đơn hàng của tôi đang được phát triển!')">Đơn hàng của tôi</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link aura-nav-link text-muted" href="#" onclick="alert('Tính năng Hồ sơ & Điểm tích luỹ đang được phát triển!')">Hồ sơ & Điểm tích luỹ</a>
+                    <c:choose>
+                        <c:when test="${not empty sessionScope.user}">
+                            <a class="nav-link aura-nav-link ${param.activePage == 'profile' ? 'active-nav' : 'text-muted'}" href="${pageContext.request.contextPath}/profile">Hồ sơ & Điểm tích luỹ</a>
+                        </c:when>
+                        <c:otherwise>
+                            <a class="nav-link aura-nav-link text-muted" href="#" data-bs-toggle="modal" data-bs-target="#authModal">Hồ sơ & Điểm tích luỹ</a>
+                        </c:otherwise>
+                    </c:choose>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link aura-nav-link text-muted" href="#" onclick="alert('Tính năng Phản ánh & Khiếu nại đang được phát triển!')">Phản ánh & Khiếu nại</a>
@@ -105,6 +112,11 @@
                                 <li class="px-3 py-2 border-bottom">
                                     <div class="fw-bold">${sessionScope.user.fullName}</div>
                                     <div class="small text-muted">${sessionScope.user.phone}</div>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item fw-medium py-2" href="${pageContext.request.contextPath}/profile">
+                                        <span class="material-symbols-outlined align-middle fs-6 me-1">person</span> Hồ sơ của tôi
+                                    </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item fw-medium py-2 text-danger" href="${pageContext.request.contextPath}/login?action=logout">

@@ -12,7 +12,7 @@ import java.sql.ResultSet;
 public class UserDAO extends BaseDAO {
 
     public User login(String identifier, String password) {
-        String sql = "SELECT id, full_name, phone, email, role, position, status " +
+        String sql = "SELECT id, full_name, phone, email, role, position, status, birthday, address, tier_name, total_points " +
                      "FROM users " +
                      "WHERE (phone = ? OR email = ?) AND password_hash = ?";
 
@@ -31,6 +31,13 @@ public class UserDAO extends BaseDAO {
                         return null; 
                     }
 
+                    String birthdayStr = rs.getString("birthday");
+                    if (birthdayStr != null && birthdayStr.length() >= 10) {
+                        birthdayStr = birthdayStr.substring(0, 10);
+                    } else if (birthdayStr == null) {
+                        birthdayStr = "";
+                    }
+
                     return new User(
                             rs.getInt("id"),
                             rs.getString("full_name"),
@@ -38,7 +45,11 @@ public class UserDAO extends BaseDAO {
                             rs.getString("email"),
                             rs.getString("role"),
                             rs.getString("position"),
-                            status
+                            status,
+                            birthdayStr,
+                            rs.getString("address") != null ? rs.getString("address") : "",
+                            rs.getString("tier_name"),
+                            rs.getInt("total_points")
                     );
                 }
             }
@@ -95,5 +106,53 @@ public class UserDAO extends BaseDAO {
             e.printStackTrace();
         }
         return false;
+    }
+    public boolean updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
+        String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ? WHERE id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, fullName);
+            ps.setString(2, phone);
+            ps.setString(3, email);
+            
+            if (birthday != null && !birthday.isEmpty()) {
+                ps.setString(4, birthday);
+            } else {
+                ps.setNull(4, java.sql.Types.DATE);
+            }
+            
+            ps.setString(5, address);
+            ps.setInt(6, userId);
+            
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public java.util.List<model.LoyaltyTransaction> getLoyaltyHistoryByUserId(int userId) {
+        java.util.List<model.LoyaltyTransaction> list = new java.util.ArrayList<>();
+        String sql = "SELECT id, customer_id, order_id, points_change, transaction_type, created_at " +
+                     "FROM loyalty_transactions WHERE customer_id = ? ORDER BY created_at DESC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new model.LoyaltyTransaction(
+                        rs.getInt("id"),
+                        rs.getInt("customer_id"),
+                        rs.getInt("order_id"),
+                        rs.getInt("points_change"),
+                        rs.getString("transaction_type"),
+                        rs.getTimestamp("created_at")
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }
