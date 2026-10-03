@@ -52,9 +52,30 @@
             <artifactId>mysql-connector-j</artifactId>
             <version>8.3.0</version>
         </dependency>
+
+        <!-- Jakarta Mail (For Forgot Password via Email) -->
+        <dependency>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+
+        <!-- JUnit 5 Jupiter for unit testing -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
+        <finalName>SWP391_CafeManagementSystem</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -88,8 +109,11 @@
                     </configuration>
                     <deployables>
                         <deployable>
+                            <groupId>com.cafe</groupId>
+                            <artifactId>SWP391_CafeManagementSystem</artifactId>
+                            <type>war</type>
                             <properties>
-                                <context>/</context>
+                                <context>/SWP391_CafeManagementSystem</context>
                             </properties>
                         </deployable>
                     </deployables>

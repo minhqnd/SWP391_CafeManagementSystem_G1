@@ -1,0 +1,924 @@
+
+-- =====================================================
+-- AURA CAFE ERP - COMPLETE DATABASE
+-- TOTAL: 16 TABLES
+-- MySQL 8.0.16+
+-- =====================================================
+
+CREATE DATABASE IF NOT EXISTS aura_cafe_erp
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+USE aura_cafe_erp;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS customer_reviews;
+DROP TABLE IF EXISTS loyalty_transactions;
+DROP TABLE IF EXISTS inventory_transactions;
+DROP TABLE IF EXISTS purchase_order_items;
+DROP TABLE IF EXISTS purchase_orders;
+DROP TABLE IF EXISTS product_ingredients;
+DROP TABLE IF EXISTS ingredients;
+DROP TABLE IF EXISTS suppliers;
+DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS vouchers;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS work_schedules;
+DROP TABLE IF EXISTS users;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- =====================================================
+-- GROUP A: USERS AND WORK SCHEDULES (2 TABLES)
+-- =====================================================
+
+-- 1. USERS
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(120) NOT NULL,
+    phone VARCHAR(20) NOT NULL UNIQUE,
+    email VARCHAR(150),
+    password_hash VARCHAR(255) NOT NULL,
+
+    role ENUM('ADMIN', 'STAFF', 'CUSTOMER')
+        NOT NULL DEFAULT 'CUSTOMER',
+
+    status ENUM('ACTIVE', 'INACTIVE', 'LOCKED')
+        NOT NULL DEFAULT 'ACTIVE',
+
+    -- Employee information
+    position ENUM(
+        'MANAGER',
+        'BARISTA',
+        'CASHIER',
+        'SHIPPER'
+    ) NULL,
+
+    base_salary DECIMAL(12,2) NOT NULL DEFAULT 0,
+    hire_date DATE NULL,
+
+    -- Customer membership information
+    tier_name ENUM(
+        'BRONZE',
+        'SILVER',
+        'GOLD',
+        'DIAMOND'
+    ) NOT NULL DEFAULT 'BRONZE',
+
+    total_points INT NOT NULL DEFAULT 0,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_user_salary
+        CHECK (base_salary >= 0),
+
+    CONSTRAINT chk_user_points
+        CHECK (total_points >= 0)
+) ENGINE=InnoDB;
+
+-- 2. WORK SCHEDULES
+CREATE TABLE work_schedules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    work_date DATE NOT NULL,
+
+    shift_name ENUM(
+        'MORNING',
+        'AFTERNOON',
+        'EVENING'
+    ) NOT NULL,
+
+    -- Attendance
+    check_in_time DATETIME NULL,
+    check_out_time DATETIME NULL,
+
+    -- Cash handover
+    starting_cash DECIMAL(12,2) NULL,
+    ending_cash_system DECIMAL(12,2) NULL,
+    ending_cash_actual DECIMAL(12,2) NULL,
+
+    status ENUM(
+        'SCHEDULED',
+        'PRESENT',
+        'ABSENT',
+        'COMPLETED'
+    ) NOT NULL DEFAULT 'SCHEDULED',
+
+    note TEXT,
+
+    CONSTRAINT fk_schedule_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT uq_user_work_shift
+        UNIQUE (user_id, work_date, shift_name),
+
+    CONSTRAINT chk_schedule_cash
+        CHECK (
+            (starting_cash IS NULL OR starting_cash >= 0)
+            AND (ending_cash_system IS NULL OR ending_cash_system >= 0)
+            AND (ending_cash_actual IS NULL OR ending_cash_actual >= 0)
+        )
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- GROUP B: PRODUCTS AND SALES (5 TABLES)
+-- =====================================================
+
+-- 3. CATEGORIES
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+
+    status ENUM('ACTIVE', 'INACTIVE')
+        NOT NULL DEFAULT 'ACTIVE'
+) ENGINE=InnoDB;
+
+-- 4. PRODUCTS
+CREATE TABLE products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    base_price DECIMAL(12,2) NOT NULL,
+
+    -- Example:
+    -- {"sizes":{"L":10000},"toppings":["Pearl"]}
+    variants_config JSON NULL,
+
+    description TEXT,
+    image_url VARCHAR(500),
+    is_available BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT fk_product_category
+        FOREIGN KEY (category_id)
+        REFERENCES categories(id),
+
+    CONSTRAINT chk_product_price
+        CHECK (base_price >= 0),
+
+    INDEX idx_products_category (category_id)
+) ENGINE=InnoDB;
+
+-- 5. VOUCHERS
+CREATE TABLE vouchers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+
+    discount_type ENUM(
+        'PERCENT',
+        'FIXED_AMOUNT'
+    ) NOT NULL,
+
+    discount_value DECIMAL(12,2) NOT NULL,
+    min_order_value DECIMAL(12,2) NOT NULL DEFAULT 0,
+    max_discount DECIMAL(12,2) NULL,
+
+    start_date DATETIME NULL,
+    valid_until DATETIME NULL,
+
+    usage_limit INT NULL,
+    used_count INT NOT NULL DEFAULT 0,
+
+    status ENUM('ACTIVE', 'INACTIVE')
+        NOT NULL DEFAULT 'ACTIVE',
+
+    CONSTRAINT chk_voucher_discount
+        CHECK (
+            discount_value > 0
+            AND (
+                discount_type <> 'PERCENT'
+                OR discount_value <= 100
+            )
+        ),
+
+    CONSTRAINT chk_voucher_min_order
+        CHECK (min_order_value >= 0),
+
+    CONSTRAINT chk_voucher_max_discount
+        CHECK (
+            max_discount IS NULL
+            OR max_discount >= 0
+        ),
+
+    CONSTRAINT chk_voucher_usage
+        CHECK (
+            used_count >= 0
+            AND (
+                usage_limit IS NULL
+                OR usage_limit >= used_count
+            )
+        ),
+
+    CONSTRAINT chk_voucher_dates
+        CHECK (
+            start_date IS NULL
+            OR valid_until IS NULL
+            OR start_date <= valid_until
+        )
+) ENGINE=InnoDB;
+
+-- 6. ORDERS
+CREATE TABLE orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_code VARCHAR(20) NOT NULL UNIQUE,
+
+    customer_id INT NULL,
+    cashier_id INT NULL,
+    voucher_id INT NULL,
+
+    order_type ENUM(
+        'DINE_IN',
+        'TAKEAWAY',
+        'ONLINE'
+    ) NOT NULL,
+
+    status ENUM(
+        'PENDING',
+        'CONFIRMED',
+        'PREPARING',
+        'READY',
+        'DELIVERING',
+        'COMPLETED',
+        'CANCELLED'
+    ) NOT NULL DEFAULT 'PENDING',
+
+    -- Amounts
+    total_amount DECIMAL(12,2) NOT NULL,
+    discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    delivery_fee DECIMAL(12,2) NOT NULL DEFAULT 0,
+    final_amount DECIMAL(12,2) NOT NULL,
+
+    -- Delivery and recipient information
+    recipient_name VARCHAR(100) NULL,
+    recipient_phone VARCHAR(20) NULL,
+    delivery_address TEXT NULL,
+    shipper_id INT NULL,
+
+    -- Dine-in information
+    table_number VARCHAR(20) NULL,
+
+    order_note TEXT NULL,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_order_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES users(id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_order_cashier
+        FOREIGN KEY (cashier_id)
+        REFERENCES users(id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_order_shipper
+        FOREIGN KEY (shipper_id)
+        REFERENCES users(id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_order_voucher
+        FOREIGN KEY (voucher_id)
+        REFERENCES vouchers(id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT chk_order_amounts
+        CHECK (
+            total_amount >= 0
+            AND discount_amount >= 0
+            AND delivery_fee >= 0
+            AND final_amount >= 0
+        ),
+
+    INDEX idx_orders_customer (customer_id),
+    INDEX idx_orders_status (status),
+    INDEX idx_orders_created_at (created_at)
+) ENGINE=InnoDB;
+
+-- 7. ORDER ITEMS
+CREATE TABLE order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+
+    -- Product snapshot
+    product_name_at_time VARCHAR(150) NOT NULL,
+    unit_price DECIMAL(12,2) NOT NULL,
+
+    -- Example:
+    -- {"size":"L","topping":["Jelly"]}
+    customization JSON NULL,
+
+    quantity INT NOT NULL,
+    subtotal DECIMAL(12,2) NOT NULL,
+
+    CONSTRAINT fk_order_item_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_order_item_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id),
+
+    CONSTRAINT chk_order_item_quantity
+        CHECK (quantity > 0),
+
+    CONSTRAINT chk_order_item_price
+        CHECK (
+            unit_price >= 0
+            AND subtotal >= 0
+        ),
+
+    INDEX idx_order_items_order (order_id)
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- GROUP C: ACCOUNTING AND CUSTOMER CARE (3 TABLES)
+-- =====================================================
+
+-- 8. PAYMENTS
+CREATE TABLE payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+
+    payment_method ENUM(
+        'CASH',
+        'VNPAY',
+        'MOMO',
+        'BANK_TRANSFER'
+    ) NOT NULL,
+
+    transaction_code VARCHAR(100) NULL,
+    amount DECIMAL(12,2) NOT NULL,
+
+    status ENUM(
+        'PENDING',
+        'SUCCESS',
+        'FAILED'
+    ) NOT NULL DEFAULT 'PENDING',
+
+    paid_at DATETIME NULL,
+    payment_note TEXT NULL,
+
+    CONSTRAINT fk_payment_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT chk_payment_amount
+        CHECK (amount >= 0),
+
+    INDEX idx_payments_order (order_id)
+) ENGINE=InnoDB;
+
+-- 9. LOYALTY TRANSACTIONS
+CREATE TABLE loyalty_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    order_id INT NULL,
+
+    points_change INT NOT NULL,
+
+    transaction_type ENUM(
+        'EARN',
+        'REDEEM'
+    ) NOT NULL,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_loyalty_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_loyalty_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT chk_loyalty_points
+        CHECK (
+            (transaction_type = 'EARN' AND points_change > 0)
+            OR
+            (transaction_type = 'REDEEM' AND points_change < 0)
+        ),
+
+    INDEX idx_loyalty_customer (customer_id)
+) ENGINE=InnoDB;
+
+-- 10. CUSTOMER REVIEWS
+CREATE TABLE customer_reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    order_id INT NOT NULL,
+
+    -- Combined rating and complaint
+    issue_type ENUM(
+        'RATING',
+        'COMPLAINT'
+    ) NOT NULL,
+
+    rating INT NULL,
+    content TEXT NOT NULL,
+
+    status ENUM(
+        'PENDING',
+        'RESOLVED',
+        'REJECTED'
+    ) NOT NULL DEFAULT 'PENDING',
+
+    admin_response TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_review_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_review_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT chk_review_type
+        CHECK (
+            (issue_type = 'RATING' AND rating BETWEEN 1 AND 5)
+            OR
+            (issue_type = 'COMPLAINT' AND rating IS NULL)
+        ),
+
+    INDEX idx_reviews_customer (customer_id),
+    INDEX idx_reviews_order (order_id)
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- GROUP D: INVENTORY AND BOM (6 TABLES)
+-- =====================================================
+
+-- 11. SUPPLIERS
+CREATE TABLE suppliers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    phone VARCHAR(20) NULL,
+    address TEXT NULL,
+
+    status ENUM('ACTIVE', 'INACTIVE')
+        NOT NULL DEFAULT 'ACTIVE'
+) ENGINE=InnoDB;
+
+-- 12. INGREDIENTS
+CREATE TABLE ingredients (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    supplier_id INT NULL,
+    name VARCHAR(150) NOT NULL,
+    unit VARCHAR(20) NOT NULL,
+
+    current_stock DECIMAL(12,3) NOT NULL DEFAULT 0,
+    min_stock_level DECIMAL(12,3) NOT NULL DEFAULT 0,
+
+    CONSTRAINT fk_ingredient_supplier
+        FOREIGN KEY (supplier_id)
+        REFERENCES suppliers(id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT chk_ingredient_stock
+        CHECK (
+            current_stock >= 0
+            AND min_stock_level >= 0
+        ),
+
+    INDEX idx_ingredients_supplier (supplier_id)
+) ENGINE=InnoDB;
+
+-- 13. PRODUCT INGREDIENTS
+CREATE TABLE product_ingredients (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    ingredient_id INT NOT NULL,
+
+    -- BOM quantity required for one product
+    quantity_required DECIMAL(12,3) NOT NULL,
+
+    CONSTRAINT fk_bom_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_bom_ingredient
+        FOREIGN KEY (ingredient_id)
+        REFERENCES ingredients(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT uq_product_ingredient
+        UNIQUE (product_id, ingredient_id),
+
+    CONSTRAINT chk_quantity_required
+        CHECK (quantity_required > 0)
+) ENGINE=InnoDB;
+
+-- 14. PURCHASE ORDERS
+CREATE TABLE purchase_orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    supplier_id INT NOT NULL,
+    creator_id INT NOT NULL,
+
+    total_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+
+    status ENUM(
+        'DRAFT',
+        'ORDERED',
+        'RECEIVED',
+        'CANCELLED'
+    ) NOT NULL DEFAULT 'DRAFT',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_po_supplier
+        FOREIGN KEY (supplier_id)
+        REFERENCES suppliers(id),
+
+    CONSTRAINT fk_po_creator
+        FOREIGN KEY (creator_id)
+        REFERENCES users(id),
+
+    CONSTRAINT chk_po_total
+        CHECK (total_cost >= 0),
+
+    INDEX idx_po_supplier (supplier_id)
+) ENGINE=InnoDB;
+
+-- 15. PURCHASE ORDER ITEMS
+CREATE TABLE purchase_order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    po_id INT NOT NULL,
+    ingredient_id INT NOT NULL,
+
+    quantity DECIMAL(12,3) NOT NULL,
+    unit_price DECIMAL(12,2) NOT NULL,
+
+    CONSTRAINT fk_poi_order
+        FOREIGN KEY (po_id)
+        REFERENCES purchase_orders(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_poi_ingredient
+        FOREIGN KEY (ingredient_id)
+        REFERENCES ingredients(id),
+
+    CONSTRAINT chk_purchase_quantity
+        CHECK (quantity > 0),
+
+    CONSTRAINT chk_purchase_price
+        CHECK (unit_price >= 0),
+
+    INDEX idx_poi_order (po_id)
+) ENGINE=InnoDB;
+
+-- 16. INVENTORY TRANSACTIONS
+CREATE TABLE inventory_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ingredient_id INT NOT NULL,
+
+    transaction_type ENUM(
+        'IN_PURCHASE',
+        'OUT_ORDER',
+        'ADJUSTMENT',
+        'SPOILAGE'
+    ) NOT NULL,
+
+    -- Positive quantity; transaction_type defines direction
+    quantity DECIMAL(12,3) NOT NULL,
+
+    reference_type ENUM(
+        'ORDER',
+        'PURCHASE_ORDER',
+        'ADJUSTMENT'
+    ) NOT NULL DEFAULT 'ADJUSTMENT',
+
+    reference_id INT NULL,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_inventory_ingredient
+        FOREIGN KEY (ingredient_id)
+        REFERENCES ingredients(id),
+
+    CONSTRAINT chk_inventory_quantity
+        CHECK (quantity > 0),
+
+    INDEX idx_inventory_ingredient (ingredient_id),
+    INDEX idx_inventory_reference (reference_type, reference_id)
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- END OF SCRIPT
+-- TOTAL: 16 TABLES
+-- =====================================================
+USE aura_cafe_erp;
+
+-- 1. USERS
+INSERT INTO users
+(id, full_name, phone, email, password_hash, role, status,
+ position, base_salary, hire_date, tier_name, total_points)
+VALUES
+(1, 'Aura Admin', '0900000001', 'admin@auracafe.vn',
+ 'demo_hash', 'ADMIN', 'ACTIVE', 'MANAGER', 15000000,
+ '2025-01-01', 'BRONZE', 0),
+
+(2, 'Nguyen Van An', '0900000002', 'an@auracafe.vn',
+ 'demo_hash', 'STAFF', 'ACTIVE', 'BARISTA', 8000000,
+ '2025-02-01', 'BRONZE', 0),
+
+(3, 'Tran Thi Binh', '0900000003', 'binh@auracafe.vn',
+ 'demo_hash', 'STAFF', 'ACTIVE', 'CASHIER', 8500000,
+ '2025-02-01', 'BRONZE', 0),
+
+(4, 'Le Minh Anh', '0900000004', 'anh@gmail.com',
+ 'demo_hash', 'CUSTOMER', 'ACTIVE', NULL, 0,
+ NULL, 'SILVER', 120),
+
+(5, 'Pham Quang Huy', '0900000005', 'huy@gmail.com',
+ 'demo_hash', 'CUSTOMER', 'ACTIVE', NULL, 0,
+ NULL, 'BRONZE', 50),
+
+(6, 'Hoang Van Nam', '0900000006', 'nam@auracafe.vn',
+ 'demo_hash', 'STAFF', 'ACTIVE', 'SHIPPER', 7500000,
+ '2025-03-01', 'BRONZE', 0);
+
+-- 2. WORK SCHEDULES
+INSERT INTO work_schedules
+(user_id, work_date, shift_name, check_in_time,
+ check_out_time, status, starting_cash,
+ ending_cash_system, ending_cash_actual, note)
+VALUES
+(2, '2026-10-03', 'MORNING',
+ '2026-10-03 08:00:00', '2026-10-03 12:00:00',
+ 'COMPLETED', NULL, NULL, NULL, 'Morning shift'),
+
+(3, '2026-10-03', 'AFTERNOON',
+ '2026-10-03 12:00:00', NULL,
+ 'PRESENT', 500000, NULL, NULL, 'Cashier shift'),
+
+(6, '2026-10-03', 'EVENING',
+ NULL, NULL, 'SCHEDULED', NULL, NULL, NULL,
+ 'Delivery shift');
+
+-- 3. CATEGORIES
+INSERT INTO categories (id, name, status)
+VALUES
+(1, 'Coffee', 'ACTIVE'),
+(2, 'Tea', 'ACTIVE'),
+(3, 'Milk Tea', 'ACTIVE'),
+(4, 'Cake', 'ACTIVE'),
+(5, 'Juice', 'ACTIVE');
+
+-- 4. PRODUCTS
+INSERT INTO products
+(id, category_id, name, base_price, variants_config,
+ description, image_url, is_available)
+VALUES
+(1, 1, 'Americano', 35000,
+ '{"sizes":{"M":0,"L":10000},"toppings":["Extra shot"]}',
+ 'Espresso nguyên chất pha loãng, giữ trọn hương vị đậm đà mộc mạc.', 'https://images.unsplash.com/photo-1551030173-122aabc4489c?auto=format&fit=crop&q=80&w=800', TRUE),
+
+(2, 1, 'Latte', 45000,
+ '{"sizes":{"M":0,"L":10000},"toppings":["Extra shot"]}',
+ 'Sự cân bằng hoàn hảo giữa Espresso đậm đà và bọt sữa nóng mịn màng.', 'https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&q=80&w=800', TRUE),
+
+(3, 1, 'Cappuccino', 45000,
+ '{"sizes":{"M":0,"L":10000}}',
+ 'Phiên bản đậm đà hơn của Latte với lớp bọt sữa dày dặn hấp dẫn.', 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&q=80&w=800', TRUE),
+
+(4, 2, 'Peach Tea', 40000,
+ '{"sizes":{"M":0,"L":10000},"toppings":["Peach jelly"]}',
+ 'Trà đào mát lạnh cùng những miếng đào tươi giòn sần sật xua tan oi bức.', 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=800', TRUE),
+
+(5, 2, 'Lemon Tea', 35000,
+ '{"sizes":{"M":0,"L":8000}}',
+ 'Trà chanh truyền thống với hương chanh tươi mát, chua ngọt thanh dịu.', 'https://images.unsplash.com/photo-1596704017254-9eb10a3e8ff6?auto=format&fit=crop&q=80&w=800', TRUE),
+
+(6, 3, 'Milk Tea', 40000,
+ '{"sizes":{"M":0,"L":10000},"toppings":["Pearl","Pudding"]}',
+ 'Trà sữa vị lá trà đen tự nhiên, ngọt ngào quyện cùng trân châu dai giòn.', 'https://images.unsplash.com/photo-1558857563-b371032bda98?auto=format&fit=crop&q=80&w=800', TRUE),
+
+(7, 4, 'Cheesecake', 55000,
+ NULL,
+ 'Bánh phô mai nướng mềm mịn, tan chảy trong miệng với độ béo ngậy khó cưỡng.', 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&q=80&w=800', TRUE),
+
+(8, 5, 'Orange Juice', 45000,
+ '{"sizes":{"M":0,"L":10000}}',
+ 'Nước cam vắt nguyên chất, giàu vitamin C và năng lượng cho ngày mới.', 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&q=80&w=800', TRUE);
+
+-- 5. VOUCHERS
+INSERT INTO vouchers
+(id, code, discount_type, discount_value, min_order_value,
+ max_discount, start_date, valid_until,
+ usage_limit, used_count, status)
+VALUES
+(1, 'WELCOME10', 'PERCENT', 10, 50000,
+ 30000, '2026-01-01 00:00:00',
+ '2026-12-31 23:59:59', 100, 2, 'ACTIVE'),
+
+(2, 'AURA20000', 'FIXED_AMOUNT', 20000, 100000,
+ NULL, '2026-01-01 00:00:00',
+ '2026-12-31 23:59:59', 50, 1, 'ACTIVE'),
+
+(3, 'SUMMER15', 'PERCENT', 15, 80000,
+ 25000, '2026-06-01 00:00:00',
+ '2026-10-31 23:59:59', 200, 0, 'ACTIVE');
+
+-- 6. ORDERS
+INSERT INTO orders
+(id, order_code, customer_id, cashier_id, voucher_id,
+ order_type, status, total_amount, discount_amount,
+ delivery_fee, final_amount, recipient_name,
+ recipient_phone, delivery_address, shipper_id,
+ table_number, order_note, created_at)
+VALUES
+(1, 'AURA-001', 4, 3, 1,
+ 'DINE_IN', 'COMPLETED', 80000, 8000,
+ 0, 72000, NULL, NULL, NULL, NULL,
+ 'T01', 'Less ice', '2026-10-03 09:00:00'),
+
+(2, 'AURA-002', 5, 3, NULL,
+ 'ONLINE', 'DELIVERING', 85000, 0,
+ 15000, 100000, 'Pham Quang Huy',
+ '0900000005', 'Cau Giay, Hanoi', 6,
+ NULL, 'Call before delivery', '2026-10-03 10:00:00'),
+
+(3, 'AURA-003', 4, 3, 2,
+ 'TAKEAWAY', 'CONFIRMED', 120000, 20000,
+ 0, 100000, NULL, NULL, NULL, NULL,
+ NULL, 'No sugar', '2026-10-03 11:00:00'),
+
+(4, 'AURA-004', NULL, 3, NULL,
+ 'DINE_IN', 'PREPARING', 90000, 0,
+ 0, 90000, NULL, NULL, NULL, NULL,
+ 'T02', NULL, '2026-10-03 12:00:00');
+
+-- 7. ORDER ITEMS
+INSERT INTO order_items
+(order_id, product_id, product_name_at_time,
+ unit_price, customization, quantity, subtotal)
+VALUES
+(1, 1, 'Americano', 40000,
+ '{"size":"L"}', 2, 80000),
+
+(2, 4, 'Peach Tea', 40000,
+ '{"size":"M"}', 1, 40000),
+
+(2, 7, 'Cheesecake', 45000,
+ NULL, 1, 45000),
+
+(3, 2, 'Latte', 60000,
+ '{"size":"L"}', 2, 120000),
+
+(4, 6, 'Milk Tea', 45000,
+ '{"size":"M","toppings":["Pearl"]}', 2, 90000);
+
+-- 8. PAYMENTS
+INSERT INTO payments
+(order_id, payment_method, transaction_code,
+ amount, status, paid_at, payment_note)
+VALUES
+(1, 'CASH', NULL, 72000,
+ 'SUCCESS', '2026-10-03 09:05:00', 'Paid at counter'),
+
+(2, 'MOMO', 'MOMO-DEMO-002', 100000,
+ 'SUCCESS', '2026-10-03 10:05:00', 'Online payment'),
+
+(3, 'VNPAY', 'VNPAY-DEMO-003', 100000,
+ 'SUCCESS', '2026-10-03 11:05:00', 'Paid by VNPAY'),
+
+(4, 'CASH', NULL, 90000,
+ 'PENDING', NULL, 'Waiting for payment');
+
+-- 9. LOYALTY TRANSACTIONS
+INSERT INTO loyalty_transactions
+(customer_id, order_id, points_change, transaction_type)
+VALUES
+(4, 1, 80, 'EARN'),
+(5, 2, 100, 'EARN'),
+(4, 3, -20, 'REDEEM');
+
+-- 10. CUSTOMER REVIEWS
+INSERT INTO customer_reviews
+(customer_id, order_id, issue_type, rating,
+ content, status, admin_response)
+VALUES
+(4, 1, 'RATING', 5,
+ 'Good coffee and friendly service',
+ 'RESOLVED', 'Thank you for your feedback'),
+
+(5, 2, 'COMPLAINT', NULL,
+ 'Delivery took longer than expected',
+ 'PENDING', NULL),
+
+(4, 3, 'RATING', 4,
+ 'Good taste, but a little too sweet',
+ 'PENDING', NULL);
+
+-- 11. SUPPLIERS
+INSERT INTO suppliers
+(id, name, phone, address, status)
+VALUES
+(1, 'Fresh Bean Supplier', '0911000001',
+ 'Dong Da, Hanoi', 'ACTIVE'),
+
+(2, 'Dairy and Syrup Co.', '0911000002',
+ 'Cau Giay, Hanoi', 'ACTIVE'),
+
+(3, 'Bakery Ingredient Supply', '0911000003',
+ 'Ba Dinh, Hanoi', 'ACTIVE');
+
+-- 12. INGREDIENTS
+INSERT INTO ingredients
+(id, supplier_id, name, unit,
+ current_stock, min_stock_level)
+VALUES
+(1, 1, 'Coffee beans', 'gram', 10000, 2000),
+(2, 2, 'Fresh milk', 'ml', 20000, 5000),
+(3, 2, 'Peach syrup', 'ml', 5000, 1000),
+(4, 2, 'Black tea', 'gram', 8000, 1500),
+(5, 2, 'Tapioca pearls', 'gram', 4000, 1000),
+(6, 3, 'Cheesecake slice', 'piece', 30, 5),
+(7, 2, 'Orange', 'piece', 100, 20),
+(8, 2, 'Lemon', 'piece', 80, 15);
+
+-- 13. PRODUCT INGREDIENTS
+INSERT INTO product_ingredients
+(product_id, ingredient_id, quantity_required)
+VALUES
+(1, 1, 18),
+(2, 1, 18),
+(2, 2, 180),
+(3, 1, 18),
+(3, 2, 120),
+(4, 3, 30),
+(4, 4, 10),
+(5, 4, 10),
+(5, 8, 1),
+(6, 4, 10),
+(6, 2, 100),
+(6, 5, 30),
+(7, 6, 1),
+(8, 7, 3);
+
+-- 14. PURCHASE ORDERS
+INSERT INTO purchase_orders
+(id, supplier_id, creator_id, total_cost,
+ status, created_at)
+VALUES
+(1, 1, 1, 2000000, 'RECEIVED', '2026-10-01 08:00:00'),
+(2, 2, 1, 1500000, 'ORDERED', '2026-10-02 09:00:00'),
+(3, 3, 1, 800000, 'DRAFT', '2026-10-03 08:00:00');
+
+-- 15. PURCHASE ORDER ITEMS
+INSERT INTO purchase_order_items
+(po_id, ingredient_id, quantity, unit_price)
+VALUES
+(1, 1, 5000, 400),
+(2, 2, 10000, 150),
+(2, 3, 5000, 120),
+(3, 6, 20, 40000);
+
+-- 16. INVENTORY TRANSACTIONS
+INSERT INTO inventory_transactions
+(ingredient_id, transaction_type, quantity,
+ reference_type, reference_id, created_at)
+VALUES
+(1, 'IN_PURCHASE', 5000, 'PURCHASE_ORDER', 1, '2026-10-01 10:00:00'),
+(2, 'IN_PURCHASE', 10000, 'PURCHASE_ORDER', 2, '2026-10-02 10:00:00'),
+(1, 'OUT_ORDER', 36, 'ORDER', 1, '2026-10-03 09:10:00'),
+(2, 'OUT_ORDER', 360, 'ORDER', 2, '2026-10-03 10:10:00'),
+(5, 'SPOILAGE', 100, 'ADJUSTMENT', NULL, '2026-10-03 11:00:00'),
+(3, 'ADJUSTMENT', 50, 'ADJUSTMENT', NULL, '2026-10-03 11:30:00');
+
+-- =====================================================
+-- VERIFY DATA
+-- =====================================================
+
+SELECT 'users' AS table_name, COUNT(*) AS total FROM users
+UNION ALL SELECT 'work_schedules', COUNT(*) FROM work_schedules
+UNION ALL SELECT 'categories', COUNT(*) FROM categories
+UNION ALL SELECT 'products', COUNT(*) FROM products
+UNION ALL SELECT 'vouchers', COUNT(*) FROM vouchers
+UNION ALL SELECT 'orders', COUNT(*) FROM orders
+UNION ALL SELECT 'order_items', COUNT(*) FROM order_items
+UNION ALL SELECT 'payments', COUNT(*) FROM payments
+UNION ALL SELECT 'loyalty_transactions', COUNT(*) FROM loyalty_transactions
+UNION ALL SELECT 'customer_reviews', COUNT(*) FROM customer_reviews
+UNION ALL SELECT 'suppliers', COUNT(*) FROM suppliers
+UNION ALL SELECT 'ingredients', COUNT(*) FROM ingredients
+UNION ALL SELECT 'product_ingredients', COUNT(*) FROM product_ingredients
+UNION ALL SELECT 'purchase_orders', COUNT(*) FROM purchase_orders
+UNION ALL SELECT 'purchase_order_items', COUNT(*) FROM purchase_order_items
+UNION ALL SELECT 'inventory_transactions', COUNT(*) FROM inventory_transactions;
+
+SELECT * FROM products;
+SELECT * FROM ingredients;
