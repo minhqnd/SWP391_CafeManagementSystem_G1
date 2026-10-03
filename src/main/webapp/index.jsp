@@ -92,89 +92,10 @@
 </head>
 <body>
 
-    <!-- Header Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3 sticky-top z-3">
-        <div class="container-fluid px-4 px-lg-5">
-            <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2 me-4" href="#">
-                <span class="material-symbols-outlined fs-2">local_cafe</span>
-                <div class="d-flex flex-column">
-                    <span class="fs-4 lh-1">Aura Café</span>
-                    <span class="text-secondary-custom fw-medium" style="font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase;">Specialty Coffee</span>
-                </div>
-            </a>
-            
-            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-                <span class="material-symbols-outlined">menu</span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="mainNavbar">
-                <!-- Navigation Links -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1 gap-lg-3 fw-medium" style="font-size: 0.95rem;">
-                    <li class="nav-item">
-                        <a class="nav-link active text-primary-custom fw-semibold" href="#">Trang chủ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Menu & Đồ uống</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Đơn hàng của tôi</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Hồ sơ & Điểm tích luỹ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Phản ánh & Khiếu nại</a>
-                    </li>
-                </ul>
-
-                <!-- Search Bar -->
-                <form class="d-flex mx-auto mx-lg-3 my-3 my-lg-0 flex-grow-1" style="max-width: 400px;">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-0 text-secondary-custom">
-                            <span class="material-symbols-outlined fs-5">search</span>
-                        </span>
-                        <input type="search" class="form-control bg-light border-0 shadow-none" placeholder="Tìm kiếm đồ uống, bánh ngọt hoặc combo...">
-                    </div>
-                </form>
-
-                <!-- Right Actions -->
-                <div class="d-flex align-items-center gap-3">
-                    <!-- Cart -->
-                    <a href="#" class="text-decoration-none text-dark d-flex flex-column align-items-center position-relative">
-                        <span class="material-symbols-outlined fs-4">shopping_bag</span>
-                        <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
-                            0
-                        </span>
-                    </a>
-                    <span class="text-secondary-custom fw-semibold d-none d-lg-block me-3" style="font-size: 0.85rem;">Giỏ hàng</span>
-
-                    <!-- Auth/Profile -->
-                    <% if(session.getAttribute("user") != null) { 
-                        model.User currentUser = (model.User) session.getAttribute("user");
-                    %>
-                        <div class="dropdown">
-                            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark" data-bs-toggle="dropdown">
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
-                                    <span class="material-symbols-outlined text-secondary-custom">person</span>
-                                </div>
-                                <div class="d-none d-xl-flex flex-column">
-                                    <span class="fw-semibold" style="font-size: 0.85rem;"><%= currentUser.getFullName() %></span>
-                                    <span class="text-primary-custom fw-bold" style="font-size: 0.7rem;">Member</span>
-                                </div>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                                <li><a class="dropdown-item fw-medium py-2" href="${pageContext.request.contextPath}/login?action=logout">Đăng xuất</a></li>
-                            </ul>
-                        </div>
-                    <% } else { %>
-                        <button class="btn btn-danger d-flex align-items-center gap-2 fw-semibold px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#authModal">
-                            <span class="material-symbols-outlined fs-5">login</span> Đăng Nhập
-                        </button>
-                    <% } %>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- Shared Header Navbar Component -->
+    <jsp:include page="/components/header.jsp">
+        <jsp:param name="activePage" value="home" />
+    </jsp:include>
 
     <!-- Hero Showcase Section -->
     <section class="hero-section">
@@ -201,7 +122,7 @@
                     </p>
                     
                     <div class="d-flex flex-wrap gap-3 mb-5">
-                        <a href="#" class="btn-custom-primary">
+                        <a href="${pageContext.request.contextPath}/menu" class="btn-custom-primary">
                             Khám phá toàn bộ Menu <span class="material-symbols-outlined fs-5">east</span>
                         </a>
                         <% if(session.getAttribute("user") == null) { %>
@@ -510,7 +431,7 @@
                 <p class="mb-0" style="color: #ffb4a9; font-size: 1.125rem;">Hơn 45 thức uống được cân chỉnh hoàn hảo từ đội ngũ Barista tâm huyết đang sẵn sàng phục vụ tại chi nhánh hoặc giao nóng hổi tận nơi.</p>
             </div>
             <div class="flex-shrink-0 mt-4 mt-md-0">
-                <a href="#" class="btn btn-light btn-lg fw-bold d-inline-flex align-items-center gap-2 px-4 py-3" style="color: var(--primary);">
+                <a href="${pageContext.request.contextPath}/menu" class="btn btn-light btn-lg fw-bold d-inline-flex align-items-center gap-2 px-4 py-3" style="color: var(--primary);">
                     Khám phá toàn bộ Menu <span class="material-symbols-outlined">restaurant_menu</span>
                 </a>
             </div>
