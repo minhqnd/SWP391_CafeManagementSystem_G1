@@ -518,29 +518,22 @@
 
     </main>
 
-    <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Không hiện giá) -->
-    <div id="stickyMiniCart" class="sticky-cart-bar d-none">
-        <div class="d-flex align-items-center gap-3" onclick="openSelectedItemsModal()" style="cursor: pointer;" title="Bấm để xem danh sách món">
+    <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Bấm Xem món ra popup) -->
+    <div id="stickyMiniCart" class="sticky-cart-bar d-none" onclick="openSelectedItemsModal()" style="cursor: pointer;" title="Bấm để xem danh sách món">
+        <div class="d-flex align-items-center gap-3">
             <div class="cart-badge-icon">
                 <span class="material-symbols-outlined fs-5">shopping_bag</span>
                 <span id="stickyCartBadge" class="badge-count-pill">0</span>
             </div>
-            <div>
-                <div class="fw-bold text-white d-flex align-items-center gap-2" style="font-size: 0.95rem;">
-                    <span>Đang chọn</span>
-                    <span id="stickyCartCount" class="badge bg-danger rounded-pill px-2.5 py-0.5">0 món</span>
-                </div>
+            <div class="fw-bold text-white" style="font-size: 0.95rem;">
+                Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">0</span> món
             </div>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-outline-light rounded-pill px-3 py-1.5 small fw-semibold" onclick="openSelectedItemsModal()" title="Xem danh sách món đã chọn">
-                <span>Xem món</span>
-            </button>
-            <a href="${pageContext.request.contextPath}/cart" class="btn btn-danger rounded-pill px-3.5 py-1.5 fw-semibold small d-flex align-items-center gap-1 shadow-sm text-decoration-none" title="Chuyển sang trang giỏ hàng">
-                <span>Xem giỏ hàng</span>
-                <span class="material-symbols-outlined fs-6">arrow_forward</span>
-            </a>
-        </div>
+        <button type="button" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm" 
+                onclick="event.stopPropagation(); openSelectedItemsModal()" title="Xem danh sách món đang chọn">
+            <span>Xem món</span>
+            <span class="material-symbols-outlined fs-6">arrow_forward</span>
+        </button>
     </div>
 
     <!-- Product Customization Modal (Mở khi bấm vào đồ uống để đổi size/topping) -->
