@@ -9,351 +9,239 @@
     <title>Aura Café | Menu & Đồ Uống</title>
 
     <!-- Google Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
         :root {
-            --primary: #900b1a;
-            --primary-dark: #6e0813;
-            --primary-light: #fff0f1;
-            --primary-container: #b2292e;
-            --secondary: #555f71;
-            --surface-bg: #f8f9fa;
-            --card-border: #f0f0f0;
+            --primary: #8b1528;
+            --primary-hover: #70101f;
+            --primary-soft: #fdf2f4;
+            --surface: #ffffff;
+            --bg-body: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #f1f5f9;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--surface-bg);
-            color: #1a1c1e;
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
             overflow-x: hidden;
+            letter-spacing: -0.01em;
         }
 
-        .text-primary-custom { color: var(--primary) !important; }
-        .bg-primary-custom { background-color: var(--primary) !important; color: white !important; }
-
-        /* Navbar Active Tab Indicator */
-        .nav-link {
-            color: #333;
-            position: relative;
-            padding: 0.5rem 0.75rem !important;
-            transition: color 0.2s ease;
+        /* Category Filter Pills */
+        .category-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            overflow-x: auto;
+            padding: 0.5rem 0.25rem 0.75rem 0.25rem;
+            scrollbar-width: none;
         }
-        .nav-link:hover {
-            color: var(--primary);
+        .category-filter-bar::-webkit-scrollbar {
+            display: none;
         }
-        .nav-link.active-menu {
-            color: var(--primary) !important;
-            font-weight: 700;
-        }
-        .nav-link.active-menu::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 10%;
-            width: 80%;
-            height: 3px;
-            background-color: var(--primary);
-            border-radius: 2px;
-        }
-
-        /* Search Bar */
-        .search-container {
-            position: relative;
-            max-width: 480px;
-            width: 100%;
-        }
-        .search-input {
-            background-color: #f1f3f5;
-            border: 1px solid transparent;
-            border-radius: 999px;
-            padding: 0.6rem 1rem 0.6rem 2.8rem;
-            font-size: 0.9rem;
-            transition: all 0.25s ease;
-        }
-        .search-input:focus {
-            background-color: #ffffff;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(144, 11, 26, 0.12);
-        }
-        .search-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #868e96;
-            pointer-events: none;
-        }
-
-        /* Category Filter Tabs Bar */
-        .category-scroll-container {
-            background-color: #ffffff;
-            border-radius: 1rem;
-            padding: 0.85rem 1.25rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            border: 1px solid #eaeaea;
-        }
-        .cat-pill {
+        .filter-pill {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.45rem;
             padding: 0.55rem 1.15rem;
             border-radius: 999px;
             font-size: 0.88rem;
             font-weight: 500;
+            color: #475569;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
             text-decoration: none;
-            color: #495057;
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
             white-space: nowrap;
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .cat-pill:hover {
+        .filter-pill:hover {
             color: var(--primary);
-            background-color: var(--primary-light);
-            border-color: rgba(144, 11, 26, 0.2);
+            background-color: var(--primary-soft);
+            border-color: rgba(139, 21, 40, 0.25);
         }
-        .cat-pill.active {
+        .filter-pill.active {
             background-color: var(--primary);
             color: #ffffff !important;
             border-color: var(--primary);
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(144, 11, 26, 0.25);
-        }
-        .cat-pill .badge-count {
-            background-color: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-            font-size: 0.72rem;
-            padding: 2px 7px;
-            border-radius: 999px;
-        }
-        .cat-pill:not(.active) .badge-count {
-            background-color: #dee2e6;
-            color: #495057;
+            box-shadow: 0 4px 14px rgba(139, 21, 40, 0.22);
         }
 
-        /* Product Card */
+        /* Minimalist Modern Product Card */
         .product-card {
             background: #ffffff;
-            border: 1px solid var(--card-border);
+            border: 1px solid #eef2f6;
             border-radius: 1.25rem;
             overflow: hidden;
-            transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             flex-direction: column;
+            cursor: pointer;
+            position: relative;
         }
         .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 16px 30px rgba(0, 0, 0, 0.08);
-            border-color: rgba(144, 11, 26, 0.15);
+            transform: translateY(-4px);
+            border-color: #cbd5e1;
+            box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
         }
-        .product-thumb-wrapper {
+
+        /* Image Box */
+        .product-img-box {
             position: relative;
             width: 100%;
-            height: 220px;
+            height: 210px;
+            background-color: #f1f5f9;
             overflow: hidden;
-            background-color: #eaeaea;
         }
-        .product-thumb {
+        .product-img-box img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.6s ease;
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .product-card:hover .product-thumb {
-            transform: scale(1.08);
+        .product-card:hover .product-img-box img {
+            transform: scale(1.05);
         }
 
-        /* Badges over Image */
-        .badge-tag-top {
+        /* Clean Badge */
+        .pill-badge {
             position: absolute;
             top: 12px;
             left: 12px;
             padding: 4px 10px;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 700;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             text-transform: uppercase;
-            border-radius: 6px;
+            border-radius: 999px;
             z-index: 2;
         }
-        .badge-banchay {
-            background-color: #900b1a;
+        .pill-badge-hot {
+            background-color: rgba(225, 29, 72, 0.95);
             color: #ffffff;
         }
-        .badge-monmoi {
-            background-color: #0b7285;
+        .pill-badge-new {
+            background-color: rgba(14, 165, 233, 0.95);
             color: #ffffff;
-        }
-        .badge-tag-bottom {
-            position: absolute;
-            bottom: 12px;
-            right: 12px;
-            padding: 3px 9px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            background: rgba(20, 20, 20, 0.7);
-            backdrop-filter: blur(4px);
-            color: #ffffff;
-            border-radius: 6px;
-            z-index: 2;
         }
 
-        /* Product Card Body */
-        .card-body-content {
-            padding: 1.25rem;
+        /* Card Content */
+        .product-card-body {
+            padding: 1.15rem 1.25rem;
             display: flex;
             flex-direction: column;
             flex-grow: 1;
         }
-        .product-title {
-            font-size: 1.05rem;
+        .product-meta-subtitle {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            margin-bottom: 0.25rem;
+        }
+        .product-name {
+            font-size: 1.02rem;
             font-weight: 700;
-            color: #1a1c1e;
-            margin-bottom: 0.4rem;
+            color: var(--text-main);
+            margin-bottom: 0.35rem;
             line-height: 1.35;
             transition: color 0.2s;
         }
-        .product-card:hover .product-title {
+        .product-card:hover .product-name {
             color: var(--primary);
         }
-        .product-desc {
-            font-size: 0.82rem;
-            color: #6c757d;
+        .product-brief {
+            font-size: 0.8rem;
+            color: #64748b;
             line-height: 1.45;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            text-overflow: ellipsis;
-            min-height: 2.4rem;
-            margin-bottom: 1.25rem;
+            min-height: 2.3rem;
+            margin-bottom: 1rem;
         }
 
-        /* Card Bottom Actions */
-        .card-footer-box {
+        /* Card Footer */
+        .product-card-footer {
+            margin-top: auto;
+            padding-top: 0.75rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: auto;
-            padding-top: 0.75rem;
-            border-top: 1px dashed #f1f3f5;
         }
-        .price-label {
-            font-size: 0.72rem;
-            color: #868e96;
-            margin-bottom: 2px;
-        }
-        .price-amount {
+        .product-price {
             font-size: 1.15rem;
             font-weight: 800;
-            color: #1a1c1e;
+            color: var(--primary);
         }
-        .btn-order-action {
+
+        /* Sleek Add Button */
+        .btn-add-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background-color: var(--primary-soft);
+            color: var(--primary);
+            border: 1px solid rgba(139, 21, 40, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .product-card:hover .btn-add-circle {
             background-color: var(--primary);
             color: #ffffff;
-            border: none;
-            padding: 0.55rem 0.95rem;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .btn-order-action:hover {
-            background-color: var(--primary-dark);
-            color: #ffffff;
-            transform: translateX(2px);
+            transform: scale(1.08);
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(139, 21, 40, 0.25);
         }
 
-        /* Pulse live indicator */
-        .craft-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.85rem;
-            color: #495057;
-            font-weight: 500;
-        }
-        .craft-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #d9480f;
-            border-radius: 50%;
-            animation: pulse-ring 2s infinite;
-        }
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); opacity: 1; }
-            50% { transform: scale(1.3); opacity: 0.6; }
-            100% { transform: scale(0.95); opacity: 1; }
-        }
-
-        /* Quick View Modal Styles */
+        /* Customization Modal Styling */
         .modal-product-img {
             width: 100%;
-            height: 320px;
+            height: 280px;
             object-fit: cover;
             border-radius: 1rem;
         }
         .option-chip {
             cursor: pointer;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            font-size: 0.88rem;
-            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 0.45rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.18s;
+            background: #ffffff;
         }
         .option-chip.selected {
             border-color: var(--primary);
-            background-color: var(--primary-light);
+            background-color: var(--primary-soft);
             color: var(--primary);
             font-weight: 600;
         }
-        .qty-btn {
+        .qty-control-btn {
             width: 36px;
             height: 36px;
-            border-radius: 8px;
-            border: 1px solid #ced4da;
+            border-radius: 50%;
+            border: 1px solid #cbd5e1;
             background: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
-            transition: background-color 0.2s;
-        }
-        .qty-btn:hover {
-            background-color: #e9ecef;
-        }
-
-        /* Floating Back To Top or Switch Mode button from screenshot */
-        .floating-mode-switch {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background-color: #1a1c1e;
-            color: #ffffff;
-            padding: 0.65rem 1.25rem;
-            border-radius: 999px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-            font-size: 0.85rem;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            z-index: 1000;
-            text-decoration: none;
-            transition: transform 0.2s;
+            transition: all 0.18s;
         }
-        .floating-mode-switch:hover {
-            transform: scale(1.05);
-            color: #ffffff;
+        .qty-control-btn:hover {
+            background-color: #f1f5f9;
         }
     </style>
 </head>
@@ -364,105 +252,96 @@
         <jsp:param name="activePage" value="menu" />
     </jsp:include>
 
-    <!-- Main Menu Content Container -->
-    <div class="container-fluid px-4 px-lg-5 py-4">
+    <!-- Main Content -->
+    <main class="container-fluid px-4 px-lg-5 py-4">
 
-        <!-- Category Filter Pills Bar -->
-        <div class="category-scroll-container mb-4">
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <!-- All categories -->
-                <a href="${pageContext.request.contextPath}/menu${not empty currentKeyword ? '?keyword=' : ''}${currentKeyword}" 
-                   class="cat-pill ${empty currentCategory ? 'active' : ''}">
-                    <span class="material-symbols-outlined fs-5">restaurant_menu</span>
-                    <span>Tất cả thực đơn</span>
-                    <span class="badge-count">${totalCount}</span>
+        <!-- Top Title & Stats Banner -->
+        <div class="d-flex align-items-baseline justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="h3 fw-bold mb-1" style="color: #0f172a;">
+                    <c:choose>
+                        <c:when test="${not empty currentKeyword}">
+                            Kết quả tìm kiếm cho "<span class="text-danger">${currentKeyword}</span>"
+                        </c:when>
+                        <c:when test="${not empty currentCategory}">
+                            <c:forEach var="c" items="${categories}">
+                                <c:if test="${c.id == currentCategory}">${c.name}</c:if>
+                            </c:forEach>
+                        </c:when>
+                        <c:otherwise>
+                            Thực đơn Aura Café
+                        </c:otherwise>
+                    </c:choose>
+                    <span class="text-muted fs-6 fw-normal ms-2">(${products.size()} món)</span>
+                </h1>
+                <p class="text-muted small mb-0">Hương vị cà phê đặc sản và trà hảo hạng pha chế thủ công.</p>
+            </div>
+
+            <c:if test="${not empty currentCategory || not empty currentKeyword}">
+                <a href="${pageContext.request.contextPath}/menu" class="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined fs-6">close</span>
+                    <span>Xoá bộ lọc</span>
                 </a>
-
-                <!-- Dynamic Categories from Database -->
-                <c:forEach var="cat" items="${categories}">
-                    <c:url var="catUrl" value="/menu">
-                        <c:param name="category" value="${cat.id}"/>
-                        <c:if test="${not empty currentKeyword}">
-                            <c:param name="keyword" value="${currentKeyword}"/>
-                        </c:if>
-                    </c:url>
-                    <a href="${catUrl}" class="cat-pill ${currentCategory == cat.id ? 'active' : ''}">
-                        <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon : 'local_cafe'}</span>
-                        <span>${cat.name}</span>
-                        <c:if test="${cat.productCount > 0}">
-                            <span class="badge-count">${cat.productCount}</span>
-                        </c:if>
-                    </a>
-                </c:forEach>
-            </div>
+            </c:if>
         </div>
 
-        <!-- Subheader: Results count & Live Status Notice -->
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
-            <div class="d-flex align-items-center gap-3">
-                <span class="text-uppercase fw-bold text-secondary" style="font-size: 0.88rem; letter-spacing: 0.5px;">
-                    HIỂN THỊ KẾT QUẢ: <strong class="text-dark">${products.size()} món</strong>
-                </span>
+        <!-- Minimalist Category Filter Pills Bar -->
+        <div class="category-filter-bar mb-4">
+            <!-- All -->
+            <a href="${pageContext.request.contextPath}/menu${not empty currentKeyword ? '?keyword=' : ''}${currentKeyword}" 
+               class="filter-pill ${empty currentCategory ? 'active' : ''}">
+                <span class="material-symbols-outlined fs-5">apps</span>
+                <span>Tất cả</span>
+            </a>
 
-                <!-- Active filters tag if any -->
-                <c:if test="${not empty currentCategory || not empty currentKeyword}">
-                    <a href="${pageContext.request.contextPath}/menu" class="badge rounded-pill bg-secondary text-white text-decoration-none px-3 py-2 d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                        <span>Xoá bộ lọc</span>
-                        <span class="material-symbols-outlined fs-6">close</span>
-                    </a>
-                </c:if>
-            </div>
-
-            <div class="craft-indicator">
-                <span class="craft-dot"></span>
-                <span>Pha chế thủ công ngay khi nhận yêu cầu</span>
-            </div>
+            <!-- Dynamic Categories -->
+            <c:forEach var="cat" items="${categories}">
+                <c:url var="catUrl" value="/menu">
+                    <c:param name="category" value="${cat.id}"/>
+                    <c:if test="${not empty currentKeyword}">
+                        <c:param name="keyword" value="${currentKeyword}"/>
+                    </c:if>
+                </c:url>
+                <a href="${catUrl}" class="filter-pill ${currentCategory == cat.id ? 'active' : ''}">
+                    <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon : 'local_cafe'}</span>
+                    <span>${cat.name}</span>
+                </a>
+            </c:forEach>
         </div>
 
-        <!-- Products Grid -->
+        <!-- Products Grid (4 columns desktop, 2 tablet, 1 mobile) -->
         <c:choose>
             <c:when test="${not empty products}">
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="productsGrid">
                     <c:forEach var="p" items="${products}">
-                        <div class="col product-item-col" data-name="${p.name.toLowerCase()}" data-category="${p.categoryId}">
-                            <div class="card h-100 product-card shadow-sm">
-                                <!-- Image Thumbnail with Badges -->
-                                <div class="product-thumb-wrapper">
-                                    <!-- Badge Top Left: BÁN CHẠY / MÓN MỚI -->
+                        <div class="col">
+                            <div class="product-card h-100" onclick="openProductDetailModal(${p.id})">
+                                <!-- Image Box -->
+                                <div class="product-img-box">
                                     <c:if test="${not empty p.badge}">
-                                        <span class="badge-tag-top ${p.badge == 'BÁN CHẠY' ? 'badge-banchay' : 'badge-monmoi'}">
+                                        <span class="pill-badge ${p.badge == 'BÁN CHẠY' ? 'pill-badge-hot' : 'pill-badge-new'}">
                                             ${p.badge}
                                         </span>
                                     </c:if>
-
-                                    <!-- Subtitle Tag Bottom Right: Phin Cổ Điển / Espresso Base... -->
-                                    <c:if test="${not empty p.subtitle}">
-                                        <span class="badge-tag-bottom">
-                                            ${p.subtitle}
-                                        </span>
-                                    </c:if>
-
-                                    <img src="${p.imageUrl}" alt="${p.name}" class="product-thumb" loading="lazy"
+                                    <img src="${p.imageUrl}" alt="${p.name}" loading="lazy"
                                          onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'">
                                 </div>
 
-                                <!-- Card Body -->
-                                <div class="card-body-content">
-                                    <h3 class="product-title" title="${p.name}">${p.name}</h3>
-                                    <p class="product-desc" title="${p.description}">
-                                        ${not empty p.description ? p.description : 'Đồ uống tinh hoa được tuyển chọn từ các vùng nguyên liệu đặc sản.'}
+                                <!-- Body -->
+                                <div class="product-card-body">
+                                    <div class="product-meta-subtitle">
+                                        ${not empty p.subtitle ? p.subtitle : p.categoryName}
+                                    </div>
+                                    <h2 class="product-name" title="${p.name}">${p.name}</h2>
+                                    <p class="product-brief" title="${p.description}">
+                                        ${not empty p.description ? p.description : 'Đồ uống tinh hoa được tuyển chọn từ vùng nguyên liệu đặc sản.'}
                                     </p>
 
-                                    <!-- Price & Action Button -->
-                                    <div class="card-footer-box">
-                                        <div>
-                                            <div class="price-label">Giá tiêu chuẩn</div>
-                                            <div class="price-amount text-danger">${p.formattedPrice}</div>
-                                        </div>
-
-                                        <button type="button" class="btn-order-action" onclick="openProductDetailModal(${p.id})">
-                                            <span>Xem chi tiết / Chọn món</span>
-                                            <span class="material-symbols-outlined fs-6">arrow_forward</span>
+                                    <!-- Price & Clean Add Button -->
+                                    <div class="product-card-footer">
+                                        <span class="product-price">${p.formattedPrice}</span>
+                                        <button type="button" class="btn-add-circle" title="Tùy chọn & Thêm món" onclick="event.stopPropagation(); openProductDetailModal(${p.id})">
+                                            <span class="material-symbols-outlined fs-5">add</span>
                                         </button>
                                     </div>
                                 </div>
@@ -472,85 +351,69 @@
                 </div>
             </c:when>
             <c:otherwise>
-                <!-- Empty State -->
-                <div class="text-center py-5 my-5">
-                    <div class="rounded-circle bg-light d-inline-flex p-4 mb-3 border">
-                        <span class="material-symbols-outlined text-secondary" style="font-size: 3.5rem;">search_off</span>
-                    </div>
-                    <h4 class="fw-bold mb-2">Không tìm thấy món phù hợp</h4>
-                    <p class="text-muted mb-4">Vui lòng thử tìm kiếm với từ khoá khác hoặc khám phá tất cả các danh mục đồ uống của Aura Café.</p>
-                    <a href="${pageContext.request.contextPath}/menu" class="btn btn-danger px-4 py-2 fw-semibold rounded-pill">
-                        Xem tất cả thực đơn
+                <!-- Clean Empty State -->
+                <div class="text-center py-5 my-4 bg-white rounded-4 border p-5">
+                    <span class="material-symbols-outlined text-secondary mb-3" style="font-size: 3rem;">search_off</span>
+                    <h3 class="h5 fw-bold mb-2">Không tìm thấy món phù hợp</h3>
+                    <p class="text-muted small mb-4">Vui lòng thử tìm với từ khoá khác hoặc xem toàn bộ danh mục thực đơn.</p>
+                    <a href="${pageContext.request.contextPath}/menu" class="btn btn-danger btn-sm px-4 py-2 rounded-pill fw-semibold">
+                        Xem tất cả món
                     </a>
                 </div>
             </c:otherwise>
         </c:choose>
 
-    </div>
+    </main>
 
-    <!-- Floating System Mode Button (Giống hệt screenshot mockup) -->
-    <a href="javascript:void(0)" onclick="switchViewInfo()" class="floating-mode-switch">
-        <span class="material-symbols-outlined fs-5">grid_view</span>
-        <span>Chuyển Phân Hệ (23 Màn hình)</span>
-    </a>
-
-    <!-- Product Customization / Detail Modal -->
+    <!-- Product Customization Modal -->
     <div class="modal fade" id="productDetailModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem; overflow: hidden;">
-                <div class="modal-header border-0 pb-0">
-                    <button type="button" class="btn-close" data-bs-toggle="modal"></button>
+                <div class="modal-header border-0 pb-0 pt-3 pe-3">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4 pt-1">
-                    <div class="row g-4">
-                        <!-- Left: Product Image -->
+                    <div class="row g-4 align-items-center">
+                        <!-- Left: Image -->
                         <div class="col-md-5">
-                            <div class="position-relative h-100">
-                                <img id="modalProductImg" src="" alt="Product" class="modal-product-img">
-                                <span id="modalProductBadge" class="badge-tag-top badge-banchay d-none"></span>
-                                <span id="modalProductSubtitle" class="badge-tag-bottom d-none"></span>
-                            </div>
+                            <img id="modalProductImg" src="" alt="Product" class="modal-product-img shadow-sm">
                         </div>
 
-                        <!-- Right: Customization Options -->
+                        <!-- Right: Details & Options -->
                         <div class="col-md-7 d-flex flex-column">
-                            <div class="small text-danger fw-bold text-uppercase" id="modalProductCategory">Danh mục</div>
-                            <h2 class="fs-4 fw-bold mb-2" id="modalProductName">Tên món</h2>
+                            <span class="text-uppercase fw-bold text-danger" style="font-size: 0.75rem; letter-spacing: 0.5px;" id="modalProductCategory">Danh mục</span>
+                            <h2 class="fs-4 fw-bold mb-1" id="modalProductName">Tên món</h2>
                             <p class="text-muted small mb-3" id="modalProductDesc">Mô tả sản phẩm</p>
                             
-                            <div class="d-flex align-items-baseline gap-2 mb-3 pb-3 border-bottom">
+                            <div class="d-flex align-items-baseline gap-2 mb-3 pb-2 border-bottom">
                                 <span class="fs-3 fw-bold text-danger" id="modalProductTotalPrice">0đ</span>
                                 <span class="text-muted small">/ Giá tiêu chuẩn</span>
                             </div>
 
-                            <!-- Size Options -->
+                            <!-- Sizes -->
                             <div class="mb-3" id="sizeOptionsContainer">
-                                <label class="form-label fw-bold small text-secondary">CHỌN SIZE (KÍCH CỠ):</label>
-                                <div class="d-flex gap-2 flex-wrap" id="sizeList">
-                                    <!-- Dynamic sizes -->
-                                </div>
+                                <label class="form-label fw-bold small text-muted mb-2">CHỌN SIZE (KÍCH CỠ):</label>
+                                <div class="d-flex gap-2 flex-wrap" id="sizeList"></div>
                             </div>
 
-                            <!-- Topping Options -->
+                            <!-- Toppings -->
                             <div class="mb-3" id="toppingOptionsContainer">
-                                <label class="form-label fw-bold small text-secondary">THÊM TOPPING & YÊU CẦU:</label>
-                                <div class="d-flex flex-column gap-2" id="toppingList">
-                                    <!-- Dynamic toppings -->
-                                </div>
+                                <label class="form-label fw-bold small text-muted mb-2">TOPPING THÊM:</label>
+                                <div class="d-flex flex-column gap-2" id="toppingList"></div>
                             </div>
 
-                            <!-- Quantity & Add to Cart Action -->
-                            <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between gap-3">
-                                <div class="d-flex align-items-center gap-2 border rounded-3 p-1">
-                                    <button type="button" class="qty-btn" onclick="adjustModalQty(-1)">-</button>
-                                    <span id="modalProductQty" class="fw-bold px-2" style="min-width: 28px; text-align: center;">1</span>
-                                    <button type="button" class="qty-btn" onclick="adjustModalQty(1)">+</button>
+                            <!-- Quantity & Action -->
+                            <div class="mt-3 pt-3 border-top d-flex align-items-center justify-content-between gap-3">
+                                <div class="d-flex align-items-center gap-2 border rounded-pill px-2 py-1">
+                                    <button type="button" class="qty-control-btn border-0" onclick="adjustModalQty(-1)">-</button>
+                                    <span id="modalProductQty" class="fw-bold px-2" style="min-width: 24px; text-align: center;">1</span>
+                                    <button type="button" class="qty-control-btn border-0" onclick="adjustModalQty(1)">+</button>
                                 </div>
 
-                                <button type="button" class="btn btn-danger flex-grow-1 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-3"
+                                <button type="button" class="btn btn-danger flex-grow-1 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill shadow-sm"
                                         onclick="confirmAddToCart()">
                                     <span class="material-symbols-outlined fs-5">shopping_bag</span>
-                                    <span>Thêm vào giỏ hàng • <span id="modalBtnTotalPrice">0đ</span></span>
+                                    <span>Thêm vào giỏ • <span id="modalBtnTotalPrice">0đ</span></span>
                                 </button>
                             </div>
 
@@ -561,7 +424,7 @@
         </div>
     </div>
 
-    <!-- Shopping Cart Preview Modal -->
+    <!-- Cart Preview Modal -->
     <div class="modal fade" id="cartPreviewModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4">
@@ -580,10 +443,10 @@
                     <div id="cartItemList" class="d-flex flex-column gap-3 mb-3"></div>
                     <div id="cartSummary" class="border-top pt-3 d-none">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="fw-bold">Tổng thanh toán tạm tính:</span>
+                            <span class="fw-bold">Tạm tính:</span>
                             <span class="fs-5 fw-bold text-danger" id="cartTotalSum">0đ</span>
                         </div>
-                        <button type="button" class="btn btn-danger w-100 py-2 fw-semibold rounded-3" onclick="showFeatureNotice('Tiến hành Đặt hàng (Online Ordering)')">
+                        <button type="button" class="btn btn-danger w-100 py-2 fw-semibold rounded-pill" onclick="alert('Tính năng Đặt hàng online sẽ được thực hiện tại phần tiếp theo!')">
                             Tiến hành thanh toán
                         </button>
                     </div>
@@ -592,7 +455,7 @@
         </div>
     </div>
 
-    <!-- Toast Notification for Add to Cart -->
+    <!-- Toast Notification -->
     <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3 z-3">
         <div id="cartToast" class="toast align-items-center text-white bg-dark border-0 shadow-lg rounded-pill" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex px-3 py-2 align-items-center">
@@ -605,37 +468,32 @@
         </div>
     </div>
 
-    <!-- Include Auth Modal for Authentication -->
+    <!-- Include Auth Modal -->
     <jsp:include page="/components/auth_modal.jsp" />
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Custom Menu Interactive Script -->
     <script>
-        // State variables for Product Detail Modal
         var currentProduct = null;
         var selectedSizePrice = 0;
-        var selectedToppingPrice = 0;
         var modalQty = 1;
         var cart = JSON.parse(localStorage.getItem('aura_cart') || '[]');
 
         function updateCartBadge() {
             var totalItems = 0;
             for (var i = 0; i < cart.length; i++) {
-                totalItems += cart[i].quantity;
+                totalItems += (cart[i].quantity || 1);
             }
             var badge = document.getElementById('headerCartBadge');
             if (badge) badge.innerText = totalItems;
             localStorage.setItem('aura_cart', JSON.stringify(cart));
         }
 
-        // Initialize cart badge on load
         document.addEventListener('DOMContentLoaded', function() {
             updateCartBadge();
         });
 
-        // Open Product Customization Modal
         function openProductDetailModal(productId) {
             fetch('${pageContext.request.contextPath}/product-detail?id=' + productId)
                 .then(function(res) { return res.json(); })
@@ -647,7 +505,6 @@
                     currentProduct = data;
                     modalQty = 1;
                     selectedSizePrice = 0;
-                    selectedToppingPrice = 0;
 
                     document.getElementById('modalProductImg').src = data.imageUrl;
                     document.getElementById('modalProductName').innerText = data.name;
@@ -655,30 +512,11 @@
                     document.getElementById('modalProductDesc').innerText = data.description || '';
                     document.getElementById('modalProductQty').innerText = 1;
 
-                    // Badges
-                    var badgeElem = document.getElementById('modalProductBadge');
-                    if (data.badge) {
-                        badgeElem.innerText = data.badge;
-                        badgeElem.className = 'badge-tag-top ' + (data.badge === 'BÁN CHẠY' ? 'badge-banchay' : 'badge-monmoi');
-                        badgeElem.classList.remove('d-none');
-                    } else {
-                        badgeElem.classList.add('d-none');
-                    }
-
-                    var subtitleElem = document.getElementById('modalProductSubtitle');
-                    if (data.subtitle) {
-                        subtitleElem.innerText = data.subtitle;
-                        subtitleElem.classList.remove('d-none');
-                    } else {
-                        subtitleElem.classList.add('d-none');
-                    }
-
-                    // Parse variants config
                     var config = data.variantsConfig || {};
-                    var sizes = config.sizes || { "M": 0, "L": 10000 };
+                    var sizes = config.sizes || { "Tiêu chuẩn": 0 };
                     var toppings = config.toppings || [];
 
-                    // Render sizes
+                    // Sizes
                     var sizeListHtml = '';
                     var sizeKeys = Object.keys(sizes);
                     sizeKeys.forEach(function(sName, index) {
@@ -691,7 +529,7 @@
                     });
                     document.getElementById('sizeList').innerHTML = sizeListHtml;
 
-                    // Render toppings
+                    // Toppings
                     var toppingListHtml = '';
                     if (Array.isArray(toppings) && toppings.length > 0) {
                         document.getElementById('toppingOptionsContainer').classList.remove('d-none');
@@ -701,7 +539,7 @@
                             toppingListHtml += '<div class="form-check d-flex align-items-center justify-content-between p-2 border rounded-3">'
                                              + '  <div>'
                                              + '    <input class="form-check-input ms-0 me-2" type="checkbox" id="top_' + idx + '" value="' + tPrice + '" onchange="calculateModalTotal()">'
-                                             + '    <label class="form-check-label fw-medium" for="top_' + idx + '">' + tName + '</label>'
+                                             + '    <label class="form-check-label small fw-medium" for="top_' + idx + '">' + tName + '</label>'
                                              + '  </div>'
                                              + '  <span class="text-danger fw-bold small">+' + tPrice.toLocaleString('vi-VN') + 'đ</span>'
                                              + '</div>';
@@ -779,12 +617,10 @@
 
             updateCartBadge();
 
-            // Hide modal
             var modalInstance = bootstrap.Modal.getInstance(document.getElementById('productDetailModal'));
             if (modalInstance) modalInstance.hide();
 
-            // Show Toast notification
-            document.getElementById('cartToastMessage').innerText = 'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào giỏ hàng!';
+            document.getElementById('cartToastMessage').innerText = 'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào giỏ!';
             var toast = new bootstrap.Toast(document.getElementById('cartToast'));
             toast.show();
         }
@@ -808,10 +644,9 @@
                     sum += item.subtotal;
                     html += '<div class="d-flex align-items-center justify-content-between p-2 border-bottom">'
                           + '  <div class="d-flex align-items-center gap-3">'
-                          + '    <img src="' + item.imageUrl + '" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">'
+                          + '    <img src="' + item.imageUrl + '" style="width: 46px; height: 46px; object-fit: cover; border-radius: 8px;">'
                           + '    <div>'
                           + '      <div class="fw-bold small">' + item.name + ' <span class="badge bg-secondary">' + item.size + '</span></div>'
-                          + '      <div class="text-muted" style="font-size: 0.75rem;">' + (item.toppings.length ? item.toppings.join(', ') : 'Không topping') + '</div>'
                           + '      <div class="text-danger fw-semibold small">' + item.unitPrice.toLocaleString('vi-VN') + 'đ x ' + item.quantity + '</div>'
                           + '    </div>'
                           + '  </div>'
@@ -831,15 +666,7 @@
         function removeFromCart(index) {
             cart.splice(index, 1);
             updateCartBadge();
-            openCartModal(); // Refresh cart modal
-        }
-
-        function showFeatureNotice(featureName) {
-            alert('Tính năng "' + featureName + '" đang được hoàn thiện theo tiến độ của nhóm!');
-        }
-
-        function switchViewInfo() {
-            alert('Aura Café ERP: Đang xem màn hình Menu Screen (#4 do MinhNDQ phụ trách).');
+            openCartModal();
         }
     </script>
 </body>
