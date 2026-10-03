@@ -718,10 +718,15 @@
                                     </div>
                                     <p class="text-muted small mb-0 mt-1" style="font-size: 0.8rem;">Các món bạn vừa chọn tại Aura Café</p>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none" 
-                                        style="width: 34px; height: 34px; transition: background 0.2s;" data-bs-dismiss="modal" aria-label="Close">
-                                    <span class="material-symbols-outlined fs-5">close</span>
-                                </button>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0 small fw-semibold" style="font-size: 0.8rem;" onclick="clearAllCart()">
+                                        Xoá tất cả
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none" 
+                                            style="width: 34px; height: 34px; transition: background 0.2s;" data-bs-dismiss="modal" aria-label="Close">
+                                        <span class="material-symbols-outlined fs-5">close</span>
+                                    </button>
+                                </div>
                             </div>
                             <div class="modal-body px-4 py-3" style="overflow-x: hidden !important;">
                                 <div id="cartEmptyState" class="text-center py-5">
@@ -1076,7 +1081,20 @@
                         openSelectedItemsModal();
                     }
 
+                    function clearAllCart() {
+                        cart = [];
+                        localStorage.setItem('aura_cart', JSON.stringify(cart));
+                        updateCartBadge();
+                        openSelectedItemsModal();
+                    }
+
                     function openSelectedItemsModal() {
+                        // Tự động dọn dẹp các món lỗi font/ký tự ? cũ từ localStorage
+                        cart = cart.filter(function(item) {
+                            return item && item.name && item.name.indexOf('?') === -1;
+                        });
+                        localStorage.setItem('aura_cart', JSON.stringify(cart));
+
                         var body = document.getElementById('cartItemList');
                         var empty = document.getElementById('cartEmptyState');
                         var summary = document.getElementById('cartSummary');
