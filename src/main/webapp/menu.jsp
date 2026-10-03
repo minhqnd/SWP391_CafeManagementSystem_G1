@@ -10,8 +10,10 @@
                 <title>Aura Café | Menu & Đồ Uống</title>
 
                 <!-- Google Fonts & Icons -->
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
                 <link
-                    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+                    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
                     rel="stylesheet" />
                 <link
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
@@ -32,7 +34,9 @@
                     }
 
                     body {
-                        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+                        font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                        -webkit-font-smoothing: antialiased;
+                        -moz-osx-font-smoothing: grayscale;
                         background-color: var(--bg-body);
                         color: var(--text-main);
                         overflow-x: hidden;
@@ -118,31 +122,50 @@
                     .filter-pill {
                         display: inline-flex;
                         align-items: center;
-                        gap: 0.45rem;
-                        padding: 0.55rem 1.15rem;
+                        gap: 0.55rem;
+                        padding: 0.6rem 1.25rem;
                         border-radius: 999px;
-                        font-size: 0.88rem;
-                        font-weight: 500;
-                        color: #475569;
-                        background-color: #ffffff;
-                        border: 1px solid #e2e8f0;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        color: #334155;
+                        background: #ffffff;
+                        border: 1.5px solid #e2e8f0;
                         text-decoration: none;
                         white-space: nowrap;
-                        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+                        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+
+                    .filter-pill .material-symbols-outlined {
+                        font-size: 1.2rem;
+                        color: #64748b;
+                        transition: color 0.2s, transform 0.2s;
                     }
 
                     .filter-pill:hover {
                         color: var(--primary);
-                        background-color: var(--primary-soft);
-                        border-color: rgba(139, 21, 40, 0.25);
+                        background-color: #ffffff;
+                        border-color: rgba(139, 21, 40, 0.35);
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 16px rgba(139, 21, 40, 0.1);
+                    }
+
+                    .filter-pill:hover .material-symbols-outlined {
+                        color: var(--primary);
+                        transform: scale(1.1);
                     }
 
                     .filter-pill.active {
-                        background-color: var(--primary);
+                        background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%);
                         color: #ffffff !important;
-                        border-color: var(--primary);
-                        font-weight: 600;
-                        box-shadow: 0 4px 14px rgba(139, 21, 40, 0.22);
+                        border-color: transparent;
+                        font-weight: 700;
+                        transform: translateY(-1px);
+                        box-shadow: 0 6px 18px rgba(139, 21, 40, 0.32);
+                    }
+
+                    .filter-pill.active .material-symbols-outlined {
+                        color: #ffffff !important;
                     }
 
                     /* Minimalist Modern Product Card */
@@ -244,6 +267,7 @@
                         line-height: 1.45;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
+                        line-clamp: 2;
                         -webkit-box-orient: vertical;
                         overflow: hidden;
                         min-height: 2.3rem;
@@ -267,24 +291,26 @@
 
                     /* 1-Click Quick Add Button */
                     .btn-add-circle {
-                        width: 38px;
-                        height: 38px;
+                        width: 40px;
+                        height: 40px;
                         border-radius: 50%;
-                        background-color: var(--primary-soft);
+                        background-color: #ffffff;
                         color: var(--primary);
-                        border: 1px solid rgba(139, 21, 40, 0.15);
+                        border: 1.5px solid rgba(139, 21, 40, 0.22);
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        transition: all 0.2s ease;
+                        box-shadow: 0 2px 6px rgba(139, 21, 40, 0.06);
+                        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                        cursor: pointer;
                     }
 
                     .btn-add-circle:hover {
-                        background-color: var(--primary);
+                        background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%);
                         color: #ffffff;
-                        transform: scale(1.1);
-                        border-color: var(--primary);
-                        box-shadow: 0 4px 12px rgba(139, 21, 40, 0.3);
+                        transform: scale(1.12) rotate(90deg);
+                        border-color: transparent;
+                        box-shadow: 0 6px 18px rgba(139, 21, 40, 0.32);
                     }
 
                     /* Sticky Bottom Mini Cart Bar */
@@ -293,19 +319,28 @@
                         bottom: 24px;
                         left: 50%;
                         transform: translateX(-50%);
-                        background: #0f172a;
+                        background: rgba(15, 23, 42, 0.94);
+                        backdrop-filter: blur(16px);
+                        -webkit-backdrop-filter: blur(16px);
                         color: #ffffff;
-                        padding: 0.65rem 1.25rem;
+                        padding: 0.65rem 1.35rem;
                         border-radius: 999px;
-                        box-shadow: 0 12px 36px rgba(15, 23, 42, 0.35);
+                        border: 1px solid rgba(255, 255, 255, 0.12);
+                        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
                         gap: 1.75rem;
                         z-index: 1040;
-                        min-width: 350px;
+                        min-width: 360px;
                         max-width: 90vw;
                         animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                        transition: transform 0.2s ease, box-shadow 0.2s ease;
+                    }
+
+                    .sticky-cart-bar:hover {
+                        transform: translate(-50%, -2px);
+                        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
                     }
 
                     @keyframes slideUp {
@@ -504,8 +539,7 @@
                                 </c:if>
                             </c:url>
                             <a href="${catUrl}" class="filter-pill ${currentCategory == cat.id ? 'active' : ''}">
-                                <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon :
-                                    'local_cafe'}</span>
+                                <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon : 'local_cafe'}</span>
                                 <span>${cat.name}</span>
                             </a>
                         </c:forEach>
@@ -545,8 +579,7 @@
                                                     </a>
                                                 </h2>
                                                 <p class="product-brief" title="${p.description}">
-                                                    ${not empty p.description ? p.description : 'Đồ uống tinh hoa được
-                                                    tuyển chọn từ vùng nguyên liệu đặc sản.'}
+                                                    ${not empty p.description ? p.description : 'Đồ uống tinh hoa được tuyển chọn từ vùng nguyên liệu đặc sản.'}
                                                 </p>
 
                                                 <!-- Price & Add Button -->
@@ -554,7 +587,7 @@
                                                     <span class="product-price">${p.formattedPrice}</span>
                                                     <button type="button" class="btn-add-circle"
                                                         title="Tùy chọn & Thêm món"
-                                                        onclick="event.stopPropagation(); openProductDetailModal(${p.id})">
+                                                        onclick="event.stopPropagation(); openProductDetailModal('${p.id}')">
                                                         <span class="material-symbols-outlined fs-5">add</span>
                                                     </button>
                                                 </div>
@@ -675,7 +708,7 @@
 
                 <!-- Selected Items Preview Modal (Món đang chọn - Giao diện hiện đại, sang trọng) -->
                 <div class="modal fade" id="selectedItemsModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 490px;">
                         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
                             <div class="modal-header border-0 pb-2 pt-4 px-4 d-flex align-items-center justify-content-between">
                                 <div>
@@ -690,7 +723,7 @@
                                     <span class="material-symbols-outlined fs-5">close</span>
                                 </button>
                             </div>
-                            <div class="modal-body px-4 py-3">
+                            <div class="modal-body px-4 py-3" style="overflow-x: hidden !important;">
                                 <div id="cartEmptyState" class="text-center py-5">
                                     <div class="bg-light rounded-circle p-3 d-inline-flex align-items-center justify-content-center text-muted mb-3" style="width: 60px; height: 60px;">
                                         <span class="material-symbols-outlined fs-2">local_cafe</span>
@@ -701,15 +734,19 @@
                                         Xem thực đơn
                                     </button>
                                 </div>
-                                <div id="cartItemList" class="d-flex flex-column gap-2.5 mb-3" style="max-height: 320px; overflow-y: auto; padding-right: 2px;"></div>
+                                <div id="cartItemList" class="d-flex flex-column gap-2 mb-3" style="max-height: 330px; overflow-y: auto; overflow-x: hidden !important; padding: 2px 2px 2px 0;"></div>
                                 <div id="cartSummary" class="border-top pt-3 d-none">
+                                    <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+                                        <span class="text-muted small fw-medium">Tổng tiền tạm tính:</span>
+                                        <span id="selectedModalTotalPrice" class="fw-bold text-danger fs-5">0đ</span>
+                                    </div>
                                     <a href="${pageContext.request.contextPath}/cart"
-                                        class="btn btn-danger w-100 py-2.5 fw-semibold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none"
-                                        style="background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%); font-size: 0.95rem;">
+                                        class="btn btn-danger w-100 py-2.5 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none"
+                                        style="background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%); font-size: 0.95rem; box-shadow: 0 6px 20px rgba(139, 21, 40, 0.28) !important;">
                                         <span>Xem giỏ hàng</span>
                                         <span class="material-symbols-outlined fs-5">arrow_forward</span>
                                     </a>
-                                    <button type="button" class="btn btn-link text-muted small text-decoration-none w-100 mt-2 py-0 d-block text-center" data-bs-dismiss="modal">
+                                    <button type="button" class="btn btn-link text-muted small text-decoration-none w-100 mt-2 py-0 d-block text-center fw-medium" data-bs-dismiss="modal">
                                         + Chọn thêm món khác
                                     </button>
                                 </div>
@@ -745,6 +782,11 @@
                     var selectedSizePrice = 0;
                     var modalQty = 1;
                     var cart = JSON.parse(localStorage.getItem('aura_cart') || '[]');
+                    // Tự động dọn dẹp các món lỗi font/ký tự ? cũ từ localStorage
+                    cart = cart.filter(function(item) {
+                        return item && item.name && item.name.indexOf('?') === -1;
+                    });
+                    localStorage.setItem('aura_cart', JSON.stringify(cart));
 
                     function updateCartBadge() {
                         var totalItems = 0;
@@ -1039,14 +1081,21 @@
                         var empty = document.getElementById('cartEmptyState');
                         var summary = document.getElementById('cartSummary');
                         var badge = document.getElementById('selectedModalBadge');
+                        var totalPriceEl = document.getElementById('selectedModalTotalPrice');
 
                         var totalItems = 0;
+                        var totalPrice = 0;
                         cart.forEach(function (item) {
-                            totalItems += (item.quantity || 1);
+                            var q = (item.quantity || 1);
+                            totalItems += q;
+                            totalPrice += (item.subtotal || (item.unitPrice * q));
                         });
 
                         if (badge) {
                             badge.innerText = totalItems + ' món';
+                        }
+                        if (totalPriceEl) {
+                            totalPriceEl.innerText = totalPrice.toLocaleString('vi-VN') + 'đ';
                         }
 
                         if (cart.length === 0) {
@@ -1060,25 +1109,28 @@
                             var html = '';
                             cart.forEach(function (item, idx) {
                                 var toppingsText = (item.toppings && item.toppings.length > 0) ? item.toppings.join(', ') : '';
-                                html += '<div class="p-3 rounded-4 bg-light border d-flex align-items-center justify-content-between gap-3" style="transition: all 0.2s;">'
-                                    + '  <div class="d-flex align-items-center gap-3 min-w-0">'
-                                    + '    <img src="' + item.imageUrl + '" style="width: 52px; height: 52px; object-fit: cover; border-radius: 12px;" class="border bg-white shadow-xs flex-shrink-0" onerror="this.src=\'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80\'">'
-                                    + '    <div class="min-w-0">'
-                                    + '      <div class="fw-bold text-dark text-truncate mb-1" style="font-size: 0.94rem;">' + item.name + '</div>'
+                                var itemPriceFormatted = ((item.unitPrice || 0) * (item.quantity || 1)).toLocaleString('vi-VN') + 'đ';
+
+                                html += '<div class="p-2.5 px-3 rounded-4 bg-light border border-light-subtle d-flex align-items-center justify-content-between gap-2.5" style="transition: all 0.2s ease;">'
+                                    + '  <div class="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1" style="overflow: hidden;">'
+                                    + '    <img src="' + item.imageUrl + '" style="width: 48px; height: 48px; object-fit: cover; border-radius: 12px;" class="border bg-white shadow-2xs flex-shrink-0" onerror="this.src=\'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80\'">'
+                                    + '    <div class="min-w-0 flex-grow-1" style="overflow: hidden;">'
+                                    + '      <div class="fw-bold text-dark text-truncate mb-0.5" style="font-size: 0.92rem;" title="' + item.name + '">' + item.name + '</div>'
                                     + '      <div class="d-flex align-items-center gap-1.5 flex-wrap">'
-                                    + '        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill" style="font-size: 0.7rem; font-weight: 600;">Size ' + item.size + '</span>'
-                                    + (toppingsText ? '        <span class="text-muted small text-truncate" style="font-size: 0.75rem; max-width: 170px;">+ ' + toppingsText + '</span>' : '')
+                                    + '        <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.68rem; font-weight: 700; padding: 2px 7px;">Size ' + item.size + '</span>'
+                                    + (toppingsText ? '        <span class="text-muted small text-truncate" style="font-size: 0.72rem; max-width: 140px;">+ ' + toppingsText + '</span>' : '')
                                     + '      </div>'
+                                    + '      <div class="text-danger fw-bold mt-1" style="font-size: 0.84rem;">' + itemPriceFormatted + '</div>'
                                     + '    </div>'
                                     + '  </div>'
                                     + '  <div class="d-flex align-items-center gap-2 flex-shrink-0">'
                                     + '    <div class="d-flex align-items-center border rounded-pill bg-white px-1.5 py-0.5 shadow-2xs">'
                                     + '      <button type="button" class="btn btn-sm btn-link p-0 text-muted" style="width: 22px; height: 22px; text-decoration: none; font-weight: bold; line-height: 1;" onclick="changeItemQty(' + idx + ', -1)">-</button>'
-                                    + '      <span class="px-2 fw-bold text-dark small" style="min-width: 18px; text-align: center;">' + item.quantity + '</span>'
+                                    + '      <span class="px-1.5 fw-bold text-dark small" style="min-width: 18px; text-align: center;">' + item.quantity + '</span>'
                                     + '      <button type="button" class="btn btn-sm btn-link p-0 text-muted" style="width: 22px; height: 22px; text-decoration: none; font-weight: bold; line-height: 1;" onclick="changeItemQty(' + idx + ', 1)">+</button>'
                                     + '    </div>'
-                                    + '    <button class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0" style="width: 32px; height: 32px;" title="Xoá món" onclick="removeFromCart(' + idx + ')">'
-                                    + '      <span class="material-symbols-outlined fs-5">delete_outline</span>'
+                                    + '    <button class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0" style="width: 30px; height: 30px;" title="Xoá món" onclick="removeFromCart(' + idx + ')">'
+                                    + '      <span class="material-symbols-outlined" style="font-size: 18px;">delete_outline</span>'
                                     + '    </button>'
                                     + '  </div>'
                                     + '</div>';
