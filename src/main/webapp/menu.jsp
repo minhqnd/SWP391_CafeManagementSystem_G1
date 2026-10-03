@@ -662,7 +662,7 @@
                                                 class="btn btn-danger flex-grow-1 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill shadow-sm"
                                                 onclick="confirmAddToCart()">
                                                 <span class="material-symbols-outlined fs-5">add_circle</span>
-                                                <span>Chọn món này</span>
+                                                <span>Chọn món này &bull; <span id="modalBtnTotalPrice">0đ</span></span>
                                             </button>
                                         </div>
 
@@ -835,7 +835,12 @@
                     // Mở Modal tùy biến chi tiết
                     function openProductDetailModal(productId) {
                         fetch('${pageContext.request.contextPath}/menu?action=detail&id=' + productId)
-                            .then(function (res) { return res.json(); })
+                            .then(function (res) {
+                                if (!res.ok) {
+                                    throw new Error('Mạng hoặc máy chủ phản hồi lỗi: ' + res.status);
+                                }
+                                return res.json();
+                            })
                             .then(function (data) {
                                 if (data.error) {
                                     alert(data.error);
@@ -845,33 +850,55 @@
                                 modalQty = 1;
                                 selectedSizePrice = 0;
 
-                                document.getElementById('modalProductImg').src = data.imageUrl;
-                                document.getElementById('modalProductName').innerText = data.name;
-                                document.getElementById('modalProductCategory').innerText = data.categoryName;
-                                document.getElementById('modalProductDesc').innerText = data.description || '';
-                                document.getElementById('modalProductQty').innerText = 1;
+                                var imgEl = document.getElementById('modalProductImg');
+                                if (imgEl) imgEl.src = data.imageUrl || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';
+                                
+                                var nameEl = document.getElementById('modalProductName');
+                                if (nameEl) nameEl.innerText = data.name || '';
+                                
+                                var catEl = document.getElementById('modalProductCategory');
+                                if (catEl) catEl.innerText = data.categoryName || '';
+                                
+                                var descEl = document.getElementById('modalProductDesc');
+                                if (descEl) descEl.innerText = data.description || '';
+                                
+                                var qtyEl = document.getElementById('modalProductQty');
+                                if (qtyEl) qtyEl.innerText = 1;
 
                                 var config = data.variantsConfig || {};
-                                var sizes = config.sizes || { "M": 0, "L": 10000 };
-                                var toppings = config.toppings || [];
+                                if (typeof config === 'string') {
+                                    try {
+                                        config = JSON.parse(config);
+                                    } catch (e) {
+                                        config = {};
+                                    }
+                                }
+                                var sizes = config.sizes;
+                                if (!sizes || typeof sizes !== 'object' || Object.keys(sizes).length === 0) {
+                                    sizes = { "M": 0, "L": 10000 };
+                                }
+                                var toppings = Array.isArray(config.toppings) ? config.toppings : [];
 
                                 // Sizes với Smart Default (Size đầu tiên tự chọn)
                                 var sizeListHtml = '';
                                 var sizeKeys = Object.keys(sizes);
                                 sizeKeys.forEach(function (sName, index) {
-                                    var extraPrice = sizes[sName];
+                                    var extraPrice = sizes[sName] || 0;
                                     var isFirst = index === 0;
                                     if (isFirst) selectedSizePrice = extraPrice;
                                     sizeListHtml += '<div class="option-chip ' + (isFirst ? 'selected' : '') + '" onclick="selectSize(this, ' + extraPrice + ')">'
                                         + sName + (extraPrice > 0 ? ' (+' + extraPrice.toLocaleString('vi-VN') + 'đ)' : '')
                                         + '</div>';
                                 });
-                                document.getElementById('sizeList').innerHTML = sizeListHtml;
+                                var sizeListEl = document.getElementById('sizeList');
+                                if (sizeListEl) sizeListEl.innerHTML = sizeListHtml;
 
                                 // Toppings
-                                var toppingListHtml = '';
-                                if (Array.isArray(toppings) && toppings.length > 0) {
-                                    document.getElementById('toppingOptionsContainer').classList.remove('d-none');
+                                var toppingContainer = document.getElementById('toppingOptionsContainer');
+                                var toppingListEl = document.getElementById('toppingList');
+                                if (toppings.length > 0) {
+                                    if (toppingContainer) toppingContainer.classList.remove('d-none');
+                                    var toppingListHtml = '';
                                     toppings.forEach(function (t, idx) {
                                         var tName = typeof t === 'string' ? t : t.name;
                                         var tPrice = typeof t === 'object' && t.price ? t.price : 8000;
@@ -883,27 +910,34 @@
                                             + '  <span class="text-danger fw-bold small">+' + tPrice.toLocaleString('vi-VN') + 'đ</span>'
                                             + '</div>';
                                     });
-                                    document.getElementById('toppingList').innerHTML = toppingListHtml;
+                                    if (toppingListEl) toppingListEl.innerHTML = toppingListHtml;
                                 } else {
-                                    document.getElementById('toppingOptionsContainer').classList.add('d-none');
+                                    if (toppingContainer) toppingContainer.classList.add('d-none');
+                                    if (toppingListEl) toppingListEl.innerHTML = '';
                                 }
 
                                 calculateModalTotal();
 
-                                var myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('productDetailModal'));
-                                myModal.show();
+                                var modalEl = document.getElementById('productDetailModal');
+                                if (modalEl) {
+                                    var myModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                                    myModal.show();
+                                }
                             })
                             .catch(function (err) {
                                 console.error('Error loading product:', err);
+                                alert('Không thể tải thông tin món. Vui lòng thử lại!');
                             });
                     }
 
                     // Đóng Modal tùy biến
                     function closeProductDetailModal() {
                         var modalEl = document.getElementById('productDetailModal');
-                        var modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
-                        if (modalInstance) {
-                            modalInstance.hide();
+                        if (modalEl) {
+                            var modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                            if (modalInstance) {
+                                modalInstance.hide();
+                            }
                         }
                     }
 
@@ -917,7 +951,8 @@
 
                     function adjustModalQty(delta) {
                         modalQty = Math.max(1, modalQty + delta);
-                        document.getElementById('modalProductQty').innerText = modalQty;
+                        var qtyEl = document.getElementById('modalProductQty');
+                        if (qtyEl) qtyEl.innerText = modalQty;
                         calculateModalTotal();
                     }
 
@@ -928,12 +963,15 @@
                         checkboxes.forEach(function (cb) {
                             topPrice += parseFloat(cb.value) || 0;
                         });
-                        var singleItemPrice = currentProduct.basePrice + selectedSizePrice + topPrice;
+                        var base = parseFloat(currentProduct.basePrice) || 0;
+                        var singleItemPrice = base + (selectedSizePrice || 0) + topPrice;
                         var total = singleItemPrice * modalQty;
 
                         var formatted = total.toLocaleString('vi-VN') + 'đ';
-                        document.getElementById('modalProductTotalPrice').innerText = formatted;
-                        document.getElementById('modalBtnTotalPrice').innerText = formatted;
+                        var totalEl = document.getElementById('modalProductTotalPrice');
+                        if (totalEl) totalEl.innerText = formatted;
+                        var btnPriceEl = document.getElementById('modalBtnTotalPrice');
+                        if (btnPriceEl) btnPriceEl.innerText = formatted;
                     }
 
                     function confirmAddToCart() {
@@ -949,7 +987,8 @@
                             if (label) toppingNames.push(label.innerText);
                         });
 
-                        var singlePrice = currentProduct.basePrice + selectedSizePrice;
+                        var base = parseFloat(currentProduct.basePrice) || 0;
+                        var singlePrice = base + (selectedSizePrice || 0);
                         checkboxes.forEach(function (cb) { singlePrice += parseFloat(cb.value) || 0; });
 
                         cart.push({
@@ -965,12 +1004,21 @@
 
                         updateCartBadge();
 
-                        var modalInstance = bootstrap.Modal.getInstance(document.getElementById('productDetailModal'));
-                        if (modalInstance) modalInstance.hide();
+                        var modalEl = document.getElementById('productDetailModal');
+                        if (modalEl) {
+                            var modalInstance = bootstrap.Modal.getInstance(modalEl);
+                            if (modalInstance) modalInstance.hide();
+                        }
 
-                        document.getElementById('cartToastMessage').innerText = 'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào danh sách chọn!';
-                        var toast = new bootstrap.Toast(document.getElementById('cartToast'));
-                        toast.show();
+                        var toastMsg = document.getElementById('cartToastMessage');
+                        if (toastMsg) {
+                            toastMsg.innerText = 'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào danh sách chọn!';
+                        }
+                        var toastEl = document.getElementById('cartToast');
+                        if (toastEl && window.bootstrap) {
+                            var toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+                            toast.show();
+                        }
                     }
 
                     function changeItemQty(index, delta) {
