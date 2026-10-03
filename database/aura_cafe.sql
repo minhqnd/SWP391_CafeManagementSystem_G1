@@ -150,6 +150,7 @@ CREATE TABLE products (
     -- {"sizes":{"L":10000},"toppings":["Pearl"]}
     variants_config JSON NULL,
 
+    description TEXT,
     image_url VARCHAR(500),
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
 
@@ -679,38 +680,39 @@ VALUES
 -- 4. PRODUCTS
 INSERT INTO products
 (id, category_id, name, base_price, variants_config,
- image_url, is_available)
+ description, image_url, is_available)
 VALUES
 (1, 1, 'Americano', 35000,
  '{"sizes":{"M":0,"L":10000},"toppings":["Extra shot"]}',
- NULL, TRUE),
+ 'Espresso nguyên chất pha loãng, giữ trọn hương vị đậm đà mộc mạc.', 'https://images.unsplash.com/photo-1551030173-122aabc4489c?auto=format&fit=crop&q=80&w=800', TRUE),
 
 (2, 1, 'Latte', 45000,
  '{"sizes":{"M":0,"L":10000},"toppings":["Extra shot"]}',
- NULL, TRUE),
+ 'Sự cân bằng hoàn hảo giữa Espresso đậm đà và bọt sữa nóng mịn màng.', 'https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&q=80&w=800', TRUE),
 
 (3, 1, 'Cappuccino', 45000,
  '{"sizes":{"M":0,"L":10000}}',
- NULL, TRUE),
+ 'Phiên bản đậm đà hơn của Latte với lớp bọt sữa dày dặn hấp dẫn.', 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&q=80&w=800', TRUE),
 
 (4, 2, 'Peach Tea', 40000,
  '{"sizes":{"M":0,"L":10000},"toppings":["Peach jelly"]}',
- NULL, TRUE),
+ 'Trà đào mát lạnh cùng những miếng đào tươi giòn sần sật xua tan oi bức.', 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=800', TRUE),
 
 (5, 2, 'Lemon Tea', 35000,
  '{"sizes":{"M":0,"L":8000}}',
- NULL, TRUE),
+ 'Trà chanh truyền thống với hương chanh tươi mát, chua ngọt thanh dịu.', 'https://images.unsplash.com/photo-1596704017254-9eb10a3e8ff6?auto=format&fit=crop&q=80&w=800', TRUE),
 
 (6, 3, 'Milk Tea', 40000,
  '{"sizes":{"M":0,"L":10000},"toppings":["Pearl","Pudding"]}',
- NULL, TRUE),
+ 'Trà sữa vị lá trà đen tự nhiên, ngọt ngào quyện cùng trân châu dai giòn.', 'https://images.unsplash.com/photo-1558857563-b371032bda98?auto=format&fit=crop&q=80&w=800', TRUE),
 
 (7, 4, 'Cheesecake', 55000,
- NULL, NULL, TRUE),
+ NULL,
+ 'Bánh phô mai nướng mềm mịn, tan chảy trong miệng với độ béo ngậy khó cưỡng.', 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&q=80&w=800', TRUE),
 
 (8, 5, 'Orange Juice', 45000,
  '{"sizes":{"M":0,"L":10000}}',
- NULL, TRUE);
+ 'Nước cam vắt nguyên chất, giàu vitamin C và năng lượng cho ngày mới.', 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&q=80&w=800', TRUE);
 
 -- 5. VOUCHERS
 INSERT INTO vouchers
