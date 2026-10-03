@@ -1,6 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-    <% // Xử lý activeTab từ session/request String activeTab=request.getParameter("tab"); if (activeTab==null)
-        activeTab=(String) request.getAttribute("activeTab"); if (activeTab==null) activeTab="login" ; %>
+    <% /* Xy ly activeTab tu session/request */ String activeTab=request.getParameter("tab"); if (activeTab==null) {
+        activeTab=(String) request.getAttribute("activeTab"); } if (activeTab==null) { activeTab="login" ; } boolean
+        isLoginTab="login" .equals(activeTab); boolean isRegisterTab="register" .equals(activeTab); boolean
+        isForgotTab="forgot" .equals(activeTab); %>
         <style>
             :root {
                 --surface-container-lowest: #ffffff;
@@ -132,13 +134,15 @@
 
                         <div class="col-12 col-md-7 p-4 p-md-5 d-flex flex-column justify-content-center">
 
-                            <% String sessionSuccess=(String) session.getAttribute("successMsg"); String
-                                sessionError=(String) session.getAttribute("errorMsg"); if (sessionSuccess !=null)
-                                session.removeAttribute("successMsg"); if (sessionError !=null)
-                                session.removeAttribute("errorMsg"); String displayError=request.getAttribute("error")
-                                !=null ? (String) request.getAttribute("error") : sessionError; String
-                                displaySuccess=request.getAttribute("success") !=null ? (String)
-                                request.getAttribute("success") : sessionSuccess; %>
+                            <% /* Get attributes safely */ String sessionSuccess=(String)
+                                session.getAttribute("successMsg"); String sessionError=(String)
+                                session.getAttribute("errorMsg"); if (sessionSuccess !=null) {
+                                session.removeAttribute("successMsg"); } if (sessionError !=null) {
+                                session.removeAttribute("errorMsg"); } String reqError=(String)
+                                request.getAttribute("error"); String reqSuccess=(String)
+                                request.getAttribute("success"); String displayError=(reqError !=null) ? reqError :
+                                sessionError; String displaySuccess=(reqSuccess !=null) ? reqSuccess : sessionSuccess;
+                                %>
 
                                 <% if (displayError !=null) { %>
                                     <div class="alert alert-danger p-2 mb-3 text-center" style="font-size: 0.875rem;">
@@ -154,26 +158,26 @@
 
                                                 <ul class="nav nav-pills-custom nav-justified" id="modalAuthTab">
                                                     <li class="nav-item">
-                                                        <button class="nav-link <%= " login".equals(activeTab)
-                                                            ? "active" : "" %>" data-bs-toggle="pill"
+                                                        <button class="nav-link <%= isLoginTab ? " active" : "" %>"
+                                                            data-bs-toggle="pill"
                                                             data-bs-target="#modal-login-pane">Đăng nhập</button>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <button class="nav-link <%= " register".equals(activeTab)
-                                                            ? "active" : "" %>" data-bs-toggle="pill"
+                                                        <button class="nav-link <%= isRegisterTab ? " active" : "" %>"
+                                                            data-bs-toggle="pill"
                                                             data-bs-target="#modal-register-pane">Đăng ký</button>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <button class="nav-link <%= " forgot".equals(activeTab)
-                                                            ? "active" : "" %>" data-bs-toggle="pill"
+                                                        <button class="nav-link <%= isForgotTab ? " active" : "" %>"
+                                                            data-bs-toggle="pill"
                                                             data-bs-target="#modal-forgot-pane">Quên mật khẩu</button>
                                                     </li>
                                                 </ul>
 
                                                 <div class="tab-content">
                                                     <!-- LOGIN -->
-                                                    <div class="tab-pane fade <%= " login".equals(activeTab)
-                                                        ? "show active" : "" %>" id="modal-login-pane">
+                                                    <div class="tab-pane fade <%= isLoginTab ? " show active" : "" %>"
+                                                        id="modal-login-pane">
                                                         <div class="mb-3">
                                                             <h2 class="fs-4 fw-semibold mb-1">Chào mừng trở lại</h2>
                                                             <p class="text-muted" style="font-size: 0.85rem;">Vui lòng
@@ -207,8 +211,8 @@
                                                     </div>
 
                                                     <!-- REGISTER -->
-                                                    <div class="tab-pane fade <%= " register".equals(activeTab)
-                                                        ? "show active" : "" %>" id="modal-register-pane">
+                                                    <div class="tab-pane fade <%= isRegisterTab ? " show active" : "" %>
+                                                        " id="modal-register-pane">
                                                         <div class="mb-3">
                                                             <h2 class="fs-4 fw-semibold mb-1">Tạo tài khoản Aura</h2>
                                                             <p class="text-muted" style="font-size: 0.85rem;">Đăng ký
@@ -252,8 +256,8 @@
                                                     </div>
 
                                                     <!-- FORGOT PWD -->
-                                                    <div class="tab-pane fade <%= " forgot".equals(activeTab)
-                                                        ? "show active" : "" %>" id="modal-forgot-pane">
+                                                    <div class="tab-pane fade <%= isForgotTab ? " show active" : "" %>"
+                                                        id="modal-forgot-pane">
                                                         <div class="mb-3">
                                                             <h2 class="fs-4 fw-semibold mb-1">Khôi phục quyền truy cập
                                                             </h2>
