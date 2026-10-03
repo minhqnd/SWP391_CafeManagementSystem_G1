@@ -363,8 +363,8 @@
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="productsGrid">
                     <c:forEach var="p" items="${products}">
                         <div class="col">
-                            <!-- Card: Bấm vào ảnh/tên sẽ tuỳ biến (hoặc thêm ngay nếu là bánh/đóng chai) -->
-                            <div class="product-card h-100" onclick="handleCardClick(${p.id}, '${p.name}', ${p.basePrice}, '${p.imageUrl}', ${p.categoryId})">
+                            <!-- Card: Bấm vào ảnh/tên hoặc dấu cộng đều mở modal tùy chọn -->
+                            <div class="product-card h-100" onclick="openProductDetailModal(${p.id})">
                                 <!-- Image Box -->
                                 <div class="product-img-box">
                                     <c:if test="${not empty p.badge}">
@@ -386,11 +386,11 @@
                                         ${not empty p.description ? p.description : 'Đồ uống tinh hoa được tuyển chọn từ vùng nguyên liệu đặc sản.'}
                                     </p>
 
-                                    <!-- Price & 1-Click Quick Add Button -->
+                                    <!-- Price & Add Button -->
                                     <div class="product-card-footer">
                                         <span class="product-price">${p.formattedPrice}</span>
-                                        <button type="button" class="btn-add-circle" title="Thêm nhanh vào giỏ hàng" 
-                                                onclick="quickAddToCart(event, ${p.id}, '${p.name}', ${p.basePrice}, '${p.imageUrl}', ${p.categoryId})">
+                                        <button type="button" class="btn-add-circle" title="Tùy chọn & Thêm món" 
+                                                onclick="event.stopPropagation(); openProductDetailModal(${p.id})">
                                             <span class="material-symbols-outlined fs-5">add</span>
                                         </button>
                                     </div>
