@@ -1,6 +1,6 @@
 package controller;
 
-import dao.AccountDAO;
+import dao.UserDAO;
 import model.User;
 
 import jakarta.servlet.ServletException;
@@ -14,7 +14,7 @@ import java.io.IOException;
 @WebServlet(name = "LoginController", urlPatterns = {"/login"})
 public class LoginController extends HttpServlet {
 
-    private final AccountDAO accountDAO = new AccountDAO();
+    private final UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -26,19 +26,33 @@ public class LoginController extends HttpServlet {
         String action = request.getParameter("action");
         if ("logout".equals(action)) {
             session.invalidate(); // Xóa session
-            response.sendRedirect(request.getContextPath() + "/login");
+            // Redirect về trang chủ thay vì /login
+            response.sendRedirect(request.getContextPath() + "/");
             return;
         }
 
         // Kiểm tra nếu đã login thì redirect luôn, không cho vào trang login nữa
         User currentUser = (User) session.getAttribute("user");
         if (currentUser != null) {
-            redirectByRole(currentUser.getRole(), response);
+            redirectByUser(currentUser, request, response);
             return;
         }
 
-        // Nếu chưa đăng nhập thì forward tới trang giao diện login.jsp
-        request.getRequestDispatcher("login.jsp").forward(request, response);
+        // Xử lý thông báo chuyển từ Register (Flash attributes)
+        if (session.getAttribute("successMsg") != null) {
+            request.setAttribute("success", session.getAttribute("successMsg"));
+            session.removeAttribute("successMsg");
+        }
+        if (session.getAttribute("errorMsg") != null) {
+            request.setAttribute("error", session.getAttribute("errorMsg"));
+            session.removeAttribute("errorMsg");
+        }
+        
+        String tab = request.getParameter("tab");
+        request.setAttribute("activeTab", tab != null ? tab : "login");
+
+        // Nếu truy cập trực tiếp /login thì điều hướng về trang chủ kèm bật popup đăng nhập
+        response.sendRedirect(request.getContextPath() + "/?tab=" + (tab != null ? tab : "login"));
     }
 
     @Override
@@ -46,47 +60,46 @@ public class LoginController extends HttpServlet {
             throws ServletException, IOException {
         
         // Nhận dữ liệu từ form (login.jsp)
-        String user = request.getParameter("username");
+        String userIdentifier = request.getParameter("username");
         String pass = request.getParameter("password");
         
         // Gọi DAO để xác thực
-        User loginUser = accountDAO.login(user, pass);
+        User loginUser = userDAO.login(userIdentifier, pass);
         
         if (loginUser != null) {
             // Đăng nhập thành công -> Tạo Session
             HttpSession session = request.getSession();
-            session.setAttribute("user", loginUser); // Lưu object User (chứa thông tin và Role) vào session
+            session.setAttribute("user", loginUser); // Lưu object User vào session
             
-            // Dựa vào Role để chuyển hướng đến trang tương ứng
-            redirectByRole(loginUser.getRole(), response);
+            // Dựa vào Role/Position để chuyển hướng đến trang tương ứng
+            redirectByUser(loginUser, request, response);
         } else {
-            // Đăng nhập thất bại -> Trả về thông báo lỗi
-            request.setAttribute("error", "Tên đăng nhập hoặc mật khẩu không chính xác, hoặc tài khoản đã bị khóa!");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+            // Đăng nhập thất bại -> Lưu lỗi vào session và điều hướng về trang chủ bật popup
+            request.getSession().setAttribute("errorMsg", "Tên đăng nhập hoặc mật khẩu không chính xác, hoặc tài khoản đã bị khóa!");
+            response.sendRedirect(request.getContextPath() + "/?tab=login");
         }
     }
 
-    // Hàm helper để chia luồng redirect tùy thuộc vào Role
-    private void redirectByRole(String role, HttpServletResponse response) throws IOException {
-        switch (role) {
-            case "Admin":
-                response.sendRedirect("admin-dashboard.jsp");
-                break;
-            case "Cashier":
+    // Hàm helper để chia luồng redirect tùy thuộc vào Role và Position
+    private void redirectByUser(User user, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String role = user.getRole();
+        String position = user.getPosition();
+        
+        if ("ADMIN".equalsIgnoreCase(role)) {
+            response.sendRedirect("admin-dashboard.jsp");
+        } else if ("STAFF".equalsIgnoreCase(role)) {
+            if ("CASHIER".equalsIgnoreCase(position)) {
                 response.sendRedirect("cashier-dashboard.jsp");
-                break;
-            case "Barista":
+            } else if ("BARISTA".equalsIgnoreCase(position)) {
                 response.sendRedirect("barista-dashboard.jsp");
-                break;
-            case "Delivery Staff":
+            } else if ("SHIPPER".equalsIgnoreCase(position)) {
                 response.sendRedirect("delivery-dashboard.jsp");
-                break;
-            case "Customer":
-                response.sendRedirect("home.jsp");
-                break;
-            default:
-                response.sendRedirect("home.jsp"); // Fallback
-                break;
+            } else {
+                response.sendRedirect(request.getContextPath() + "/"); // Fallback for other staff
+            }
+        } else {
+            // CUSTOMER
+            response.sendRedirect(request.getContextPath() + "/");
         }
     }
 }
