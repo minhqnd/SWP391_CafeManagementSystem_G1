@@ -539,11 +539,14 @@
     <!-- Product Customization Modal (Mở khi bấm vào đồ uống để đổi size/topping) -->
     <div class="modal fade" id="productDetailModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem; overflow: hidden;">
-                <div class="modal-header border-0 pb-0 pt-3 pe-3">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4 pt-1">
+            <div class="modal-content border-0 shadow-lg position-relative" style="border-radius: 1.5rem; overflow: hidden;">
+                <!-- Close Button (Always on top with high z-index) -->
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" 
+                        style="z-index: 1060; cursor: pointer; padding: 0.75rem;" 
+                        data-bs-dismiss="modal" 
+                        aria-label="Close" 
+                        onclick="closeProductDetailModal()"></button>
+                <div class="modal-body p-4 pt-3">
                     <div class="row g-4 align-items-center">
                         <!-- Left: Image -->
                         <div class="col-md-5">
@@ -794,12 +797,21 @@
 
                     calculateModalTotal();
 
-                    var myModal = new bootstrap.Modal(document.getElementById('productDetailModal'));
+                    var myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('productDetailModal'));
                     myModal.show();
                 })
                 .catch(function(err) {
                     console.error('Error loading product:', err);
                 });
+        }
+
+        // Đóng Modal tùy biến
+        function closeProductDetailModal() {
+            var modalEl = document.getElementById('productDetailModal');
+            var modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
         }
 
         function selectSize(element, extraPrice) {
@@ -902,7 +914,7 @@
                 document.getElementById('cartTotalSum').innerText = sum.toLocaleString('vi-VN') + 'đ';
             }
 
-            var modal = new bootstrap.Modal(document.getElementById('cartPreviewModal'));
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('cartPreviewModal'));
             modal.show();
         }
 
