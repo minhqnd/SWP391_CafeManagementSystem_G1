@@ -9,6 +9,9 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * ProductDAO - Tương tác dữ liệu sản phẩm / thực đơn
+ */
 public class ProductDAO extends BaseDAO {
 
     private Product mapResultSetToProduct(ResultSet rs) throws Exception {
@@ -27,6 +30,33 @@ public class ProductDAO extends BaseDAO {
         );
     }
 
+    /**
+     * Dùng cho trang chủ (Homepage) lấy tối đa 8 sản phẩm
+     */
+    public List<Product> getAllProducts() {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.name AS category_name " +
+                     "FROM products p " +
+                     "LEFT JOIN categories c ON p.category_id = c.id " +
+                     "WHERE p.is_available = 1 " +
+                     "LIMIT 8";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultSetToProduct(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Lấy toàn bộ sản phẩm khả dụng cho trang Menu
+     */
     public List<Product> getAllAvailableProducts() {
         List<Product> list = new ArrayList<>();
         String sql = "SELECT p.*, c.name AS category_name " +
@@ -108,12 +138,13 @@ public class ProductDAO extends BaseDAO {
                 "JOIN categories c ON p.category_id = c.id " +
                 "WHERE p.is_available = 1 "
         );
-
         List<Object> params = new ArrayList<>();
+
         if (categoryId != null && categoryId > 0) {
             sql.append(" AND p.category_id = ? ");
             params.add(categoryId);
         }
+
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND (p.name LIKE ? OR c.name LIKE ? OR p.description LIKE ? OR p.subtitle LIKE ?) ");
             String term = "%" + keyword.trim() + "%";
@@ -122,6 +153,7 @@ public class ProductDAO extends BaseDAO {
             params.add(term);
             params.add(term);
         }
+
         sql.append(" ORDER BY p.id ASC");
 
         try (Connection conn = DBContext.getConnection();

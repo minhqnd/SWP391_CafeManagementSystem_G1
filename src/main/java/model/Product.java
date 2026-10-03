@@ -23,6 +23,18 @@ public class Product implements Serializable {
     public Product() {
     }
 
+    // 7-param constructor used by Homepage
+    public Product(int id, int categoryId, String name, double basePrice, String variantsConfig, String imageUrl, boolean isAvailable) {
+        this.id = id;
+        this.categoryId = categoryId;
+        this.name = name;
+        this.basePrice = basePrice;
+        this.variantsConfig = variantsConfig;
+        this.imageUrl = imageUrl;
+        this.isAvailable = isAvailable;
+    }
+
+    // Full constructor used by Menu & detailed catalog
     public Product(int id, int categoryId, String categoryName, String name, double basePrice,
                    String description, String badge, String subtitle, String variantsConfig,
                    String imageUrl, boolean isAvailable) {
