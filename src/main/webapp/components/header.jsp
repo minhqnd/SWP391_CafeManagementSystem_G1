@@ -80,7 +80,7 @@
             <!-- Right Actions: Cart & Profile -->
             <div class="d-flex align-items-center gap-3 ms-lg-auto">
                 <!-- Cart Button -->
-                <a href="javascript:void(0)" onclick="typeof openCartModal === 'function' ? openCartModal() : (window.location.href='${pageContext.request.contextPath}/menu')" 
+                <a href="${pageContext.request.contextPath}/cart" 
                    class="text-decoration-none text-dark d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-light border"
                    style="transition: background-color 0.2s;" title="Giỏ hàng">
                     <span class="material-symbols-outlined fs-5 text-secondary">shopping_bag</span>

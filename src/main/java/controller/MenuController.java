@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
-@WebServlet(name = "MenuController", urlPatterns = {"/menu", "/product-detail"})
+@WebServlet(name = "MenuController", urlPatterns = {"/menu"})
 public class MenuController extends HttpServlet {
 
     private final ProductDAO productDAO = new ProductDAO();
@@ -25,10 +25,8 @@ public class MenuController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String path = request.getServletPath();
-
-        // Xử lý lấy chi tiết sản phẩm qua JSON API cho Modal popup
-        if ("/product-detail".equals(path) || "detail".equals(request.getParameter("action"))) {
+        // Xử lý lấy chi tiết sản phẩm qua JSON API cho Modal popup tại Menu
+        if ("detail".equals(request.getParameter("action"))) {
             handleProductDetailApi(request, response);
             return;
         }

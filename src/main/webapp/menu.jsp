@@ -462,8 +462,8 @@
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="productsGrid">
                     <c:forEach var="p" items="${products}">
                         <div class="col">
-                            <!-- Card: Bấm vào ảnh/tên hoặc dấu cộng đều mở modal tùy chọn -->
-                            <div class="product-card h-100" onclick="openProductDetailModal(${p.id})">
+                            <!-- Card: Bấm vào ảnh/tên chuyển sang trang chi tiết của DonVQ, nút + mở modal thêm nhanh -->
+                            <div class="product-card h-100" onclick="window.location.href='${pageContext.request.contextPath}/product-detail?id=${p.id}'">
                                 <!-- Image Box -->
                                 <div class="product-img-box">
                                     <c:if test="${not empty p.badge}">
@@ -480,7 +480,11 @@
                                     <div class="product-meta-subtitle">
                                         ${not empty p.subtitle ? p.subtitle : p.categoryName}
                                     </div>
-                                    <h2 class="product-name" title="${p.name}">${p.name}</h2>
+                                    <h2 class="product-name" title="${p.name}">
+                                        <a href="${pageContext.request.contextPath}/product-detail?id=${p.id}" class="text-decoration-none text-dark" onclick="event.stopPropagation()">
+                                            ${p.name}
+                                        </a>
+                                    </h2>
                                     <p class="product-brief" title="${p.description}">
                                         ${not empty p.description ? p.description : 'Đồ uống tinh hoa được tuyển chọn từ vùng nguyên liệu đặc sản.'}
                                     </p>
@@ -741,7 +745,7 @@
 
         // Mở Modal tùy biến chi tiết
         function openProductDetailModal(productId) {
-            fetch('${pageContext.request.contextPath}/product-detail?id=' + productId)
+            fetch('${pageContext.request.contextPath}/menu?action=detail&id=' + productId)
                 .then(function(res) { return res.json(); })
                 .then(function(data) {
                     if (data.error) {
