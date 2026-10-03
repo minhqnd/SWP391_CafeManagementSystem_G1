@@ -359,103 +359,10 @@
 </head>
 <body>
 
-    <!-- Header Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3 sticky-top z-3">
-        <div class="container-fluid px-4 px-lg-5">
-            <!-- Brand Logo -->
-            <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2 me-4" href="${pageContext.request.contextPath}/">
-                <div class="bg-danger text-white rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                    <span class="material-symbols-outlined fs-4">local_cafe</span>
-                </div>
-                <div class="d-flex flex-column">
-                    <span class="fs-4 lh-1 text-dark fw-bold">Aura Café</span>
-                    <span class="text-secondary fw-semibold" style="font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase;">Specialty Coffee</span>
-                </div>
-            </a>
-            
-            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-                <span class="material-symbols-outlined">menu</span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="mainNavbar">
-                <!-- Navigation Links -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1 gap-lg-3 fw-medium" style="font-size: 0.95rem;">
-                    <li class="nav-item">
-                        <a class="nav-link" href="${pageContext.request.contextPath}/">Trang chủ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active-menu" href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-muted" href="#" onclick="showFeatureNotice('Đơn hàng của tôi')">Đơn hàng của tôi</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-muted" href="#" onclick="showFeatureNotice('Hồ sơ & Điểm tích luỹ')">Hồ sơ & Điểm tích luỹ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-muted" href="#" onclick="showFeatureNotice('Phản ánh & Khiếu nại')">Phản ánh & Khiếu nại</a>
-                    </li>
-                </ul>
-
-                <!-- Live Search Bar -->
-                <form action="${pageContext.request.contextPath}/menu" method="GET" class="d-flex mx-auto mx-lg-3 my-3 my-lg-0 flex-grow-1 search-container">
-                    <c:if test="${not empty currentCategory}">
-                        <input type="hidden" name="category" value="${currentCategory}">
-                    </c:if>
-                    <span class="material-symbols-outlined search-icon fs-5">search</span>
-                    <input type="search" name="keyword" value="${currentKeyword}" 
-                           class="form-control search-input shadow-none" 
-                           id="menuSearchInput"
-                           placeholder="Tìm kiếm đồ uống, bánh ngọt hoặc combo..."
-                           autocomplete="off">
-                </form>
-
-                <!-- Right Actions: Cart & Profile -->
-                <div class="d-flex align-items-center gap-3">
-                    <!-- Cart Button -->
-                    <a href="javascript:void(0)" onclick="openCartModal()" 
-                       class="text-decoration-none text-dark d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-light border hover-shadow"
-                       style="transition: background-color 0.2s;">
-                        <span class="material-symbols-outlined fs-5 text-secondary">shopping_bag</span>
-                        <span class="fw-semibold" style="font-size: 0.88rem;">Giỏ hàng</span>
-                        <span id="headerCartBadge" class="badge rounded-pill bg-danger" style="font-size: 0.72rem;">0</span>
-                    </a>
-
-                    <!-- Profile / Auth Button -->
-                    <c:choose>
-                        <c:when test="${not empty sessionScope.user}">
-                            <div class="dropdown">
-                                <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark" data-bs-toggle="dropdown">
-                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
-                                        <span class="material-symbols-outlined text-danger">account_circle</span>
-                                    </div>
-                                    <div class="d-none d-xl-flex flex-column text-start">
-                                        <span class="fw-semibold text-truncate" style="font-size: 0.85rem; max-width: 120px;">${sessionScope.user.fullName}</span>
-                                        <span class="text-danger fw-bold" style="font-size: 0.7rem;">${sessionScope.user.role}</span>
-                                    </div>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                                    <li class="px-3 py-2 border-bottom">
-                                        <div class="fw-bold">${sessionScope.user.fullName}</div>
-                                        <div class="small text-muted">${sessionScope.user.phone}</div>
-                                    </li>
-                                    <li><a class="dropdown-item fw-medium py-2 text-danger" href="${pageContext.request.contextPath}/login?action=logout">
-                                        <span class="material-symbols-outlined align-middle fs-6 me-1">logout</span> Đăng xuất
-                                    </a></li>
-                                </ul>
-                            </div>
-                        </c:when>
-                        <c:otherwise>
-                            <button type="button" class="btn btn-outline-danger rounded-circle p-2 d-flex align-items-center justify-content-center" 
-                                    style="width: 42px; height: 42px;" data-bs-toggle="modal" data-bs-target="#authModal" title="Đăng nhập / Đăng ký">
-                                <span class="material-symbols-outlined fs-5">person</span>
-                            </button>
-                        </c:otherwise>
-                    </c:choose>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- Shared Header Navbar Component -->
+    <jsp:include page="/components/header.jsp">
+        <jsp:param name="activePage" value="menu" />
+    </jsp:include>
 
     <!-- Main Menu Content Container -->
     <div class="container-fluid px-4 px-lg-5 py-4">
