@@ -67,6 +67,7 @@
     </dependencies>
 
     <build>
+        <finalName>SWP391_CafeManagementSystem</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -100,8 +101,11 @@
                     </configuration>
                     <deployables>
                         <deployable>
+                            <groupId>com.cafe</groupId>
+                            <artifactId>SWP391_CafeManagementSystem</artifactId>
+                            <type>war</type>
                             <properties>
-                                <context>/</context>
+                                <context>/SWP391_CafeManagementSystem</context>
                             </properties>
                         </deployable>
                     </deployables>
