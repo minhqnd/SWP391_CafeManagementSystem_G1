@@ -520,24 +520,27 @@
 
     <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Không hiện giá) -->
     <div id="stickyMiniCart" class="sticky-cart-bar d-none">
-        <div class="d-flex align-items-center gap-3" onclick="openSelectedItemsModal()" style="cursor: pointer;" title="Xem các món đang chọn">
+        <div class="d-flex align-items-center gap-3" onclick="openSelectedItemsModal()" style="cursor: pointer;" title="Bấm để xem danh sách món">
             <div class="cart-badge-icon">
-                <span class="material-symbols-outlined fs-5">checklist</span>
+                <span class="material-symbols-outlined fs-5">shopping_bag</span>
                 <span id="stickyCartBadge" class="badge-count-pill">0</span>
             </div>
             <div>
-                <div class="fw-bold" style="font-size: 0.95rem;">
-                    Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">0</span> món
-                </div>
-                <div class="text-muted" style="font-size: 0.75rem;">
-                    Bấm để xem danh sách món
+                <div class="fw-bold text-white d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+                    <span>Đang chọn</span>
+                    <span id="stickyCartCount" class="badge bg-danger rounded-pill px-2.5 py-0.5">0 món</span>
                 </div>
             </div>
         </div>
-        <a href="${pageContext.request.contextPath}/cart" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm text-decoration-none" title="Chuyển sang trang giỏ hàng">
-            <span>Đến giỏ hàng</span>
-            <span class="material-symbols-outlined fs-6">arrow_forward</span>
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-light rounded-pill px-3 py-1.5 small fw-semibold" onclick="openSelectedItemsModal()" title="Xem danh sách món đã chọn">
+                <span>Xem món</span>
+            </button>
+            <a href="${pageContext.request.contextPath}/cart" class="btn btn-danger rounded-pill px-3.5 py-1.5 fw-semibold small d-flex align-items-center gap-1 shadow-sm text-decoration-none" title="Chuyển sang trang giỏ hàng">
+                <span>Xem giỏ hàng</span>
+                <span class="material-symbols-outlined fs-6">arrow_forward</span>
+            </a>
+        </div>
     </div>
 
     <!-- Product Customization Modal (Mở khi bấm vào đồ uống để đổi size/topping) -->
@@ -602,29 +605,31 @@
         </div>
     </div>
 
-    <!-- Selected Items Preview Modal (Món đang chọn - Không hiện giá/tạm tính) -->
+    <!-- Selected Items Preview Modal (Món đang chọn - Giao diện tinh tế, không hiện giá) -->
     <div class="modal fade" id="selectedItemsModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="modal-header border-0 pb-0 pt-3 px-4">
-                    <div>
-                        <h5 class="modal-title fw-bold d-flex align-items-center gap-2 mb-0">
-                            <span class="material-symbols-outlined text-danger">checklist</span>
-                            Món bạn đang chọn
-                        </h5>
-                        <p class="text-muted small mb-0 mt-1">Danh sách món đã thêm tại Menu</p>
+                <div class="modal-header border-0 pb-2 pt-3 px-4 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="bg-danger-subtle text-danger rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                            <span class="material-symbols-outlined fs-5">checklist</span>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0 text-dark" style="font-size: 1.05rem;">Món bạn đang chọn</h5>
+                            <span class="text-muted small" style="font-size: 0.78rem;">Danh sách món đã thêm tại Menu</span>
+                        </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body p-4 pt-3">
+                <div class="modal-body px-4 py-3">
                     <div id="cartEmptyState" class="text-center py-4">
                         <span class="material-symbols-outlined text-muted fs-1 mb-2">playlist_remove</span>
                         <p class="text-muted mb-0">Bạn chưa chọn món nào.</p>
                     </div>
-                    <div id="cartItemList" class="d-flex flex-column gap-2 mb-3" style="max-height: 280px; overflow-y: auto;"></div>
+                    <div id="cartItemList" class="d-flex flex-column gap-2 mb-3" style="max-height: 300px; overflow-y: auto;"></div>
                     <div id="cartSummary" class="border-top pt-3 d-none">
-                        <a href="${pageContext.request.contextPath}/cart" class="btn btn-danger w-100 py-2.5 fw-semibold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none">
-                            <span>Chuyển sang trang giỏ hàng</span>
+                        <a href="${pageContext.request.contextPath}/cart" class="btn btn-danger w-100 py-2.5 fw-semibold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none" style="background: linear-gradient(135deg, #8b1528 0%, #b91c1c 100%);">
+                            <span>Xem giỏ hàng</span>
                             <span class="material-symbols-outlined fs-5">arrow_forward</span>
                         </a>
                     </div>
@@ -903,13 +908,18 @@
                     var toppingsText = (item.toppings && item.toppings.length > 0) ? (' • ' + item.toppings.join(', ')) : '';
                     html += '<div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 bg-light border">'
                           + '  <div class="d-flex align-items-center gap-3">'
-                          + '    <img src="' + item.imageUrl + '" style="width: 44px; height: 44px; object-fit: cover; border-radius: 8px;">'
+                          + '    <img src="' + item.imageUrl + '" style="width: 48px; height: 48px; object-fit: cover; border-radius: 10px;" class="border bg-white shadow-xs">'
                           + '    <div>'
-                          + '      <div class="fw-semibold small" style="color: var(--text-main);">' + item.name + ' <span class="badge bg-secondary-subtle text-dark border small">' + item.size + '</span></div>'
-                          + '      <div class="text-muted small">Số lượng: <span class="fw-bold text-dark">' + item.quantity + '</span>' + toppingsText + '</div>'
+                          + '      <div class="fw-bold small text-dark d-flex align-items-center gap-1.5">'
+                          + '        <span>' + item.name + '</span>'
+                          + '        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill" style="font-size: 0.68rem; font-weight: 600;">' + item.size + '</span>'
+                          + '      </div>'
+                          + '      <div class="text-muted small mt-0.5" style="font-size: 0.78rem;">'
+                          + '        Số lượng: <span class="fw-bold text-dark">' + item.quantity + '</span>' + toppingsText
+                          + '      </div>'
                           + '    </div>'
                           + '  </div>'
-                          + '  <button class="btn btn-sm btn-link text-muted p-1 text-decoration-none" title="Bỏ chọn món" onclick="removeFromCart(' + idx + ')">'
+                          + '  <button class="btn btn-sm btn-outline-secondary rounded-circle p-1 d-flex align-items-center justify-content-center border-0 text-muted" style="width: 32px; height: 32px;" title="Bỏ chọn món" onclick="removeFromCart(' + idx + ')">'
                           + '    <span class="material-symbols-outlined fs-5">close</span>'
                           + '  </button>'
                           + '</div>';
