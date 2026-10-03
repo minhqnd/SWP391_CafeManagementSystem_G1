@@ -32,6 +32,7 @@
             color: var(--text-main);
             overflow-x: hidden;
             letter-spacing: -0.01em;
+            padding-bottom: 80px; /* Space for Sticky Bottom Cart */
         }
 
         /* Category Filter Pills */
@@ -184,7 +185,7 @@
             color: var(--primary);
         }
 
-        /* Sleek Add Button */
+        /* 1-Click Quick Add Button */
         .btn-add-circle {
             width: 38px;
             height: 38px;
@@ -197,12 +198,59 @@
             justify-content: center;
             transition: all 0.2s ease;
         }
-        .product-card:hover .btn-add-circle {
+        .btn-add-circle:hover {
             background-color: var(--primary);
             color: #ffffff;
-            transform: scale(1.08);
+            transform: scale(1.1);
             border-color: var(--primary);
-            box-shadow: 0 4px 10px rgba(139, 21, 40, 0.25);
+            box-shadow: 0 4px 12px rgba(139, 21, 40, 0.3);
+        }
+
+        /* Sticky Bottom Mini Cart Bar */
+        .sticky-cart-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f172a;
+            color: #ffffff;
+            padding: 0.65rem 1.25rem;
+            border-radius: 999px;
+            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.75rem;
+            z-index: 1040;
+            min-width: 350px;
+            max-width: 90vw;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp {
+            from { transform: translate(-50%, 40px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .cart-badge-icon {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+        }
+        .badge-count-pill {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background-color: #e11d48;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 999px;
         }
 
         /* Customization Modal Styling */
@@ -315,7 +363,8 @@
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="productsGrid">
                     <c:forEach var="p" items="${products}">
                         <div class="col">
-                            <div class="product-card h-100" onclick="openProductDetailModal(${p.id})">
+                            <!-- Card: Bấm vào ảnh/tên sẽ tuỳ biến (hoặc thêm ngay nếu là bánh/đóng chai) -->
+                            <div class="product-card h-100" onclick="handleCardClick(${p.id}, '${p.name}', ${p.basePrice}, '${p.imageUrl}', ${p.categoryId})">
                                 <!-- Image Box -->
                                 <div class="product-img-box">
                                     <c:if test="${not empty p.badge}">
@@ -337,10 +386,11 @@
                                         ${not empty p.description ? p.description : 'Đồ uống tinh hoa được tuyển chọn từ vùng nguyên liệu đặc sản.'}
                                     </p>
 
-                                    <!-- Price & Clean Add Button -->
+                                    <!-- Price & 1-Click Quick Add Button -->
                                     <div class="product-card-footer">
                                         <span class="product-price">${p.formattedPrice}</span>
-                                        <button type="button" class="btn-add-circle" title="Tùy chọn & Thêm món" onclick="event.stopPropagation(); openProductDetailModal(${p.id})">
+                                        <button type="button" class="btn-add-circle" title="Thêm nhanh vào giỏ hàng" 
+                                                onclick="quickAddToCart(event, ${p.id}, '${p.name}', ${p.basePrice}, '${p.imageUrl}', ${p.categoryId})">
                                             <span class="material-symbols-outlined fs-5">add</span>
                                         </button>
                                     </div>
@@ -365,7 +415,29 @@
 
     </main>
 
-    <!-- Product Customization Modal -->
+    <!-- Sticky Bottom Mini Cart Bar (Hiện khi có món trong giỏ) -->
+    <div id="stickyMiniCart" class="sticky-cart-bar d-none">
+        <div class="d-flex align-items-center gap-3">
+            <div class="cart-badge-icon">
+                <span class="material-symbols-outlined fs-5">shopping_bag</span>
+                <span id="stickyCartBadge" class="badge-count-pill">0</span>
+            </div>
+            <div>
+                <div class="fw-bold" style="font-size: 0.92rem;">
+                    Giỏ hàng • <span id="stickyCartCount">0</span> món
+                </div>
+                <div class="text-danger fw-bold" style="font-size: 1.05rem;" id="stickyCartTotal">
+                    0đ
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm" onclick="openCartModal()">
+            <span>Xem giỏ hàng</span>
+            <span class="material-symbols-outlined fs-6">arrow_forward</span>
+        </button>
+    </div>
+
+    <!-- Product Customization Modal (Mở khi bấm vào đồ uống để đổi size/topping) -->
     <div class="modal fade" id="productDetailModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem; overflow: hidden;">
@@ -482,11 +554,30 @@
 
         function updateCartBadge() {
             var totalItems = 0;
+            var totalPrice = 0;
             for (var i = 0; i < cart.length; i++) {
-                totalItems += (cart[i].quantity || 1);
+                var q = (cart[i].quantity || 1);
+                totalItems += q;
+                totalPrice += (cart[i].subtotal || (cart[i].unitPrice * q));
             }
-            var badge = document.getElementById('headerCartBadge');
-            if (badge) badge.innerText = totalItems;
+            
+            // Header badge
+            var headerBadge = document.getElementById('headerCartBadge');
+            if (headerBadge) headerBadge.innerText = totalItems;
+
+            // Sticky Bottom Mini Cart Bar
+            var stickyCart = document.getElementById('stickyMiniCart');
+            if (stickyCart) {
+                if (totalItems > 0) {
+                    stickyCart.classList.remove('d-none');
+                    document.getElementById('stickyCartCount').innerText = totalItems;
+                    document.getElementById('stickyCartBadge').innerText = totalItems;
+                    document.getElementById('stickyCartTotal').innerText = totalPrice.toLocaleString('vi-VN') + 'đ';
+                } else {
+                    stickyCart.classList.add('d-none');
+                }
+            }
+
             localStorage.setItem('aura_cart', JSON.stringify(cart));
         }
 
@@ -494,6 +585,59 @@
             updateCartBadge();
         });
 
+        // 1-Click Quick Add: Bấm nút + thêm ngay vào giỏ hàng với Size M / Tiêu chuẩn, không popup
+        function quickAddToCart(event, id, name, price, imageUrl, categoryId) {
+            if (event) {
+                event.stopPropagation();
+            }
+
+            var defaultSize = (categoryId === 5 || categoryId === 6) ? 'Tiêu chuẩn' : 'M';
+
+            // Tìm xem món này đã có trong giỏ với cấu hình mặc định chưa
+            var existingIndex = -1;
+            for (var i = 0; i < cart.length; i++) {
+                if (cart[i].id === id && cart[i].size === defaultSize && (!cart[i].toppings || cart[i].toppings.length === 0)) {
+                    existingIndex = i;
+                    break;
+                }
+            }
+
+            if (existingIndex > -1) {
+                cart[existingIndex].quantity += 1;
+                cart[existingIndex].subtotal = cart[existingIndex].unitPrice * cart[existingIndex].quantity;
+            } else {
+                cart.push({
+                    id: id,
+                    name: name,
+                    imageUrl: imageUrl,
+                    size: defaultSize,
+                    toppings: [],
+                    unitPrice: price,
+                    quantity: 1,
+                    subtotal: price
+                });
+            }
+
+            updateCartBadge();
+
+            // Hiển thị Toast thông báo nhanh
+            document.getElementById('cartToastMessage').innerText = 'Đã thêm nhanh ' + name + ' vào giỏ!';
+            var toast = new bootstrap.Toast(document.getElementById('cartToast'));
+            toast.show();
+        }
+
+        // Xử lý khi bấm vào Card
+        function handleCardClick(id, name, price, imageUrl, categoryId) {
+            // Category 5 (Bánh ngọt) & 6 (Đóng chai): không có size/topping -> thêm ngay, không mở popup
+            if (categoryId === 5 || categoryId === 6) {
+                quickAddToCart(null, id, name, price, imageUrl, categoryId);
+            } else {
+                // Đồ uống: mở popup để khách chọn đổi size L, thêm topping
+                openProductDetailModal(id);
+            }
+        }
+
+        // Mở Modal tùy biến chi tiết
         function openProductDetailModal(productId) {
             fetch('${pageContext.request.contextPath}/product-detail?id=' + productId)
                 .then(function(res) { return res.json(); })
@@ -513,10 +657,10 @@
                     document.getElementById('modalProductQty').innerText = 1;
 
                     var config = data.variantsConfig || {};
-                    var sizes = config.sizes || { "Tiêu chuẩn": 0 };
+                    var sizes = config.sizes || { "M": 0, "L": 10000 };
                     var toppings = config.toppings || [];
 
-                    // Sizes
+                    // Sizes với Smart Default (Size đầu tiên tự chọn)
                     var sizeListHtml = '';
                     var sizeKeys = Object.keys(sizes);
                     sizeKeys.forEach(function(sName, index) {
