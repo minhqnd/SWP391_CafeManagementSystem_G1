@@ -1,4 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="dao.ProductDAO" %>
+<%@ page import="model.Product" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.text.DecimalFormat" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -138,8 +142,8 @@
                     <!-- Cart -->
                     <a href="#" class="text-decoration-none text-dark d-flex flex-column align-items-center position-relative">
                         <span class="material-symbols-outlined fs-4">shopping_bag</span>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
-                            4
+                        <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                            0
                         </span>
                     </a>
                     <span class="text-secondary-custom fw-semibold d-none d-lg-block me-3" style="font-size: 0.85rem;">Giỏ hàng</span>
@@ -274,102 +278,70 @@
             </div>
             
             <div class="row g-4">
-                <!-- Card 1 -->
+                <%
+                    ProductDAO productDAO = new ProductDAO();
+                    List<Product> productsList = productDAO.getAllProducts();
+                    DecimalFormat formatter = new DecimalFormat("###,###,###");
+                    for (Product p : productsList) { 
+                        String priceStr = formatter.format(p.getBasePrice()).replace(",", ".") + "đ";
+                        String desc = "Cà phê đặc sản thơm ngon, đậm đà.";
+                        String imgUrl = p.getImageUrl() != null && !p.getImageUrl().isEmpty() ? p.getImageUrl() : "https://lh3.googleusercontent.com/aida-public/AB6AXuDZIHvaJT4mQKloRO3wsOdLK_H-3jVQ6dlX5-V0MNiGe9EovAzUhlDHw4iFDJtfJeJfdvT9P6mdfbUGDTw_S4MpFvJT_JgLtBh308WQKUWEf29pPjIWTcUameeU4l5ufqziY_8QwroRkxCAhBlf0pUKdbFwLrrTYOeVTgCO0N8ZxuIqKFXyVkSDgIrDu18Gy9OJ42tGAayDee90kqkZgUbnSxICfokYqruhylqZ3Kbea0iuhuFL904x";
+                        
+                        switch(p.getId()) {
+                            case 1: 
+                                desc = "Espresso nguyên chất pha loãng, giữ trọn hương vị đậm đà mộc mạc."; 
+                                imgUrl = "https://images.unsplash.com/photo-1551030173-122aabc4489c?auto=format&fit=crop&q=80&w=800";
+                                break;
+                            case 2: 
+                                desc = "Sự cân bằng hoàn hảo giữa Espresso đậm đà và bọt sữa nóng mịn màng."; 
+                                imgUrl = "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&q=80&w=800";
+                                break;
+                            case 3: 
+                                desc = "Phiên bản đậm đà hơn của Latte với lớp bọt sữa dày dặn hấp dẫn."; 
+                                imgUrl = "https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&q=80&w=800";
+                                break;
+                            case 4: 
+                                desc = "Trà đào mát lạnh cùng những miếng đào tươi giòn sần sật xua tan oi bức."; 
+                                imgUrl = "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=800";
+                                break;
+                            case 5: 
+                                desc = "Trà chanh truyền thống với hương chanh tươi mát, chua ngọt thanh dịu."; 
+                                imgUrl = "https://images.unsplash.com/photo-1596704017254-9eb10a3e8ff6?auto=format&fit=crop&q=80&w=800";
+                                break;
+                            case 6: 
+                                desc = "Trà sữa vị lá trà đen tự nhiên, ngọt ngào quyện cùng trân châu dai giòn."; 
+                                imgUrl = "https://images.unsplash.com/photo-1558857563-b371032bda98?auto=format&fit=crop&q=80&w=800";
+                                break;
+                            case 7: 
+                                desc = "Bánh phô mai nướng mềm mịn, tan chảy trong miệng với độ béo ngậy khó cưỡng."; 
+                                imgUrl = "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&q=80&w=800";
+                                break;
+                            case 8: 
+                                desc = "Nước cam vắt nguyên chất, giàu vitamin C và năng lượng cho ngày mới."; 
+                                imgUrl = "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&q=80&w=800";
+                                break;
+                        }
+                %>
+                <!-- Card -->
                 <div class="col-sm-6 col-lg-3">
                     <div class="product-card">
                         <div class="product-img-box">
-                            <div class="product-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDZIHvaJT4mQKloRO3wsOdLK_H-3jVQ6dlX5-V0MNiGe9EovAzUhlDHw4iFDJtfJeJfdvT9P6mdfbUGDTw_S4MpFvJT_JgLtBh308WQKUWEf29pPjIWTcUameeU4l5ufqziY_8QwroRkxCAhBlf0pUKdbFwLrrTYOeVTgCO0N8ZxuIqKFXyVkSDgIrDu18Gy9OJ42tGAayDee90kqkZgUbnSxICfokYqruhylqZ3Kbea0iuhuFL904x');"></div>
-                            <div class="badge-tag bg-primary-custom">Top 1 Trend</div>
-                            <div class="price-tag">55.000đ</div>
+                            <div class="product-img" style="background-image: url('<%= imgUrl %>');"></div>
+                            <div class="price-tag"><%= priceStr %></div>
                         </div>
                         <div class="card-body-custom">
                             <div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="text-secondary-custom" style="font-size: 0.75rem;">Cà phê truyền thống</span>
-                                    <span class="d-flex align-items-center gap-1 text-warning fw-bold" style="font-size: 0.75rem;"><span class="material-symbols-outlined fs-6">star</span>4.9</span>
-                                </div>
-                                <h3 class="product-title">Cà phê Muối Aura</h3>
-                                <p class="product-desc">Lớp kem béo mặn thanh thoát ôm trọn vị cà phê phin đượm vị caramel tự nhiên.</p>
+                                <h3 class="product-title"><%= p.getName() %></h3>
+                                <p class="product-desc text-secondary-custom" style="font-size: 0.85rem; margin-top: 0.5rem;"><%= desc %></p>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-primary-custom fw-medium" style="font-size: 0.75rem;">Bán ra 1.420+ ly</span>
-                                <button class="btn-add"><span class="material-symbols-outlined fs-5">add</span></button>
+                                <span class="text-primary-custom fw-medium" style="font-size: 0.75rem;"></span>
+                                <button class="btn-add" data-product-id="<%= p.getId() %>"><span class="material-symbols-outlined fs-5">add</span></button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- Card 2 -->
-                <div class="col-sm-6 col-lg-3">
-                    <div class="product-card">
-                        <div class="product-img-box">
-                            <div class="product-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDsWG5hD7E15KulXih9-NnE_R9_q5zYuELTnI0f8MXtEIXP7V-KuC_696klLO7Cd9fXL6KzINoUGXlmIE_ML7BlaYoR3l-UOkB4vVHXlt5_lpDLwd84j4A8DKEdx84ncy00mJLRkDbN9XrMwNhT0izwq360-GTh9E3gzOkVdML26LXs_ZK8CtaYG2L06kfyYmxpPJdf9JWMf0lvb5TsMzI7_ziZbnrUyEsnx_7afxyL1L9H_qp9HXG4');"></div>
-                            <div class="badge-tag" style="background-color: #95815a;">Thanh nhiệt</div>
-                            <div class="price-tag">62.000đ</div>
-                        </div>
-                        <div class="card-body-custom">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="text-secondary-custom" style="font-size: 0.75rem;">Trà mộc trái cây</span>
-                                    <span class="d-flex align-items-center gap-1 text-warning fw-bold" style="font-size: 0.75rem;"><span class="material-symbols-outlined fs-6">star</span>4.8</span>
-                                </div>
-                                <h3 class="product-title">Trà Sen Vàng</h3>
-                                <p class="product-desc">Trà Ô Long thanh mát quyện cùng hạt sen Huế bùi dẻo và củ năng giòn ngọt ngào.</p>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-primary-custom fw-medium" style="font-size: 0.75rem;">Bán ra 980+ ly</span>
-                                <button class="btn-add"><span class="material-symbols-outlined fs-5">add</span></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Card 3 -->
-                <div class="col-sm-6 col-lg-3">
-                    <div class="product-card">
-                        <div class="product-img-box">
-                            <div class="product-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC73bJIMisYC3woutOOND70MWfIGTxEDrf6b4c9PBVm8Xe0RfUwFXbefz-HWRFvMEM7NgC88FeAZRF_MM8Qh9hsXGpTHFKAJpCwnHl0P_hjHQONbklfl90oML_oSdFivqy_dWF6LTdp8MVKYKiI-xfCHRMcfJZkJdHVKUsHEN7thwPrKkyUaNxM7CfZNzbJRZXcursv4JU19T3_v8Fm_VYRo5tOT04zh-0zo083vUvymgsgvmZAzf-F');"></div>
-                            <div class="badge-tag bg-secondary">Ủ lạnh 18H</div>
-                            <div class="price-tag">65.000đ</div>
-                        </div>
-                        <div class="card-body-custom">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="text-secondary-custom" style="font-size: 0.75rem;">Cold Brew Series</span>
-                                    <span class="d-flex align-items-center gap-1 text-warning fw-bold" style="font-size: 0.75rem;"><span class="material-symbols-outlined fs-6">star</span>4.9</span>
-                                </div>
-                                <h3 class="product-title">Cold Brew Cam Quế</h3>
-                                <p class="product-desc">Cà phê ủ lạnh kết hợp lát cam vàng sấy mộc và thanh quế Trà Bồng thơm nồng nàn.</p>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-primary-custom fw-medium" style="font-size: 0.75rem;">Bán ra 870+ ly</span>
-                                <button class="btn-add"><span class="material-symbols-outlined fs-5">add</span></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Card 4 -->
-                <div class="col-sm-6 col-lg-3">
-                    <div class="product-card">
-                        <div class="product-img-box">
-                            <div class="product-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCv1Ywnp65znPe0Z-5bzYLoIagLEnA_Hd7l7AiVu3pIEEFgWHVMftCWb-A2yq8nQcXMNi5cA0CYTwbYFh5M-jz6s5m-cKlnQO946HqJnAeLaQpbUi4OL26qOqujvJcK69-w7ol9T3cOz60pCDSlNB3iKQGf-bUb9l2Wdz8wvctQCddX4WVWsFGioMxOoLm48kizX8qOpr2SCY7HOiXQkqlMiiIB_VibQi00xFDxJ_MrZg3pn_pl-exQ');"></div>
-                            <div class="badge-tag bg-primary-custom">Đậm đà</div>
-                            <div class="price-tag">59.000đ</div>
-                        </div>
-                        <div class="card-body-custom">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="text-secondary-custom" style="font-size: 0.75rem;">Cà phê sáng tạo</span>
-                                    <span class="d-flex align-items-center gap-1 text-warning fw-bold" style="font-size: 0.75rem;"><span class="material-symbols-outlined fs-6">star</span>4.7</span>
-                                </div>
-                                <h3 class="product-title">Bạc Xỉu Kem Trứng</h3>
-                                <p class="product-desc">Sự giao thoa mượt mà giữa sữa đặc ngọt dịu, cốt cà phê robusta và lớp kem trứng mịn màng.</p>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-primary-custom fw-medium" style="font-size: 0.75rem;">Bán ra 1.150+ ly</span>
-                                <button class="btn-add"><span class="material-symbols-outlined fs-5">add</span></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <% } %>
             </div>
         </div>
     </section>
@@ -390,19 +362,47 @@
             </div>
             
             <div class="row g-4">
+                <% 
+                    int maxSeasonal = 3;
+                    int countSeasonal = 0;
+                    for (int i = 3; i < productsList.size() && countSeasonal < maxSeasonal; i++) {
+                        Product p = productsList.get(i);
+                        String priceStr = formatter.format(p.getBasePrice()).replace(",", ".") + "đ";
+                        String desc = "Đồ uống đặc biệt theo mùa.";
+                        String imgUrl = p.getImageUrl() != null && !p.getImageUrl().isEmpty() ? p.getImageUrl() : "https://lh3.googleusercontent.com/aida-public/AB6AXuAcgRPc8BItsw3RcB_6EvOwKbblAJajE3GUnNQJzOqbV8wu_PNvyvs1Om33aV8PewUezJRcqBzMb-2WdFoD0_VkUZgNj07Jme5IP6Mc31_Si0ZlI7cwIlZLx17Gp2rVR49Rd9YwRNSQgPewzdmOqd1F4dkobPBHSXXpRULTAM8u0cxM1waClivynY60mAjv0ni79mgw7xTpUaF8stgm0Rrp4aQ_ClW65FsN3fI0pBTWd3KfpF-XMGQR";
+                        String badge = "New Arrival";
+                        
+                        switch(p.getId()) {
+                            case 4: 
+                                desc = "Trà đào mát lạnh cùng những miếng đào tươi giòn sần sật xua tan oi bức."; 
+                                imgUrl = "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=800";
+                                badge = "Signature Craft";
+                                break;
+                            case 5: 
+                                desc = "Trà chanh truyền thống với hương chanh tươi mát, chua ngọt thanh dịu."; 
+                                imgUrl = "https://images.unsplash.com/photo-1596704017254-9eb10a3e8ff6?auto=format&fit=crop&q=80&w=800";
+                                badge = "Summer Vibes";
+                                break;
+                            case 6: 
+                                desc = "Trà sữa vị lá trà đen tự nhiên, ngọt ngào quyện cùng trân châu dai giòn."; 
+                                imgUrl = "https://images.unsplash.com/photo-1558857563-b371032bda98?auto=format&fit=crop&q=80&w=800";
+                                badge = "Best Choice";
+                                break;
+                        }
+                %>
                 <div class="col-md-4">
                     <div class="seasonal-card">
                         <div class="position-relative overflow-hidden">
-                            <div class="seasonal-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAcgRPc8BItsw3RcB_6EvOwKbblAJajE3GUnNQJzOqbV8wu_PNvyvs1Om33aV8PewUezJRcqBzMb-2WdFoD0_VkUZgNj07Jme5IP6Mc31_Si0ZlI7cwIlZLx17Gp2rVR49Rd9YwRNSQgPewzdmOqd1F4dkobPBHSXXpRULTAM8u0cxM1waClivynY60mAjv0ni79mgw7xTpUaF8stgm0Rrp4aQ_ClW65FsN3fI0pBTWd3KfpF-XMGQR');"></div>
-                            <div class="position-absolute top-0 start-0 m-3 bg-white px-2 py-1 rounded text-primary-custom fw-bold shadow-sm" style="font-size: 0.75rem;">New Arrival</div>
+                            <div class="seasonal-img" style="background-image: url('<%= imgUrl %>');"></div>
+                            <div class="position-absolute top-0 start-0 m-3 bg-white px-2 py-1 rounded text-primary-custom fw-bold shadow-sm" style="font-size: 0.75rem;"><%= badge %></div>
                         </div>
                         <div class="p-4 d-flex flex-column flex-1 justify-content-between">
                             <div>
                                 <div class="d-flex justify-content-between align-items-baseline mb-2">
-                                    <h3 class="fs-5 fw-bold mb-0">Latte Hạt Dẻ Cười</h3>
-                                    <span class="text-primary-custom fw-bold">69.000đ</span>
+                                    <h3 class="fs-5 fw-bold mb-0"><%= p.getName() %></h3>
+                                    <span class="text-primary-custom fw-bold"><%= priceStr %></span>
                                 </div>
-                                <p class="text-secondary-custom" style="font-size: 0.875rem;">Sữa hạt dẻ cười nguyên chất nghiền mịn kết hợp espresso đơn nguồn gốc từ Colombia.</p>
+                                <p class="text-secondary-custom" style="font-size: 0.875rem;"><%= desc %></p>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                                 <span class="text-secondary-custom" style="font-size: 0.75rem;">Phục vụ: Nóng / Lạnh</span>
@@ -411,50 +411,10 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-md-4">
-                    <div class="seasonal-card">
-                        <div class="position-relative overflow-hidden">
-                            <div class="seasonal-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA6msjrrNwbb8UKa9RmgpX4emU7meNLw3YvbVlIHV6kqIjjfBbtCd_TrXK2Z-vhIscCsKHyXjhj2isU-gUzUBjWYNz8V8rozBRYRGPdhLRyO9dJ8D301EHX1mfdqpQE9LoE4Ch45Ik8XAlwqrg453f6sS4uQBfJwfQVBCK1ardOWICDodJQYSCgXyJatRTAi4b9bpjo_Xfx8WZLgy4-H7czWISlwItU9uSVAJzsvNWKyW4O4Y--lLyw');"></div>
-                            <div class="position-absolute top-0 start-0 m-3 bg-white px-2 py-1 rounded text-primary-custom fw-bold shadow-sm" style="font-size: 0.75rem;">Signature Craft</div>
-                        </div>
-                        <div class="p-4 d-flex flex-column flex-1 justify-content-between">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-baseline mb-2">
-                                    <h3 class="fs-5 fw-bold mb-0">Cascara Sparkling</h3>
-                                    <span class="text-primary-custom fw-bold">68.000đ</span>
-                                </div>
-                                <p class="text-secondary-custom" style="font-size: 0.875rem;">Trà vỏ cà phê chín mọng sấy nắng tự nhiên, kết hợp men nho đỏ và bọt gas sảng khoái.</p>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-secondary-custom" style="font-size: 0.75rem;">Phục vụ: Lạnh có ga</span>
-                                <a href="#" class="text-primary-custom fw-semibold text-decoration-none" style="font-size: 0.875rem;">Chi tiết</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="seasonal-card">
-                        <div class="position-relative overflow-hidden">
-                            <div class="seasonal-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAUxS7WE42UCsJ_BAbKdVEGakmkGWJrlt5mGpMesAKZeERcJE_C2bXMjyusXY0yYjqLqsEPBMu54G_zKSk-EmvPSuVTdPzGkmLXbH9MAW1mHwq1BKaC8paH2GEs0DQsntPwRpHMfEHiAeEupSM6XKMvsVfvDLY2XgwgCYk3tB_ohM9hh_FoYUa1kgDySfRUnmFKItK4dnW1Qx4oCfgoNXvStWhI6a8KyQCHGT5AzPmuErNHXJTC7kGU');"></div>
-                            <div class="position-absolute top-0 start-0 m-3 bg-white px-2 py-1 rounded text-primary-custom fw-bold shadow-sm" style="font-size: 0.75rem;">Seasonal Warmth</div>
-                        </div>
-                        <div class="p-4 d-flex flex-column flex-1 justify-content-between">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-baseline mb-2">
-                                    <h3 class="fs-5 fw-bold mb-0">Mocha Bơ Đậu Phộng</h3>
-                                    <span class="text-primary-custom fw-bold">72.000đ</span>
-                                </div>
-                                <p class="text-secondary-custom" style="font-size: 0.875rem;">Sô-cô-la Bỉ nguyên chất hòa quyện lớp kem bơ đậu phộng mặn nhẹ và espresso đậm vị.</p>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-secondary-custom" style="font-size: 0.75rem;">Phục vụ: Nóng / Lạnh</span>
-                                <a href="#" class="text-primary-custom fw-semibold text-decoration-none" style="font-size: 0.875rem;">Chi tiết</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <% 
+                        countSeasonal++;
+                    } 
+                %>
             </div>
         </div>
     </section>
@@ -564,5 +524,57 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script Add To Cart -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addButtons = document.querySelectorAll('.btn-add');
+            addButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-product-id');
+                    if (productId) {
+                        fetch('${pageContext.request.contextPath}/cart/add', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: 'productId=' + productId + '&quantity=1'
+                        })
+                        .then(response => {
+                            if (response.status === 401) {
+                                const authModal = new bootstrap.Modal(document.getElementById('authModal'));
+                                authModal.show();
+                                throw new Error('Unauthorized');
+                            }
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Jump cart number animation and update
+                                const badge = document.getElementById('cart-badge');
+                                badge.textContent = data.totalItems;
+                                
+                                // Simple pop animation
+                                badge.style.transform = 'scale(1.5)';
+                                badge.style.transition = 'transform 0.2s';
+                                setTimeout(() => {
+                                    badge.style.transform = 'scale(1)';
+                                }, 200);
+                            }
+                        })
+                        .catch(error => {
+                            if (error.message !== 'Unauthorized') {
+                                console.error('Error:', error);
+                                alert('Đã xảy ra lỗi khi thêm vào giỏ hàng.');
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
