@@ -518,26 +518,26 @@
 
     </main>
 
-    <!-- Sticky Bottom Mini Cart Bar (Hiện khi có món trong giỏ) -->
+    <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Không hiện giá) -->
     <div id="stickyMiniCart" class="sticky-cart-bar d-none">
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3" onclick="openSelectedItemsModal()" style="cursor: pointer;" title="Xem các món đang chọn">
             <div class="cart-badge-icon">
-                <span class="material-symbols-outlined fs-5">shopping_bag</span>
+                <span class="material-symbols-outlined fs-5">checklist</span>
                 <span id="stickyCartBadge" class="badge-count-pill">0</span>
             </div>
             <div>
-                <div class="fw-bold" style="font-size: 0.92rem;">
-                    Giỏ hàng • <span id="stickyCartCount">0</span> món
+                <div class="fw-bold" style="font-size: 0.95rem;">
+                    Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">0</span> món
                 </div>
-                <div class="text-danger fw-bold" style="font-size: 1.05rem;" id="stickyCartTotal">
-                    0đ
+                <div class="text-muted" style="font-size: 0.75rem;">
+                    Bấm để xem danh sách món
                 </div>
             </div>
         </div>
-        <button type="button" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm" onclick="openCartModal()">
-            <span>Xem giỏ hàng</span>
+        <a href="${pageContext.request.contextPath}/cart" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm text-decoration-none" title="Chuyển sang trang giỏ hàng">
+            <span>Đến giỏ hàng</span>
             <span class="material-symbols-outlined fs-6">arrow_forward</span>
-        </button>
+        </a>
     </div>
 
     <!-- Product Customization Modal (Mở khi bấm vào đồ uống để đổi size/topping) -->
@@ -590,8 +590,8 @@
 
                                 <button type="button" class="btn btn-danger flex-grow-1 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill shadow-sm"
                                         onclick="confirmAddToCart()">
-                                    <span class="material-symbols-outlined fs-5">shopping_bag</span>
-                                    <span>Thêm vào giỏ • <span id="modalBtnTotalPrice">0đ</span></span>
+                                    <span class="material-symbols-outlined fs-5">add_circle</span>
+                                    <span>Chọn món này</span>
                                 </button>
                             </div>
 
@@ -602,31 +602,31 @@
         </div>
     </div>
 
-    <!-- Cart Preview Modal -->
-    <div class="modal fade" id="cartPreviewModal" tabindex="-1" aria-hidden="true">
+    <!-- Selected Items Preview Modal (Món đang chọn - Không hiện giá/tạm tính) -->
+    <div class="modal fade" id="selectedItemsModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg rounded-4">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
-                        <span class="material-symbols-outlined text-danger">shopping_bag</span>
-                        Giỏ hàng của bạn
-                    </h5>
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header border-0 pb-0 pt-3 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold d-flex align-items-center gap-2 mb-0">
+                            <span class="material-symbols-outlined text-danger">checklist</span>
+                            Món bạn đang chọn
+                        </h5>
+                        <p class="text-muted small mb-0 mt-1">Danh sách món đã thêm tại Menu</p>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body p-4" id="cartModalBody">
+                <div class="modal-body p-4 pt-3">
                     <div id="cartEmptyState" class="text-center py-4">
-                        <span class="material-symbols-outlined text-muted fs-1 mb-2">remove_shopping_cart</span>
-                        <p class="text-muted mb-0">Giỏ hàng của bạn đang trống.</p>
+                        <span class="material-symbols-outlined text-muted fs-1 mb-2">playlist_remove</span>
+                        <p class="text-muted mb-0">Bạn chưa chọn món nào.</p>
                     </div>
-                    <div id="cartItemList" class="d-flex flex-column gap-3 mb-3"></div>
+                    <div id="cartItemList" class="d-flex flex-column gap-2 mb-3" style="max-height: 280px; overflow-y: auto;"></div>
                     <div id="cartSummary" class="border-top pt-3 d-none">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="fw-bold">Tạm tính:</span>
-                            <span class="fs-5 fw-bold text-danger" id="cartTotalSum">0đ</span>
-                        </div>
-                        <button type="button" class="btn btn-danger w-100 py-2 fw-semibold rounded-pill" onclick="alert('Tính năng Đặt hàng online sẽ được thực hiện tại phần tiếp theo!')">
-                            Tiến hành thanh toán
-                        </button>
+                        <a href="${pageContext.request.contextPath}/cart" class="btn btn-danger w-100 py-2.5 fw-semibold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none">
+                            <span>Chuyển sang trang giỏ hàng</span>
+                            <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -671,14 +671,15 @@
             var headerBadge = document.getElementById('headerCartBadge');
             if (headerBadge) headerBadge.innerText = totalItems;
 
-            // Sticky Bottom Mini Cart Bar
+            // Sticky Bottom Selection Bar
             var stickyCart = document.getElementById('stickyMiniCart');
             if (stickyCart) {
                 if (totalItems > 0) {
                     stickyCart.classList.remove('d-none');
-                    document.getElementById('stickyCartCount').innerText = totalItems;
-                    document.getElementById('stickyCartBadge').innerText = totalItems;
-                    document.getElementById('stickyCartTotal').innerText = totalPrice.toLocaleString('vi-VN') + 'đ';
+                    var countEl = document.getElementById('stickyCartCount');
+                    if (countEl) countEl.innerText = totalItems;
+                    var badgeEl = document.getElementById('stickyCartBadge');
+                    if (badgeEl) badgeEl.innerText = totalItems;
                 } else {
                     stickyCart.classList.add('d-none');
                 }
@@ -879,12 +880,12 @@
             var modalInstance = bootstrap.Modal.getInstance(document.getElementById('productDetailModal'));
             if (modalInstance) modalInstance.hide();
 
-            document.getElementById('cartToastMessage').innerText = 'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào giỏ!';
+            document.getElementById('cartToastMessage').innerText = 'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào danh sách chọn!';
             var toast = new bootstrap.Toast(document.getElementById('cartToast'));
             toast.show();
         }
 
-        function openCartModal() {
+        function openSelectedItemsModal() {
             var body = document.getElementById('cartItemList');
             var empty = document.getElementById('cartEmptyState');
             var summary = document.getElementById('cartSummary');
@@ -898,34 +899,34 @@
                 summary.classList.remove('d-none');
 
                 var html = '';
-                var sum = 0;
                 cart.forEach(function(item, idx) {
-                    sum += item.subtotal;
-                    html += '<div class="d-flex align-items-center justify-content-between p-2 border-bottom">'
+                    var toppingsText = (item.toppings && item.toppings.length > 0) ? (' • ' + item.toppings.join(', ')) : '';
+                    html += '<div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 bg-light border">'
                           + '  <div class="d-flex align-items-center gap-3">'
-                          + '    <img src="' + item.imageUrl + '" style="width: 46px; height: 46px; object-fit: cover; border-radius: 8px;">'
+                          + '    <img src="' + item.imageUrl + '" style="width: 44px; height: 44px; object-fit: cover; border-radius: 8px;">'
                           + '    <div>'
-                          + '      <div class="fw-bold small">' + item.name + ' <span class="badge bg-secondary">' + item.size + '</span></div>'
-                          + '      <div class="text-danger fw-semibold small">' + item.unitPrice.toLocaleString('vi-VN') + 'đ x ' + item.quantity + '</div>'
+                          + '      <div class="fw-semibold small" style="color: var(--text-main);">' + item.name + ' <span class="badge bg-secondary-subtle text-dark border small">' + item.size + '</span></div>'
+                          + '      <div class="text-muted small">Số lượng: <span class="fw-bold text-dark">' + item.quantity + '</span>' + toppingsText + '</div>'
                           + '    </div>'
                           + '  </div>'
-                          + '  <button class="btn btn-sm btn-outline-danger p-1 border-0" onclick="removeFromCart(' + idx + ')">'
-                          + '    <span class="material-symbols-outlined fs-6">delete</span>'
+                          + '  <button class="btn btn-sm btn-link text-muted p-1 text-decoration-none" title="Bỏ chọn món" onclick="removeFromCart(' + idx + ')">'
+                          + '    <span class="material-symbols-outlined fs-5">close</span>'
                           + '  </button>'
                           + '</div>';
                 });
                 body.innerHTML = html;
-                document.getElementById('cartTotalSum').innerText = sum.toLocaleString('vi-VN') + 'đ';
             }
 
-            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('cartPreviewModal'));
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('selectedItemsModal'));
             modal.show();
         }
+
+        var openCartModal = openSelectedItemsModal;
 
         function removeFromCart(index) {
             cart.splice(index, 1);
             updateCartBadge();
-            openCartModal();
+            openSelectedItemsModal();
         }
     </script>
 </body>
