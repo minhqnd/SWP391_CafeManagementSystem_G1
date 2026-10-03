@@ -14,16 +14,32 @@ import java.util.List;
  */
 public class ProductDAO extends BaseDAO {
 
+    private boolean hasColumn(ResultSet rs, String columnName) throws Exception {
+        java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+        int columns = rsmd.getColumnCount();
+        for (int x = 1; x <= columns; x++) {
+            if (columnName.equalsIgnoreCase(rsmd.getColumnName(x)) || 
+                columnName.equalsIgnoreCase(rsmd.getColumnLabel(x))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Product mapResultSetToProduct(ResultSet rs) throws Exception {
+        String desc = hasColumn(rs, "description") ? rs.getString("description") : null;
+        String badge = hasColumn(rs, "badge") ? rs.getString("badge") : null;
+        String subtitle = hasColumn(rs, "subtitle") ? rs.getString("subtitle") : null;
+        
         return new Product(
                 rs.getInt("id"),
                 rs.getInt("category_id"),
-                rs.getString("category_name"),
+                hasColumn(rs, "category_name") ? rs.getString("category_name") : null,
                 rs.getString("name"),
                 rs.getDouble("base_price"),
-                rs.getString("description"),
-                rs.getString("badge"),
-                rs.getString("subtitle"),
+                desc,
+                badge,
+                subtitle,
                 rs.getString("variants_config"),
                 rs.getString("image_url"),
                 rs.getBoolean("is_available")
