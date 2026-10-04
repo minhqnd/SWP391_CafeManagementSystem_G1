@@ -3,37 +3,55 @@ package model;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Model Feedback / Complaint - Phản ánh & Khiếu nại của khách hàng
+ * Model Feedback / Customer Review - Phản ánh & Khiếu nại của khách hàng
+ * Ánh xạ trực tiếp từ bảng `customer_reviews` trong database `aura_cafe.sql`
+ *
+ * CREATE TABLE customer_reviews (
+ *     id INT AUTO_INCREMENT PRIMARY KEY,
+ *     customer_id INT NOT NULL,
+ *     order_id INT NOT NULL,
+ *     issue_type ENUM('RATING', 'COMPLAINT') NOT NULL,
+ *     rating INT NULL,
+ *     content TEXT NOT NULL,
+ *     status ENUM('PENDING', 'RESOLVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+ *     admin_response TEXT NULL,
+ *     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ *     CONSTRAINT fk_review_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+ *     CONSTRAINT fk_review_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+ *     CONSTRAINT chk_review_type CHECK (((issue_type = 'RATING' AND rating BETWEEN 1 AND 5) OR (issue_type = 'COMPLAINT' AND rating IS NULL)))
+ * );
  */
 public class Feedback implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    // Các trường tương ứng 1-1 với cột trong bảng customer_reviews
     private int id;
     private String ticketCode;
     private Integer customerId;
     private String customerName;
     private String customerPhone;
+    private int orderId;
     private String orderCode;
-    private String category;
-    private String categoryLabel;
-    private int rating = 5;
-    private String title;
+    
+    // Core database field: issue_type ENUM('RATING', 'COMPLAINT')
+    private String issueType = "COMPLAINT";
+    
+    // Core database field: rating INT NULL (1..5 khi RATING, NULL khi COMPLAINT)
+    private int rating = 0;
+    
+    // Core database field: content TEXT NOT NULL
     private String content;
-    private String images;
-    private String contactMethod = "phone";
-    private String status = "PROCESSING";
-    private String statusLabel = "Đã tiếp nhận";
-    private int progressPercent = 25;
-    private String agentName;
-    private String agentNote;
-    private String resolution;
-    private String giftVoucher;
+    
+    // Core database field: status ENUM('PENDING', 'RESOLVED', 'REJECTED')
+    private String status = "PENDING";
+    
+    // Core database field: admin_response TEXT NULL
+    private String adminResponse;
+    
+    // Core database field: created_at DATETIME
     private Timestamp createdAt;
-    private Timestamp updatedAt;
 
     public Feedback() {
     }
@@ -47,7 +65,10 @@ public class Feedback implements Serializable {
     }
 
     public String getTicketCode() {
-        return ticketCode;
+        if (ticketCode != null && !ticketCode.trim().isEmpty()) {
+            return ticketCode;
+        }
+        return "#CR-" + String.format("%04d", id);
     }
 
     public void setTicketCode(String ticketCode) {
@@ -78,28 +99,31 @@ public class Feedback implements Serializable {
         this.customerPhone = customerPhone;
     }
 
+    public int getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(int orderId) {
+        this.orderId = orderId;
+    }
+
     public String getOrderCode() {
-        return orderCode;
+        if (orderCode != null && !orderCode.trim().isEmpty()) {
+            return orderCode;
+        }
+        return orderId > 0 ? ("AURA-00" + orderId) : "";
     }
 
     public void setOrderCode(String orderCode) {
         this.orderCode = orderCode;
     }
 
-    public String getCategory() {
-        return category;
+    public String getIssueType() {
+        return issueType != null ? issueType : "COMPLAINT";
     }
 
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public String getCategoryLabel() {
-        return categoryLabel;
-    }
-
-    public void setCategoryLabel(String categoryLabel) {
-        this.categoryLabel = categoryLabel;
+    public void setIssueType(String issueType) {
+        this.issueType = issueType;
     }
 
     public int getRating() {
@@ -110,14 +134,6 @@ public class Feedback implements Serializable {
         this.rating = rating;
     }
 
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public String getContent() {
         return content;
     }
@@ -126,24 +142,8 @@ public class Feedback implements Serializable {
         this.content = content;
     }
 
-    public String getImages() {
-        return images;
-    }
-
-    public void setImages(String images) {
-        this.images = images;
-    }
-
-    public String getContactMethod() {
-        return contactMethod;
-    }
-
-    public void setContactMethod(String contactMethod) {
-        this.contactMethod = contactMethod;
-    }
-
     public String getStatus() {
-        return status;
+        return status != null ? status : "PENDING";
     }
 
     public void setStatus(String status) {
@@ -151,51 +151,20 @@ public class Feedback implements Serializable {
     }
 
     public String getStatusLabel() {
-        return statusLabel;
+        if ("RESOLVED".equalsIgnoreCase(status)) {
+            return "Đã giải quyết";
+        } else if ("REJECTED".equalsIgnoreCase(status)) {
+            return "Từ chối";
+        }
+        return "Đang chờ xử lý";
     }
 
-    public void setStatusLabel(String statusLabel) {
-        this.statusLabel = statusLabel;
+    public String getAdminResponse() {
+        return adminResponse;
     }
 
-    public int getProgressPercent() {
-        return progressPercent;
-    }
-
-    public void setProgressPercent(int progressPercent) {
-        this.progressPercent = progressPercent;
-    }
-
-    public String getAgentName() {
-        return agentName;
-    }
-
-    public void setAgentName(String agentName) {
-        this.agentName = agentName;
-    }
-
-    public String getAgentNote() {
-        return agentNote;
-    }
-
-    public void setAgentNote(String agentNote) {
-        this.agentNote = agentNote;
-    }
-
-    public String getResolution() {
-        return resolution;
-    }
-
-    public void setResolution(String resolution) {
-        this.resolution = resolution;
-    }
-
-    public String getGiftVoucher() {
-        return giftVoucher;
-    }
-
-    public void setGiftVoucher(String giftVoucher) {
-        this.giftVoucher = giftVoucher;
+    public void setAdminResponse(String adminResponse) {
+        this.adminResponse = adminResponse;
     }
 
     public Timestamp getCreatedAt() {
@@ -206,20 +175,16 @@ public class Feedback implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public Timestamp getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Timestamp updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public boolean isProcessing() {
-        return "PROCESSING".equalsIgnoreCase(status) || "PENDING".equalsIgnoreCase(status);
+    public boolean isPending() {
+        return "PENDING".equalsIgnoreCase(status);
     }
 
     public boolean isResolved() {
         return "RESOLVED".equalsIgnoreCase(status);
+    }
+
+    public boolean isRejected() {
+        return "REJECTED".equalsIgnoreCase(status);
     }
 
     public String getFormattedCreatedAt() {
@@ -228,18 +193,5 @@ public class Feedback implements Serializable {
         }
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm - dd/MM/yyyy");
         return sdf.format(createdAt);
-    }
-
-    public List<String> getImageList() {
-        List<String> list = new ArrayList<>();
-        if (images != null && !images.trim().isEmpty()) {
-            String[] parts = images.split(";");
-            for (String p : parts) {
-                if (!p.trim().isEmpty()) {
-                    list.add(p.trim());
-                }
-            }
-        }
-        return list;
     }
 }
