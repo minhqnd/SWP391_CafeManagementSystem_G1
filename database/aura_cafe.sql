@@ -44,6 +44,10 @@ CREATE TABLE users (
     email VARCHAR(150),
     password_hash VARCHAR(255) NOT NULL,
 
+    -- Personal information (profile page)
+    birthday DATE NULL,
+    address TEXT NULL,
+
     role ENUM('ADMIN', 'STAFF', 'CUSTOMER')
         NOT NULL DEFAULT 'CUSTOMER',
 
