@@ -790,167 +790,431 @@
         /* Tab 2: Orders History View */
         .orders-panel {
             flex: 1;
-            background: #ffffff;
+            background: #f8fafc;
             display: none;
             flex-direction: column;
-            overflow: hidden;
+            overflow-y: auto;
+            padding: 24px 32px;
+            gap: 20px;
         }
 
         .orders-panel.active {
             display: flex;
         }
 
-        .orders-toolbar-pro {
-            padding: 12px 16px;
-            background: #ffffff;
-            border-bottom: 1px solid var(--slate-200);
+        /* Top Header Bar */
+        .orders-view-header {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .orders-view-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--slate-900);
+            display: flex;
+            align-items: center;
             gap: 10px;
-            flex-shrink: 0;
+            letter-spacing: -0.5px;
+            margin: 0;
         }
 
-        .btn-type-filter {
-            border: 1px solid var(--slate-200);
-            background: var(--slate-100);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--slate-600);
-            cursor: pointer;
-            transition: all 0.15s;
+        .orders-view-subtitle {
+            font-size: 13.5px;
+            color: var(--slate-500);
+            margin-top: 4px;
         }
 
-        .btn-type-filter.active {
-            background: var(--slate-800);
-            color: #ffffff;
-            border-color: var(--slate-800);
-        }
-
-        .btn-status-filter {
-            border: 1px solid var(--slate-200);
+        .btn-reload-orders {
             background: #ffffff;
-            padding: 6px 14px;
+            border: 1px solid var(--slate-200);
             border-radius: 8px;
-            font-size: 12.5px;
+            padding: 9px 16px;
+            font-size: 13px;
             font-weight: 600;
             color: var(--slate-700);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             cursor: pointer;
-            transition: all 0.15s;
-            white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
         }
 
-        .btn-status-filter.active {
-            background: var(--aura-primary);
-            color: #ffffff;
-            border-color: var(--aura-primary);
-        }
-
-        .orders-split-workspace {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-            background: #ffffff;
-        }
-
-        .orders-table-pane {
-            flex: 1;
-            overflow-y: auto;
-            border-right: 1px solid var(--slate-200);
-        }
-
-        .order-detail-pane {
-            width: 380px;
-            flex-shrink: 0;
+        .btn-reload-orders:hover {
             background: var(--slate-50);
+            border-color: var(--slate-300);
+            color: var(--slate-900);
+            transform: translateY(-1px);
+        }
+
+        /* Stats KPI Cards */
+        .orders-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 1200px) {
+            .orders-kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .kpi-stat-card {
+            background: #ffffff;
+            border: 1px solid var(--slate-200);
+            border-radius: 12px;
+            padding: 16px 20px;
             display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            border-left: 1px solid var(--slate-200);
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .order-row-item {
-            cursor: pointer;
-            transition: background-color 0.15s;
+        .kpi-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.05);
         }
 
-        .order-row-item:hover td {
-            background: var(--slate-50) !important;
-        }
-
-        .order-row-item.active td {
-            background: var(--aura-primary-light) !important;
-        }
-
-        .empty-detail-state {
+        .kpi-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%;
-            padding: 30px 20px;
-            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .kpi-stat-icon.total {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .kpi-stat-icon.revenue {
+            background: #ecfdf5;
+            color: #059669;
+        }
+
+        .kpi-stat-icon.success {
+            background: #f0fdfa;
+            color: #0d9488;
+        }
+
+        .kpi-stat-icon.cancelled {
+            background: #fff1f2;
+            color: #e11d48;
+        }
+
+        .kpi-stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .kpi-stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .kpi-stat-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--slate-900);
+            line-height: 1.2;
+            margin-top: 2px;
+        }
+
+        .kpi-stat-sub {
+            font-size: 11.5px;
             color: var(--slate-400);
+            margin-top: 2px;
         }
 
-        .detail-pane-header {
-            padding: 14px 16px;
+        /* Filter & Search Toolbar Card */
+        .orders-filter-card {
             background: #ffffff;
-            border-bottom: 1px solid var(--slate-200);
-        }
-
-        .detail-pane-body {
-            padding: 14px 16px;
+            border: 1px solid var(--slate-200);
+            border-radius: 12px;
+            padding: 14px 18px;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            flex: 1;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
 
-        .detail-pane-footer {
-            padding: 14px 16px;
-            background: #ffffff;
-            border-top: 1px solid var(--slate-200);
+        .filter-row-top {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .search-input-wrapper .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--slate-400);
+            font-size: 19px;
+            pointer-events: none;
+        }
+
+        .orders-search-input {
+            width: 100%;
+            height: 38px;
+            padding: 6px 14px 6px 40px;
+            border-radius: 8px;
+            border: 1px solid var(--slate-200);
+            background: var(--slate-50);
+            font-size: 13.5px;
+            color: var(--slate-800);
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .orders-search-input:focus {
+            background: #ffffff;
+            border-color: var(--aura-primary);
+            box-shadow: 0 0 0 3px rgba(144, 11, 26, 0.1);
+        }
+
+        .filter-type-group {
+            display: flex;
+            align-items: center;
+            background: var(--slate-100);
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid var(--slate-200);
+            gap: 2px;
+        }
+
+        .btn-filter-type {
+            border: none;
+            background: transparent;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-600);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-filter-type:hover {
+            color: var(--slate-900);
+        }
+
+        .btn-filter-type.active {
+            background: #ffffff;
+            color: var(--slate-900);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .filter-status-pills {
+            display: flex;
+            align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-status-pill {
+            border: 1px solid var(--slate-200);
+            background: #ffffff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--slate-600);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-status-pill:hover {
+            border-color: var(--slate-300);
+            color: var(--slate-800);
+        }
+
+        .btn-status-pill.active {
+            background: var(--slate-900);
+            color: #ffffff;
+            border-color: var(--slate-900);
+        }
+
+        /* Orders Table Card */
+        .orders-table-card {
+            background: #ffffff;
+            border: 1px solid var(--slate-200);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        }
+
+        .orders-table-wrapper {
+            overflow-x: auto;
+            max-height: calc(100vh - 380px);
+            min-height: 250px;
         }
 
         .pos-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            border-collapse: collapse;
             font-size: 13.5px;
         }
 
         .pos-table th {
-            background: var(--slate-100);
-            color: var(--slate-700);
+            background: var(--slate-50);
+            color: var(--slate-600);
+            font-size: 11.5px;
             font-weight: 700;
-            padding: 10px 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 12px 18px;
             border-bottom: 1px solid var(--slate-200);
             text-align: left;
             position: sticky;
             top: 0;
             z-index: 10;
+            white-space: nowrap;
         }
 
         .pos-table td {
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--slate-200);
+            padding: 13px 18px;
+            border-bottom: 1px solid var(--slate-100);
             vertical-align: middle;
+            color: var(--slate-800);
         }
 
-        /* Status Badges */
-        .badge-status {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11.5px;
+        .order-table-row {
+            transition: background-color 0.15s ease;
+        }
+
+        .order-table-row:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Table Badges & Elements */
+        .order-code-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-weight: 700;
+            color: var(--slate-900);
+            background: var(--slate-100);
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--slate-200);
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            font-size: 12.5px;
+        }
+
+        .badge-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-type.dine-in {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .badge-type.takeaway {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .order-items-snippet {
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .order-items-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--slate-800);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .order-items-qty {
+            font-size: 11.5px;
+            color: var(--slate-500);
+        }
+
+        .order-price-val {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--aura-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .badge-payment {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-payment.cash {
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid var(--slate-200);
+        }
+
+        .badge-payment.qr {
+            background: #ecfeff;
+            color: #0e7490;
+            border: 1px solid #a5f3fc;
+        }
+
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
         }
 
         .badge-status.confirmed {
@@ -958,29 +1222,76 @@
             color: #065f46;
             border: 1px solid #a7f3d0;
         }
+        .badge-status.confirmed .status-dot { background: #10b981; }
 
         .badge-status.preparing {
-            background: #fffbeb;
-            color: #92400e;
-            border: 1px solid #fde68a;
-        }
-
-        .badge-status.ready {
             background: #eff6ff;
-            color: #1e40af;
+            color: #1d4ed8;
             border: 1px solid #bfdbfe;
         }
+        .badge-status.preparing .status-dot { background: #3b82f6; }
+
+        .badge-status.ready {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+        .badge-status.ready .status-dot { background: #f59e0b; }
 
         .badge-status.completed {
             background: #f1f5f9;
             color: #334155;
             border: 1px solid #cbd5e1;
         }
+        .badge-status.completed .status-dot { background: #64748b; }
 
         .badge-status.cancelled {
             background: #fff1f2;
             color: #9f1239;
             border: 1px solid #fecdd3;
+        }
+        .badge-status.cancelled .status-dot { background: #f43f5e; }
+
+        .btn-action-bill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #ffffff;
+            border: 1px solid var(--slate-200);
+            color: var(--slate-700);
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .btn-action-bill:hover {
+            background: var(--slate-50);
+            border-color: var(--slate-300);
+            color: var(--slate-900);
+        }
+
+        .btn-action-cancel-order {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            color: #be123c;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-action-cancel-order:hover {
+            background: #ffe4e6;
+            border-color: #fda4af;
+            color: #9f1239;
         }
 
         /* Modal Styles */
@@ -1336,119 +1647,313 @@
         </div>
 
         <!-- ================= VIEW 2: TODAY'S ORDERS HISTORY ================= -->
+        <c:set var="todayCount" value="${not empty counterOrders ? counterOrders.size() : 0}" />
+        <c:set var="todayRevenue" value="0" />
+        <c:set var="todaySuccessCount" value="0" />
+        <c:set var="todayCancelledCount" value="0" />
+        <c:forEach var="chk" items="${counterOrders}">
+            <c:choose>
+                <c:when test="${chk.status eq 'CANCELLED'}">
+                    <c:set var="todayCancelledCount" value="${todayCancelledCount + 1}" />
+                </c:when>
+                <c:otherwise>
+                    <c:set var="todayRevenue" value="${todayRevenue + chk.finalAmount}" />
+                    <c:set var="todaySuccessCount" value="${todaySuccessCount + 1}" />
+                </c:otherwise>
+            </c:choose>
+        </c:forEach>
+
         <div class="orders-panel" id="viewOrdersList">
-            <div class="orders-toolbar">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">history</span>
-                    <span class="fw-bold fs-6">Danh sách đơn tại quầy hôm nay</span>
+            <!-- Header Section -->
+            <div class="orders-view-header">
+                <div>
+                    <h2 class="orders-view-title">
+                        <span class="material-symbols-outlined text-primary" style="font-size: 28px;">receipt_long</span>
+                        <span>Danh sách đơn hàng tại quầy hôm nay</span>
+                    </h2>
+                    <div class="orders-view-subtitle">
+                        Theo dõi thời gian thực các đơn bán tại quầy • Tự động đồng bộ với màn hình Barista KDS
+                    </div>
                 </div>
-                <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onclick="window.location.reload()">
-                    <span class="material-symbols-outlined">refresh</span>
-                    <span>Tải lại dữ liệu</span>
-                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn-reload-orders" onclick="window.location.reload()" title="Tải lại danh sách đơn mới nhất">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">sync</span>
+                        <span>Tải lại dữ liệu</span>
+                    </button>
+                </div>
             </div>
-            <div class="orders-table-wrapper">
-                <table class="pos-table">
-                    <thead>
-                        <tr>
-                            <th>Mã đơn</th>
-                            <th>Thời gian</th>
-                            <th>Loại đơn</th>
-                            <th>Khách hàng</th>
-                            <th>Món đã gọi</th>
-                            <th>Tổng tiền</th>
-                            <th>Hình thức</th>
-                            <th>Trạng thái</th>
-                            <th>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <c:choose>
-                            <c:when test="${not empty counterOrders}">
-                                <c:forEach var="o" items="${counterOrders}">
-                                <tr>
-                                    <td class="fw-bold">${o.orderCode}</td>
-                                    <td>${o.createdTimeText}</td>
-                                    <td>
-                                        <c:choose>
-                                            <c:when test="${o.orderType eq 'TAKEAWAY'}">
-                                                <span class="badge bg-light text-dark border">Mang về</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="badge bg-light text-dark border">Tại quán</span>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                    <td>
-                                        <span>${empty o.recipientName ? 'Khách tại quầy' : o.recipientName}</span>
-                                    </td>
-                                    <td style="max-width: 250px;" class="text-truncate" title="${o.itemSummary}">
-                                        ${o.itemSummary}
-                                    </td>
-                                    <td class="fw-bold text-danger">${o.formattedFinalAmount}</td>
-                                    <td>${o.paymentMethodLabel}</td>
-                                    <td>
-                                        <c:choose>
-                                            <c:when test="${o.status eq 'CONFIRMED'}">
-                                                <span class="badge-status confirmed">
-                                                    <span class="material-symbols-outlined">check_circle</span>
-                                                    <span>Đã thanh toán</span>
+
+            <!-- Stats Overview Cards -->
+            <div class="orders-kpi-grid">
+                <div class="kpi-stat-card">
+                    <div class="kpi-stat-icon total">
+                        <span class="material-symbols-outlined" style="font-size: 26px;">receipt</span>
+                    </div>
+                    <div class="kpi-stat-info">
+                        <span class="kpi-stat-label">Tổng đơn tạo</span>
+                        <span class="kpi-stat-value">${todayCount}</span>
+                        <span class="kpi-stat-sub">Đơn phát sinh trong ca</span>
+                    </div>
+                </div>
+
+                <div class="kpi-stat-card">
+                    <div class="kpi-stat-icon revenue">
+                        <span class="material-symbols-outlined" style="font-size: 26px;">monetization_on</span>
+                    </div>
+                    <div class="kpi-stat-info">
+                        <span class="kpi-stat-label">Doanh thu thực thu</span>
+                        <span class="kpi-stat-value">
+                            <fmt:formatNumber value="${todayRevenue}" pattern="###,###,###" />đ
+                        </span>
+                        <span class="kpi-stat-sub">Không tính đơn đã hủy</span>
+                    </div>
+                </div>
+
+                <div class="kpi-stat-card">
+                    <div class="kpi-stat-icon success">
+                        <span class="material-symbols-outlined" style="font-size: 26px;">check_circle</span>
+                    </div>
+                    <div class="kpi-stat-info">
+                        <span class="kpi-stat-label">Đơn thành công</span>
+                        <span class="kpi-stat-value">${todaySuccessCount}</span>
+                        <span class="kpi-stat-sub">Đã thanh toán & phục vụ</span>
+                    </div>
+                </div>
+
+                <div class="kpi-stat-card">
+                    <div class="kpi-stat-icon cancelled">
+                        <span class="material-symbols-outlined" style="font-size: 26px;">cancel</span>
+                    </div>
+                    <div class="kpi-stat-info">
+                        <span class="kpi-stat-label">Đơn đã hủy</span>
+                        <span class="kpi-stat-value">${todayCancelledCount}</span>
+                        <span class="kpi-stat-sub">Giao dịch đã hủy</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter & Search Toolbar Card -->
+            <div class="orders-filter-card">
+                <div class="filter-row-top">
+                    <!-- Search Input -->
+                    <div class="search-input-wrapper">
+                        <span class="material-symbols-outlined search-icon">search</span>
+                        <input type="text" id="orderSearchInput" class="orders-search-input" 
+                               placeholder="Tìm nhanh theo mã đơn (ORD-...), tên khách, số điện thoại, món..." 
+                               oninput="applyOrderFilters()">
+                    </div>
+
+                    <!-- Type Filter -->
+                    <div class="filter-type-group">
+                        <button type="button" class="btn-filter-type active" data-type="ALL" onclick="setOrderTypeFilter('ALL', this)">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">filter_list</span>
+                            <span>Tất cả</span>
+                        </button>
+                        <button type="button" class="btn-filter-type" data-type="DINE_IN" onclick="setOrderTypeFilter('DINE_IN', this)">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">storefront</span>
+                            <span>Tại quán</span>
+                        </button>
+                        <button type="button" class="btn-filter-type" data-type="TAKEAWAY" onclick="setOrderTypeFilter('TAKEAWAY', this)">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">takeout_dining</span>
+                            <span>Mang về</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Status Filter Pills -->
+                <div class="filter-status-pills">
+                    <span class="text-xs fw-bold text-muted me-1 text-uppercase" style="letter-spacing: 0.5px;">Trạng thái:</span>
+                    <button type="button" class="btn-status-pill active" data-status="ALL" onclick="setOrderStatusFilter('ALL', this)">
+                        <span>Tất cả (${todayCount})</span>
+                    </button>
+                    <button type="button" class="btn-status-pill" data-status="CONFIRMED" onclick="setOrderStatusFilter('CONFIRMED', this)">
+                        <span class="status-dot" style="background: #10b981;"></span>
+                        <span>Đã thanh toán</span>
+                    </button>
+                    <button type="button" class="btn-status-pill" data-status="PREPARING" onclick="setOrderStatusFilter('PREPARING', this)">
+                        <span class="status-dot" style="background: #3b82f6;"></span>
+                        <span>Đang pha chế</span>
+                    </button>
+                    <button type="button" class="btn-status-pill" data-status="READY" onclick="setOrderStatusFilter('READY', this)">
+                        <span class="status-dot" style="background: #f59e0b;"></span>
+                        <span>Sẵn sàng</span>
+                    </button>
+                    <button type="button" class="btn-status-pill" data-status="COMPLETED" onclick="setOrderStatusFilter('COMPLETED', this)">
+                        <span class="status-dot" style="background: #64748b;"></span>
+                        <span>Hoàn thành</span>
+                    </button>
+                    <button type="button" class="btn-status-pill" data-status="CANCELLED" onclick="setOrderStatusFilter('CANCELLED', this)">
+                        <span class="status-dot" style="background: #f43f5e;"></span>
+                        <span>Đã hủy</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Orders Table Card -->
+            <div class="orders-table-card">
+                <div class="orders-table-wrapper">
+                    <table class="pos-table" id="ordersTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 170px;">Mã đơn</th>
+                                <th style="width: 100px;">Thời gian</th>
+                                <th style="width: 120px;">Loại đơn</th>
+                                <th style="width: 160px;">Khách hàng</th>
+                                <th>Món đã gọi</th>
+                                <th class="text-end" style="width: 130px;">Tổng tiền</th>
+                                <th style="width: 130px;">Hình thức</th>
+                                <th style="width: 150px;">Trạng thái</th>
+                                <th class="text-center" style="width: 150px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <c:choose>
+                                <c:when test="${not empty counterOrders}">
+                                    <c:forEach var="o" items="${counterOrders}">
+                                    <tr class="order-table-row" 
+                                        data-type="${o.orderType}" 
+                                        data-status="${o.status}" 
+                                        data-search="${o.orderCode} ${o.recipientName} ${o.recipientPhone} ${o.itemSummary}">
+                                        <td>
+                                            <span class="order-code-badge" onclick="copyOrderCode('${o.orderCode}')" title="Bấm để sao chép mã" style="cursor: pointer;">
+                                                <span class="material-symbols-outlined" style="font-size: 14px; color: var(--slate-500);">tag</span>
+                                                <span>${o.orderCode}</span>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-slate-800">${o.createdTimeText}</div>
+                                            <div style="font-size: 11px; color: var(--slate-400);">Hôm nay</div>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${o.orderType eq 'TAKEAWAY'}">
+                                                    <span class="badge-type takeaway">
+                                                        <span class="material-symbols-outlined" style="font-size: 14px;">takeout_dining</span>
+                                                        <span>Mang về</span>
+                                                    </span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge-type dine-in">
+                                                        <span class="material-symbols-outlined" style="font-size: 14px;">storefront</span>
+                                                        <span>Tại quán</span>
+                                                    </span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-slate-800 d-flex align-items-center gap-1">
+                                                <span class="material-symbols-outlined text-slate-400" style="font-size: 16px;">person</span>
+                                                <span class="text-truncate" style="max-width: 130px;" title="${empty o.recipientName ? 'Khách tại quầy' : o.recipientName}">
+                                                    ${empty o.recipientName ? 'Khách tại quầy' : o.recipientName}
                                                 </span>
-                                            </c:when>
-                                            <c:when test="${o.status eq 'PREPARING'}">
-                                                <span class="badge-status preparing">
-                                                    <span class="material-symbols-outlined">sync</span>
-                                                    <span>Đang pha chế</span>
-                                                </span>
-                                            </c:when>
-                                            <c:when test="${o.status eq 'READY'}">
-                                                <span class="badge-status ready">
-                                                    <span class="material-symbols-outlined">notifications_active</span>
-                                                    <span>Sẵn sàng</span>
-                                                </span>
-                                            </c:when>
-                                            <c:when test="${o.status eq 'COMPLETED'}">
-                                                <span class="badge-status completed">
-                                                    <span class="material-symbols-outlined">done_all</span>
-                                                    <span>Hoàn thành</span>
-                                                </span>
-                                            </c:when>
-                                            <c:when test="${o.status eq 'CANCELLED'}">
-                                                <span class="badge-status cancelled">
-                                                    <span class="material-symbols-outlined">cancel</span>
-                                                    <span>Đã hủy</span>
-                                                </span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="badge bg-secondary">${o.statusLabel}</span>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-1">
-                                            <a href="${pageContext.request.contextPath}/bill?orderId=${o.id}" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-2" title="Xem & In hóa đơn">
-                                                <span class="material-symbols-outlined" style="font-size: 16px;">receipt</span>
-                                            </a>
-                                            <c:if test="${o.status ne 'COMPLETED' && o.status ne 'CANCELLED'}">
-                                                <button class="btn btn-sm btn-outline-danger py-1 px-2" onclick="cancelOrder(${o.id})" title="Hủy đơn này">
-                                                    <span class="material-symbols-outlined" style="font-size: 16px;">close</span>
-                                                </button>
+                                            </div>
+                                            <c:if test="${not empty o.recipientPhone}">
+                                                <div style="font-size: 11px; color: var(--slate-500); padding-left: 20px;">${o.recipientPhone}</div>
                                             </c:if>
-                                        </div>
-                                    </td>
-                                </tr>
-                                </c:forEach>
-                            </c:when>
-                            <c:otherwise>
-                                <tr>
-                                    <td colspan="9" class="text-center py-4 text-muted">
-                                        Chưa có đơn hàng nào được ghi nhận tại quầy trong hôm nay.
-                                    </td>
-                                </tr>
-                            </c:otherwise>
-                        </c:choose>
-                    </tbody>
-                </table>
+                                        </td>
+                                        <td>
+                                            <div class="order-items-snippet" title="${o.itemSummary}">
+                                                <div class="order-items-text">${o.itemSummary}</div>
+                                                <div class="order-items-qty">${o.itemCount} món</div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="order-price-val">${o.formattedFinalAmount}</div>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${o.paymentMethod eq 'BANK_TRANSFER'}">
+                                                    <span class="badge-payment qr">
+                                                        <span class="material-symbols-outlined" style="font-size: 14px;">qr_code_2</span>
+                                                        <span>VietQR</span>
+                                                    </span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge-payment cash">
+                                                        <span class="material-symbols-outlined" style="font-size: 14px;">payments</span>
+                                                        <span>Tiền mặt</span>
+                                                    </span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${o.status eq 'CONFIRMED'}">
+                                                    <span class="badge-status confirmed">
+                                                        <span class="status-dot"></span>
+                                                        <span>Đã thanh toán</span>
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${o.status eq 'PREPARING'}">
+                                                    <span class="badge-status preparing">
+                                                        <span class="status-dot"></span>
+                                                        <span>Đang pha chế</span>
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${o.status eq 'READY'}">
+                                                    <span class="badge-status ready">
+                                                        <span class="status-dot"></span>
+                                                        <span>Sẵn sàng</span>
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${o.status eq 'COMPLETED'}">
+                                                    <span class="badge-status completed">
+                                                        <span class="status-dot"></span>
+                                                        <span>Hoàn thành</span>
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${o.status eq 'CANCELLED'}">
+                                                    <span class="badge-status cancelled">
+                                                        <span class="status-dot"></span>
+                                                        <span>Đã hủy</span>
+                                                    </span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge bg-secondary">${o.statusLabel}</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                                <a href="${pageContext.request.contextPath}/bill?orderId=${o.id}" target="_blank" class="btn-action-bill" title="Mở xem và in hóa đơn">
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">receipt_long</span>
+                                                    <span>Hóa đơn</span>
+                                                </a>
+                                                <c:if test="${o.status ne 'COMPLETED' && o.status ne 'CANCELLED'}">
+                                                    <button type="button" class="btn-action-cancel-order" onclick="cancelOrder(${o.id})" title="Hủy đơn hàng này">
+                                                        <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
+                                                        <span>Hủy</span>
+                                                    </button>
+                                                </c:if>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </c:forEach>
+                                    <tr id="noFilterResultsRow" style="display: none;">
+                                        <td colspan="9" class="text-center py-5">
+                                            <div class="d-flex flex-column align-items-center justify-content-center text-muted">
+                                                <span class="material-symbols-outlined mb-2" style="font-size: 40px; color: var(--slate-300);">search_off</span>
+                                                <div class="fw-bold fs-6 text-slate-700">Không tìm thấy đơn hàng nào phù hợp</div>
+                                                <div class="small text-slate-400 mt-1">Thử thay đổi từ khóa hoặc bộ lọc trạng thái</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </c:when>
+                                <c:otherwise>
+                                    <tr>
+                                        <td colspan="9" class="text-center py-5">
+                                            <div class="d-flex flex-column align-items-center justify-content-center text-muted">
+                                                <span class="material-symbols-outlined mb-2" style="font-size: 48px; color: var(--slate-300);">inbox</span>
+                                                <div class="fw-bold fs-6 text-slate-700">Chưa có đơn hàng nào tại quầy hôm nay</div>
+                                                <div class="small text-slate-400 mt-1">Các đơn hàng phát sinh trong ca làm việc sẽ hiển thị tại đây</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </c:otherwise>
+                            </c:choose>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -2143,6 +2648,64 @@
             } catch (e) {
                 console.error(e);
                 alert('Lỗi kết nối máy chủ.');
+            }
+        }
+
+        // 11. Instant Orders Filter
+        let currentOrderTypeFilter = 'ALL';
+        let currentOrderStatusFilter = 'ALL';
+
+        function setOrderTypeFilter(type, btn) {
+            currentOrderTypeFilter = type;
+            document.querySelectorAll('.btn-filter-type').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyOrderFilters();
+        }
+
+        function setOrderStatusFilter(status, btn) {
+            currentOrderStatusFilter = status;
+            document.querySelectorAll('.btn-status-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyOrderFilters();
+        }
+
+        function applyOrderFilters() {
+            const query = (document.getElementById('orderSearchInput')?.value || '').trim().toLowerCase();
+            const rows = document.querySelectorAll('.order-table-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const type = row.getAttribute('data-type') || '';
+                const status = row.getAttribute('data-status') || '';
+                const searchData = (row.getAttribute('data-search') || '').toLowerCase();
+
+                const matchType = (currentOrderTypeFilter === 'ALL' || type === currentOrderTypeFilter);
+                const matchStatus = (currentOrderStatusFilter === 'ALL' || status === currentOrderStatusFilter);
+                const matchQuery = (!query || searchData.includes(query));
+
+                if (matchType && matchStatus && matchQuery) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const emptyRow = document.getElementById('noFilterResultsRow');
+            if (emptyRow) {
+                emptyRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+            }
+        }
+
+        function copyOrderCode(code) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(code).then(() => {
+                    showToast('Đã sao chép mã đơn ' + code);
+                }).catch(() => {
+                    showToast('Mã đơn: ' + code);
+                });
+            } else {
+                showToast('Mã đơn: ' + code);
             }
         }
 
