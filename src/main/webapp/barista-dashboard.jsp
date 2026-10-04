@@ -598,7 +598,7 @@
                     const controller = new AbortController();
                     loadController = controller;
                     try {
-                        const response = await fetch(contextPath + "/barista/orders", {
+                        const response = await fetch(contextPath + "/barista?action=orders", {
                             headers: { "Accept": "application/json" }, credentials: "same-origin", cache: "no-store", signal: controller.signal
                         });
                         const data = await readJson(response);

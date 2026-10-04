@@ -107,24 +107,24 @@ public class BaristaController extends HttpServlet {
                 handleRecipesView(request, response);
                 return;
             }
-            if (!"orders".equals(action)) {
+            if (!ordersApi) {
                 error(response, 400, "Chức năng chưa được hỗ trợ.");
                 return;
             }
             writeJson(response, 200, dashboardData(orderDAO.getOrdersForBarista()));
         } catch (SQLException | ClassNotFoundException e) {
             getServletContext().log("Cannot load barista orders", e);
-            error(response, 500, "Không tải được đơn hàng: " + e.getMessage());
+            error(response, 501, "Không tải được đơn hàng: " + e.getMessage());
         } catch (RuntimeException e) {
             getServletContext().log("Unexpected error in barista orders", e);
-            error(response, 500, "Lỗi máy chủ: " + e.getMessage());
+            error(response, 501, "Lỗi máy chủ: " + e.getMessage());
         } catch (Exception e) {
             // Lưới an toàn cuối cùng: bất kỳ exception nào chưa được bắt
             // đều trả JSON thay vì để Tomcat redirect về index.jsp
             getServletContext().log("Unhandled error in BaristaController.doGet", e);
             if (!response.isCommitted()) {
                 try {
-                    error(response, 500, "Lỗi không mong muốn: " + e.getMessage());
+                    error(response, 501, "Lỗi không mong muốn: " + e.getMessage());
                 } catch (IOException ignored) { }
             }
             try {
