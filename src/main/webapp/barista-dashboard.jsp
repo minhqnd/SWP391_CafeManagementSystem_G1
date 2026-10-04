@@ -1,1256 +1,824 @@
-<%@ page contentType="text/html;charset=UTF-8"
-         pageEncoding="UTF-8"
-         language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:if test="${empty requestScope.baristaDashboard}">
-    <c:redirect url="/barista"/>
-</c:if>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+    <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+        <c:if test="${empty requestScope.baristaDashboard}">
+            <c:redirect url="/barista" />
+        </c:if>
+        <!DOCTYPE html>
+        <html lang="vi">
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Aura Café | KDS Barista</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+                rel="stylesheet">
+            <link
+                href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+                rel="stylesheet">
+            <style>
+                :root {
+                    --aura-primary: #900b1a;
+                    --aura-primary-dark: #710916;
+                    --stone-50: #fafaf9;
+                    --stone-100: #f5f5f4;
+                    --stone-200: #e7e5e4;
+                    --stone-500: #78716c;
+                    --stone-800: #292524;
+                }
 
-    <title>Aura Café - Barista</title>
+                * {
+                    box-sizing: border-box;
+                }
 
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-        rel="stylesheet">
+                body {
+                    min-height: 100vh;
+                    margin: 0;
+                    padding-bottom: 42px;
+                    background: var(--stone-100);
+                    color: var(--stone-800);
+                    font-family: "Inter", sans-serif;
+                    font-size: 14px;
+                }
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+                .material-symbols-outlined {
+                    font-size: 20px;
+                    line-height: 1;
+                    vertical-align: middle;
+                }
 
-    <style>
-        :root {
-            --aura-red: #900b1a;
-            --aura-red-dark: #710916;
-            --aura-border: #e7e5e4;
-            --aura-muted: #78716c;
-        }
+                .kds-toolbar {
+                    position: sticky;
+                    top: 72px;
+                    z-index: 1020;
+                    border-bottom: 1px solid var(--stone-200);
+                    background: rgba(255, 255, 255, .96);
+                    box-shadow: 0 2px 8px rgba(41, 37, 36, .04);
+                    backdrop-filter: blur(10px);
+                }
 
-        body {
-            margin: 0;
-            background: #f5f5f4;
-            color: #292524;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-        }
+                .metric-card {
+                    min-width: 155px;
+                    padding: 9px 13px;
+                    border: 1px solid var(--stone-200);
+                    border-radius: 13px;
+                    background: var(--stone-50);
+                }
 
-        .btn-aura {
-            --bs-btn-color: #fff;
-            --bs-btn-bg: var(--aura-red);
-            --bs-btn-border-color: var(--aura-red);
-            --bs-btn-hover-color: #fff;
-            --bs-btn-hover-bg: var(--aura-red-dark);
-            --bs-btn-hover-border-color: var(--aura-red-dark);
-        }
+                .metric-card.waiting {
+                    border-color: #fecdd3;
+                    background: #fff1f2;
+                    color: #9f1239;
+                }
 
-        /* THANH THỐNG KÊ */
+                .metric-card.preparing {
+                    border-color: #fde68a;
+                    background: #fffbeb;
+                    color: #92400e;
+                }
 
-        .toolbar {
-            background: #fff;
-            border-bottom: 1px solid var(--aura-border);
-        }
+                .metric-card.ready {
+                    border-color: #a7f3d0;
+                    background: #ecfdf5;
+                    color: #047857;
+                }
 
-        .stat-box {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 11px 16px;
-            border: 1px solid var(--aura-border);
-            border-radius: 16px;
-            background: #fafaf9;
-        }
+                .metric-label {
+                    font-size: 10px;
+                    font-weight: 800;
+                    letter-spacing: .04em;
+                    text-transform: uppercase;
+                }
 
-        .stat-waiting {
-            background: #fff1f2;
-            border-color: #fecdd3;
-            color: #9f1239;
-        }
+                .metric-value {
+                    font-size: 17px;
+                    font-weight: 800;
+                    line-height: 1.15;
+                }
 
-        .stat-preparing {
-            background: #fffbeb;
-            border-color: #fde68a;
-            color: #92400e;
-        }
+                .live-dot {
+                    width: 9px;
+                    height: 9px;
+                    border-radius: 50%;
+                    background: #e11d48;
+                    box-shadow: 0 0 0 5px rgba(225, 29, 72, .1);
+                }
 
-        .stat-label {
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
+                .toolbar-btn {
+                    min-height: 38px;
+                    border-radius: 11px;
+                    font-size: 12px;
+                    font-weight: 700;
+                }
 
-        .stat-value {
-            font-size: 20px;
-            font-weight: 800;
-        }
+                .btn-aura {
+                    --bs-btn-color: #fff;
+                    --bs-btn-bg: var(--aura-primary);
+                    --bs-btn-border-color: var(--aura-primary);
+                    --bs-btn-hover-color: #fff;
+                    --bs-btn-hover-bg: var(--aura-primary-dark);
+                    --bs-btn-hover-border-color: var(--aura-primary-dark);
+                }
 
-        /* Chấm đỏ tĩnh, không dùng animation */
-        .waiting-dot {
-            width: 11px;
-            height: 11px;
-            flex-shrink: 0;
-            border-radius: 50%;
-            background: #e11d48;
-        }
+                .station-scroll {
+                    scrollbar-width: thin;
+                }
 
-        .sound-button {
-            padding: 12px 16px;
-            border-radius: 14px;
-            font-size: 13px;
-            font-weight: 700;
-        }
+                .station-btn {
+                    flex: 0 0 auto;
+                    padding: 7px 12px;
+                    border: 0;
+                    border-radius: 9px;
+                    background: var(--stone-100);
+                    color: #57534e;
+                    font-size: 12px;
+                    font-weight: 700;
+                    white-space: nowrap;
+                }
 
-        .filter-button {
-            padding: 9px 14px;
-            border-radius: 10px;
-            background: #f5f5f4;
-            color: #57534e;
-            border: 1px solid transparent;
-            font-size: 13px;
-            font-weight: 700;
-        }
+                .station-btn:hover {
+                    background: #e7e5e4;
+                }
 
-        .filter-button:hover {
-            border-color: #d6d3d1;
-        }
+                .station-btn.active {
+                    background: var(--aura-primary);
+                    color: #fff;
+                    box-shadow: 0 2px 5px rgba(144, 11, 26, .2);
+                }
 
-        .filter-button.active {
-            background: var(--aura-red);
-            color: #fff;
-        }
+                .ticket-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                    gap: 16px;
+                    align-items: start;
+                }
 
-        /* DANH SÁCH ĐƠN */
+                .ticket {
+                    overflow: hidden;
+                    border: 1px solid var(--stone-200);
+                    border-radius: 16px;
+                    background: #fff;
+                    box-shadow: 0 2px 7px rgba(41, 37, 36, .05);
+                    transition: transform .18s ease, box-shadow .18s ease;
+                }
 
-        .order-column {
-            min-height: 350px;
-            padding: 12px;
-            border-radius: 14px;
-            background: #eeecea;
-            border-top: 4px solid;
-        }
+                .ticket:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 22px rgba(41, 37, 36, .09);
+                }
 
-        .order-list {
-            max-height: 65vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-            scrollbar-gutter: stable;
-            padding-right: 4px;
-        }
+                .ticket.is-overdue {
+                    border-color: #fda4af;
+                    box-shadow: 0 0 0 3px rgba(225, 29, 72, .1);
+                }
 
-        .column-waiting {
-            border-top-color: var(--aura-red);
-        }
+                .ticket.is-ready {
+                    opacity: .78;
+                }
 
-        .column-preparing {
-            border-top-color: #d97706;
-        }
+                .ticket-ribbon {
+                    height: 6px;
+                }
 
-        .column-ready {
-            border-top-color: #059669;
-        }
+                .ticket-ribbon.waiting {
+                    background: #e11d48;
+                }
 
-        .order-card {
-            overflow: hidden;
-            border: 1px solid var(--aura-border);
-            border-radius: 14px;
-            background: #fff;
-            box-shadow: 0 2px 6px rgb(0 0 0 / 3%);
-        }
+                .ticket-ribbon.preparing {
+                    background: #f59e0b;
+                }
 
-        .order-code {
-            font-size: 16px;
-            font-weight: 800;
-        }
+                .ticket-ribbon.ready {
+                    background: #10b981;
+                }
 
-        .order-time,
-        .order-meta {
-            color: var(--aura-muted);
-            font-size: 12px;
-        }
+                .ticket-header {
+                    padding: 13px 14px;
+                    border-bottom: 1px solid #f5f5f4;
+                    background: rgba(250, 250, 249, .75);
+                }
 
-        .order-note {
-            padding: 9px 10px;
-            border-left: 3px solid #d97706;
-            border-radius: 6px;
-            background: #fff8e6;
-            color: #7c4a03;
-            font-size: 12px;
-        }
+                .ticket.is-overdue .ticket-header {
+                    background: #fff1f2;
+                }
 
-        .item-row {
-            padding: 10px;
-            border: 1px solid var(--aura-border);
-            border-radius: 10px;
-            background: #fafaf9;
-        }
+                .ticket-code {
+                    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                    font-size: 15px;
+                    font-weight: 800;
+                }
 
-        .item-name {
-            font-size: 13px;
-            font-weight: 700;
-        }
+                .status-badge {
+                    padding: 4px 7px;
+                    border-radius: 6px;
+                    font-size: 9px;
+                    font-weight: 800;
+                    letter-spacing: .04em;
+                }
 
-        .item-quantity {
-            color: var(--aura-red);
-            font-weight: 800;
-        }
+                .status-badge.waiting {
+                    background: #ffe4e6;
+                    color: #be123c;
+                }
 
-        .item-tag {
-            padding: 3px 6px;
-            border: 1px solid var(--aura-border);
-            border-radius: 5px;
-            background: #fff;
-            color: #57534e;
-            font-size: 10px;
-        }
+                .status-badge.preparing {
+                    background: #fef3c7;
+                    color: #92400e;
+                }
 
-        .item-action {
-            min-width: 86px;
-            font-size: 10px;
-            font-weight: 800;
-            white-space: nowrap;
-        }
+                .status-badge.ready {
+                    background: #d1fae5;
+                    color: #047857;
+                }
 
-        .empty-column {
-            padding: 35px 10px;
-            text-align: center;
-            color: var(--aura-muted);
-            font-size: 13px;
-        }
+                .ticket.is-overdue .status-badge {
+                    background: #e11d48;
+                    color: #fff;
+                }
 
-        .min-width-zero {
-            min-width: 0;
-        }
+                .ticket-target {
+                    margin-top: 4px;
+                    color: #44403c;
+                    font-size: 12px;
+                    font-weight: 700;
+                }
 
-        .recipe-lookup-link {
-            transition: color 0.15s ease;
-        }
+                .ticket-time {
+                    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                    font-size: 12px;
+                    font-weight: 800;
+                }
 
-        .recipe-lookup-link:hover {
-            color: var(--aura-red) !important;
-            text-decoration: underline !important;
-        }
+                .ticket.is-overdue .ticket-time,
+                .ticket.is-overdue .ticket-code {
+                    color: #be123c;
+                }
 
-        .recipe-sop-badge {
-            transition: all 0.15s ease;
-        }
+                .ticket-body {
+                    padding: 13px 14px;
+                }
 
-        .recipe-sop-badge:hover {
-            background-color: #fee2e2 !important;
-            color: var(--aura-red) !important;
-            border-color: #fca5a5 !important;
-        }
+                .ticket-item {
+                    padding: 10px;
+                    border: 1px solid var(--stone-200);
+                    border-radius: 11px;
+                    background: rgba(250, 250, 249, .7);
+                }
 
-        @media (max-width: 575.98px) {
-            .stat-box {
-                flex: 1 1 140px;
-                padding: 10px;
-            }
+                .item-qty {
+                    min-width: 26px;
+                    color: var(--aura-primary);
+                    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                    font-size: 12px;
+                    font-weight: 800;
+                }
 
-            .stat-label {
-                font-size: 10px;
-            }
-        }
-    </style>
-</head>
+                .item-name {
+                    font-size: 12px;
+                    font-weight: 800;
+                    line-height: 1.35;
+                }
 
-<body data-context-path="${pageContext.request.contextPath}"
-      data-csrf-token="${sessionScope.baristaCsrfToken}">
+                .item-tag {
+                    padding: 3px 6px;
+                    border: 1px solid var(--stone-200);
+                    border-radius: 5px;
+                    background: #fff;
+                    color: #57534e;
+                    font-size: 9px;
+                }
 
-<!-- Shared Customer header with Barista navigation and a non-clickable brand. -->
-<jsp:include page="/components/header.jsp">
-    <jsp:param name="navbarMode" value="barista"/>
-    <jsp:param name="showCart" value="false"/>
-    <jsp:param name="activePage" value="barista-orders"/>
-</jsp:include>
+                .ticket-note {
+                    padding: 9px 10px;
+                    border: 1px solid #fecdd3;
+                    border-radius: 10px;
+                    background: #fff1f2;
+                    color: #881337;
+                    font-size: 10px;
+                    font-weight: 600;
+                    line-height: 1.5;
+                }
 
-<!-- THỐNG KÊ VÀ BỘ LỌC -->
-<section class="toolbar px-3 px-xl-4 py-3"
-         aria-label="Thống kê và bộ lọc">
+                .ticket-footer {
+                    padding: 11px 13px;
+                    border-top: 1px solid var(--stone-200);
+                    background: var(--stone-50);
+                }
 
-    <div class="d-flex flex-wrap align-items-center
-                justify-content-between gap-3">
+                .ticket-action {
+                    min-height: 39px;
+                    border-radius: 10px;
+                    font-size: 11px;
+                    font-weight: 800;
+                    letter-spacing: .02em;
+                }
 
-        <div class="d-flex flex-wrap gap-2">
+                .empty-board {
+                    grid-column: 1 / -1;
+                    padding: 70px 20px;
+                    border: 2px dashed #d6d3d1;
+                    border-radius: 18px;
+                    color: var(--stone-500);
+                    text-align: center;
+                }
 
-            <div class="stat-box stat-waiting">
-                <span class="waiting-dot" aria-hidden="true"></span>
+                .kds-footer {
+                    position: fixed;
+                    right: 0;
+                    bottom: 0;
+                    left: 0;
+                    z-index: 1030;
+                    height: 42px;
+                    border-top: 1px solid var(--stone-200);
+                    background: rgba(255, 255, 255, .96);
+                    color: var(--stone-500);
+                    font-size: 11px;
+                    backdrop-filter: blur(10px);
+                }
 
-                <div>
-                    <div class="stat-label">Đang chờ pha</div>
-                    <div>
-                        <strong id="waiting-count" class="stat-value">0</strong>
-                        <span>đơn</span>
+                .kbd {
+                    padding: 2px 6px;
+                    border: 1px solid var(--stone-200);
+                    border-radius: 5px;
+                    background: var(--stone-100);
+                    color: #57534e;
+                    font-family: ui-monospace, monospace;
+                }
+
+                .toast-container {
+                    z-index: 1090;
+                }
+
+                @media (min-width: 1500px) {
+                    .ticket-grid {
+                        grid-template-columns: repeat(5, minmax(0, 1fr));
+                    }
+                }
+
+                @media (max-width: 991.98px) {
+                    .kds-toolbar {
+                        top: 68px;
+                    }
+                }
+
+                @media (max-width: 575.98px) {
+                    .metric-card {
+                        min-width: calc(50% - 4px);
+                        flex: 1;
+                    }
+
+                    .ticket-grid {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .kds-footer .shortcut-help {
+                        display: none !important;
+                    }
+                }
+            </style>
+        </head>
+
+        <body data-context-path="${pageContext.request.contextPath}" data-csrf-token="${sessionScope.baristaCsrfToken}">
+            <jsp:include page="/components/header.jsp">
+                <jsp:param name="navbarMode" value="barista" />
+                <jsp:param name="showCart" value="false" />
+                <jsp:param name="activePage" value="barista-orders" />
+            </jsp:include>
+
+            <section class="kds-toolbar px-3 px-lg-4 py-3" aria-label="Điều khiển KDS">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex flex-wrap gap-2">
+                        <div class="metric-card waiting d-flex align-items-center gap-3">
+                            <span class="live-dot"></span>
+                            <div>
+                                <div class="metric-label">Đang chờ pha</div>
+                                <div class="metric-value"><span id="waiting-count">0</span> đơn</div>
+                            </div>
+                        </div>
+                        <div class="metric-card preparing d-flex align-items-center gap-3">
+                            <span class="material-symbols-outlined">local_cafe</span>
+                            <div>
+                                <div class="metric-label">Đang thực hiện</div>
+                                <div class="metric-value"><span id="preparing-count">0</span> đơn</div>
+                            </div>
+                        </div>
+                        <div class="metric-card ready d-flex align-items-center gap-3">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            <div>
+                                <div class="metric-label">Đã hoàn tất</div>
+                                <div class="metric-value"><span id="ready-count">0</span> đơn</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button id="sound-button"
+                            class="btn btn-light border toolbar-btn d-flex align-items-center gap-2" type="button"
+                            aria-pressed="false">
+                            <span id="sound-icon" class="material-symbols-outlined text-danger">volume_off</span><span
+                                id="sound-label">Âm chuông: Tắt</span>
+                        </button>
+                        <button id="refresh-button"
+                            class="btn btn-light border toolbar-btn d-flex align-items-center gap-2" type="button">
+                            <span class="material-symbols-outlined">refresh</span><span>Làm mới</span>
+                        </button>
+                        <button id="fullscreen-button" class="btn btn-aura toolbar-btn d-flex align-items-center gap-2"
+                            type="button">
+                            <span class="material-symbols-outlined">fullscreen</span><span
+                                class="d-none d-sm-inline">Toàn màn hình</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 border-top mt-3 pt-3">
+                    <div id="category-filters" class="station-scroll d-flex gap-2 overflow-x-auto pb-1"
+                        aria-label="Lọc trạm pha chế">
+                        <button class="station-btn active" data-group="all" aria-pressed="true" type="button">Tất cả
+                            trạm pha chế</button>
+                    </div>
+                    <div class="small text-secondary text-nowrap">Tự động làm mới: <strong
+                            class="text-danger font-monospace">05s</strong></div>
+                </div>
+            </section>
+
+            <main class="container-fluid px-3 px-lg-4 py-4">
+                <div id="error-message" class="alert alert-danger" role="alert" hidden></div>
+                <section id="ticket-board" class="ticket-grid" aria-label="Danh sách đơn pha chế"></section>
+            </main>
+
+            <div class="toast-container position-fixed top-0 end-0 p-3">
+                <div id="kds-toast" class="toast border-0 shadow" role="status" aria-live="polite">
+                    <div class="d-flex">
+                        <div id="toast-message" class="toast-body fw-semibold"></div><button type="button"
+                            class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
                     </div>
                 </div>
             </div>
 
-            <div class="stat-box stat-preparing">
-                <svg width="28" height="28" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor"
-                     stroke-width="1.8" aria-hidden="true">
-                    <path d="M4 5h12v10a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V5Z"/>
-                    <path d="M16 6h2a3 3 0 1 1 0 6h-2M3 22h16"/>
-                </svg>
-
-                <div>
-                    <div class="stat-label">Đang pha</div>
-                    <div>
-                        <strong id="preparing-count" class="stat-value">0</strong>
-                        <span>đơn</span>
-                    </div>
+            <footer class="kds-footer d-flex align-items-center justify-content-between px-3 px-lg-4">
+                <div class="d-flex align-items-center gap-2 text-success fw-semibold"><span
+                        class="material-symbols-outlined">cloud_done</span><span>KDS trực tuyến · Dữ liệu đồng bộ</span>
                 </div>
-            </div>
+                <div class="shortcut-help d-flex align-items-center gap-3"><span><span class="kbd">R</span> Làm
+                        mới</span><span><span class="kbd">F</span> Toàn màn hình</span></div>
+            </footer>
 
-            <div class="stat-box">
-                <svg width="28" height="28" viewBox="0 0 24 24"
-                     fill="none" stroke="#059669"
-                     stroke-width="2" stroke-linecap="round"
-                     stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="m8 12 3 3 5-6"/>
-                </svg>
+            <script id="barista-initial-data"
+                type="application/json"><c:out value="${requestScope.baristaInitialData}" escapeXml="false" default="{}"/></script>
+            <span id="barista-initial-error" hidden>
+                <c:out value="${requestScope.baristaInitialError}" />
+            </span>
 
-                <div>
-                    <div class="stat-label">Đã xong</div>
-                    <div>
-                        <strong id="ready-count" class="stat-value">0</strong>
-                        <span>đơn</span>
-                    </div>
-                </div>
-            </div>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+            <script>
+                "use strict";
+                const contextPath = document.body.dataset.contextPath;
+                const refreshIntervalMs = 5000;
+                const board = document.getElementById("ticket-board");
+                const errorMessage = document.getElementById("error-message");
+                const toast = bootstrap.Toast.getOrCreateInstance(document.getElementById("kds-toast"), { delay: 2600 });
+                let activeGroup = "all";
+                let currentOrders = [];
+                let isUpdating = false;
+                let loadController = null;
+                let refreshTimer = null;
+                let soundEnabled = false;
+                let audioContext = null;
+                let notificationInitialized = false;
+                const seenOrderIds = new Set();
 
-        </div>
-
-        <button id="sound-button"
-                class="btn btn-light border sound-button
-                       d-flex align-items-center gap-2"
-                type="button"
-                aria-pressed="false">
-
-            <svg width="22" height="22" viewBox="0 0 24 24"
-                 fill="none" stroke="#900b1a"
-                 stroke-width="1.8" stroke-linecap="round"
-                 stroke-linejoin="round" aria-hidden="true">
-                <path d="M11 5 6 9H3v6h3l5 4V5Z"/>
-                <path d="M15 8a6 6 0 0 1 0 8"/>
-                <path d="M18 5a10 10 0 0 1 0 14"/>
-            </svg>
-
-            <span id="sound-label">Âm chuông: Tắt</span>
-        </button>
-    </div>
-
-    <div class="border-top mt-3 pt-3">
-        <div id="category-filters" class="d-flex flex-wrap gap-2" aria-label="Lọc nhóm sản phẩm">
-            <button class="btn filter-button active"
-                    data-group="all" aria-pressed="true" type="button">
-                Tất cả sản phẩm
-            </button>
-        </div>
-    </div>
-</section>
-
-<main class="container-fluid px-3 px-xl-4 py-4">
-
-    <div id="error-message"
-         class="alert alert-danger"
-         role="alert"
-         hidden>
-    </div>
-
-    <div id="sound-message"
-         class="alert alert-warning"
-         role="status"
-         hidden>
-    </div>
-
-    <section class="row g-3" aria-label="Danh sách đơn pha chế">
-
-        <div class="col-12 col-lg-4">
-            <div class="order-column column-waiting">
-                <div class="d-flex align-items-center
-                            justify-content-between mb-3 px-1">
-                    <h2 class="h6 fw-bold mb-0">Đang chờ pha</h2>
-                    <span id="waiting-column-count"
-                          class="badge rounded-pill"
-                          style="background: #900b1a">0</span>
-                </div>
-
-                <div id="waiting-orders" class="order-list" tabindex="0" role="region" aria-label="Đang chờ pha"></div>
-            </div>
-        </div>
-
-        <div class="col-12 col-lg-4">
-            <div class="order-column column-preparing">
-                <div class="d-flex align-items-center
-                            justify-content-between mb-3 px-1">
-                    <h2 class="h6 fw-bold mb-0">Đang pha</h2>
-                    <span id="preparing-column-count"
-                          class="badge text-bg-warning rounded-pill">0</span>
-                </div>
-
-                <div id="preparing-orders" class="order-list" tabindex="0" role="region" aria-label="Đang pha"></div>
-            </div>
-        </div>
-
-        <div class="col-12 col-lg-4">
-            <div class="order-column column-ready">
-                <div class="d-flex align-items-center
-                            justify-content-between mb-3 px-1">
-                    <h2 class="h6 fw-bold mb-0">Đã xong</h2>
-                    <span id="ready-column-count"
-                          class="badge text-bg-success rounded-pill">0</span>
-                </div>
-
-                <div id="ready-orders" class="order-list" tabindex="0" role="region" aria-label="Đã xong"></div>
-            </div>
-        </div>
-
-    </section>
-</main>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    "use strict";
-
-    const contextPath = document.body.dataset.contextPath;
-    const refreshIntervalMs = 5000;
-
-    let activeGroup = "all";
-    let currentOrders = [];
-    let isUpdating = false;
-    let loadController = null;
-    let refreshTimer = null;
-
-    // Chuông luôn theo dõi hàng đợi đầy đủ, không theo bộ lọc.
-    let notificationInitialized = false;
-    const seenOrderIds = new Set();
-
-    let soundEnabled = false;
-    let audioContext = null;
-
-    const containers = {
-        CONFIRMED: document.getElementById("waiting-orders"),
-        PREPARING: document.getElementById("preparing-orders"),
-        READY: document.getElementById("ready-orders")
-    };
-
-    const errorMessage = document.getElementById("error-message");
-    const soundMessage = document.getElementById("sound-message");
-
-    // =====================================================
-    // NAVBAR
-    // =====================================================
-
-    document.addEventListener("keydown", event => {
-        if (event.altKey || event.ctrlKey || event.metaKey) {
-            return;
-        }
-
-        const linkId = event.key === "F1"
-            ? "orders-link"
-            : event.key === "F2"
-                ? "recipes-link"
-                : null;
-
-        if (linkId) {
-            event.preventDefault();
-            window.location.assign(
-                document.getElementById(linkId).href
-            );
-        }
-    });
-
-    // =====================================================
-    // ÂM CHUÔNG
-    // =====================================================
-
-    function updateSoundButton() {
-        document.getElementById("sound-label").textContent =
-            "Âm chuông: " + (soundEnabled ? "Bật" : "Tắt");
-
-        document.getElementById("sound-button").setAttribute(
-            "aria-pressed",
-            String(soundEnabled)
-        );
-    }
-
-    function playNotificationSound() {
-        if (!soundEnabled || !audioContext) {
-            return;
-        }
-
-        if (audioContext.state !== "running") {
-            soundEnabled = false;
-            updateSoundButton();
-
-            soundMessage.textContent =
-                "Âm thanh đang bị trình duyệt tạm dừng. "
-                + "Bấm bật chuông để kích hoạt lại.";
-
-            soundMessage.hidden = false;
-            return;
-        }
-
-        const start = audioContext.currentTime;
-
-        // Hai nốt ngắn, âm lượng nhẹ.
-        [660, 880].forEach((frequency, index) => {
-            const oscillator = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-
-            const time = start + index * 0.18;
-
-            oscillator.type = "sine";
-            oscillator.frequency.value = frequency;
-
-            gain.gain.setValueAtTime(0, time);
-            gain.gain.linearRampToValueAtTime(0.12, time + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.16);
-
-            oscillator.connect(gain);
-            gain.connect(audioContext.destination);
-
-            oscillator.start(time);
-            oscillator.stop(time + 0.18);
-
-            oscillator.onended = () => {
-                oscillator.disconnect();
-                gain.disconnect();
-            };
-        });
-    }
-
-    document.getElementById("sound-button").addEventListener(
-        "click",
-        async () => {
-            soundMessage.hidden = true;
-
-            if (soundEnabled) {
-                soundEnabled = false;
-                updateSoundButton();
-                return;
-            }
-
-            try {
-                const AudioContextClass =
-                    window.AudioContext || window.webkitAudioContext;
-
-                if (!AudioContextClass) {
-                    throw new Error("Trình duyệt không hỗ trợ âm thanh.");
+                function node(tag, className, text) {
+                    const result = document.createElement(tag);
+                    if (className) result.className = className;
+                    if (text !== undefined && text !== null) result.textContent = text;
+                    return result;
                 }
 
-                if (!audioContext) {
-                    audioContext = new AudioContextClass();
+                function showToast(message) {
+                    document.getElementById("toast-message").textContent = message;
+                    toast.show();
                 }
 
-                await audioContext.resume();
-
-                if (audioContext.state !== "running") {
-                    throw new Error("Không thể kích hoạt âm thanh.");
+                function showError(message) {
+                    errorMessage.textContent = message;
+                    errorMessage.hidden = false;
                 }
 
-                soundEnabled = true;
-                updateSoundButton();
-
-                // Tiếng thử khi nhân viên chủ động bật chuông.
-                playNotificationSound();
-
-            } catch (error) {
-                soundEnabled = false;
-                updateSoundButton();
-
-                soundMessage.textContent =
-                    "Không bật được chuông. " + error.message;
-
-                soundMessage.hidden = false;
-            }
-        }
-    );
-
-    function detectNewOrders(allOrders) {
-        let hasNewOrder = false;
-
-        allOrders.forEach(order => {
-            if (order.id === null || order.id === undefined) {
-                return;
-            }
-
-            const id = String(order.id);
-
-            const inQueue =
-                order.status === "CONFIRMED";
-
-            if (notificationInitialized
-                    && inQueue
-                    && !seenOrderIds.has(id)) {
-                hasNewOrder = true;
-            }
-
-            // Vẫn ghi nhận khi tắt chuông.
-            // Bật lại sẽ không phát lại các đơn đã nhìn thấy.
-            seenOrderIds.add(id);
-        });
-
-        if (notificationInitialized && hasNewOrder) {
-            playNotificationSound();
-        }
-
-        notificationInitialized = true;
-    }
-
-    // =====================================================
-    // API
-    // =====================================================
-
-    async function readJsonResponse(response, allowEmpty) {
-        if (response.redirected) {
-            throw new Error(
-                "Yêu cầu bị chuyển hướng. Vui lòng kiểm tra đăng nhập."
-            );
-        }
-
-        const text = await response.text();
-
-        if (!text.trim()) {
-            if (response.ok && allowEmpty) {
-                return {};
-            }
-
-            throw new Error(
-                "Máy chủ trả về nội dung rỗng (HTTP "
-                + response.status + ")."
-            );
-        }
-
-        let data;
-
-        try {
-            data = JSON.parse(text);
-        } catch (error) {
-            throw new Error(
-                "Máy chủ không trả về JSON hợp lệ. "
-                + "Kiểm tra BaristaController hoặc phiên đăng nhập."
-            );
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data && data.message
-                    ? data.message
-                    : "Yêu cầu thất bại: HTTP " + response.status
-            );
-        }
-
-        if (!data || typeof data !== "object" || Array.isArray(data)) {
-            throw new Error("Cấu trúc JSON không hợp lệ.");
-        }
-
-        return data;
-    }
-
-    async function fetchOrders(signal) {
-        const response = await fetch(
-            contextPath
-                + "/barista?action=orders",
-            {
-                method: "GET",
-                headers: { "Accept": "application/json" },
-                credentials: "same-origin",
-                cache: "no-store",
-                signal: signal
-            }
-        );
-
-        const data = await readJsonResponse(response, false);
-
-        if (!Array.isArray(data.orders)) {
-            throw new Error("Phản hồi thiếu mảng orders.");
-        }
-
-        return data;
-    }
-
-    function scheduleRefresh() {
-        clearTimeout(refreshTimer);
-
-        refreshTimer = setTimeout(() => {
-            loadOrders();
-        }, refreshIntervalMs);
-    }
-
-    async function loadOrders() {
-        if (isUpdating) {
-            return;
-        }
-
-        clearTimeout(refreshTimer);
-
-        if (loadController) {
-            loadController.abort();
-        }
-
-        const controller = new AbortController();
-        loadController = controller;
-
-        try {
-            const data = await fetchOrders(controller.signal);
-            if (loadController !== controller) {
-                return;
-            }
-            currentOrders = sortDashboardOrders(data.orders);
-            renderCategoryFilters(data.categories || []);
-            updateStatistics(data.statistics || {});
-            renderFilteredOrders();
-            detectNewOrders(currentOrders);
-
-            hideError();
-
-        } catch (error) {
-            if (error.name !== "AbortError"
-                    && loadController === controller) {
-                showError(error.message);
-            }
-
-        } finally {
-            if (loadController === controller) {
-                loadController = null;
-                scheduleRefresh();
-            }
-        }
-    }
-
-    // =====================================================
-    // BỘ LỌC VÀ SẮP XẾP
-    // =====================================================
-
-    document.getElementById("category-filters").addEventListener("click", event => {
-        const button = event.target.closest(".filter-button");
-        if (!button) return;
-        activeGroup = button.dataset.group;
-        document.querySelectorAll(".filter-button").forEach(item => {
-            const selected = item === button;
-            item.classList.toggle("active", selected);
-            item.setAttribute("aria-pressed", String(selected));
-        });
-        renderFilteredOrders();
-    });
-
-    function renderCategoryFilters(categories) {
-        if (activeGroup !== "all"
-                && !categories.some(category => String(category.id) === activeGroup)) {
-            activeGroup = "all";
-        }
-        const container = document.getElementById("category-filters");
-        container.replaceChildren();
-        [{id: "all", name: "Tất cả sản phẩm"}, ...categories].forEach(category => {
-            const button = element("button", "btn filter-button", category.name);
-            button.type = "button";
-            button.dataset.group = String(category.id);
-            const selected = button.dataset.group === activeGroup;
-            button.classList.toggle("active", selected);
-            button.setAttribute("aria-pressed", String(selected));
-            container.appendChild(button);
-        });
-    }
-
-    function renderFilteredOrders() {
-        // Match orders by category but show ALL their items: the action completes the whole order.
-        const displayOrders = activeGroup === "all" ? currentOrders
-            : currentOrders.filter(order => order.items.some(item =>
-                String(item.categoryId) === activeGroup));
-        renderOrders(displayOrders, currentOrders);
-    }
-
-    function sortDashboardOrders(orders) {
-        const working = sortOldestFirst(orders.filter(order =>
-            order.status === "CONFIRMED" || order.status === "PREPARING"));
-        const ready = orders.filter(order => order.status === "READY");
-        if (ready.every(order => order.createdAt
-                && Number.isFinite(new Date(order.createdAt).getTime()))) {
-            ready.sort((a, b) => new Date(b.createdAt).getTime()
-                - new Date(a.createdAt).getTime() || b.id - a.id);
-        }
-        return [...working, ...ready.slice(0, 3)];
-    }
-
-    function sortOldestFirst(orders) {
-        const result = orders.slice();
-
-        // Nếu thiếu thời gian hợp lệ, giữ thứ tự backend cung cấp.
-        const validDates = result.every(order =>
-            order.createdAt
-            && Number.isFinite(new Date(order.createdAt).getTime())
-        );
-
-        if (validDates) {
-            result.sort((a, b) =>
-                new Date(a.createdAt).getTime()
-                - new Date(b.createdAt).getTime() || a.id - b.id
-            );
-        }
-
-        return result;
-    }
-
-    // =====================================================
-    // HIỂN THỊ
-    // =====================================================
-
-    function element(tag, className, text) {
-        const node = document.createElement(tag);
-        node.className = className;
-
-        if (text !== undefined && text !== null) {
-            node.textContent = text;
-        }
-
-        return node;
-    }
-
-    function updateStatistics(statistics) {
-        document.getElementById("waiting-count").textContent =
-            statistics.waiting ?? 0;
-
-        document.getElementById("preparing-count").textContent =
-            statistics.preparing ?? 0;
-
-        document.getElementById("ready-count").textContent =
-            statistics.ready ?? 0;
-    }
-
-    function renderOrders(displayOrders, allOrders) {
-        const scrollPositions = Object.fromEntries(Object.entries(containers)
-            .map(([status, container]) => [status, container.scrollTop]));
-        Object.values(containers).forEach(container => {
-            container.replaceChildren();
-        });
-
-        // Giữ quy tắc FIFO của JSP cũ, nhưng xét toàn bộ hàng đợi.
-        // Backend vẫn phải kiểm tra quyền cập nhật và FIFO.
-        const firstActionableOrder = allOrders.find(order =>
-            order.status === "CONFIRMED"
-            || order.status === "PREPARING"
-        );
-
-        const firstId = firstActionableOrder
-            ? String(firstActionableOrder.id)
-            : null;
-
-        const counts = {
-            CONFIRMED: 0,
-            PREPARING: 0,
-            READY: 0
-        };
-
-        displayOrders.forEach(order => {
-            const container = containers[order.status];
-
-            if (!container) {
-                return;
-            }
-
-            const canAct = String(order.id) === firstId;
-
-            container.appendChild(createOrderCard(order, canAct));
-            counts[order.status]++;
-        });
-
-        const settings = [
-            ["CONFIRMED", "waiting-column-count", "Không có đơn đang chờ."],
-            ["PREPARING", "preparing-column-count", "Không có đơn đang pha."],
-            ["READY", "ready-column-count", "Chưa có đơn đã xong."]
-        ];
-
-        settings.forEach(([status, countId, message]) => {
-            document.getElementById(countId).textContent = counts[status];
-
-            if (!counts[status]) {
-                containers[status].appendChild(
-                    element("div", "empty-column", message)
-                );
-            }
-        });
-        Object.entries(containers).forEach(([status, container]) => {
-            container.scrollTop = scrollPositions[status];
-        });
-    }
-
-    function createReadyCard(order) {
-        const card = element("article", "card order-card mb-3");
-        const header = element("div", "card-header bg-white p-3");
-        header.append(
-            element("strong", "order-code", "#" + (order.orderCode || order.id)),
-            element("div", "order-time mt-1", "Giờ đặt: " + formatCreatedAt(order.createdAt))
-        );
-        const body = element("div", "card-body p-3 d-flex flex-column gap-2");
-        (Array.isArray(order.items) ? order.items : []).forEach(item => {
-            const row = element("div", "item-name d-flex align-items-center justify-content-between");
-            const left = element("span", "");
-            left.append(
-                element("span", "item-quantity me-1", (item.quantity ?? 0) + "×")
-            );
-            const link = element(
-                "a",
-                "text-decoration-none text-dark recipe-lookup-link",
-                item.productName || "Sản phẩm"
-            );
-            if (item.productId) {
-                link.href = contextPath + "/barista?action=recipes&productId=" + item.productId;
-                link.title = "Bấm để xem công thức & định lượng (SOP)";
-            }
-            left.appendChild(link);
-            row.appendChild(left);
-            body.appendChild(row);
-        });
-        card.append(header, body);
-        return card;
-    }
-
-    function createOrderCard(order, canAct) {
-        if (order.status === "READY") {
-            return createReadyCard(order);
-        }
-        const card = element("article", "card order-card mb-3");
-        const header = element("div", "card-header bg-white p-3");
-
-        const titleRow = element(
-            "div",
-            "d-flex flex-wrap justify-content-between align-items-center gap-2"
-        );
-
-        titleRow.append(
-            element(
-                "strong",
-                "order-code",
-                "#" + (order.orderCode || order.id)
-            ),
-            element(
-                "span",
-                "order-time",
-                "Giờ đặt: " + formatCreatedAt(order.createdAt)
-            )
-        );
-
-        header.append(
-            titleRow,
-            element(
-                "span",
-                "badge text-bg-light border mt-2",
-                getOrderTypeLabel(order)
-            ),
-            element(
-                "div",
-                "order-meta mt-2",
-                getOrderMeta(order)
-            )
-        );
-
-        if (order.orderNote && String(order.orderNote).trim()) {
-            header.appendChild(
-                element(
-                    "div",
-                    "order-note mt-2",
-                    "Ghi chú: " + order.orderNote
-                )
-            );
-        }
-
-        const itemsContainer = element(
-            "div",
-            "card-body p-3 d-flex flex-column gap-2"
-        );
-
-        const items = Array.isArray(order.items) ? order.items : [];
-
-        items.forEach(item => {
-            itemsContainer.appendChild(
-                createItemRow(item)
-            );
-        });
-
-        if (!items.length) {
-            itemsContainer.appendChild(
-                element(
-                    "div",
-                    "small text-secondary",
-                    "Chưa có thông tin món."
-                )
-            );
-        }
-
-        const footer = element("div", "card-footer bg-white p-3");
-        footer.appendChild(element("div", "order-meta mb-2",
-            "Tổng: " + order.itemCount + " món • Cập nhật áp dụng cho toàn bộ đơn"));
-        const action = element("button", "btn btn-aura item-action w-100");
-        action.type = "button";
-        action.disabled = !canAct || order.status === "READY" || isUpdating;
-        action.textContent = order.status === "CONFIRMED" ? "BẮT ĐẦU PHA" : "HOÀN THÀNH";
-        action.title = canAct ? "Cập nhật trạng thái toàn bộ đơn"
-            : "Xử lý đơn đến trước trước khi cập nhật đơn này";
-        action.addEventListener("click", () => updateOrderStatus(order.id,
-            order.status === "CONFIRMED" ? "PREPARING" : "READY"));
-        footer.appendChild(action);
-        card.append(header, itemsContainer, footer);
-
-        return card;
-    }
-
-    function createItemRow(item) {
-        const row = element(
-            "div",
-            "item-row d-flex align-items-start justify-content-between gap-2"
-        );
-
-        const info = element("div", "flex-grow-1 min-width-zero");
-        const name = element("div", "item-name d-flex align-items-center justify-content-between gap-1");
-
-        const nameLeft = element("span", "text-truncate");
-        nameLeft.append(
-            element(
-                "span",
-                "item-quantity me-1",
-                (item.quantity ?? 0) + "×"
-            )
-        );
-
-        const nameLink = element(
-            "a",
-            "text-decoration-none text-dark fw-bold recipe-lookup-link",
-            item.productName || "Sản phẩm"
-        );
-        if (item.productId) {
-            nameLink.href = contextPath + "/barista?action=recipes&productId=" + item.productId;
-            nameLink.title = "Bấm để xem công thức & định lượng (SOP)";
-        }
-        nameLeft.appendChild(nameLink);
-        name.appendChild(nameLeft);
-
-        if (item.productId) {
-            const recipeBadge = element(
-                "a",
-                "badge bg-light text-secondary border text-decoration-none d-inline-flex align-items-center gap-1 px-1 py-0.5 flex-shrink-0 recipe-sop-badge",
-                ""
-            );
-            recipeBadge.href = contextPath + "/barista?action=recipes&productId=" + item.productId;
-            recipeBadge.title = "Tra cứu công thức (SOP)";
-            recipeBadge.innerHTML = '<span class="material-symbols-outlined" style="font-size: 13px;">menu_book</span><span style="font-size: 10px; font-weight: 700;">SOP</span>';
-            name.appendChild(recipeBadge);
-        }
-
-        info.appendChild(name);
-
-        const customizations = parseCustomization(item.customization);
-
-        if (customizations.length) {
-            const options = element(
-                "div",
-                "d-flex flex-wrap gap-1 mt-2"
-            );
-
-            customizations.forEach(value => {
-                options.appendChild(
-                    element("span", "item-tag", value)
-                );
-            });
-
-            info.appendChild(options);
-        }
-
-        row.append(info);
-
-        return row;
-    }
-
-    // =====================================================
-    // CẬP NHẬT TRẠNG THÁI ĐƠN
-    // =====================================================
-
-    async function updateOrderStatus(orderId, status) {
-        if (isUpdating) {
-            return;
-        }
-
-        if (orderId === null || orderId === undefined) {
-            showError("Đơn thiếu orderId nên không thể cập nhật.");
-            return;
-        }
-
-        isUpdating = true;
-        clearTimeout(refreshTimer);
-
-        if (loadController) {
-            loadController.abort();
-            loadController = null;
-        }
-
-        const buttons = Array.from(
-            document.querySelectorAll(".item-action")
-        );
-
-        const previousStates = buttons.map(button => button.disabled);
-
-        buttons.forEach(button => {
-            button.disabled = true;
-        });
-
-        hideError();
-
-        let succeeded = false;
-        let updateError = null;
-
-        try {
-            const body = new URLSearchParams();
-            body.append("action", "update-order-status");
-            body.append("orderId", String(orderId));
-            body.append("status", status);
-            body.append("csrfToken", document.body.dataset.csrfToken);
-
-            const response = await fetch(contextPath + "/barista", {
-                method: "POST",
-                credentials: "same-origin",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Accept": "application/json"
-                },
-                body: body
-            });
-
-            await readJsonResponse(response, response.status === 204);
-            succeeded = true;
-
-        } catch (error) {
-            updateError = error.message;
-            showError(updateError);
-
-        } finally {
-            isUpdating = false;
-
-            if (!succeeded) {
-                buttons.forEach((button, index) => {
-                    button.disabled = previousStates[index];
+                function hideError() {
+                    errorMessage.textContent = "";
+                    errorMessage.hidden = true;
+                }
+
+                function updateSoundButton() {
+                    document.getElementById("sound-label").textContent = "Âm chuông: " + (soundEnabled ? "Bật" : "Tắt");
+                    document.getElementById("sound-icon").textContent = soundEnabled ? "volume_up" : "volume_off";
+                    document.getElementById("sound-button").setAttribute("aria-pressed", String(soundEnabled));
+                }
+
+                function playNotificationSound() {
+                    if (!soundEnabled || !audioContext || audioContext.state !== "running") return;
+                    [660, 880].forEach((frequency, index) => {
+                        const oscillator = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        const start = audioContext.currentTime + index * .16;
+                        oscillator.frequency.value = frequency;
+                        gain.gain.setValueAtTime(.001, start);
+                        gain.gain.exponentialRampToValueAtTime(.12, start + .02);
+                        gain.gain.exponentialRampToValueAtTime(.001, start + .14);
+                        oscillator.connect(gain); gain.connect(audioContext.destination);
+                        oscillator.start(start); oscillator.stop(start + .15);
+                    });
+                }
+
+                document.getElementById("sound-button").addEventListener("click", async () => {
+                    if (soundEnabled) {
+                        soundEnabled = false;
+                    } else {
+                        try {
+                            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                            if (!AudioContextClass) throw new Error("Trình duyệt không hỗ trợ âm thanh");
+                            audioContext = audioContext || new AudioContextClass();
+                            await audioContext.resume();
+                            soundEnabled = audioContext.state === "running";
+                            if (soundEnabled) playNotificationSound();
+                        } catch (error) {
+                            showToast(error.message);
+                        }
+                    }
+                    updateSoundButton();
                 });
 
-                scheduleRefresh();
-            }
-        }
+                document.getElementById("fullscreen-button").addEventListener("click", async () => {
+                    try {
+                        if (document.fullscreenElement) await document.exitFullscreen();
+                        else await document.documentElement.requestFullscreen();
+                    } catch (error) { showToast("Không thể chuyển chế độ toàn màn hình"); }
+                });
 
-        // Reload after conflicts/errors too, since another terminal may have changed the queue.
-        await loadOrders();
-        if (updateError) showError(updateError);
-    }
+                document.getElementById("refresh-button").addEventListener("click", () => {
+                    loadOrders();
+                    showToast("Đang làm mới dữ liệu KDS");
+                });
 
-    // =====================================================
-    // HÀM HỖ TRỢ
-    // =====================================================
+                document.addEventListener("keydown", event => {
+                    if (event.target.matches("input, textarea, select") || event.ctrlKey || event.altKey || event.metaKey) return;
+                    if (event.key.toLowerCase() === "r") { event.preventDefault(); loadOrders(); }
+                    if (event.key.toLowerCase() === "f") { event.preventDefault(); document.getElementById("fullscreen-button").click(); }
+                });
 
-    function parseCustomization(customization) {
-        if (!customization) {
-            return [];
-        }
-
-        let parsed = customization;
-
-        if (typeof parsed === "string") {
-            try {
-                parsed = JSON.parse(parsed);
-            } catch (error) {
-                return [customization];
-            }
-        }
-
-        if (parsed === null) {
-            return [];
-        }
-
-        if (Array.isArray(parsed)) {
-            return parsed.map(value => String(value));
-        }
-
-        if (typeof parsed === "object") {
-            const values = [];
-
-            Object.entries(parsed).forEach(([key, value]) => {
-                if (value === null || value === undefined) {
-                    return;
-                }
-
-                if (Array.isArray(value)) {
-                    value.forEach(entry => {
-                        values.push(typeof entry === "object" && entry !== null
-                            ? (entry.name || JSON.stringify(entry)) : String(entry));
+                document.getElementById("category-filters").addEventListener("click", event => {
+                    const button = event.target.closest(".station-btn");
+                    if (!button) return;
+                    activeGroup = button.dataset.group;
+                    document.querySelectorAll(".station-btn").forEach(item => {
+                        const selected = item === button;
+                        item.classList.toggle("active", selected);
+                        item.setAttribute("aria-pressed", String(selected));
                     });
-                } else {
-                    values.push(key + ": " + String(value));
+                    renderOrders();
+                });
+
+                async function readJson(response) {
+                    const text = await response.text();
+                    let data;
+                    try { data = text ? JSON.parse(text) : {}; }
+                    catch (error) {
+                        const contentType = response.headers.get("content-type") || "";
+                        if (response.redirected || contentType.includes("text/html")) {
+                            throw new Error("Phiên đăng nhập hoặc bản triển khai đã hết hạn. Hãy tải lại trang và đăng nhập lại.");
+                        }
+                        throw new Error("Máy chủ không trả về dữ liệu đơn hàng hợp lệ");
+                    }
+                    if (!response.ok) throw new Error(data.message || "Yêu cầu thất bại (HTTP " + response.status + ")");
+                    return data;
                 }
-            });
 
-            return values;
-        }
+                async function loadOrders() {
+                    if (isUpdating) return;
+                    clearTimeout(refreshTimer);
+                    if (loadController) loadController.abort();
+                    const controller = new AbortController();
+                    loadController = controller;
+                    try {
+                        const response = await fetch(contextPath + "/barista/orders", {
+                            headers: { "Accept": "application/json" }, credentials: "same-origin", cache: "no-store", signal: controller.signal
+                        });
+                        const data = await readJson(response);
+                        if (!Array.isArray(data.orders)) throw new Error("Phản hồi thiếu danh sách đơn hàng");
+                        currentOrders = sortOrders(data.orders);
+                        renderFilters(data.categories || []);
+                        updateStatistics(data.statistics || {});
+                        renderOrders();
+                        detectNewOrders();
+                        hideError();
+                    } catch (error) {
+                        if (error.name !== "AbortError") showError(error.message);
+                    } finally {
+                        if (loadController === controller) {
+                            loadController = null;
+                            refreshTimer = setTimeout(loadOrders, refreshIntervalMs);
+                        }
+                    }
+                }
 
-        return [String(parsed)];
-    }
+                function sortOrders(orders) {
+                    return orders.slice().sort((a, b) => {
+                        const statusRank = { PREPARING: 0, CONFIRMED: 1, READY: 2 };
+                        const rank = (statusRank[a.status] ?? 9) - (statusRank[b.status] ?? 9);
+                        if (rank) return rank;
+                        const timeA = new Date(a.createdAt).getTime();
+                        const timeB = new Date(b.createdAt).getTime();
+                        if (Number.isFinite(timeA) && Number.isFinite(timeB)) return a.status === "READY" ? timeB - timeA : timeA - timeB;
+                        return a.id - b.id;
+                    });
+                }
 
-    function getOrderTypeLabel(order) {
-        if (order.orderType === "DINE_IN") {
-            return "Dùng tại quán";
-        }
+                function renderFilters(categories) {
+                    if (activeGroup !== "all" && !categories.some(category => String(category.id) === activeGroup)) activeGroup = "all";
+                    const container = document.getElementById("category-filters");
+                    container.replaceChildren();
+                    [{ id: "all", name: "Tất cả trạm pha chế" }, ...categories].forEach(category => {
+                        const count = category.id === "all"
+                            ? currentOrders.length
+                            : currentOrders.filter(order => order.items.some(item => String(item.categoryId) === String(category.id))).length;
+                        const button = node("button", "station-btn", category.name + " (" + count + ")");
+                        button.type = "button";
+                        button.dataset.group = String(category.id);
+                        const selected = button.dataset.group === activeGroup;
+                        button.classList.toggle("active", selected);
+                        button.setAttribute("aria-pressed", String(selected));
+                        container.appendChild(button);
+                    });
+                }
 
-        if (order.orderType === "ONLINE") {
-            return "Online";
-        }
+                function updateStatistics(statistics) {
+                    document.getElementById("waiting-count").textContent = statistics.waiting ?? 0;
+                    document.getElementById("preparing-count").textContent = statistics.preparing ?? 0;
+                    document.getElementById("ready-count").textContent = statistics.ready ?? 0;
+                }
 
-        return "Mua mang đi";
-    }
+                function renderOrders() {
+                    const orders = activeGroup === "all" ? currentOrders : currentOrders.filter(order =>
+                        order.items.some(item => String(item.categoryId) === activeGroup));
+                    board.replaceChildren();
+                    if (!orders.length) {
+                        const empty = node("div", "empty-board");
+                        empty.append(node("span", "material-symbols-outlined d-block mb-2 fs-1", "coffee"), node("strong", "d-block mb-1", "Chưa có đơn tại trạm này"), node("span", "small", "Đơn mới sẽ tự động xuất hiện sau khi thanh toán thành công."));
+                        board.appendChild(empty);
+                        return;
+                    }
+                    const firstActionable = currentOrders.find(order => order.status === "PREPARING")
+                        || currentOrders.find(order => order.status === "CONFIRMED");
+                    orders.forEach(order => board.appendChild(createTicket(order, firstActionable && order.id === firstActionable.id)));
+                }
 
-    function getOrderMeta(order) {
-        if (order.orderType === "DINE_IN") {
-            return order.tableNumber
-                ? "Bàn " + order.tableNumber
-                : "Khách dùng tại quán";
-        }
+                function createTicket(order, canAct) {
+                    const ageMinutes = getAgeMinutes(order.createdAt);
+                    const overdue = order.status !== "READY" && ageMinutes >= 5;
+                    const tone = order.status === "CONFIRMED" ? "waiting" : order.status === "PREPARING" ? "preparing" : "ready";
+                    const ticket = node("article", "ticket" + (overdue ? " is-overdue" : "") + (order.status === "READY" ? " is-ready" : ""));
+                    ticket.appendChild(node("div", "ticket-ribbon " + tone));
 
-        if (order.orderType === "ONLINE") {
-            return order.recipientName
-                ? "Khách: " + order.recipientName
-                : "Nhân viên quán giao";
-        }
+                    const header = node("div", "ticket-header");
+                    const top = node("div", "d-flex align-items-start justify-content-between gap-2");
+                    const identity = node("div", "min-w-0");
+                    const identityRow = node("div", "d-flex align-items-center flex-wrap gap-2");
+                    identityRow.append(node("span", "ticket-code", "#" + (order.orderCode || order.id)), node("span", "status-badge " + tone, overdue ? "KHẨN CẤP" : getStatusLabel(order.status)));
+                    identity.append(identityRow, node("div", "ticket-target", getOrderTarget(order)));
+                    const timer = node("div", "text-end flex-shrink-0");
+                    timer.append(node("span", "ticket-time d-block", formatDuration(ageMinutes)), node("small", "text-secondary", overdue ? "SLA: 05:00" : "Mục tiêu: 05:00"));
+                    top.append(identity, timer);
+                    header.appendChild(top);
+                    if (order.recipientName && order.orderType !== "DINE_IN") header.appendChild(node("div", "small text-secondary mt-2", "Khách: " + order.recipientName));
 
-        return "Khách mua mang đi";
-    }
+                    const body = node("div", "ticket-body d-flex flex-column gap-2");
+                    (order.items || []).forEach(item => body.appendChild(createItem(item)));
+                    if (order.orderNote && String(order.orderNote).trim()) {
+                        const note = node("div", "ticket-note d-flex align-items-start gap-2");
+                        note.append(node("span", "material-symbols-outlined flex-shrink-0", "warning"), node("span", "", order.orderNote));
+                        body.appendChild(note);
+                    }
 
-    function formatCreatedAt(createdAt) {
-        if (!createdAt) {
-            return "";
-        }
+                    const footer = node("div", "ticket-footer");
+                    if (order.status === "READY") {
+                        const done = node("div", "d-flex align-items-center justify-content-center gap-2 text-success fw-bold py-2");
+                        done.append(node("span", "material-symbols-outlined", "task_alt"), node("span", "", "ĐƠN ĐÃ SẴN SÀNG"));
+                        footer.appendChild(done);
+                    } else {
+                        const action = node("button", "btn btn-aura ticket-action w-100 d-flex align-items-center justify-content-center gap-2");
+                        action.type = "button";
+                        action.disabled = !canAct || isUpdating;
+                        action.title = canAct ? "Cập nhật trạng thái đơn" : "Cần xử lý đơn đến trước theo thứ tự";
+                        action.append(node("span", "material-symbols-outlined", order.status === "CONFIRMED" ? "local_cafe" : "check"), node("span", "", order.status === "CONFIRMED" ? "BẮT ĐẦU PHA" : "HOÀN TẤT ĐƠN"));
+                        action.addEventListener("click", () => updateOrderStatus(order.id, order.status === "CONFIRMED" ? "PREPARING" : "READY"));
+                        footer.appendChild(action);
+                        if (!canAct) footer.appendChild(node("div", "text-center text-secondary mt-2", "Đang chờ theo thứ tự FIFO"));
+                    }
+                    ticket.append(header, body, footer);
+                    return ticket;
+                }
 
-        const date = new Date(createdAt);
+                function createItem(item) {
+                    const row = node("div", "ticket-item d-flex align-items-start gap-2");
+                    row.appendChild(node("span", "item-qty", (item.quantity ?? 0) + "×"));
+                    const detail = node("div", "flex-grow-1 min-width-0");
+                    detail.appendChild(node("div", "item-name", item.productName || "Sản phẩm"));
+                    const customizations = parseCustomization(item.customization);
+                    if (customizations.length) {
+                        const tags = node("div", "d-flex flex-wrap gap-1 mt-2");
+                        customizations.forEach(value => tags.appendChild(node("span", "item-tag", value)));
+                        detail.appendChild(tags);
+                    }
+                    row.appendChild(detail);
+                    return row;
+                }
 
-        if (Number.isNaN(date.getTime())) {
-            return String(createdAt);
-        }
+                async function updateOrderStatus(orderId, status) {
+                    if (isUpdating) return;
+                    isUpdating = true;
+                    clearTimeout(refreshTimer);
+                    renderOrders();
+                    try {
+                        const body = new URLSearchParams({ action: "update-order-status", orderId: String(orderId), status, csrfToken: document.body.dataset.csrfToken });
+                        const response = await fetch(contextPath + "/barista", {
+                            method: "POST", credentials: "same-origin",
+                            headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" }, body
+                        });
+                        await readJson(response);
+                        showToast(status === "PREPARING" ? "Đã bắt đầu pha chế đơn" : "Đơn đã hoàn tất và sẵn sàng bàn giao");
+                    } catch (error) {
+                        showError(error.message);
+                    } finally {
+                        isUpdating = false;
+                        await loadOrders();
+                    }
+                }
 
-        return date.toLocaleTimeString("vi-VN", {
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-    }
+                function detectNewOrders() {
+                    let hasNew = false;
+                    currentOrders.forEach(order => {
+                        const id = String(order.id);
+                        if (notificationInitialized && order.status === "CONFIRMED" && !seenOrderIds.has(id)) hasNew = true;
+                        seenOrderIds.add(id);
+                    });
+                    if (hasNew) { playNotificationSound(); showToast("Có đơn mới vừa vào hàng chờ pha chế"); }
+                    notificationInitialized = true;
+                }
 
-    function showError(message) {
-        errorMessage.textContent = message;
-        errorMessage.hidden = false;
-    }
+                function parseCustomization(customization) {
+                    if (!customization) return [];
+                    let value = customization;
+                    if (typeof value === "string") {
+                        try { value = JSON.parse(value); } catch (error) { return [customization]; }
+                    }
+                    if (Array.isArray(value)) return value.map(String);
+                    if (value && typeof value === "object") {
+                        const labels = { size: "Size", sugar: "Đường", ice: "Đá", toppings: "Topping" };
+                        return Object.entries(value).flatMap(([key, entry]) => {
+                            if (entry === null || entry === undefined || entry === "") return [];
+                            const prefix = labels[key] || key;
+                            return Array.isArray(entry) ? entry.map(item => prefix + ": " + (item.name || item)) : [prefix + ": " + entry];
+                        });
+                    }
+                    return [String(value)];
+                }
 
-    function hideError() {
-        errorMessage.textContent = "";
-        errorMessage.hidden = true;
-    }
+                function getOrderTarget(order) {
+                    if (order.orderType === "DINE_IN") return order.tableNumber ? "Bàn " + order.tableNumber + " (Tại quán)" : "Dùng tại quán";
+                    if (order.orderType === "ONLINE") return "Đơn giao hàng (Online)";
+                    return "Mang đi (Takeaway)";
+                }
 
-    loadOrders();
-</script>
+                function getStatusLabel(status) {
+                    return status === "CONFIRMED" ? "MỚI NHẬN" : status === "PREPARING" ? "ĐANG PHA" : "ĐÃ XONG";
+                }
 
-</body>
-</html>
+                function getAgeMinutes(createdAt) {
+                    const time = new Date(createdAt).getTime();
+                    return Number.isFinite(time) ? Math.max(0, Math.floor((Date.now() - time) / 60000)) : 0;
+                }
+
+                function formatDuration(totalMinutes) {
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    return (hours ? String(hours).padStart(2, "0") + ":" : "") + String(minutes).padStart(2, "0") + ":00";
+                }
+
+                updateSoundButton();
+                const initialError = document.getElementById("barista-initial-error").textContent.trim();
+                try {
+                    const initialData = JSON.parse(document.getElementById("barista-initial-data").textContent || "{}");
+                    if (Array.isArray(initialData.orders)) {
+                        currentOrders = sortOrders(initialData.orders);
+                        renderFilters(initialData.categories || []);
+                        updateStatistics(initialData.statistics || {});
+                        renderOrders();
+                        detectNewOrders();
+                    }
+                } catch (error) {
+                    showError("Không đọc được dữ liệu đơn hàng ban đầu.");
+                }
+                if (initialError) showError(initialError);
+                refreshTimer = setTimeout(loadOrders, refreshIntervalMs);
+            </script>
+        </body>
+
+        </html>
