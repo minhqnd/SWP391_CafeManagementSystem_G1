@@ -749,12 +749,8 @@
             variantsConfig: '${product.variantsConfig != null ? product.variantsConfig : "{}"}'
         };
 
-        var cart = JSON.parse(localStorage.getItem('aura_cart') || '[]');
-        // Tự động dọn dẹp các món lỗi font/ký tự ? cũ từ localStorage
-        cart = cart.filter(function(item) {
-            return item && item.name && item.name.indexOf('?') === -1;
-        });
-        localStorage.setItem('aura_cart', JSON.stringify(cart));
+        // Giỏ hàng lưu trong session phía server, trang chỉ giữ tổng số món để hiển thị
+        var cartCount = Number('${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}');
         var quantity = 1;
         var selectedSizePrice = 0;
         var selectedSizeName = '';
@@ -878,30 +874,34 @@
         }
 
         function addToCart() {
-            var base = productData.basePrice;
-            var toppingTotal = 0;
-            var toppingNames = [];
-            selectedToppings.forEach(function (t) {
-                toppingTotal += t.price;
-                toppingNames.push(t.name);
-            });
+            // Gửi món vào giỏ hàng (CartController - /cart/add), giá được tính lại ở server
+            var params = new URLSearchParams();
+            params.append('productId', productData.id);
+            params.append('quantity', quantity);
+            params.append('size', selectedSizeName || '');
+            selectedToppings.forEach(function (t) { params.append('topping', t.name); });
 
-            var unitPrice = base + selectedSizePrice + toppingTotal;
+            fetch('${pageContext.request.contextPath}/cart/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString()
+            })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (!data.success) {
+                        alert(data.error || 'Không thể thêm món vào giỏ hàng.');
+                        return;
+                    }
+                    cartCount = data.totalItems;
+                    updateCartBadge();
+                    showAddedFeedback();
+                })
+                .catch(function () {
+                    alert('Không thể kết nối máy chủ. Vui lòng thử lại!');
+                });
+        }
 
-            cart.push({
-                id: productData.id,
-                name: productData.name,
-                imageUrl: productData.imageUrl,
-                size: selectedSizeName || 'Tiêu chuẩn',
-                toppings: toppingNames,
-                unitPrice: unitPrice,
-                quantity: quantity,
-                subtotal: unitPrice * quantity
-            });
-
-            localStorage.setItem('aura_cart', JSON.stringify(cart));
-            updateCartBadge();
-
+        function showAddedFeedback() {
             // Show toast
             var toastMsg = document.getElementById('cartToastMessage');
             if (toastMsg) {
@@ -929,12 +929,8 @@
         }
 
         function updateCartBadge() {
-            var totalItems = 0;
-            for (var i = 0; i < cart.length; i++) {
-                totalItems += (cart[i].quantity || 1);
-            }
             var headerBadge = document.getElementById('headerCartBadge');
-            if (headerBadge) headerBadge.innerText = totalItems;
+            if (headerBadge) headerBadge.innerText = cartCount;
         }
     </script>
 
