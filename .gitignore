@@ -32,3 +32,4 @@ target/
 .DS_Store
 Thumbs.db
 *.log
+/cafe_system-main
