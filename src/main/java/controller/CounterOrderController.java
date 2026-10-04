@@ -49,14 +49,19 @@ public class CounterOrderController extends HttpServlet {
             if (accept != null && accept.contains("application/json")) {
                 sendJson(response, HttpServletResponse.SC_UNAUTHORIZED, "{\"success\":false,\"error\":\"Vui lòng đăng nhập.\"}");
             } else {
-                response.sendRedirect(request.getContextPath() + "/?login=true");
+                response.sendRedirect(request.getContextPath() + "/login");
             }
             return false;
         }
 
         String role = user.getRole();
         if (!"ACTIVE".equalsIgnoreCase(user.getStatus()) || (!"STAFF".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role))) {
-            sendJson(response, HttpServletResponse.SC_FORBIDDEN, "{\"success\":false,\"error\":\"Chỉ nhân viên hoặc quản trị viên được phép truy cập POS.\"}");
+            String accept = request.getHeader("Accept");
+            if (accept != null && accept.contains("application/json")) {
+                sendJson(response, HttpServletResponse.SC_FORBIDDEN, "{\"success\":false,\"error\":\"Chỉ nhân viên hoặc quản trị viên được phép truy cập POS.\"}");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/login?error=unauthorized");
+            }
             return false;
         }
 
