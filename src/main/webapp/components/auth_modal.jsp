@@ -259,15 +259,18 @@
                                                                         <input type="password" id="reg-password"
                                                                             class="form-control bg-light border-0 p-2"
                                                                             name="password"
-                                                                            placeholder="Tối thiểu 6 ký tự" minlength="6" required>
+                                                                            placeholder="Tối thiểu 6 ký tự"
+                                                                            minlength="6" required>
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label fw-medium"
-                                                                            style="font-size: 0.85rem;">Xác nhận mật khẩu</label>
+                                                                            style="font-size: 0.85rem;">Xác nhận mật
+                                                                            khẩu</label>
                                                                         <input type="password" id="reg-confirm-password"
                                                                             class="form-control bg-light border-0 p-2"
                                                                             name="confirm_password"
-                                                                            placeholder="Nhập lại mật khẩu" minlength="6" required>
+                                                                            placeholder="Nhập lại mật khẩu"
+                                                                            minlength="6" required>
                                                                     </div>
                                                                     <button type="submit"
                                                                         class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
