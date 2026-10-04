@@ -1,25 +1,208 @@
 package controller;
 
+import dao.OrderDAO;
+import model.Order;
+import model.OrderDetail;
+import model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
-@WebServlet(name = "BaristaController", urlPatterns = {"/barista"})
+@WebServlet(name = "BaristaController", urlPatterns = { "/barista" })
 public class BaristaController extends HttpServlet {
+    private final OrderDAO orderDAO;
+
+    public BaristaController() {
+        this(new OrderDAO());
+    }
+
+    // Package access allows controller tests without a live database.
+    BaristaController(OrderDAO orderDAO) {
+        this.orderDAO = orderDAO;
+    }
+
+    private boolean authorize(HttpServletRequest request, HttpServletResponse response,
+                              boolean api) throws IOException {
+        response.setHeader("Cache-Control", "no-store");
+        HttpSession session = request.getSession(false);
+        User user = session == null ? null : (User) session.getAttribute("user");
+        if (user == null) {
+            if (api) {
+                error(response, 401, "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/login");
+            }
+            return false;
+        }
+        if (!"ACTIVE".equals(user.getStatus()) || !"STAFF".equals(user.getRole())
+                || !"BARISTA".equals(user.getPosition())) {
+            error(response, 403, "Chỉ nhân viên Barista đang hoạt động được truy cập.");
+            return false;
+        }
+        return true;
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO: Xử lý hiển thị hàng chờ các món cần pha chế
+        String action = request.getParameter("action");
+        if (!authorize(request, response, action != null)) {
+            return;
+        }
+        if (action == null || action.isBlank()) {
+            HttpSession session = request.getSession(false);
+            synchronized (session) {
+                if (session.getAttribute("baristaCsrfToken") == null) {
+                    session.setAttribute("baristaCsrfToken", UUID.randomUUID().toString());
+                }
+            }
+            request.setAttribute("baristaDashboard", true);
+            request.getRequestDispatcher("/barista-dashboard.jsp").forward(request, response);
+            return;
+        }
+        if (!"orders".equals(action)) {
+            error(response, 400, "Chức năng chưa được hỗ trợ.");
+            return;
+        }
+        try {
+            writeJson(response, 200, dashboardData(orderDAO.getOrdersForBarista()));
+        } catch (SQLException | ClassNotFoundException e) {
+            getServletContext().log("Cannot load barista orders", e);
+            error(response, 500, "Không tải được đơn hàng. Vui lòng thử lại.");
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        // TODO: Xử lý cập nhật trạng thái món/đơn (đang làm, đã xong)
+            throws IOException {
+        request.setCharacterEncoding("UTF-8");
+        if (!authorize(request, response, true)) {
+            return;
+        }
+        Object token = request.getSession(false).getAttribute("baristaCsrfToken");
+        if (!(token instanceof String) || !token.equals(request.getParameter("csrfToken"))) {
+            error(response, 403, "Phiên thao tác không hợp lệ. Vui lòng tải lại trang.");
+            return;
+        }
+        if (!"update-order-status".equals(request.getParameter("action"))) {
+            error(response, 400, "Thao tác không hợp lệ.");
+            return;
+        }
+        try {
+            int orderId = Integer.parseInt(request.getParameter("orderId"));
+            String status = request.getParameter("status");
+            if (!orderDAO.updateBaristaOrderStatus(orderId, status)) {
+                error(response, 409,
+                        "Đơn đã thay đổi hoặc chưa đến lượt. Vui lòng tải lại hàng đợi.");
+                return;
+            }
+            writeJson(response, 200, Map.of("success", true));
+        } catch (IllegalArgumentException e) {
+            error(response, 400, "Mã đơn hoặc trạng thái không hợp lệ.");
+        } catch (SQLException | ClassNotFoundException e) {
+            getServletContext().log("Cannot update barista order", e);
+            error(response, 500, "Không cập nhật được đơn hàng. Vui lòng tải lại và thử lại.");
+        }
+    }
+
+    // UI projection: no payment status, item status or completion time is fabricated.
+    static Map<String, Object> dashboardData(List<Order> orders) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        List<Map<String, Object>> rows = new ArrayList<>();
+        Map<Integer, String> categories = new LinkedHashMap<>();
+        for (Order order : orders) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", order.getId());
+            row.put("orderCode", order.getOrderCode());
+            row.put("orderType", order.getOrderType());
+            row.put("status", order.getStatus());
+            row.put("createdAt", order.getCreatedAt());
+            row.put("tableNumber", order.getTableNumber());
+            row.put("recipientName", order.getRecipientName());
+            row.put("orderNote", order.getOrderNote());
+            row.put("itemCount", order.getItemCount());
+            List<Map<String, Object>> items = new ArrayList<>();
+            for (OrderDetail item : order.getItems()) {
+                Map<String, Object> detail = new LinkedHashMap<>();
+                detail.put("id", item.getId());
+                detail.put("productName", item.getProductName());
+                detail.put("quantity", item.getQuantity());
+                detail.put("customization", item.getCustomization());
+                detail.put("categoryId", item.getCategoryId());
+                detail.put("categoryName", item.getCategoryName());
+                items.add(detail);
+                categories.put(item.getCategoryId(), item.getCategoryName());
+            }
+            row.put("items", items);
+            rows.add(row);
+        }
+        data.put("orders", rows);
+        data.put("statistics", Map.of(
+                "waiting", orders.stream().filter(o -> "CONFIRMED".equals(o.getStatus())).count(),
+                "preparing", orders.stream().filter(o -> "PREPARING".equals(o.getStatus())).count(),
+                "ready", orders.stream().filter(o -> "READY".equals(o.getStatus())).count()));
+        data.put("categories", categories.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> Map.of("id", e.getKey(), "name", e.getValue()))
+                .collect(Collectors.toList()));
+        return data;
+    }
+
+    private void error(HttpServletResponse response, int status, String message)
+            throws IOException {
+        writeJson(response, status, Map.of("message", message));
+    }
+
+    private void writeJson(HttpServletResponse response, int status, Object data)
+            throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(json(data));
+    }
+
+    // Minimal JSON writer for the explicit Map/List/scalar projection above.
+    static String json(Object value) {
+        if (value == null) {
+            return "null";
+        }
+        if (value instanceof Number || value instanceof Boolean) {
+            return value.toString();
+        }
+        if (value instanceof Map<?, ?> map) {
+            return map.entrySet().stream()
+                    .map(e -> json(e.getKey().toString()) + ":" + json(e.getValue()))
+                    .collect(Collectors.joining(",", "{", "}"));
+        }
+        if (value instanceof Iterable<?> values) {
+            List<String> parts = new ArrayList<>();
+            for (Object item : values) {
+                parts.add(json(item));
+            }
+            return "[" + String.join(",", parts) + "]";
+        }
+        StringBuilder result = new StringBuilder("\"");
+        for (char ch : value.toString().toCharArray()) {
+            if (ch == '"' || ch == '\\') {
+                result.append('\\').append(ch);
+            } else if (ch < 0x20) {
+                result.append(String.format("\\u%04x", (int) ch));
+            } else {
+                result.append(ch);
+            }
+        }
+        return result.append('"').toString();
     }
 }
