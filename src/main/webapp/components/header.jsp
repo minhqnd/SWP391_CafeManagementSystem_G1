@@ -85,7 +85,7 @@
                    style="transition: background-color 0.2s;" title="Giỏ hàng">
                     <span class="material-symbols-outlined fs-5 text-secondary">shopping_bag</span>
                     <span class="fw-semibold d-none d-sm-inline" style="font-size: 0.88rem;">Giỏ hàng</span>
-                    <span id="headerCartBadge" class="badge rounded-pill bg-danger" style="font-size: 0.72rem;">0</span>
+                    <span id="headerCartBadge" class="badge rounded-pill bg-danger" style="font-size: 0.72rem;">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span>
                 </a>
 
                 <!-- Profile / Auth Button -->
@@ -125,18 +125,3 @@
         </div>
     </div>
 </nav>
-
-<script>
-    // Đồng bộ số lượng giỏ hàng trên tất cả các trang
-    (function syncHeaderCart() {
-        try {
-            var cartData = JSON.parse(localStorage.getItem('aura_cart') || '[]');
-            var count = 0;
-            for (var i = 0; i < cartData.length; i++) {
-                count += (cartData[i].quantity || 1);
-            }
-            var badge = document.getElementById('headerCartBadge');
-            if (badge) badge.innerText = count;
-        } catch (e) {}
-    })();
-</script>

@@ -2,7 +2,9 @@
     <% /* Xy ly activeTab tu session/request */ String activeTab=request.getParameter("tab"); if (activeTab==null) {
         activeTab=(String) request.getAttribute("activeTab"); } if (activeTab==null) { activeTab="login" ; } boolean
         isLoginTab="login" .equals(activeTab); boolean isRegisterTab="register" .equals(activeTab); boolean
-        isForgotTab="forgot" .equals(activeTab); %>
+        isForgotTab="forgot" .equals(activeTab);
+        /* Trang cần quay lại sau khi đăng nhập / đăng ký (VD: /checkout), do Controller đặt sẵn */
+        String authRedirect=(String) request.getAttribute("authRedirect"); %>
         <style>
             :root {
                 --surface-container-lowest: #ffffff;
@@ -185,6 +187,9 @@
                                                         </div>
                                                         <form action="${pageContext.request.contextPath}/login"
                                                             method="POST">
+                                                            <% if (authRedirect != null) { %>
+                                                                <input type="hidden" name="redirect" value="<%= authRedirect %>">
+                                                            <% } %>
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium"
                                                                     style="font-size: 0.85rem;">Số điện thoại /
@@ -220,6 +225,9 @@
                                                         </div>
                                                         <form action="${pageContext.request.contextPath}/register"
                                                             method="POST">
+                                                            <% if (authRedirect != null) { %>
+                                                                <input type="hidden" name="redirect" value="<%= authRedirect %>">
+                                                            <% } %>
                                                             <div class="row g-2 mb-3">
                                                                 <div class="col-12">
                                                                     <label class="form-label fw-medium"
