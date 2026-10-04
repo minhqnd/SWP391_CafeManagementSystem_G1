@@ -20,16 +20,20 @@ public class ProfileController extends HttpServlet {
         int nextPoints = 300;
 
         if (points < 300) {
-            currentDisplayTier = "SILVER";
+            currentDisplayTier = "MEMBER";
             nextTier = "Vàng";
             nextPoints = 300;
         } else if (points < 800) {
             currentDisplayTier = "GOLD";
             nextTier = "Kim Cương";
             nextPoints = 800;
-        } else {
+        } else if (points < 1500) {
             currentDisplayTier = "DIAMOND";
             nextTier = "VIP";
+            nextPoints = 1500;
+        } else {
+            currentDisplayTier = "VIP";
+            nextTier = "Tối đa";
             nextPoints = points;
         }
 
@@ -91,15 +95,15 @@ public class ProfileController extends HttpServlet {
             // Backend validation
             if (fullName == null || fullName.trim().isEmpty()) {
                 request.setAttribute("errorMsg", "Họ và tên không được để trống!");
-            } else if (phone == null || !phone.matches("^(84|0)[3|5|7|8|9][0-9]{8}$")) {
+            } else if (phone != null && !phone.trim().isEmpty() && !phone.matches("^[0-9]{9,15}$")) {
                 request.setAttribute("errorMsg", "Số điện thoại không hợp lệ!");
-            } else if (email == null || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            } else if (email != null && !email.trim().isEmpty() && !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
                 request.setAttribute("errorMsg", "Địa chỉ email không hợp lệ!");
             } else {
                 dao.UserDAO userDAO = new dao.UserDAO();
-                boolean success = userDAO.updateUserProfile(user.getId(), fullName, phone, email, birthday, address);
+                String updateResult = userDAO.updateUserProfile(user.getId(), fullName, phone, email, birthday, address);
                 
-                if (success) {
+                if ("success".equals(updateResult)) {
                     user.setFullName(fullName);
                     user.setPhone(phone);
                     user.setEmail(email);
@@ -108,7 +112,7 @@ public class ProfileController extends HttpServlet {
                     session.setAttribute("user", user);
                     request.setAttribute("successMsg", "Cập nhật thông tin thành công!");
                 } else {
-                    request.setAttribute("errorMsg", "Cập nhật thất bại. Vui lòng thử lại!");
+                    request.setAttribute("errorMsg", updateResult);
                 }
             }
         } else if ("changePassword".equals(action)) {

@@ -14,7 +14,7 @@ public class DBContext {
     private static final String PORT = "3306";
     private static final String DB_NAME = "aura_cafe_erp";
     private static final String USER = "root";
-    private static final String PASSWORD = "khoa0374684101";
+    private static final String PASSWORD = "1234";
 
     private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DB_NAME
             + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";

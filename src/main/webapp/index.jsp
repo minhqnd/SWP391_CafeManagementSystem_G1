@@ -349,74 +349,94 @@
         </div>
 
         <div class="row g-4 align-items-stretch">
-            <!-- Silver -->
-            <div class="col-lg-4">
+            <!-- Member -->
+            <div class="col-lg-3 col-md-6">
                 <div class="tier-card tier-silver">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div class="rounded-3 bg-light d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                            <span class="material-symbols-outlined text-secondary">military_tech</span>
+                            <span class="material-symbols-outlined text-secondary">account_circle</span>
                         </div>
-                        <span class="badge bg-light text-secondary border text-uppercase">Khởi đầu</span>
+                        <span class="badge bg-light text-secondary border text-uppercase" style="font-size: 0.6rem;">Khởi đầu</span>
                     </div>
-                    <h3 class="fs-3 fw-bold mb-1">Silver Member</h3>
-                    <p class="text-secondary-custom mb-3" style="font-size: 0.875rem;">Tích lũy từ 0 - 299 Điểm</p>
+                    <h3 class="fs-4 fw-bold mb-1">Thành viên</h3>
+                    <p class="text-secondary-custom mb-3" style="font-size: 0.8rem;">Tích lũy 0 - 299 Điểm</p>
                     <div class="progress mb-4" style="height: 6px;">
-                        <div class="progress-bar bg-secondary" role="progressbar" style="width: 33%"></div>
+                        <div class="progress-bar bg-secondary" role="progressbar" style="width: 25%"></div>
                     </div>
-                    <ul class="list-unstyled flex-grow-1 text-secondary-custom" style="font-size: 0.875rem; line-height: 1.8;">
-                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Tích luỹ <strong>1 Điểm</strong> cho mỗi 10.000đ</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Tặng 01 E-Voucher 20% tháng sinh nhật</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Đổi voucher món ăn kèm chỉ từ 50 Điểm</li>
+                    <ul class="list-unstyled flex-grow-1 text-secondary-custom" style="font-size: 0.8rem; line-height: 1.8;">
+                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.1rem;">check_circle</span> Tích luỹ 5% trên hóa đơn</li>
+                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.1rem;">check_circle</span> Tặng E-Voucher 20.000đ</li>
                     </ul>
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-light w-100 fw-semibold mt-4">Xem chi tiết hạng Silver</a>
+                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-light w-100 fw-semibold mt-4 text-secondary" style="font-size: 0.85rem;">Chi tiết hạng</a>
                 </div>
             </div>
             
             <!-- Gold -->
-            <div class="col-lg-4">
-                <div class="tier-card tier-gold">
+            <div class="col-lg-3 col-md-6">
+                <div class="tier-card tier-gold h-100">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div class="rounded-3 d-flex align-items-center justify-content-center text-white" style="width: 48px; height: 48px; background-color: #95815a;">
-                            <span class="material-symbols-outlined">workspace_premium</span>
+                            <span class="material-symbols-outlined">stars</span>
                         </div>
-                        <span class="badge text-white text-uppercase" style="background-color: #95815a;">Phổ biến nhất</span>
+                        <span class="badge text-white text-uppercase" style="background-color: #95815a; font-size: 0.6rem;">Phổ biến nhất</span>
                     </div>
-                    <h3 class="fs-3 fw-bold mb-1" style="color: #6b5c3f;">Gold Member</h3>
-                    <p class="text-secondary-custom mb-3" style="font-size: 0.875rem;">Tích lũy từ 300 - 799 Điểm</p>
+                    <h3 class="fs-4 fw-bold mb-1" style="color: #6b5c3f;">Vàng (Gold)</h3>
+                    <p class="text-secondary-custom mb-3" style="font-size: 0.8rem;">Tích lũy 300 - 799 Điểm</p>
                     <div class="progress mb-4" style="height: 6px;">
-                        <div class="progress-bar" role="progressbar" style="width: 66%; background-color: #95815a;"></div>
+                        <div class="progress-bar" role="progressbar" style="width: 50%; background-color: #95815a;"></div>
                     </div>
-                    <ul class="list-unstyled flex-grow-1 text-secondary-custom" style="font-size: 0.875rem; line-height: 1.8;">
-                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Tích luỹ nhân hệ số <strong>x1.5 Điểm</strong></li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Tặng 01 Ly đồ uống miễn phí tháng sinh nhật</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Miễn phí nâng cấp Size 2 lần/tháng</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Ưu tiên pha chế giờ cao điểm tại quầy</li>
+                    <ul class="list-unstyled flex-grow-1 text-secondary-custom" style="font-size: 0.8rem; line-height: 1.8;">
+                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.1rem;">check_circle</span> Tích luỹ 10% đơn hàng</li>
+                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.1rem;">check_circle</span> Tặng 01 bánh ngọt sinh nhật</li>
+                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.1rem;">check_circle</span> Miễn phí Upsize T3</li>
                     </ul>
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn w-100 fw-semibold text-white mt-4" style="background-color: #95815a;">Đặc quyền Gold Member</a>
+                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn w-100 fw-semibold text-white mt-4" style="background-color: #95815a; font-size: 0.85rem;">Đặc quyền Gold</a>
                 </div>
             </div>
             
             <!-- Diamond -->
-            <div class="col-lg-4">
-                <div class="tier-card tier-diamond">
+            <div class="col-lg-3 col-md-6">
+                <div class="tier-card h-100" style="background: white; border: 1px solid var(--surface-container-high); box-shadow: 0 4px 15px rgba(0,0,0,0.03); border-radius: 1rem; padding: 2rem;">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="rounded-3 bg-primary-custom d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center text-white" style="width: 48px; height: 48px; background-color: #9c27b0;">
                             <span class="material-symbols-outlined">diamond</span>
                         </div>
-                        <span class="badge text-white text-uppercase" style="background-color: #b2292e;">VIP Tối thượng</span>
+                        <span class="badge text-white text-uppercase" style="background-color: #9c27b0; font-size: 0.6rem;">Cao cấp</span>
                     </div>
-                    <h3 class="fs-3 fw-bold mb-1">Diamond Member</h3>
-                    <p class="text-white-50 mb-3" style="font-size: 0.875rem;">Tích lũy từ 800 Điểm trở lên</p>
-                    <div class="progress mb-4" style="height: 6px; background-color: rgba(255,255,255,0.2);">
-                        <div class="progress-bar bg-primary-custom" role="progressbar" style="width: 100%;"></div>
+                    <h3 class="fs-4 fw-bold mb-1" style="color: #9c27b0;">Kim Cương</h3>
+                    <p class="text-secondary-custom mb-3" style="font-size: 0.8rem;">Tích lũy 800 - 1499 Điểm</p>
+                    <div class="progress mb-4" style="height: 6px;">
+                        <div class="progress-bar" role="progressbar" style="width: 75%; background-color: #9c27b0;"></div>
                     </div>
-                    <ul class="list-unstyled flex-grow-1 text-white-50" style="font-size: 0.875rem; line-height: 1.8;">
-                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> <span class="text-white">Tích luỹ nhân hệ số <strong>x2.0 Điểm</strong> toàn diện</span></li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> Combo Sinh nhật: Bánh ngọt + Đồ uống</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> Miễn phí giao hàng không giới hạn khoảng cách</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> Lời mời tham dự Workshop Cà phê thử nếm</li>
+                    <ul class="list-unstyled flex-grow-1 text-secondary-custom" style="font-size: 0.8rem; line-height: 1.8;">
+                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.1rem;">check_circle</span> Tích luỹ 12% toàn diện</li>
+                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.1rem;">check_circle</span> Miễn phí giao hàng >50k</li>
+                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.1rem;">check_circle</span> Hỗ trợ riêng biệt 24/7</li>
                     </ul>
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-light w-100 fw-semibold mt-4 text-dark">Gia nhập Diamond Club</a>
+                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn w-100 fw-semibold text-white mt-4" style="background-color: #9c27b0; font-size: 0.85rem;">Gia nhập Diamond</a>
+                </div>
+            </div>
+
+            <!-- VIP -->
+            <div class="col-lg-3 col-md-6">
+                <div class="tier-card tier-diamond h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="rounded-3 bg-dark d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border: 1px solid rgba(255,255,255,0.2);">
+                            <span class="material-symbols-outlined text-warning">workspace_premium</span>
+                        </div>
+                        <span class="badge text-white text-uppercase" style="background-color: #b2292e; font-size: 0.6rem;">VIP Tối thượng</span>
+                    </div>
+                    <h3 class="fs-4 fw-bold mb-1">Hạng VIP</h3>
+                    <p class="text-white-50 mb-3" style="font-size: 0.8rem;">Tích lũy từ 1500 Điểm</p>
+                    <div class="progress mb-4" style="height: 6px; background-color: rgba(255,255,255,0.2);">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;"></div>
+                    </div>
+                    <ul class="list-unstyled flex-grow-1 text-white-50" style="font-size: 0.8rem; line-height: 1.8;">
+                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-warning" style="font-size: 1.1rem;">verified</span> <span class="text-white">Tích luỹ 15% trọn đời</span></li>
+                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-warning" style="font-size: 1.1rem;">verified</span> Workshop Cà phê thử nếm</li>
+                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-warning" style="font-size: 1.1rem;">verified</span> Set quà VIP cuối năm</li>
+                    </ul>
+                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-warning w-100 fw-semibold mt-4 text-dark" style="font-size: 0.85rem;">Đặc quyền VIP</a>
                 </div>
             </div>
         </div>

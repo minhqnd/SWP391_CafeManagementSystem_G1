@@ -107,7 +107,7 @@ public class UserDAO extends BaseDAO {
         }
         return false;
     }
-    public boolean updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
+    public String updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
         String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ? WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -124,11 +124,14 @@ public class UserDAO extends BaseDAO {
             ps.setString(5, address);
             ps.setInt(6, userId);
             
-            return ps.executeUpdate() > 0;
+            int updated = ps.executeUpdate();
+            return updated > 0 ? "success" : "Cập nhật thất bại, không có thay đổi nào.";
+        } catch (java.sql.SQLIntegrityConstraintViolationException e) {
+            return "Số điện thoại hoặc Email đã được sử dụng bởi tài khoản khác!";
         } catch (Exception e) {
             e.printStackTrace();
+            return "Lỗi hệ thống: " + e.getMessage();
         }
-        return false;
     }
 
     /** Điểm Aura hiện tại (đọc lại sau khi thanh toán / đổi điểm để cập nhật user trong session) */
