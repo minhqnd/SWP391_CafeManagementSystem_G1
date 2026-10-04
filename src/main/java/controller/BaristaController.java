@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@WebServlet(name = "BaristaController", urlPatterns = { "/barista" })
+@WebServlet(name = "BaristaController", urlPatterns = { "/barista", "/barista/orders" })
 public class BaristaController extends HttpServlet {
     private final OrderDAO orderDAO;
 
@@ -58,27 +58,37 @@ public class BaristaController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
-        if (!authorize(request, response, action != null)) {
+        boolean ordersApi = "/barista/orders".equals(request.getServletPath())
+                || "orders".equals(action);
+        if (!authorize(request, response, ordersApi)) {
             return;
         }
-        if (action == null || action.isBlank()) {
+        if (!ordersApi && (action == null || action.isBlank())) {
             HttpSession session = request.getSession(false);
             synchronized (session) {
                 if (session.getAttribute("baristaCsrfToken") == null) {
                     session.setAttribute("baristaCsrfToken", UUID.randomUUID().toString());
                 }
             }
+            try {
+                request.setAttribute("baristaInitialData",
+                        json(dashboardData(orderDAO.getOrdersForBarista())));
+            } catch (SQLException | ClassNotFoundException | RuntimeException e) {
+                getServletContext().log("Cannot load initial barista orders", e);
+                request.setAttribute("baristaInitialError",
+                        "Không tải được đơn hàng từ cơ sở dữ liệu.");
+            }
             request.setAttribute("baristaDashboard", true);
             request.getRequestDispatcher("/barista-dashboard.jsp").forward(request, response);
             return;
         }
-        if (!"orders".equals(action)) {
+        if (!ordersApi) {
             error(response, 400, "Chức năng chưa được hỗ trợ.");
             return;
         }
         try {
             writeJson(response, 200, dashboardData(orderDAO.getOrdersForBarista()));
-        } catch (SQLException | ClassNotFoundException e) {
+        } catch (SQLException | ClassNotFoundException | RuntimeException e) {
             getServletContext().log("Cannot load barista orders", e);
             error(response, 500, "Không tải được đơn hàng. Vui lòng thử lại.");
         }
@@ -197,7 +207,7 @@ public class BaristaController extends HttpServlet {
         for (char ch : value.toString().toCharArray()) {
             if (ch == '"' || ch == '\\') {
                 result.append('\\').append(ch);
-            } else if (ch < 0x20) {
+            } else if (ch < 0x20 || ch == '<' || ch == '>' || ch == '&') {
                 result.append(String.format("\\u%04x", (int) ch));
             } else {
                 result.append(ch);
