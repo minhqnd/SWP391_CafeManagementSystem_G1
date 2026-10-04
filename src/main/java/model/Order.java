@@ -30,6 +30,17 @@ public class Order implements Serializable {
     private String tableNumber;
     private String orderNote;
     private LocalDateTime createdAt;
+    private Integer voucherId;
+    private String orderType;   // DINE_IN, TAKEAWAY, ONLINE
+    private String status;      // PENDING, CONFIRMED, PREPARING, READY, DELIVERING, COMPLETED, CANCELLED
+    private double totalAmount;
+    private double discountAmount;
+    private double deliveryFee;
+    private double finalAmount;
+    private String recipientName;
+    private String recipientPhone;
+    private String deliveryAddress;
+    private String orderNote;
 
     public Order() {
     }
@@ -157,6 +168,35 @@ public class Order implements Serializable {
     }
 
     public void setFinalAmount(BigDecimal finalAmount) {
+    public double getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public double getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(double discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public double getDeliveryFee() {
+        return deliveryFee;
+    }
+
+    public void setDeliveryFee(double deliveryFee) {
+        this.deliveryFee = deliveryFee;
+    }
+
+    public double getFinalAmount() {
+        return finalAmount;
+    }
+
+    public void setFinalAmount(double finalAmount) {
         this.finalAmount = finalAmount;
     }
 

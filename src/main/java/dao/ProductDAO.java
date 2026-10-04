@@ -14,16 +14,32 @@ import java.util.List;
  */
 public class ProductDAO extends BaseDAO {
 
+    private boolean hasColumn(ResultSet rs, String columnName) throws Exception {
+        java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+        int columns = rsmd.getColumnCount();
+        for (int x = 1; x <= columns; x++) {
+            if (columnName.equalsIgnoreCase(rsmd.getColumnName(x)) || 
+                columnName.equalsIgnoreCase(rsmd.getColumnLabel(x))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Product mapResultSetToProduct(ResultSet rs) throws Exception {
+        String desc = hasColumn(rs, "description") ? rs.getString("description") : null;
+        String badge = hasColumn(rs, "badge") ? rs.getString("badge") : null;
+        String subtitle = hasColumn(rs, "subtitle") ? rs.getString("subtitle") : null;
+        
         return new Product(
                 rs.getInt("id"),
                 rs.getInt("category_id"),
-                rs.getString("category_name"),
+                hasColumn(rs, "category_name") ? rs.getString("category_name") : null,
                 rs.getString("name"),
                 rs.getDouble("base_price"),
-                rs.getString("description"),
-                rs.getString("badge"),
-                rs.getString("subtitle"),
+                desc,
+                badge,
+                subtitle,
                 rs.getString("variants_config"),
                 rs.getString("image_url"),
                 rs.getBoolean("is_available")
@@ -207,5 +223,35 @@ public class ProductDAO extends BaseDAO {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    /**
+     * Lấy danh sách sản phẩm liên quan (cùng danh mục), loại trừ sản phẩm hiện tại
+     */
+    public List<Product> getRelatedProducts(int categoryId, int excludeProductId, int limit) {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.name AS category_name " +
+                     "FROM products p " +
+                     "JOIN categories c ON p.category_id = c.id " +
+                     "WHERE p.is_available = 1 AND p.category_id = ? AND p.id != ? " +
+                     "ORDER BY RAND() " +
+                     "LIMIT ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, categoryId);
+            ps.setInt(2, excludeProductId);
+            ps.setInt(3, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }

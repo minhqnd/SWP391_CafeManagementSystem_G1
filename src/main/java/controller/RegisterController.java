@@ -2,6 +2,7 @@ package controller;
 
 import dao.UserDAO;
 import model.User;
+import utils.RedirectUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -48,13 +49,17 @@ public class RegisterController extends HttpServlet {
         newUser.setPosition(dbPosition);
         
         boolean isSuccess = userDAO.register(newUser, password);
-        
+
+        // Đăng ký từ trang Checkout -> quay lại đúng trang đó để đăng nhập và đặt hàng tiếp
+        String redirect = request.getParameter("redirect");
+        String backPath = RedirectUtil.isSafeLocalPath(redirect) ? redirect : "/";
+
         if (isSuccess) {
             request.getSession().setAttribute("successMsg", "Đăng ký thành công! Vui lòng đăng nhập.");
-            response.sendRedirect(request.getContextPath() + "/?tab=login");
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=login");
         } else {
             request.getSession().setAttribute("errorMsg", "Đăng ký thất bại. Email hoặc Số điện thoại có thể đã tồn tại.");
-            response.sendRedirect(request.getContextPath() + "/?tab=register");
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
         }
     }
 }

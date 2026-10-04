@@ -12,8 +12,38 @@ public class User implements Serializable {
     private String role;
     private String position;
     private String status;
+    private String birthday; // Stored as YYYY-MM-DD or standard Date string
+    private String address;
+    private String tierName;
+    private int totalPoints;
 
     public User() {
+    }
+
+    public User(int id, String fullName, String phone, String email, String role, String position, String status, String birthday, String address, String tierName, int totalPoints) {
+        this.id = id;
+        this.fullName = fullName;
+        this.phone = phone;
+        this.email = email;
+        this.role = role;
+        this.position = position;
+        this.status = status;
+        this.birthday = birthday;
+        this.address = address;
+        this.tierName = tierName;
+        this.totalPoints = totalPoints;
+    }
+
+    public User(int id, String fullName, String phone, String email, String role, String position, String status, String birthday, String address) {
+        this.id = id;
+        this.fullName = fullName;
+        this.phone = phone;
+        this.email = email;
+        this.role = role;
+        this.position = position;
+        this.status = status;
+        this.birthday = birthday;
+        this.address = address;
     }
 
     public User(int id, String fullName, String phone, String email, String role, String position, String status) {
@@ -80,5 +110,37 @@ public class User implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(String birthday) {
+        this.birthday = birthday;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getTierName() {
+        return tierName;
+    }
+
+    public void setTierName(String tierName) {
+        this.tierName = tierName;
+    }
+
+    public int getTotalPoints() {
+        return totalPoints;
+    }
+
+    public void setTotalPoints(int totalPoints) {
+        this.totalPoints = totalPoints;
     }
 }

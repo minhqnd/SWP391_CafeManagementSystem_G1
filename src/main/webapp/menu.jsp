@@ -10,8 +10,10 @@
                 <title>Aura Café | Menu & Đồ Uống</title>
 
                 <!-- Google Fonts & Icons -->
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
                 <link
-                    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+                    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
                     rel="stylesheet" />
                 <link
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
@@ -32,7 +34,9 @@
                     }
 
                     body {
-                        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+                        font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                        -webkit-font-smoothing: antialiased;
+                        -moz-osx-font-smoothing: grayscale;
                         background-color: var(--bg-body);
                         color: var(--text-main);
                         overflow-x: hidden;
@@ -118,31 +122,50 @@
                     .filter-pill {
                         display: inline-flex;
                         align-items: center;
-                        gap: 0.45rem;
-                        padding: 0.55rem 1.15rem;
+                        gap: 0.55rem;
+                        padding: 0.6rem 1.25rem;
                         border-radius: 999px;
-                        font-size: 0.88rem;
-                        font-weight: 500;
-                        color: #475569;
-                        background-color: #ffffff;
-                        border: 1px solid #e2e8f0;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        color: #334155;
+                        background: #ffffff;
+                        border: 1.5px solid #e2e8f0;
                         text-decoration: none;
                         white-space: nowrap;
-                        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+                        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+
+                    .filter-pill .material-symbols-outlined {
+                        font-size: 1.2rem;
+                        color: #64748b;
+                        transition: color 0.2s, transform 0.2s;
                     }
 
                     .filter-pill:hover {
                         color: var(--primary);
-                        background-color: var(--primary-soft);
-                        border-color: rgba(139, 21, 40, 0.25);
+                        background-color: #ffffff;
+                        border-color: rgba(139, 21, 40, 0.35);
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 16px rgba(139, 21, 40, 0.1);
+                    }
+
+                    .filter-pill:hover .material-symbols-outlined {
+                        color: var(--primary);
+                        transform: scale(1.1);
                     }
 
                     .filter-pill.active {
-                        background-color: var(--primary);
+                        background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%);
                         color: #ffffff !important;
-                        border-color: var(--primary);
-                        font-weight: 600;
-                        box-shadow: 0 4px 14px rgba(139, 21, 40, 0.22);
+                        border-color: transparent;
+                        font-weight: 700;
+                        transform: translateY(-1px);
+                        box-shadow: 0 6px 18px rgba(139, 21, 40, 0.32);
+                    }
+
+                    .filter-pill.active .material-symbols-outlined {
+                        color: #ffffff !important;
                     }
 
                     /* Minimalist Modern Product Card */
@@ -244,6 +267,7 @@
                         line-height: 1.45;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
+                        line-clamp: 2;
                         -webkit-box-orient: vertical;
                         overflow: hidden;
                         min-height: 2.3rem;
@@ -267,24 +291,26 @@
 
                     /* 1-Click Quick Add Button */
                     .btn-add-circle {
-                        width: 38px;
-                        height: 38px;
+                        width: 40px;
+                        height: 40px;
                         border-radius: 50%;
-                        background-color: var(--primary-soft);
+                        background-color: #ffffff;
                         color: var(--primary);
-                        border: 1px solid rgba(139, 21, 40, 0.15);
+                        border: 1.5px solid rgba(139, 21, 40, 0.22);
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        transition: all 0.2s ease;
+                        box-shadow: 0 2px 6px rgba(139, 21, 40, 0.06);
+                        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                        cursor: pointer;
                     }
 
                     .btn-add-circle:hover {
-                        background-color: var(--primary);
+                        background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%);
                         color: #ffffff;
-                        transform: scale(1.1);
-                        border-color: var(--primary);
-                        box-shadow: 0 4px 12px rgba(139, 21, 40, 0.3);
+                        transform: scale(1.12) rotate(90deg);
+                        border-color: transparent;
+                        box-shadow: 0 6px 18px rgba(139, 21, 40, 0.32);
                     }
 
                     /* Sticky Bottom Mini Cart Bar */
@@ -293,19 +319,28 @@
                         bottom: 24px;
                         left: 50%;
                         transform: translateX(-50%);
-                        background: #0f172a;
+                        background: rgba(15, 23, 42, 0.94);
+                        backdrop-filter: blur(16px);
+                        -webkit-backdrop-filter: blur(16px);
                         color: #ffffff;
-                        padding: 0.65rem 1.25rem;
+                        padding: 0.65rem 1.35rem;
                         border-radius: 999px;
-                        box-shadow: 0 12px 36px rgba(15, 23, 42, 0.35);
+                        border: 1px solid rgba(255, 255, 255, 0.12);
+                        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
                         gap: 1.75rem;
                         z-index: 1040;
-                        min-width: 350px;
+                        min-width: 360px;
                         max-width: 90vw;
                         animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                        transition: transform 0.2s ease, box-shadow 0.2s ease;
+                    }
+
+                    .sticky-cart-bar:hover {
+                        transform: translate(-50%, -2px);
+                        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
                     }
 
                     @keyframes slideUp {
@@ -504,8 +539,7 @@
                                 </c:if>
                             </c:url>
                             <a href="${catUrl}" class="filter-pill ${currentCategory == cat.id ? 'active' : ''}">
-                                <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon :
-                                    'local_cafe'}</span>
+                                <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon : 'local_cafe'}</span>
                                 <span>${cat.name}</span>
                             </a>
                         </c:forEach>
@@ -545,8 +579,7 @@
                                                     </a>
                                                 </h2>
                                                 <p class="product-brief" title="${p.description}">
-                                                    ${not empty p.description ? p.description : 'Đồ uống tinh hoa được
-                                                    tuyển chọn từ vùng nguyên liệu đặc sản.'}
+                                                    ${not empty p.description ? p.description : 'Đồ uống tinh hoa được tuyển chọn từ vùng nguyên liệu đặc sản.'}
                                                 </p>
 
                                                 <!-- Price & Add Button -->
@@ -554,7 +587,7 @@
                                                     <span class="product-price">${p.formattedPrice}</span>
                                                     <button type="button" class="btn-add-circle"
                                                         title="Tùy chọn & Thêm món"
-                                                        onclick="event.stopPropagation(); openProductDetailModal(${p.id})">
+                                                        onclick="event.stopPropagation(); openProductDetailModal('${p.id}')">
                                                         <span class="material-symbols-outlined fs-5">add</span>
                                                     </button>
                                                 </div>
@@ -673,51 +706,6 @@
                     </div>
                 </div>
 
-                <!-- Selected Items Preview Modal (Món đang chọn - Giao diện hiện đại, sang trọng) -->
-                <div class="modal fade" id="selectedItemsModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
-                        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
-                            <div class="modal-header border-0 pb-2 pt-4 px-4 d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <h5 class="modal-title fw-bold text-dark mb-0" style="font-size: 1.15rem; letter-spacing: -0.01em;">Món đang chọn</h5>
-                                        <span id="selectedModalBadge" class="badge rounded-pill bg-danger-subtle text-danger fw-bold" style="font-size: 0.75rem;">0 món</span>
-                                    </div>
-                                    <p class="text-muted small mb-0 mt-1" style="font-size: 0.8rem;">Các món bạn vừa chọn tại Aura Café</p>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none" 
-                                        style="width: 34px; height: 34px; transition: background 0.2s;" data-bs-dismiss="modal" aria-label="Close">
-                                    <span class="material-symbols-outlined fs-5">close</span>
-                                </button>
-                            </div>
-                            <div class="modal-body px-4 py-3">
-                                <div id="cartEmptyState" class="text-center py-5">
-                                    <div class="bg-light rounded-circle p-3 d-inline-flex align-items-center justify-content-center text-muted mb-3" style="width: 60px; height: 60px;">
-                                        <span class="material-symbols-outlined fs-2">local_cafe</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Chưa có món nào được chọn</h6>
-                                    <p class="text-muted small mb-3">Hãy chọn các món yêu thích từ thực đơn bên dưới nhé.</p>
-                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-4 py-1.5 fw-semibold" data-bs-dismiss="modal">
-                                        Xem thực đơn
-                                    </button>
-                                </div>
-                                <div id="cartItemList" class="d-flex flex-column gap-2.5 mb-3" style="max-height: 320px; overflow-y: auto; padding-right: 2px;"></div>
-                                <div id="cartSummary" class="border-top pt-3 d-none">
-                                    <a href="${pageContext.request.contextPath}/cart"
-                                        class="btn btn-danger w-100 py-2.5 fw-semibold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none"
-                                        style="background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%); font-size: 0.95rem;">
-                                        <span>Xem giỏ hàng</span>
-                                        <span class="material-symbols-outlined fs-5">arrow_forward</span>
-                                    </a>
-                                    <button type="button" class="btn btn-link text-muted small text-decoration-none w-100 mt-2 py-0 d-block text-center" data-bs-dismiss="modal">
-                                        + Chọn thêm món khác
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Toast Notification -->
                 <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3 z-3">
                     <div id="cartToast"
@@ -744,81 +732,73 @@
                     var currentProduct = null;
                     var selectedSizePrice = 0;
                     var modalQty = 1;
-                    var cart = JSON.parse(localStorage.getItem('aura_cart') || '[]');
+                    // Giỏ hàng lưu trong session phía server, trang chỉ giữ tổng số món để hiển thị
+                    var cartCount = Number('${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}');
 
                     function updateCartBadge() {
-                        var totalItems = 0;
-                        var totalPrice = 0;
-                        for (var i = 0; i < cart.length; i++) {
-                            var q = (cart[i].quantity || 1);
-                            totalItems += q;
-                            totalPrice += (cart[i].subtotal || (cart[i].unitPrice * q));
-                        }
-
                         // Header badge
                         var headerBadge = document.getElementById('headerCartBadge');
-                        if (headerBadge) headerBadge.innerText = totalItems;
+                        if (headerBadge) headerBadge.innerText = cartCount;
 
                         // Sticky Bottom Selection Bar
                         var stickyCart = document.getElementById('stickyMiniCart');
                         if (stickyCart) {
-                            if (totalItems > 0) {
+                            if (cartCount > 0) {
                                 stickyCart.classList.remove('d-none');
                                 var countEl = document.getElementById('stickyCartCount');
-                                if (countEl) countEl.innerText = totalItems;
+                                if (countEl) countEl.innerText = cartCount;
                                 var badgeEl = document.getElementById('stickyCartBadge');
-                                if (badgeEl) badgeEl.innerText = totalItems;
+                                if (badgeEl) badgeEl.innerText = cartCount;
                             } else {
                                 stickyCart.classList.add('d-none');
                             }
                         }
-
-                        localStorage.setItem('aura_cart', JSON.stringify(cart));
                     }
 
                     document.addEventListener('DOMContentLoaded', function () {
                         updateCartBadge();
                     });
 
-                    // 1-Click Quick Add: Bấm nút + thêm ngay vào giỏ hàng với Size M / Tiêu chuẩn, không popup
+                    // Gửi món vào giỏ hàng (CartController - /cart/add), giá được tính lại ở server
+                    function addToServerCart(productId, size, toppings, quantity, successMessage) {
+                        var params = new URLSearchParams();
+                        params.append('productId', productId);
+                        params.append('quantity', quantity);
+                        params.append('size', size || '');
+                        toppings.forEach(function (t) { params.append('topping', t); });
+
+                        fetch('${pageContext.request.contextPath}/cart/add', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: params.toString()
+                        })
+                            .then(function (response) { return response.json(); })
+                            .then(function (data) {
+                                if (!data.success) {
+                                    alert(data.error || 'Không thể thêm món vào giỏ hàng.');
+                                    return;
+                                }
+                                cartCount = data.totalItems;
+                                updateCartBadge();
+
+                                var toastMsg = document.getElementById('cartToastMessage');
+                                if (toastMsg) toastMsg.innerText = successMessage;
+                                var toastEl = document.getElementById('cartToast');
+                                if (toastEl && window.bootstrap) {
+                                    bootstrap.Toast.getOrCreateInstance(toastEl).show();
+                                }
+                            })
+                            .catch(function () {
+                                alert('Không thể kết nối máy chủ. Vui lòng thử lại!');
+                            });
+                    }
+
+                    // 1-Click Quick Add: Bấm nút + thêm ngay vào giỏ hàng với size mặc định, không popup
                     function quickAddToCart(event, id, name, price, imageUrl, categoryId) {
                         if (event) {
                             event.stopPropagation();
                         }
-
-                        var defaultSize = (categoryId === 5 || categoryId === 6) ? 'Tiêu chuẩn' : 'M';
-
-                        // Tìm xem món này đã có trong giỏ với cấu hình mặc định chưa
-                        var existingIndex = -1;
-                        for (var i = 0; i < cart.length; i++) {
-                            if (cart[i].id === id && cart[i].size === defaultSize && (!cart[i].toppings || cart[i].toppings.length === 0)) {
-                                existingIndex = i;
-                                break;
-                            }
-                        }
-
-                        if (existingIndex > -1) {
-                            cart[existingIndex].quantity += 1;
-                            cart[existingIndex].subtotal = cart[existingIndex].unitPrice * cart[existingIndex].quantity;
-                        } else {
-                            cart.push({
-                                id: id,
-                                name: name,
-                                imageUrl: imageUrl,
-                                size: defaultSize,
-                                toppings: [],
-                                unitPrice: price,
-                                quantity: 1,
-                                subtotal: price
-                            });
-                        }
-
-                        updateCartBadge();
-
-                        // Hiển thị Toast thông báo nhanh
-                        document.getElementById('cartToastMessage').innerText = 'Đã thêm nhanh ' + name + ' vào giỏ!';
-                        var toast = new bootstrap.Toast(document.getElementById('cartToast'));
-                        toast.show();
+                        addToServerCart(id, '', [], 1, 'Đã thêm nhanh ' + name + ' vào giỏ!');
                     }
 
                     // Xử lý khi bấm vào Card
@@ -886,7 +866,7 @@
                                     var extraPrice = sizes[sName] || 0;
                                     var isFirst = index === 0;
                                     if (isFirst) selectedSizePrice = extraPrice;
-                                    sizeListHtml += '<div class="option-chip ' + (isFirst ? 'selected' : '') + '" onclick="selectSize(this, ' + extraPrice + ')">'
+                                    sizeListHtml += '<div class="option-chip ' + (isFirst ? 'selected' : '') + '" data-size="' + sName.replace(/"/g, '&quot;') + '" onclick="selectSize(this, ' + extraPrice + ')">'
                                         + sName + (extraPrice > 0 ? ' (+' + extraPrice.toLocaleString('vi-VN') + 'đ)' : '')
                                         + '</div>';
                                 });
@@ -978,7 +958,7 @@
                         if (!currentProduct) return;
 
                         var activeSize = document.querySelector('#sizeList .option-chip.selected');
-                        var sizeName = activeSize ? activeSize.innerText.split(' ')[0] : 'Tiêu chuẩn';
+                        var sizeName = activeSize ? activeSize.getAttribute('data-size') : '';
 
                         var toppingNames = [];
                         var checkboxes = document.querySelectorAll('#toppingList input[type="checkbox"]:checked');
@@ -987,116 +967,22 @@
                             if (label) toppingNames.push(label.innerText);
                         });
 
-                        var base = parseFloat(currentProduct.basePrice) || 0;
-                        var singlePrice = base + (selectedSizePrice || 0);
-                        checkboxes.forEach(function (cb) { singlePrice += parseFloat(cb.value) || 0; });
-
-                        cart.push({
-                            id: currentProduct.id,
-                            name: currentProduct.name,
-                            imageUrl: currentProduct.imageUrl,
-                            size: sizeName,
-                            toppings: toppingNames,
-                            unitPrice: singlePrice,
-                            quantity: modalQty,
-                            subtotal: singlePrice * modalQty
-                        });
-
-                        updateCartBadge();
+                        addToServerCart(currentProduct.id, sizeName, toppingNames, modalQty,
+                            'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào giỏ hàng!');
 
                         var modalEl = document.getElementById('productDetailModal');
                         if (modalEl) {
                             var modalInstance = bootstrap.Modal.getInstance(modalEl);
                             if (modalInstance) modalInstance.hide();
                         }
-
-                        var toastMsg = document.getElementById('cartToastMessage');
-                        if (toastMsg) {
-                            toastMsg.innerText = 'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào danh sách chọn!';
-                        }
-                        var toastEl = document.getElementById('cartToast');
-                        if (toastEl && window.bootstrap) {
-                            var toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-                            toast.show();
-                        }
                     }
 
-                    function changeItemQty(index, delta) {
-                        if (!cart[index]) return;
-                        var newQty = (cart[index].quantity || 1) + delta;
-                        if (newQty <= 0) {
-                            cart.splice(index, 1);
-                        } else {
-                            cart[index].quantity = newQty;
-                            cart[index].subtotal = cart[index].unitPrice * newQty;
-                        }
-                        updateCartBadge();
-                        openSelectedItemsModal();
-                    }
-
+                    // Xem các món đã chọn tại trang Giỏ hàng
                     function openSelectedItemsModal() {
-                        var body = document.getElementById('cartItemList');
-                        var empty = document.getElementById('cartEmptyState');
-                        var summary = document.getElementById('cartSummary');
-                        var badge = document.getElementById('selectedModalBadge');
-
-                        var totalItems = 0;
-                        cart.forEach(function (item) {
-                            totalItems += (item.quantity || 1);
-                        });
-
-                        if (badge) {
-                            badge.innerText = totalItems + ' món';
-                        }
-
-                        if (cart.length === 0) {
-                            body.innerHTML = '';
-                            empty.classList.remove('d-none');
-                            summary.classList.add('d-none');
-                        } else {
-                            empty.classList.add('d-none');
-                            summary.classList.remove('d-none');
-
-                            var html = '';
-                            cart.forEach(function (item, idx) {
-                                var toppingsText = (item.toppings && item.toppings.length > 0) ? item.toppings.join(', ') : '';
-                                html += '<div class="p-3 rounded-4 bg-light border d-flex align-items-center justify-content-between gap-3" style="transition: all 0.2s;">'
-                                    + '  <div class="d-flex align-items-center gap-3 min-w-0">'
-                                    + '    <img src="' + item.imageUrl + '" style="width: 52px; height: 52px; object-fit: cover; border-radius: 12px;" class="border bg-white shadow-xs flex-shrink-0" onerror="this.src=\'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80\'">'
-                                    + '    <div class="min-w-0">'
-                                    + '      <div class="fw-bold text-dark text-truncate mb-1" style="font-size: 0.94rem;">' + item.name + '</div>'
-                                    + '      <div class="d-flex align-items-center gap-1.5 flex-wrap">'
-                                    + '        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill" style="font-size: 0.7rem; font-weight: 600;">Size ' + item.size + '</span>'
-                                    + (toppingsText ? '        <span class="text-muted small text-truncate" style="font-size: 0.75rem; max-width: 170px;">+ ' + toppingsText + '</span>' : '')
-                                    + '      </div>'
-                                    + '    </div>'
-                                    + '  </div>'
-                                    + '  <div class="d-flex align-items-center gap-2 flex-shrink-0">'
-                                    + '    <div class="d-flex align-items-center border rounded-pill bg-white px-1.5 py-0.5 shadow-2xs">'
-                                    + '      <button type="button" class="btn btn-sm btn-link p-0 text-muted" style="width: 22px; height: 22px; text-decoration: none; font-weight: bold; line-height: 1;" onclick="changeItemQty(' + idx + ', -1)">-</button>'
-                                    + '      <span class="px-2 fw-bold text-dark small" style="min-width: 18px; text-align: center;">' + item.quantity + '</span>'
-                                    + '      <button type="button" class="btn btn-sm btn-link p-0 text-muted" style="width: 22px; height: 22px; text-decoration: none; font-weight: bold; line-height: 1;" onclick="changeItemQty(' + idx + ', 1)">+</button>'
-                                    + '    </div>'
-                                    + '    <button class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0" style="width: 32px; height: 32px;" title="Xoá món" onclick="removeFromCart(' + idx + ')">'
-                                    + '      <span class="material-symbols-outlined fs-5">delete_outline</span>'
-                                    + '    </button>'
-                                    + '  </div>'
-                                    + '</div>';
-                            });
-                            body.innerHTML = html;
-                        }
-
-                        var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('selectedItemsModal'));
-                        modal.show();
+                        window.location.href = '${pageContext.request.contextPath}/cart';
                     }
 
                     var openCartModal = openSelectedItemsModal;
-
-                    function removeFromCart(index) {
-                        cart.splice(index, 1);
-                        updateCartBadge();
-                        openSelectedItemsModal();
-                    }
                 </script>
             </body>
 

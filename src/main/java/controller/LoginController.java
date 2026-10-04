@@ -2,6 +2,7 @@ package controller;
 
 import dao.UserDAO;
 import model.User;
+import utils.RedirectUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -62,21 +63,30 @@ public class LoginController extends HttpServlet {
         // Nhận dữ liệu từ form (login.jsp)
         String userIdentifier = request.getParameter("username");
         String pass = request.getParameter("password");
-        
+        // Trang cần quay lại sau khi đăng nhập (VD: /checkout), chỉ nhận đường dẫn nội bộ
+        String redirect = request.getParameter("redirect");
+        boolean hasRedirect = RedirectUtil.isSafeLocalPath(redirect);
+
         // Gọi DAO để xác thực
         User loginUser = userDAO.login(userIdentifier, pass);
-        
+
         if (loginUser != null) {
             // Đăng nhập thành công -> Tạo Session
             HttpSession session = request.getSession();
             session.setAttribute("user", loginUser); // Lưu object User vào session
-            
+
+            // Khách hàng đăng nhập từ trang Checkout -> quay lại tiếp tục đặt hàng
+            if (hasRedirect && "CUSTOMER".equalsIgnoreCase(loginUser.getRole())) {
+                response.sendRedirect(request.getContextPath() + redirect);
+                return;
+            }
+
             // Dựa vào Role/Position để chuyển hướng đến trang tương ứng
             redirectByUser(loginUser, request, response);
         } else {
-            // Đăng nhập thất bại -> Lưu lỗi vào session và điều hướng về trang chủ bật popup
+            // Đăng nhập thất bại -> Lưu lỗi vào session và điều hướng về trang trước đó (mặc định trang chủ) bật popup
             request.getSession().setAttribute("errorMsg", "Tên đăng nhập hoặc mật khẩu không chính xác, hoặc tài khoản đã bị khóa!");
-            response.sendRedirect(request.getContextPath() + "/?tab=login");
+            response.sendRedirect(request.getContextPath() + (hasRedirect ? redirect : "/") + "?tab=login");
         }
     }
 

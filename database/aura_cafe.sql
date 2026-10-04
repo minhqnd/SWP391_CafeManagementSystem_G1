@@ -44,6 +44,10 @@ CREATE TABLE users (
     email VARCHAR(150),
     password_hash VARCHAR(255) NOT NULL,
 
+    -- Personal information (profile page)
+    birthday DATE NULL,
+    address TEXT NULL,
+
     role ENUM('ADMIN', 'STAFF', 'CUSTOMER')
         NOT NULL DEFAULT 'CUSTOMER',
 
@@ -134,7 +138,7 @@ CREATE TABLE work_schedules (
 CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-
+    icon VARCHAR(50) NULL,
     status ENUM('ACTIVE', 'INACTIVE')
         NOT NULL DEFAULT 'ACTIVE'
 ) ENGINE=InnoDB;
@@ -146,6 +150,8 @@ CREATE TABLE products (
     name VARCHAR(150) NOT NULL,
     base_price DECIMAL(12,2) NOT NULL,
 
+    badge VARCHAR(50) NULL,
+    subtitle VARCHAR(150) NULL,
     -- Example:
     -- {"sizes":{"L":10000},"toppings":["Pearl"]}
     variants_config JSON NULL,
