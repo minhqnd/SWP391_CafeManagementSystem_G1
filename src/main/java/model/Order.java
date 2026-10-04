@@ -2,6 +2,7 @@ package model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -174,6 +175,31 @@ public class Order implements Serializable {
     public boolean isPending() { return "PENDING".equals(status); }
     public boolean isCompleted() { return "COMPLETED".equals(status); }
     public boolean isCancelled() { return "CANCELLED".equals(status); }
+    public boolean isPaid() {
+        return "CONFIRMED".equals(status) || "PREPARING".equals(status)
+                || "READY".equals(status) || "DELIVERING".equals(status) || "COMPLETED".equals(status);
+    }
+
+    public String getFormattedTotalAmount() {
+        return new DecimalFormat("###,###,###").format(totalAmount).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedDeliveryFee() {
+        return new DecimalFormat("###,###,###").format(deliveryFee).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedDiscountAmount() {
+        return new DecimalFormat("###,###,###").format(discountAmount).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedVatAmount() {
+        double vat = (totalAmount - discountAmount) * 0.08;
+        return new DecimalFormat("###,###,###").format(vat).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedFinalAmount() {
+        return new DecimalFormat("###,###,###").format(finalAmount).replace(",", ".") + " đ";
+    }
 
     /** Đã thanh toán và đang được pha chế / giao */
     public boolean isInProgress() {

@@ -107,4 +107,35 @@ public class PaymentDAO extends BaseDAO {
             }
         }
     }
+
+    /**
+     * Lấy thông tin thanh toán thành công theo mã đơn hàng
+     */
+    public model.Payment getPaymentByOrderId(int orderId) {
+        String sql = "SELECT * FROM payments WHERE order_id = ? AND status = 'SUCCESS' ORDER BY id DESC LIMIT 1";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, orderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    model.Payment p = new model.Payment();
+                    p.setId(rs.getInt("id"));
+                    p.setOrderId(rs.getInt("order_id"));
+                    p.setPaymentMethod(rs.getString("payment_method"));
+                    p.setTransactionCode(rs.getString("transaction_code"));
+                    p.setAmount(rs.getDouble("amount"));
+                    p.setStatus(rs.getString("status"));
+                    p.setPaidAt(rs.getTimestamp("paid_at"));
+                    p.setPaymentNote(rs.getString("payment_note"));
+                    return p;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

@@ -225,6 +225,11 @@
                                         <div class="fw-semibold">+${o.rewardPoints} điểm đã cộng</div>
                                     </div>
                                 </div>
+                                <div class="pt-2 border-top mt-2">
+                                    <a href="${ctx}/bill?orderId=${o.id}" class="btn btn-outline-secondary btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1" target="_blank">
+                                        <span class="material-symbols-outlined fs-6">receipt_long</span> Xem hóa đơn điện tử
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -310,6 +315,11 @@
                                     </c:url>
                                     <a href="${feedbackUrl}" class="btn btn-soft btn-sm px-3">
                                         <span class="material-symbols-outlined fs-6">rate_review</span> Đánh giá
+                                    </a>
+                                </c:if>
+                                <c:if test="${o.completed || not empty o.paidAt}">
+                                    <a href="${ctx}/bill?orderId=${o.id}" class="btn btn-soft btn-sm px-3 d-inline-flex align-items-center gap-1" target="_blank">
+                                        <span class="material-symbols-outlined fs-6">receipt_long</span> Hóa đơn
                                     </a>
                                 </c:if>
                                 <c:if test="${o.completed || o.cancelled}">

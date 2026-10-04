@@ -2,6 +2,7 @@ package model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -185,5 +186,19 @@ public class OrderDetail implements Serializable {
             text.append(String.join(", ", toppings));
         }
         return text.toString();
+    }
+
+    public String getFormattedUnitPrice() {
+        if (unitPrice == null) return "0 đ";
+        return new DecimalFormat("###,###,###").format(unitPrice).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedSubtotal() {
+        if (subtotal == null) return "0 đ";
+        return new DecimalFormat("###,###,###").format(subtotal).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedQuantity() {
+        return String.format("%02d", quantity);
     }
 }

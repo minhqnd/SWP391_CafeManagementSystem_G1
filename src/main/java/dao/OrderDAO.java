@@ -404,6 +404,61 @@ public class OrderDAO extends BaseDAO {
             "                                    WHERE p2.order_id = o.id AND p2.status = 'SUCCESS') ";
 
     /**
+     * Lấy 1 đơn kèm các món theo orderId (cho màn Bill, Payment)
+     */
+    public Order getOrderById(int orderId) {
+        String sql = CUSTOMER_ORDER_SELECT + "WHERE o.id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            Map<Integer, Order> orders = new LinkedHashMap<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
+                }
+            }
+            loadOrderItems(conn, orders);
+            return orders.get(orderId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Lấy danh sách OrderDetail của 1 đơn hàng
+     */
+    public List<OrderDetail> getOrderDetails(int orderId) {
+        Order order = getOrderById(orderId);
+        return order != null ? order.getItems() : new ArrayList<>();
+    }
+
+    /**
+     * Lấy các đơn hàng gần nhất
+     */
+    public List<Order> getRecentOrders(int limit) {
+        String sql = CUSTOMER_ORDER_SELECT + "ORDER BY o.created_at DESC, o.id DESC LIMIT ?";
+        List<Order> list = new ArrayList<>();
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
+                    list.add(order);
+                }
+            }
+            loadOrderItems(conn, orders);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
      * Lấy 1 đơn kèm các món, chỉ khi đơn thuộc về khách này (null nếu không có)
      */
     public Order getCustomerOrder(int orderId, int customerId) {
