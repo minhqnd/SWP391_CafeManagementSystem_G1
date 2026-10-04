@@ -866,7 +866,22 @@ public class OrderDAO extends BaseDAO {
      * Hủy đơn tại quầy (chỉ khi đơn chưa hoàn thành)
      */
     public boolean cancelCounterOrder(int orderId) {
-        String sql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ? AND status IN ('CONFIRMED', 'PENDING', 'PREPARING')";
+        String sql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ? AND status IN ('CONFIRMED', 'PENDING', 'PREPARING', 'READY')";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Thu ngân đánh dấu đơn tại quầy đã hoàn tất (khách đã nhận món)
+     */
+    public boolean completeCounterOrder(int orderId) {
+        String sql = "UPDATE orders SET status = 'COMPLETED' WHERE id = ? AND status IN ('CONFIRMED', 'PREPARING', 'READY')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderId);

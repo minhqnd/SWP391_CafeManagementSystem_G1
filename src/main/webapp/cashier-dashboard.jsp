@@ -800,19 +800,121 @@
             display: flex;
         }
 
-        .orders-toolbar {
-            padding: 14px 20px;
+        .orders-toolbar-pro {
+            padding: 12px 16px;
+            background: #ffffff;
             border-bottom: 1px solid var(--slate-200);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--slate-50);
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
         }
 
-        .orders-table-wrapper {
+        .btn-type-filter {
+            border: 1px solid var(--slate-200);
+            background: var(--slate-100);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--slate-600);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-type-filter.active {
+            background: var(--slate-800);
+            color: #ffffff;
+            border-color: var(--slate-800);
+        }
+
+        .btn-status-filter {
+            border: 1px solid var(--slate-200);
+            background: #ffffff;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--slate-700);
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-status-filter.active {
+            background: var(--aura-primary);
+            color: #ffffff;
+            border-color: var(--aura-primary);
+        }
+
+        .orders-split-workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .orders-table-pane {
             flex: 1;
             overflow-y: auto;
-            padding: 16px 20px;
+            border-right: 1px solid var(--slate-200);
+        }
+
+        .order-detail-pane {
+            width: 380px;
+            flex-shrink: 0;
+            background: var(--slate-50);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border-left: 1px solid var(--slate-200);
+        }
+
+        .order-row-item {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        .order-row-item:hover td {
+            background: var(--slate-50) !important;
+        }
+
+        .order-row-item.active td {
+            background: var(--aura-primary-light) !important;
+        }
+
+        .empty-detail-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 30px 20px;
+            text-align: center;
+            color: var(--slate-400);
+        }
+
+        .detail-pane-header {
+            padding: 14px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--slate-200);
+        }
+
+        .detail-pane-body {
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .detail-pane-footer {
+            padding: 14px 16px;
+            background: #ffffff;
+            border-top: 1px solid var(--slate-200);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .pos-table {
@@ -838,10 +940,6 @@
             padding: 12px 14px;
             border-bottom: 1px solid var(--slate-200);
             vertical-align: middle;
-        }
-
-        .pos-table tr:hover td {
-            background: var(--slate-50);
         }
 
         /* Status Badges */

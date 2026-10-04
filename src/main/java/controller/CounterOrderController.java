@@ -120,6 +120,8 @@ public class CounterOrderController extends HttpServlet {
             handleCreateOrder(request, response);
         } else if ("cancel-order".equals(action)) {
             handleCancelOrder(request, response);
+        } else if ("complete-order".equals(action)) {
+            handleCompleteOrder(request, response);
         } else {
             sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Hành động không hợp lệ.\"}");
         }
@@ -298,6 +300,21 @@ public class CounterOrderController extends HttpServlet {
             sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã hủy đơn hàng thành công.\"}");
         } else {
             sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Không thể hủy đơn hàng này (đơn đã hoàn thành hoặc không tồn tại).\"}");
+        }
+    }
+
+    private void handleCompleteOrder(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int orderId = parseInt(request.getParameter("orderId"), -1);
+        if (orderId <= 0) {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Mã đơn không hợp lệ.\"}");
+            return;
+        }
+
+        boolean success = orderDAO.completeCounterOrder(orderId);
+        if (success) {
+            sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã đánh dấu hoàn tất đơn hàng và giao khách thành công.\"}");
+        } else {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Không thể hoàn tất đơn hàng này.\"}");
         }
     }
 
