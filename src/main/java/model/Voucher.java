@@ -1,9 +1,12 @@
 package model;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
- * Voucher - Mã khuyến mãi áp dụng trên tổng tiền hàng (bảng vouchers)
+ * Voucher - Mã khuyến mãi áp dụng trên tổng tiền hàng (bảng vouchers).
+ * customerId = null: mã công khai; có giá trị: voucher khách tự đổi bằng điểm Aura (chỉ khách đó dùng).
  */
 public class Voucher implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -17,6 +20,8 @@ public class Voucher implements Serializable {
     private double discountValue;
     private double minOrderValue;
     private Double maxDiscount;
+    private Integer customerId;
+    private LocalDateTime validUntil;
 
     public Voucher() {
     }
@@ -77,6 +82,31 @@ public class Voucher implements Serializable {
 
     public void setMaxDiscount(Double maxDiscount) {
         this.maxDiscount = maxDiscount;
+    }
+
+    public Integer getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Integer customerId) {
+        this.customerId = customerId;
+    }
+
+    public LocalDateTime getValidUntil() {
+        return validUntil;
+    }
+
+    public void setValidUntil(LocalDateTime validUntil) {
+        this.validUntil = validUntil;
+    }
+
+    /** Voucher đổi từ điểm Aura của riêng khách */
+    public boolean isPersonal() {
+        return customerId != null;
+    }
+
+    public String getValidUntilText() {
+        return validUntil != null ? validUntil.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "";
     }
 
     public boolean isPercent() {

@@ -4,6 +4,7 @@ import dao.ProductDAO;
 import dao.VoucherDAO;
 import model.Cart;
 import model.CartItem;
+import model.OrderDetail;
 import model.Product;
 import model.Voucher;
 
@@ -50,9 +51,10 @@ public class CartService {
 
     /**
      * Cập nhật lại tên, ảnh, giá, trạng thái còn phục vụ của các món và voucher trong giỏ theo Database.
+     * customerId: khách đang đăng nhập (null nếu chưa đăng nhập) - voucher đổi điểm chỉ chủ của nó mới dùng được.
      * Trả về false nếu voucher đang dùng đã hết hạn / hết lượt và bị gỡ khỏi giỏ.
      */
-    public boolean refreshCart(Cart cart) {
+    public boolean refreshCart(Cart cart, Integer customerId) {
         for (CartItem item : cart.getItems()) {
             Product product = productDAO.getProductById(item.getProductId());
             if (product == null || !product.isAvailable()) {
@@ -64,11 +66,28 @@ public class CartService {
         }
 
         if (cart.getVoucher() != null) {
-            Voucher voucher = voucherDAO.getUsableVoucherByCode(cart.getVoucher().getCode());
+            Voucher voucher = voucherDAO.getUsableVoucherByCode(cart.getVoucher().getCode(), customerId);
             cart.setVoucher(voucher);
             return voucher != null;
         }
         return true;
+    }
+
+    /**
+     * "Đặt lại đơn này": thêm lại các món của đơn cũ (đúng size, topping, số lượng) vào giỏ với giá hiện tại.
+     * Món đã ngừng phục vụ được bỏ qua. Trả về số dòng món đã thêm.
+     */
+    public int addOrderItemsToCart(Cart cart, List<OrderDetail> details) {
+        int added = 0;
+        for (OrderDetail detail : details) {
+            CartItem item = createItem(detail.getProductId(), detail.getSizeOption(),
+                    detail.getToppingOptions(), detail.getQuantity());
+            if (item != null) {
+                cart.addItem(item);
+                added++;
+            }
+        }
+        return added;
     }
 
     /**

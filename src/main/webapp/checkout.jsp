@@ -264,6 +264,10 @@
                             <div class="fw-bold fs-5">Tổng thanh toán</div>
                             <div class="grand-total"><fmt:formatNumber value="${grandTotal}" pattern="#,##0" />đ</div>
                         </div>
+                        <div class="info-box small mb-3 d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined fs-5 text-aura">qr_code_2</span>
+                            <span>Thanh toán bằng <b>chuyển khoản VietQR</b> ở bước tiếp theo. Đơn được cộng <b>+${cart.rewardPoints} điểm Aura</b> sau khi thanh toán.</span>
+                        </div>
 
                         <c:choose>
                             <c:when test="${isGuest}">

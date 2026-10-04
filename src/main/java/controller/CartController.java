@@ -3,6 +3,7 @@ package controller;
 import dao.VoucherDAO;
 import model.Cart;
 import model.CartItem;
+import model.User;
 import model.Voucher;
 import service.CartService;
 
@@ -37,10 +38,11 @@ public class CartController extends HttpServlet {
 
         HttpSession session = request.getSession();
         Cart cart = getCart(session);
+        Integer customerId = getCustomerId(session);
 
         // Cập nhật giá & trạng thái món theo Database, kiểm tra voucher còn hiệu lực
         String voucherCode = cart.getVoucher() != null ? cart.getVoucher().getCode() : null;
-        if (!cartService.refreshCart(cart)) {
+        if (!cartService.refreshCart(cart, customerId)) {
             session.setAttribute("cartError", "Mã " + voucherCode + " đã hết hạn hoặc hết lượt sử dụng.");
         }
 
@@ -48,7 +50,7 @@ public class CartController extends HttpServlet {
         moveFlashMessage(session, request, "cartError");
 
         request.setAttribute("cart", cart);
-        request.setAttribute("vouchers", voucherDAO.getUsableVouchers());
+        request.setAttribute("vouchers", voucherDAO.getUsableVouchers(customerId));
         request.getRequestDispatcher("/cart.jsp").forward(request, response);
     }
 
@@ -130,13 +132,14 @@ public class CartController extends HttpServlet {
         }
 
         String voucherCode = code.trim().toUpperCase();
-        Voucher voucher = voucherDAO.getUsableVoucherByCode(voucherCode);
+        Integer customerId = getCustomerId(session);
+        Voucher voucher = voucherDAO.getUsableVoucherByCode(voucherCode, customerId);
         if (voucher == null) {
             session.setAttribute("cartError", "Mã " + voucherCode + " không tồn tại hoặc đã hết hạn.");
             return;
         }
 
-        cartService.refreshCart(cart);
+        cartService.refreshCart(cart, customerId);
         if (!voucher.isEligible(cart.getSelectedSubtotal())) {
             session.setAttribute("cartError", "Mã " + voucher.getCode() + " áp dụng cho đơn từ "
                     + formatMoney(voucher.getMinOrderValue()) + ". Hãy chọn thêm món nhé!");
@@ -156,7 +159,14 @@ public class CartController extends HttpServlet {
         return cart;
     }
 
-    private void moveFlashMessage(HttpSession session, HttpServletRequest request, String key) {
+    /** Khách đang đăng nhập (null nếu chưa) - dùng để lấy voucher đổi điểm của riêng khách */
+    static Integer getCustomerId(HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        return user != null ? user.getId() : null;
+    }
+
+    /** Chuyển thông báo 1 lần (flash) từ session sang request sau khi redirect */
+    static void moveFlashMessage(HttpSession session, HttpServletRequest request, String key) {
         Object message = session.getAttribute(key);
         if (message != null) {
             request.setAttribute(key, message);
