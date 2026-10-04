@@ -158,32 +158,31 @@
                                 Thời gian nhận hàng
                             </div>
                             <div class="row g-3">
+                                <!-- Radio đứng ngay trước khung .time-option để CSS tô sáng khung đang chọn (input:checked + .time-option) -->
                                 <div class="col-md-6">
-                                    <label class="time-option" style="cursor: pointer;">
-                                        <span class="d-flex gap-2">
-                                            <input class="form-check-input mt-1" type="radio" name="deliveryTime" value="NOW"
-                                                   ${deliveryTime != 'SCHEDULED' ? 'checked' : ''}>
-                                            <span>
-                                                <span class="d-block fw-semibold small">${isDelivery ? 'Giao ngay lập tức' : 'Lấy ngay khi pha xong'}</span>
-                                                <span class="d-block text-muted" style="font-size: 0.75rem;">
-                                                    ${isDelivery ? 'Ưu tiên Barista pha chế & giao trong 25 - 30 phút' : 'Barista pha chế ngay sau khi bạn thanh toán'}
-                                                </span>
-                                            </span>
-                                        </span>
-                                    </label>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="time-option">
-                                        <label class="d-flex gap-2" style="cursor: pointer;">
-                                            <input class="form-check-input mt-1" type="radio" name="deliveryTime" value="SCHEDULED"
-                                                   ${deliveryTime == 'SCHEDULED' ? 'checked' : ''}>
-                                            <span>
-                                                <span class="d-block fw-semibold small">${isDelivery ? 'Hẹn giờ giao cụ thể' : 'Hẹn giờ lấy cụ thể'}</span>
-                                                <span class="d-block text-muted" style="font-size: 0.75rem;">Chọn khung giờ tiện nhất trong ngày hôm nay</span>
+                                    <div class="time-choice">
+                                        <input class="form-check-input" type="radio" name="deliveryTime" value="NOW" id="deliveryTimeNow"
+                                               ${deliveryTime != 'SCHEDULED' ? 'checked' : ''}>
+                                        <label class="time-option" for="deliveryTimeNow">
+                                            <span class="d-block fw-semibold small">${isDelivery ? 'Giao ngay lập tức' : 'Lấy ngay khi pha xong'}</span>
+                                            <span class="d-block text-muted" style="font-size: 0.75rem;">
+                                                ${isDelivery ? 'Ưu tiên Barista pha chế & giao trong 25 - 30 phút' : 'Barista pha chế ngay sau khi bạn thanh toán'}
                                             </span>
                                         </label>
-                                        <input type="time" name="scheduledTime" class="form-control form-control-sm aura-input bg-white mt-2"
-                                               aria-label="Giờ hẹn nhận hàng" value="${fn:escapeXml(scheduledTime)}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="time-choice">
+                                        <input class="form-check-input" type="radio" name="deliveryTime" value="SCHEDULED" id="deliveryTimeScheduled"
+                                               ${deliveryTime == 'SCHEDULED' ? 'checked' : ''}>
+                                        <div class="time-option">
+                                            <label class="d-block" for="deliveryTimeScheduled">
+                                                <span class="d-block fw-semibold small">${isDelivery ? 'Hẹn giờ giao cụ thể' : 'Hẹn giờ lấy cụ thể'}</span>
+                                                <span class="d-block text-muted" style="font-size: 0.75rem;">Chọn khung giờ tiện nhất trong ngày hôm nay</span>
+                                            </label>
+                                            <input type="time" name="scheduledTime" class="form-control form-control-sm aura-input bg-white mt-2"
+                                                   aria-label="Giờ hẹn nhận hàng" value="${fn:escapeXml(scheduledTime)}">
+                                        </div>
                                     </div>
                                 </div>
                             </div>

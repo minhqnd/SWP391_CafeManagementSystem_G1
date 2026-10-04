@@ -445,16 +445,36 @@ body.aura-cart-page {
     flex-shrink: 0;
 }
 
+/* Ô chọn thời gian: radio nằm đè ở góc trái, khung đứng ngay sau radio */
+.time-choice {
+    position: relative;
+    height: 100%;
+}
+
+.time-choice .form-check-input {
+    position: absolute;
+    top: 1.05rem;
+    left: 1rem;
+    margin: 0;
+    z-index: 1;
+}
+
 .time-option {
     display: block;
     height: 100%;
     border: 1px solid var(--aura-border);
     background: #f5f7fc;
     border-radius: 12px;
-    padding: 0.85rem 1rem;
+    padding: 0.85rem 1rem 0.85rem 2.6rem;
 }
 
-.time-option:has(input[type="radio"]:checked) {
+label.time-option,
+.time-option label {
+    cursor: pointer;
+}
+
+/* Tô sáng khung của lựa chọn đang được tích */
+.time-choice .form-check-input:checked + .time-option {
     border-color: #d4dbec;
     background: var(--aura-blue-soft);
 }
