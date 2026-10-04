@@ -1493,10 +1493,6 @@
                 <span class="material-symbols-outlined text-muted">account_circle</span>
                 <span>${sessionScope.user.fullName}</span>
             </div>
-            <a href="${pageContext.request.contextPath}/barista" target="_blank" class="btn-link-action" title="Mở màn hình Pha chế Barista">
-                <span class="material-symbols-outlined">local_cafe</span>
-                <span>Màn KDS</span>
-            </a>
             <a href="${pageContext.request.contextPath}/login?action=logout" class="btn-link-action" title="Đăng xuất khỏi hệ thống">
                 <span class="material-symbols-outlined">logout</span>
                 <span>Đăng xuất</span>
