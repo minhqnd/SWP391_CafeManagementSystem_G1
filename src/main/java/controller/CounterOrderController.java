@@ -271,7 +271,7 @@ public class CounterOrderController extends HttpServlet {
         order.setFinalAmount(finalAmount);
         order.setRecipientName(recipientName != null && !recipientName.isEmpty() ? recipientName : "Khách tại quầy");
         order.setRecipientPhone(recipientPhone != null ? recipientPhone : "");
-        order.setTableNumber("DINE_IN".equalsIgnoreCase(order.getOrderType()) ? tableNumber : null);
+        order.setTableNumber(tableNumber != null && !tableNumber.trim().isEmpty() ? tableNumber.trim() : null);
         order.setOrderNote(orderNote);
 
         String paymentNote = "Thanh toán tại quầy qua " + ("BANK_TRANSFER".equals(paymentMethod) ? "VietQR" : "Tiền mặt");

@@ -1165,24 +1165,6 @@
                     </button>
                 </div>
 
-                <!-- Table Selector (Shown for Dine-In) -->
-                <div class="table-select-row" id="tableSelectWrapper">
-                    <span class="table-select-label">Chọn bàn:</span>
-                    <select id="tableNumberSelect" class="table-select-box">
-                        <option value="Bàn 01">Bàn 01 (Tầng 1)</option>
-                        <option value="Bàn 02">Bàn 02 (Tầng 1)</option>
-                        <option value="Bàn 03">Bàn 03 (Tầng 1)</option>
-                        <option value="Bàn 04">Bàn 04 (Tầng 1)</option>
-                        <option value="Bàn 05">Bàn 05 (Tầng 1)</option>
-                        <option value="Bàn 06">Bàn 06 (Tầng 2)</option>
-                        <option value="Bàn 07">Bàn 07 (Tầng 2)</option>
-                        <option value="Bàn 08">Bàn 08 (Tầng 2)</option>
-                        <option value="Bàn 09">Bàn 09 (Tầng 2)</option>
-                        <option value="Bàn 10">Bàn 10 (Tầng 2)</option>
-                        <option value="Mang đi">Khách tự mang đi</option>
-                    </select>
-                </div>
-
                 <!-- Customer Search / Loyalty -->
                 <div class="customer-loyalty-section">
                     <div class="cust-input-group" id="custSearchBox">
@@ -1274,7 +1256,7 @@
                             <th>Mã đơn</th>
                             <th>Thời gian</th>
                             <th>Loại đơn</th>
-                            <th>Bàn / Khách</th>
+                            <th>Khách hàng</th>
                             <th>Món đã gọi</th>
                             <th>Tổng tiền</th>
                             <th>Hình thức</th>
@@ -1300,14 +1282,7 @@
                                         </c:choose>
                                     </td>
                                     <td>
-                                        <c:choose>
-                                            <c:when test="${not empty o.tableNumber}">
-                                                <span class="fw-semibold text-danger">${o.tableNumber}</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span>${o.recipientName}</span>
-                                            </c:otherwise>
-                                        </c:choose>
+                                        <span>${empty o.recipientName ? 'Khách tại quầy' : o.recipientName}</span>
                                     </td>
                                     <td style="max-width: 250px;" class="text-truncate" title="${o.itemSummary}">
                                         ${o.itemSummary}
@@ -1647,16 +1622,13 @@
             orderType = type;
             const btnDine = document.getElementById('btnTypeDineIn');
             const btnTake = document.getElementById('btnTypeTakeaway');
-            const tableWrap = document.getElementById('tableSelectWrapper');
 
             if (type === 'DINE_IN') {
                 btnDine.classList.add('active');
                 btnTake.classList.remove('active');
-                tableWrap.style.display = 'flex';
             } else {
                 btnTake.classList.add('active');
                 btnDine.classList.remove('active');
-                tableWrap.style.display = 'none';
             }
         }
 
@@ -1897,9 +1869,7 @@
             const { finalTotal } = updateSummary(sub);
 
             document.getElementById('payModalTotalDisplay').textContent = formatCurrency(finalTotal);
-
-            const table = (orderType === 'DINE_IN') ? document.getElementById('tableNumberSelect').value : 'Mang về';
-            document.getElementById('payModalSummaryDesc').textContent = (orderType === 'DINE_IN' ? 'Tại quán' : 'Mang về') + ' | ' + table;
+            document.getElementById('payModalSummaryDesc').textContent = (orderType === 'DINE_IN' ? 'Dùng tại quán' : 'Mang về');
 
             selectPaymentMethod('CASH');
             setCashAmount(finalTotal);
@@ -1966,14 +1936,13 @@
             const sub = cartItems.reduce((acc, it) => acc + it.subtotal, 0);
             const { discount, finalTotal } = updateSummary(sub);
 
-            const tableNum = (orderType === 'DINE_IN') ? document.getElementById('tableNumberSelect').value : null;
             const orderNote = document.getElementById('orderNoteInput').value.trim();
 
             const payload = {
                 orderType: orderType,
-                tableNumber: tableNum || '',
+                tableNumber: '',
                 customerId: currentCustomer ? currentCustomer.id : null,
-                recipientName: currentCustomer ? currentCustomer.fullName : (tableNum || 'Khách tại quầy'),
+                recipientName: currentCustomer ? currentCustomer.fullName : (orderType === 'DINE_IN' ? 'Khách tại quán' : 'Khách mang về'),
                 recipientPhone: currentCustomer ? currentCustomer.phone : '',
                 orderNote: orderNote,
                 paymentMethod: selectedPaymentMethod,
