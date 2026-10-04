@@ -10,6 +10,27 @@ Khung dự án Java Web chuẩn Maven dành cho môn học SWP391.
 
 ---
 
+## Danh sách tài khoản đăng nhập thử nghiệm (Demo Accounts)
+
+Mật khẩu mặc định cho tất cả tài khoản bên dưới: `123456` (hoặc `1234`).  
+Hệ thống cho phép đăng nhập bằng **Email**, **Số điện thoại**, hoặc **Tên đăng nhập** (tiền tố trước `@`).
+
+| Vai trò (Role) | Vị trí (Position) | Họ và tên | Email đăng nhập | Số điện thoại | Đường dẫn truy cập chính |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **ADMIN** | Quản lý (Manager) | Aura Admin | `admin@auracafe.vn` | `0900000001` | `/admin-dashboard.jsp` |
+| **STAFF** | Thu ngân (Cashier) | Tran Thi Binh | `binh@auracafe.vn` | `0900000003` | `/cashier` (POS bán hàng tại quầy) |
+| **STAFF** | Pha chế (Barista) | Nguyen Van An | `an@auracafe.vn` | `0900000002` | `/barista` (Màn hình KDS pha chế) |
+| **STAFF** | Giao hàng (Shipper) | Hoang Van Nam | `nam@auracafe.vn` | `0900000006` | `/delivery-dashboard.jsp` |
+| **CUSTOMER** | Hội viên Bạc (Silver) | Le Minh Anh | `anh@gmail.com` | `0900000004` | `/` (Trang chủ, 120 điểm tích lũy) |
+| **CUSTOMER** | Hội viên Đồng (Bronze) | Pham Quang Huy | `huy@gmail.com` | `0900000005` | `/` (Trang chủ, 50 điểm tích lũy) |
+
+### Đường dẫn truy cập nhanh (chạy qua ./run.sh):
+- Trang chủ: `http://localhost:8080/SWP391_CafeManagementSystem/`
+- Màn hình Thu ngân POS: `http://localhost:8080/SWP391_CafeManagementSystem/cashier`
+- Màn hình Barista KDS: `http://localhost:8080/SWP391_CafeManagementSystem/barista`
+
+---
+
 ## 🏛 Sơ đồ kiến trúc & Cấu trúc thư mục
 
 Cấu trúc thư mục được khởi tạo đồng bộ 100% với sơ đồ kiến trúc:
