@@ -2,6 +2,13 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
+<c:if test="${empty sessionScope.user}">
+    <c:redirect url="/?login=true" />
+</c:if>
+<c:if test="${empty currentDisplayTier}">
+    <c:redirect url="/profile" />
+</c:if>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -67,6 +74,16 @@
             align-items: center;
             gap: 0.3rem;
             box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+        }
+        .tier-badge-silver {
+            background-color: #e2e8f0;
+            color: #334155;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .tier-badge-diamond {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+            box-shadow: 0 4px 10px rgba(156, 39, 176, 0.3);
         }
 
         .progress-bar-custom {
@@ -237,7 +254,7 @@
     <main class="py-5">
         <div class="container">
             <!-- Top Section: Loyalty & Barcode -->
-            <div class="row g-4 mb-4 justify-content-center">
+            <div class="row g-4 mb-4">
                 <!-- Loyalty Card -->
                 <div class="col-lg-8">
                     <div class="loyalty-card">
@@ -251,8 +268,8 @@
                                     <span class="text-white-50" style="font-size: 0.85rem;">Thành viên thân thiết cấp cao</span>
                                 </div>
                             </div>
-                            <div class="tier-badge-gold">
-                                <span class="material-symbols-outlined fs-6">stars</span> HẠNG ${currentDisplayTier}
+                            <div class="tier-badge-gold ${currentDisplayTier == 'SILVER' ? 'tier-badge-silver' : (currentDisplayTier == 'DIAMOND' ? 'tier-badge-diamond' : '')}">
+                                <span class="material-symbols-outlined fs-6">stars</span> HẠNG ${currentDisplayTier != null ? currentDisplayTier : 'MEMBER'}
                             </div>
                         </div>
 
@@ -262,13 +279,13 @@
                                 <h2 class="fs-3 fw-bold mb-1">${sessionScope.user.fullName}</h2>
                                 <div class="d-flex align-items-center gap-2 text-white-50">
                                     <span style="font-size: 0.9rem; font-family: monospace;">#AURA-${sessionScope.user.id != null ? sessionScope.user.id + 9900 : 9981}</span>
-                                    <span class="material-symbols-outlined fs-6" style="cursor: pointer;" title="Copy ID">content_copy</span>
+                                    <span class="material-symbols-outlined fs-6" style="cursor: pointer;" title="Sao chép mã" onclick="copyMemberId('#AURA-${sessionScope.user.id != null ? sessionScope.user.id + 9900 : 9981}')">content_copy</span>
                                 </div>
                             </div>
                             <div class="text-end bg-white bg-opacity-10 p-3 rounded-3 border border-white border-opacity-25">
                                 <div class="text-white-50 mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Điểm tích luỹ Aura</div>
-                                <div class="fs-2 fw-bold text-white lh-1 mb-1">${sessionScope.user.totalPoints} <span class="fs-6 fw-normal">pts</span></div>
-                                <div class="text-white-50" style="font-size: 0.7rem;">&approx; <fmt:formatNumber value="${discountValue}" pattern="#,###" />đ trừ trực tiếp hóa đơn</div>
+                                <div class="fs-2 fw-bold text-white lh-1 mb-1">${sessionScope.user.totalPoints != null ? sessionScope.user.totalPoints : 0} <span class="fs-6 fw-normal">pts</span></div>
+                                <div class="text-white-50" style="font-size: 0.7rem;">&approx; <fmt:formatNumber value="${discountValue != null ? discountValue : 0}" pattern="#,###" />đ trừ trực tiếp hóa đơn</div>
                             </div>
                         </div>
 
@@ -277,18 +294,66 @@
                                 <c:choose>
                                     <c:when test="${nextTierName == 'VIP'}">
                                         <span>Bạn đã đạt hạng <strong>Kim Cương</strong> tối đa</span>
-                                        <span class="fw-bold">${sessionScope.user.totalPoints}</span>
+                                        <span class="fw-bold">${sessionScope.user.totalPoints != null ? sessionScope.user.totalPoints : 0}</span>
                                     </c:when>
                                     <c:otherwise>
-                                        <span>Cần <strong style="color: var(--gold);">${pointsNeeded} điểm</strong> nữa để thăng hạng <strong>${nextTierName}</strong></span>
-                                        <span class="fw-bold">${sessionScope.user.totalPoints} / ${nextPoints}</span>
+                                        <span>Cần <strong style="color: var(--gold);">${pointsNeeded != null ? pointsNeeded : 0} điểm</strong> nữa để thăng hạng <strong>${nextTierName != null ? nextTierName : 'Vàng'}</strong></span>
+                                        <span class="fw-bold">${sessionScope.user.totalPoints != null ? sessionScope.user.totalPoints : 0} / ${nextPoints != null ? nextPoints : 300}</span>
                                     </c:otherwise>
                                 </c:choose>
                             </div>
+                            <c:set var="fillPct" value="${empty progressPercent ? 0 : progressPercent}" />
                             <div class="progress-bar-custom">
-                                <div class="progress-fill" style="width: ${progressPercent}%;"></div>
+                                <div class="progress-fill" style="width: ${fillPct}%;"></div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Barcode Card -->
+                <div class="col-lg-4">
+                    <div class="barcode-card justify-content-between">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h3 class="fs-6 fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                    <span class="material-symbols-outlined text-danger" style="font-size: 20px;">qr_code_2</span>
+                                    Mã tích điểm tại quầy
+                                </h3>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold rounded-pill" style="font-size: 0.65rem;">Tự động làm mới</span>
+                            </div>
+                            <div class="barcode-box">
+                                <div class="bg-white py-2 px-3 rounded shadow-sm d-flex justify-content-center align-items-center">
+                                    <div class="d-flex align-items-center justify-content-center gap-1 w-100" style="height: 52px; max-width: 220px;">
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 3px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 1px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 5px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 2px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 4px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 6px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 2px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 3px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 5px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 1px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 4px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 2px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 3px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 5px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 2px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 4px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 6px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 3px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 2px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 5px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 1px;"></span>
+                                        <span class="d-inline-block bg-dark h-100 rounded-1" style="width: 4px;"></span>
+                                    </div>
+                                </div>
+                                <p class="font-monospace text-dark fw-bold mt-2 mb-0" style="font-size: 0.85rem; letter-spacing: 0.2em;">8934567${sessionScope.user.id != null ? sessionScope.user.id + 9900 : 9981}</p>
+                            </div>
+                        </div>
+                        <p class="text-muted small text-center mb-0" style="font-size: 0.72rem; line-height: 1.4;">
+                            Đưa mã này cho thu ngân tại quầy thanh toán để tích điểm hoặc áp dụng ưu đãi hội viên.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -389,7 +454,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-custom">Ngày sinh nhật</label>
-                                    <input type="date" name="birthday" class="form-control-custom w-100 profile-input" value="${sessionScope.user.birthday}" readonly required>
+                                    <input type="date" name="birthday" class="form-control-custom w-100 profile-input" value="${sessionScope.user.birthday}" readonly>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label-custom">Địa chỉ nhận hàng mặc định</label>
@@ -397,7 +462,7 @@
                                 </div>
                             </div>
                             
-                            <div id="editActions" class="mt-4 pt-3 border-top d-none d-flex justify-content-end gap-2">
+                            <div id="editActions" class="mt-4 pt-3 border-top d-none justify-content-end gap-2">
                                 <button type="button" id="btnCancelEdit" class="btn btn-light fw-bold px-4">Hủy</button>
                                 <button type="submit" id="btnSaveProfile" class="btn btn-secondary px-4 fw-bold" disabled>Lưu thay đổi</button>
                             </div>
@@ -713,6 +778,7 @@
                 
                 // Show actions, hide edit button
                 editActions.classList.remove('d-none');
+                editActions.classList.add('d-flex');
                 btnEdit.classList.add('d-none');
                 checkFormChanged(); // Reset button state
             });
@@ -731,10 +797,52 @@
                 });
                 
                 // Hide actions, show edit button
+                editActions.classList.remove('d-flex');
                 editActions.classList.add('d-none');
                 btnEdit.classList.remove('d-none');
             });
         });
+
+        // Toast notification helper
+        function showToast(message) {
+            const toastEl = document.getElementById('profileToast');
+            const toastMsg = document.getElementById('profileToastMsg');
+            if (toastEl && toastMsg) {
+                toastMsg.textContent = message;
+                const toast = new bootstrap.Toast(toastEl, { delay: 2500 });
+                toast.show();
+            }
+        }
+
+        // Copy Member ID / Barcode to clipboard
+        function copyMemberId(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Đã sao chép: ' + text);
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Đã sao chép: ' + text);
+            } catch (err) {
+                showToast('Đã sao chép: ' + text);
+            }
+            document.body.removeChild(textArea);
+        }
 
         // Toggle password visibility
         function togglePassword(element) {
@@ -797,5 +905,18 @@
             }
         });
     </script>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+        <div id="profileToast" class="toast align-items-center text-bg-dark border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-success fs-5">check_circle</span>
+                    <span id="profileToastMsg">Đã sao chép!</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
