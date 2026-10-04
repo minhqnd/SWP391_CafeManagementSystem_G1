@@ -1284,7 +1284,8 @@
                     </thead>
                     <tbody>
                         <c:choose>
-                            <c:forEach var="o" items="${counterOrders}">
+                            <c:when test="${not empty counterOrders}">
+                                <c:forEach var="o" items="${counterOrders}">
                                 <tr>
                                     <td class="fw-bold">${o.orderCode}</td>
                                     <td>${o.createdTimeText}</td>
@@ -1363,7 +1364,8 @@
                                         </div>
                                     </td>
                                 </tr>
-                            </c:forEach>
+                                </c:forEach>
+                            </c:when>
                             <c:otherwise>
                                 <tr>
                                     <td colspan="9" class="text-center py-4 text-muted">
