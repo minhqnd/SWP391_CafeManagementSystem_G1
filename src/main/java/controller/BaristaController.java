@@ -1,8 +1,14 @@
 package controller;
 
+import dao.CategoryDAO;
 import dao.OrderDAO;
+import dao.ProductDAO;
+import dao.ProductIngredientDAO;
+import model.Category;
 import model.Order;
 import model.OrderDetail;
+import model.Product;
+import model.ProductIngredient;
 import model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -14,6 +20,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,21 +30,39 @@ import java.util.stream.Collectors;
 @WebServlet(name = "BaristaController", urlPatterns = { "/barista" })
 public class BaristaController extends HttpServlet {
     private final OrderDAO orderDAO;
+    private final ProductDAO productDAO;
+    private final CategoryDAO categoryDAO;
+    private final ProductIngredientDAO productIngredientDAO;
 
     public BaristaController() {
-        this(new OrderDAO());
+        this(new OrderDAO(), new ProductDAO(), new CategoryDAO(), new ProductIngredientDAO());
     }
 
     // Package access allows controller tests without a live database.
     BaristaController(OrderDAO orderDAO) {
+        this(orderDAO, new ProductDAO(), new CategoryDAO(), new ProductIngredientDAO());
+    }
+
+    BaristaController(OrderDAO orderDAO, ProductDAO productDAO, CategoryDAO categoryDAO, ProductIngredientDAO productIngredientDAO) {
         this.orderDAO = orderDAO;
+        this.productDAO = productDAO;
+        this.categoryDAO = categoryDAO;
+        this.productIngredientDAO = productIngredientDAO;
     }
 
     private boolean authorize(HttpServletRequest request, HttpServletResponse response,
                               boolean api) throws IOException {
         response.setHeader("Cache-Control", "no-store");
         HttpSession session = request.getSession(false);
-        User user = session == null ? null : (User) session.getAttribute("user");
+        User user = null;
+        if (session != null) {
+            try {
+                user = (User) session.getAttribute("user");
+            } catch (ClassCastException e) {
+                // Session object cũ sau khi redeploy – xóa session và yêu cầu đăng nhập lại
+                session.invalidate();
+            }
+        }
         if (user == null) {
             if (api) {
                 error(response, 401, "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
@@ -46,8 +71,10 @@ public class BaristaController extends HttpServlet {
             }
             return false;
         }
-        if (!"ACTIVE".equals(user.getStatus()) || !"STAFF".equals(user.getRole())
-                || !"BARISTA".equals(user.getPosition())) {
+        String status = user.getStatus();
+        String role = user.getRole();
+        String position = user.getPosition();
+        if (!"ACTIVE".equals(status) || !"STAFF".equals(role) || !"BARISTA".equals(position)) {
             error(response, 403, "Chỉ nhân viên Barista đang hoạt động được truy cập.");
             return false;
         }
@@ -57,30 +84,80 @@ public class BaristaController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String action = request.getParameter("action");
-        if (!authorize(request, response, action != null)) {
-            return;
+        try {
+            String action = request.getParameter("action");
+            boolean isApi = "orders".equals(action);
+            if (!authorize(request, response, isApi)) {
+                return;
+            }
+            if (action == null || action.isBlank()) {
+                HttpSession session = request.getSession(false);
+                synchronized (session) {
+                    if (session.getAttribute("baristaCsrfToken") == null) {
+                        session.setAttribute("baristaCsrfToken", UUID.randomUUID().toString());
+                    }
+                }
+                request.setAttribute("baristaDashboard", true);
+                request.getRequestDispatcher("/barista-dashboard.jsp").forward(request, response);
+                return;
+            }
+            if ("recipes".equals(action)) {
+                handleRecipesView(request, response);
+                return;
+            }
+            if (!"orders".equals(action)) {
+                error(response, 400, "Chức năng chưa được hỗ trợ.");
+                return;
+            }
+            try {
+                writeJson(response, 200, dashboardData(orderDAO.getOrdersForBarista()));
+            } catch (SQLException | ClassNotFoundException e) {
+                getServletContext().log("Cannot load barista orders", e);
+                error(response, 500, "Không tải được đơn hàng: " + e.getMessage());
+            } catch (RuntimeException e) {
+                getServletContext().log("Unexpected error in barista orders", e);
+                error(response, 500, "Lỗi máy chủ: " + e.getMessage());
+            }
+        } catch (Exception e) {
+            // Lưới an toàn cuối cùng: bất kỳ exception nào chưa được bắt
+            // đều trả JSON thay vì để Tomcat redirect về index.jsp
+            getServletContext().log("Unhandled error in BaristaController.doGet", e);
+            if (!response.isCommitted()) {
+                try {
+                    error(response, 500, "Lỗi không mong muốn: " + e.getMessage());
+                } catch (IOException ignored) { }
+            }
         }
-        if (action == null || action.isBlank()) {
-            HttpSession session = request.getSession(false);
-            synchronized (session) {
-                if (session.getAttribute("baristaCsrfToken") == null) {
-                    session.setAttribute("baristaCsrfToken", UUID.randomUUID().toString());
+    }
+
+    private void handleRecipesView(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            List<Category> categories = categoryDAO.getAllActiveCategoriesWithCount();
+            List<Product> products = productDAO.getAllAvailableProducts();
+            Map<Integer, List<ProductIngredient>> ingredientsMap = productIngredientDAO.getAllProductIngredientsMap();
+
+            for (Product p : products) {
+                p.setIngredients(ingredientsMap.getOrDefault(p.getId(), Collections.emptyList()));
+            }
+
+            request.setAttribute("categories", categories);
+            request.setAttribute("products", products);
+
+            String productIdParam = request.getParameter("productId");
+            if (productIdParam != null && !productIdParam.isBlank()) {
+                try {
+                    int selectedId = Integer.parseInt(productIdParam.trim());
+                    request.setAttribute("selectedProductId", selectedId);
+                } catch (NumberFormatException ignored) {
                 }
             }
-            request.setAttribute("baristaDashboard", true);
-            request.getRequestDispatcher("/barista-dashboard.jsp").forward(request, response);
-            return;
-        }
-        if (!"orders".equals(action)) {
-            error(response, 400, "Chức năng chưa được hỗ trợ.");
-            return;
-        }
-        try {
-            writeJson(response, 200, dashboardData(orderDAO.getOrdersForBarista()));
-        } catch (SQLException | ClassNotFoundException e) {
-            getServletContext().log("Cannot load barista orders", e);
-            error(response, 500, "Không tải được đơn hàng. Vui lòng thử lại.");
+
+            request.setAttribute("baristaRecipes", true);
+            request.getRequestDispatcher("/barista-recipes.jsp").forward(request, response);
+        } catch (Exception e) {
+            getServletContext().log("Cannot load recipes for barista", e);
+            response.sendError(500, "Không thể tải danh sách công thức & định lượng.");
         }
     }
 
@@ -137,6 +214,7 @@ public class BaristaController extends HttpServlet {
             for (OrderDetail item : order.getItems()) {
                 Map<String, Object> detail = new LinkedHashMap<>();
                 detail.put("id", item.getId());
+                detail.put("productId", item.getProductId());
                 detail.put("productName", item.getProductName());
                 detail.put("quantity", item.getQuantity());
                 detail.put("customization", item.getCustomization());

@@ -224,6 +224,25 @@
             min-width: 0;
         }
 
+        .recipe-lookup-link {
+            transition: color 0.15s ease;
+        }
+
+        .recipe-lookup-link:hover {
+            color: var(--aura-red) !important;
+            text-decoration: underline !important;
+        }
+
+        .recipe-sop-badge {
+            transition: all 0.15s ease;
+        }
+
+        .recipe-sop-badge:hover {
+            background-color: #fee2e2 !important;
+            color: var(--aura-red) !important;
+            border-color: #fca5a5 !important;
+        }
+
         @media (max-width: 575.98px) {
             .stat-box {
                 flex: 1 1 140px;
@@ -869,8 +888,23 @@
         );
         const body = element("div", "card-body p-3 d-flex flex-column gap-2");
         (Array.isArray(order.items) ? order.items : []).forEach(item => {
-            body.appendChild(element("div", "item-name",
-                (item.quantity ?? 0) + "× " + (item.productName || "Sản phẩm")));
+            const row = element("div", "item-name d-flex align-items-center justify-content-between");
+            const left = element("span", "");
+            left.append(
+                element("span", "item-quantity me-1", (item.quantity ?? 0) + "×")
+            );
+            const link = element(
+                "a",
+                "text-decoration-none text-dark recipe-lookup-link",
+                item.productName || "Sản phẩm"
+            );
+            if (item.productId) {
+                link.href = contextPath + "/barista?action=recipes&productId=" + item.productId;
+                link.title = "Bấm để xem công thức & định lượng (SOP)";
+            }
+            left.appendChild(link);
+            row.appendChild(left);
+            body.appendChild(row);
         });
         card.append(header, body);
         return card;
@@ -972,16 +1006,40 @@
         );
 
         const info = element("div", "flex-grow-1 min-width-zero");
-        const name = element("div", "item-name");
+        const name = element("div", "item-name d-flex align-items-center justify-content-between gap-1");
 
-        name.append(
+        const nameLeft = element("span", "text-truncate");
+        nameLeft.append(
             element(
                 "span",
                 "item-quantity me-1",
                 (item.quantity ?? 0) + "×"
-            ),
-            element("span", "", item.productName || "Sản phẩm")
+            )
         );
+
+        const nameLink = element(
+            "a",
+            "text-decoration-none text-dark fw-bold recipe-lookup-link",
+            item.productName || "Sản phẩm"
+        );
+        if (item.productId) {
+            nameLink.href = contextPath + "/barista?action=recipes&productId=" + item.productId;
+            nameLink.title = "Bấm để xem công thức & định lượng (SOP)";
+        }
+        nameLeft.appendChild(nameLink);
+        name.appendChild(nameLeft);
+
+        if (item.productId) {
+            const recipeBadge = element(
+                "a",
+                "badge bg-light text-secondary border text-decoration-none d-inline-flex align-items-center gap-1 px-1 py-0.5 flex-shrink-0 recipe-sop-badge",
+                ""
+            );
+            recipeBadge.href = contextPath + "/barista?action=recipes&productId=" + item.productId;
+            recipeBadge.title = "Tra cứu công thức (SOP)";
+            recipeBadge.innerHTML = '<span class="material-symbols-outlined" style="font-size: 13px;">menu_book</span><span style="font-size: 10px; font-weight: 700;">SOP</span>';
+            name.appendChild(recipeBadge);
+        }
 
         info.appendChild(name);
 
