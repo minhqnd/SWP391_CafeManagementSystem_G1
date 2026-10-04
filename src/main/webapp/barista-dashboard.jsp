@@ -1,993 +1,1399 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-    <!DOCTYPE html>
-    <html lang="vi">
+<%@ page contentType="text/html;charset=UTF-8"
+         pageEncoding="UTF-8"
+         language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Aura Café - KDS Barista</title>
-        <link
-            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet">
-        <link
-            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-            rel="stylesheet">
-        <style>
-            :root {
-                --red: #8b1528;
-                --red-dark: #70101f;
-                --red-soft: #fdf2f4;
-                --orange: #d97706;
-                --green: #087f5b;
-                --green-soft: #e8fff5;
-                --blue: #2563eb;
-                --gray-50: #f8fafc;
-                --gray-100: #f1f5f9;
-                --gray-200: #e2e8f0;
-                --gray-500: #64748b;
-                --gray-700: #0f172a;
-                --shadow: 0 2px 10px rgba(15, 23, 42, .04);
-            }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-            * {
-                box-sizing: border-box;
-            }
+    <title>Aura Café - Barista</title>
 
-            body {
-                margin: 0;
-                background: var(--gray-50);
-                color: var(--gray-700);
-                font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-                letter-spacing: -0.01em;
-            }
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet">
 
-            button {
-                font: inherit;
-            }
+    <style>
+        :root {
+            --aura-red: #900b1a;
+            --aura-red-dark: #710916;
+            --aura-border: #e7e5e4;
+            --aura-muted: #78716c;
+        }
 
-            .topbar {
-                height: 76px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 20px;
-                padding: 0 28px;
-                background: #fff;
-                border-bottom: 1px solid var(--gray-200);
-            }
+        body {
+            margin: 0;
+            background: #f5f5f4;
+            color: #292524;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
 
-            .brand {
-                display: flex;
-                align-items: center;
+        .btn-aura {
+            --bs-btn-color: #fff;
+            --bs-btn-bg: var(--aura-red);
+            --bs-btn-border-color: var(--aura-red);
+            --bs-btn-hover-color: #fff;
+            --bs-btn-hover-bg: var(--aura-red-dark);
+            --bs-btn-hover-border-color: var(--aura-red-dark);
+        }
+
+        /* NAVBAR */
+
+        .barista-navbar {
+            background: #fff;
+            border-bottom: 1px solid var(--aura-border);
+        }
+
+        .navbar-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center;
+            gap: 20px;
+            min-height: 86px;
+            padding: 12px 0;
+        }
+
+        .brand-name {
+            color: var(--aura-red);
+            font-size: 24px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .terminal-badge {
+            background: var(--aura-red);
+            color: #fff;
+            font-size: 10px;
+            padding: 8px 10px;
+            white-space: nowrap;
+        }
+
+        .barista-navigation {
+            justify-self: center;
+            flex-wrap: nowrap;
+            padding: 5px;
+            gap: 5px;
+            background: #f5f5f4;
+            border-radius: 16px;
+        }
+
+        .barista-navigation .nav-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 13px 16px;
+            border-radius: 11px;
+            color: #625e58;
+            font-size: 14px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .barista-navigation .nav-link.active {
+            background: var(--aura-red);
+            color: #fff;
+        }
+
+        .barista-navigation .nav-link:hover:not(.active) {
+            background: #eae7e5;
+        }
+
+        .employee {
+            justify-self: end;
+            min-width: 0;
+        }
+
+        .employee-name {
+            max-width: 210px;
+            overflow-wrap: anywhere;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .employee-role {
+            color: var(--aura-muted);
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .employee-avatar {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: var(--aura-red);
+            color: #fff;
+            font-weight: 800;
+        }
+
+        /* THANH THỐNG KÊ */
+
+        .toolbar {
+            background: #fff;
+            border-bottom: 1px solid var(--aura-border);
+        }
+
+        .stat-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            border: 1px solid var(--aura-border);
+            border-radius: 16px;
+            background: #fafaf9;
+        }
+
+        .stat-waiting {
+            background: #fff1f2;
+            border-color: #fecdd3;
+            color: #9f1239;
+        }
+
+        .stat-preparing {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #92400e;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        /* Chấm đỏ tĩnh, không dùng animation */
+        .waiting-dot {
+            width: 11px;
+            height: 11px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: #e11d48;
+        }
+
+        .sound-button {
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .filter-button {
+            padding: 9px 14px;
+            border-radius: 10px;
+            background: #f5f5f4;
+            color: #57534e;
+            border: 1px solid transparent;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .filter-button:hover {
+            border-color: #d6d3d1;
+        }
+
+        .filter-button.active {
+            background: var(--aura-red);
+            color: #fff;
+        }
+
+        /* DANH SÁCH ĐƠN */
+
+        .order-column {
+            min-height: 350px;
+            padding: 12px;
+            border-radius: 14px;
+            background: #eeecea;
+            border-top: 4px solid;
+        }
+
+        .column-waiting {
+            border-top-color: var(--aura-red);
+        }
+
+        .column-preparing {
+            border-top-color: #d97706;
+        }
+
+        .column-ready {
+            border-top-color: #059669;
+        }
+
+        .order-card {
+            overflow: hidden;
+            border: 1px solid var(--aura-border);
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 2px 6px rgb(0 0 0 / 3%);
+        }
+
+        .order-code {
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .order-time,
+        .order-meta {
+            color: var(--aura-muted);
+            font-size: 12px;
+        }
+
+        .order-note {
+            padding: 9px 10px;
+            border-left: 3px solid #d97706;
+            border-radius: 6px;
+            background: #fff8e6;
+            color: #7c4a03;
+            font-size: 12px;
+        }
+
+        .item-row {
+            padding: 10px;
+            border: 1px solid var(--aura-border);
+            border-radius: 10px;
+            background: #fafaf9;
+        }
+
+        .item-name {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .item-quantity {
+            color: var(--aura-red);
+            font-weight: 800;
+        }
+
+        .item-tag {
+            padding: 3px 6px;
+            border: 1px solid var(--aura-border);
+            border-radius: 5px;
+            background: #fff;
+            color: #57534e;
+            font-size: 10px;
+        }
+
+        .item-action {
+            min-width: 86px;
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .empty-column {
+            padding: 35px 10px;
+            text-align: center;
+            color: var(--aura-muted);
+            font-size: 13px;
+        }
+
+        .min-width-zero {
+            min-width: 0;
+        }
+
+        @media (max-width: 1199.98px) {
+            .navbar-layout {
+                grid-template-columns: minmax(0, 1fr) auto;
                 gap: 12px;
-                min-width: 245px;
+            }
+
+            .barista-navigation {
+                grid-column: 1 / -1;
+                grid-row: 2;
+            }
+
+            .employee {
+                grid-column: 2;
+                grid-row: 1;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .terminal-badge {
+                display: none;
             }
 
             .brand-name {
-                color: var(--red);
-                font-size: 23px;
-                font-weight: 800;
-                letter-spacing: -0.03em;
+                font-size: 21px;
             }
 
-            .brand-badge {
-                padding: 7px 10px;
-                border-radius: 5px;
-                color: white;
-                background: var(--red);
-                font-size: 11px;
-                font-weight: 800;
-                letter-spacing: .04em;
+            .employee-name {
+                max-width: 135px;
+                font-size: 12px;
             }
 
-            .station-info {
+            .employee-avatar {
+                width: 36px;
+                height: 36px;
+            }
+
+            .barista-navigation {
+                width: 100%;
+            }
+
+            .barista-navigation .nav-link {
                 flex: 1;
-                min-width: 180px;
-            }
-
-            .station-info strong {
-                display: block;
-                font-size: 15px;
-            }
-
-            .station-info span {
-                color: var(--gray-500);
-                font-size: 12px;
-            }
-
-            .mode-switch {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                padding: 4px;
-                border-radius: 14px;
-                background: var(--gray-100);
-            }
-
-            .mode-switch>span {
-                padding: 10px 14px;
-                border-radius: 10px;
-                color: var(--gray-500);
-                font-size: 13px;
-                font-weight: 700;
-                white-space: nowrap;
-            }
-
-            .mode-switch>span.active {
-                color: white;
-                background: var(--red);
-                box-shadow: 0 4px 10px rgba(139, 21, 40, .18);
-            }
-
-            .mode-switch .material-symbols-outlined {
-                padding: 0;
-                color: inherit;
-            }
-
-            .shift-info {
-                min-width: 145px;
-                text-align: right;
-            }
-
-            .shift-info strong,
-            .shift-info span {
-                display: block;
-            }
-
-            .shift-info strong {
-                font-size: 13px;
-            }
-
-            .shift-info span {
-                color: var(--gray-500);
+                padding: 11px 7px;
                 font-size: 11px;
-            }
-
-            .online {
-                display: inline-flex;
-                align-items: center;
-                gap: 7px;
-                margin-left: 14px;
-                padding: 8px 12px;
-                border: 1px solid #93e7c5;
-                border-radius: 20px;
-                color: var(--green);
-                background: var(--green-soft);
-                font-size: 13px;
-                font-weight: 700;
-            }
-
-            .online::before {
-                content: "";
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background: #25b986;
-            }
-
-            .user-actions {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                white-space: nowrap;
-            }
-
-            .user-actions span {
-                font-size: 13px;
-                color: var(--gray-500);
-            }
-
-            .outline-button,
-            .logout-button {
-                padding: 9px 13px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-weight: 700;
-            }
-
-            .outline-button {
-                border: 1px solid var(--gray-200);
-                color: var(--gray-700);
-                background: white;
-                transition: .2s ease;
-            }
-
-            .outline-button:hover {
-                color: var(--red);
-                border-color: rgba(139, 21, 40, .3);
-                background: var(--red-soft);
-            }
-
-            .logout-button {
-                border: 0;
-                color: white;
-                background: var(--red);
-                text-decoration: none;
-            }
-
-            .logout-button:hover {
-                color: white;
-                background: var(--red-dark);
-            }
-
-            .dashboard {
-                padding: 20px 28px 30px;
-            }
-
-            .summary {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(170px, 1fr));
-                gap: 14px;
-                margin-bottom: 18px;
-            }
-
-            .summary-card {
-                padding: 16px 18px;
-                border: 1px solid var(--gray-200);
-                border-radius: 16px;
-                background: white;
-                box-shadow: var(--shadow);
-            }
-
-            .summary-card p {
-                margin: 0 0 6px;
-                color: var(--gray-500);
-                font-size: 13px;
-                font-weight: 700;
-                text-transform: uppercase;
-            }
-
-            .summary-card strong {
-                font-size: 30px;
-            }
-
-            .summary-card.waiting strong {
-                color: var(--red);
-            }
-
-            .summary-card.preparing strong {
-                color: var(--orange);
-            }
-
-            .summary-card.ready strong {
-                color: var(--green);
-            }
-
-            .toolbar {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 14px;
-                margin-bottom: 16px;
-                padding: 10px;
-                border: 1px solid var(--gray-200);
-                border-radius: 12px;
-                background: white;
-            }
-
-            .filters {
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-            }
-
-            .filter-button {
-                padding: 9px 14px;
-                border: 0;
-                border: 1px solid transparent;
-                border-radius: 999px;
-                color: var(--gray-700);
-                background: white;
-                cursor: pointer;
-                font-weight: 700;
-            }
-
-            .filter-button:hover {
-                color: var(--red);
-                border-color: rgba(139, 21, 40, .25);
-                background: var(--red-soft);
-            }
-
-            .filter-button.active {
-                color: white;
-                background: var(--red);
-            }
-
-            .refresh-info {
-                color: var(--gray-500);
-                font-size: 13px;
-                white-space: nowrap;
-            }
-
-            .refresh-info strong {
-                color: var(--red);
-            }
-
-            .columns {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(280px, 1fr));
-                gap: 16px;
-                align-items: start;
-            }
-
-            .column {
-                min-height: 350px;
-                padding: 12px;
-                border-radius: 14px;
-                background: #f1f5f9;
-            }
-
-            .column-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin: 0 4px 12px;
-            }
-
-            .column-header h2 {
-                margin: 0;
-                font-size: 16px;
-            }
-
-            .column-header span {
-                min-width: 26px;
-                padding: 4px 8px;
-                border-radius: 12px;
-                color: white;
-                background: var(--gray-500);
+                white-space: normal;
                 text-align: center;
-                font-size: 12px;
-                font-weight: 800;
             }
 
-            .column.waiting {
-                border-top: 4px solid var(--red);
-            }
-
-            .column.preparing {
-                border-top: 4px solid var(--orange);
-            }
-
-            .column.ready {
-                border-top: 4px solid var(--green);
-            }
-
-            .order-card {
-                margin-bottom: 12px;
-                overflow: hidden;
-                border: 1px solid var(--gray-200);
-                border-radius: 16px;
-                background: white;
-                box-shadow: var(--shadow);
-            }
-
-            .order-card-header {
-                padding: 14px;
-                border-bottom: 1px solid var(--gray-200);
-            }
-
-            .order-title-row,
-            .order-meta-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 8px;
-            }
-
-            .order-title-row strong {
-                font-size: 17px;
-            }
-
-            .order-time {
-                color: var(--gray-500);
-                font-size: 12px;
-            }
-
-            .order-type {
-                display: inline-block;
-                margin-top: 9px;
-                padding: 5px 8px;
-                border-radius: 6px;
-                color: var(--gray-700);
-                background: var(--gray-100);
-                font-size: 12px;
-                font-weight: 700;
-            }
-
-            .order-meta-row {
-                justify-content: flex-start;
-                margin-top: 8px;
-                color: var(--gray-500);
-                font-size: 13px;
-            }
-
-            .order-note {
-                margin-top: 10px;
-                padding: 9px 10px;
-                border-left: 3px solid var(--orange);
-                border-radius: 5px;
-                color: #7c4a03;
-                background: #fff8e6;
-                font-size: 13px;
-                line-height: 1.4;
-            }
-
-            .order-items {
-                padding: 12px;
-            }
-
-            .item-row {
-                display: flex;
-                align-items: flex-start;
-                justify-content: space-between;
-                gap: 10px;
-                margin-bottom: 9px;
-                padding: 11px;
-                border: 1px solid var(--gray-200);
-                border-radius: 10px;
-                background: #fff;
-            }
-
-            .item-row:last-child {
-                margin-bottom: 0;
-            }
-
-            .item-info {
-                min-width: 0;
-            }
-
-            .item-name {
-                color: #252525;
-                font-size: 14px;
-                font-weight: 800;
-                line-height: 1.35;
-            }
-
-            .item-quantity {
-                margin-right: 5px;
-                color: var(--red);
-                font-weight: 900;
-            }
-
-            .customization {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 5px;
-                margin-top: 7px;
-            }
-
-            .customization span {
-                padding: 3px 6px;
-                border: 1px solid var(--gray-200);
-                border-radius: 5px;
-                color: var(--gray-500);
-                font-size: 11px;
-            }
-
-            .item-action {
-                flex: 0 0 auto;
-                min-width: 92px;
-                padding: 9px 8px;
-                border: 0;
-                border-radius: 10px;
-                color: #5f6368;
-                background: #e9ecef;
-                cursor: pointer;
-                font-size: 11px;
-                font-weight: 900;
-            }
-
-            .item-action:hover:not(:disabled) {
-                background: #dfe3e6;
-            }
-
-            .item-action.done {
-                color: var(--green);
-                background: var(--green-soft);
-                cursor: default;
-            }
-
-            .item-action:disabled:not(.done) {
-                cursor: not-allowed;
-                opacity: .65;
-            }
-
-            .empty-column {
-                padding: 40px 12px;
-                color: var(--gray-500);
-                text-align: center;
-                font-size: 13px;
-            }
-
-            .error-message {
+            .shortcut {
                 display: none;
-                margin-bottom: 14px;
-                padding: 12px 14px;
-                border: 1px solid #ffc9c9;
-                border-radius: 8px;
-                color: #a8071a;
-                background: #fff1f1;
             }
 
-            @media (max-width: 1050px) {
-                .topbar {
-                    height: auto;
-                    min-height: 76px;
-                    flex-wrap: wrap;
-                    padding: 15px 18px;
-                }
-
-                .station-info {
-                    order: 3;
-                    flex-basis: 100%;
-                }
-
-                .dashboard {
-                    padding: 16px;
-                }
-
-                .columns {
-                    overflow-x: auto;
-                    grid-template-columns: repeat(3, minmax(300px, 1fr));
-                }
+            .stat-box {
+                flex: 1 1 140px;
+                padding: 10px;
             }
 
-            @media (max-width: 650px) {
-                .summary {
-                    grid-template-columns: 1fr;
-                }
-
-                .toolbar {
-                    align-items: flex-start;
-                    flex-direction: column;
-                }
-
-                .brand-badge {
-                    display: none;
-                }
-
-                .user-actions span {
-                    display: none;
-                }
+            .stat-label {
+                font-size: 10px;
             }
-        </style>
-    </head>
+        }
+    </style>
+</head>
 
-    <body>
-        <header class="topbar">
-            <div class="brand">
+<body data-context-path="${pageContext.request.contextPath}">
+
+<!-- NAVBAR -->
+<header class="barista-navbar">
+    <div class="container-fluid px-3 px-xl-4">
+        <div class="navbar-layout">
+
+            <div class="d-flex align-items-center gap-3">
                 <span class="brand-name">Aura Café</span>
-                <span class="brand-badge">BARISTA KDS TERMINAL</span>
-            </div>
 
-            <div class="station-info">
-                <strong>Trạm 01 · Pha chế chính</strong>
-                <span>${sessionScope.user.fullName} · Barista</span>
-                <span class="online">KDS Online</span>
-            </div>
-
-            <div class="mode-switch" aria-label="Chế độ màn hình">
-                <span class="active">
-                    <span class="material-symbols-outlined"
-                        style="font-size: 17px; vertical-align: middle;">point_of_sale</span>
-                    Màn hình KDS (F1)
-                </span>
-                <span>
-                    <span class="material-symbols-outlined"
-                        style="font-size: 17px; vertical-align: middle;">menu_book</span>
-                    Công thức & Định lượng (F2)
+                <span class="badge terminal-badge">
+                    BARISTA KDS TERMINAL
                 </span>
             </div>
 
-            <div class="shift-info">
-                <strong>Ca sáng: 06:30 - 14:30</strong>
-                <span>Đang trong ca làm việc</span>
+            <nav class="nav nav-pills barista-navigation"
+                 aria-label="Điều hướng Barista">
+
+                <a id="orders-link"
+                   class="nav-link active"
+                   aria-current="page"
+                   href="${pageContext.request.contextPath}/barista">
+
+                    <svg width="22" height="22" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 8h12v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8Z"/>
+                        <path d="M16 9h2a3 3 0 1 1 0 6h-2"/>
+                        <path d="M7 3v2M11 3v2M3 22h16"/>
+                    </svg>
+
+                    <span>
+                        Đơn pha chế <span class="shortcut">(F1)</span>
+                    </span>
+                </a>
+
+                <a id="recipes-link"
+                   class="nav-link"
+                   href="${pageContext.request.contextPath}/barista?action=recipes">
+
+                    <svg width="23" height="23" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v16"/>
+                        <path d="M12 5C9 3 5 3 2 4v16c3-1 7-1 10 1"/>
+                        <path d="M12 5c3-2 7-2 10-1v16c-3-1-7-1-10 1"/>
+                    </svg>
+
+                    <span>
+                        Công thức & Định lượng
+                        <span class="shortcut">(F2)</span>
+                    </span>
+                </a>
+            </nav>
+
+            <div class="employee d-flex align-items-center gap-3">
+                <div class="text-end">
+                    <div id="employee-name" class="employee-name">
+                        <c:out value="${sessionScope.user.fullName}"
+                               default="Nhân viên"/>
+                    </div>
+
+                    <div class="employee-role">
+                        Nhân viên pha chế
+                    </div>
+                </div>
+
+                <div id="employee-avatar"
+                     class="employee-avatar"
+                     aria-hidden="true">
+                    NV
+                </div>
             </div>
 
-            <div class="user-actions">
-                <span id="last-updated">Đang tải dữ liệu...</span>
-                <button id="refresh-button" class="outline-button" type="button">Làm mới</button>
-                <a class="logout-button" href="${pageContext.request.contextPath}/login?action=logout">Đăng xuất</a>
+        </div>
+    </div>
+</header>
+
+<!-- THỐNG KÊ VÀ BỘ LỌC -->
+<section class="toolbar px-3 px-xl-4 py-3"
+         aria-label="Thống kê và bộ lọc">
+
+    <div class="d-flex flex-wrap align-items-center
+                justify-content-between gap-3">
+
+        <div class="d-flex flex-wrap gap-2">
+
+            <div class="stat-box stat-waiting">
+                <span class="waiting-dot" aria-hidden="true"></span>
+
+                <div>
+                    <div class="stat-label">Đang chờ pha</div>
+                    <div>
+                        <strong id="waiting-count" class="stat-value">0</strong>
+                        <span>đơn</span>
+                    </div>
+                </div>
             </div>
-        </header>
 
-        <main class="dashboard">
-            <section class="summary" aria-label="Thống kê đơn hàng">
-                <div class="summary-card waiting">
-                    <p>Đang chờ pha</p>
-                    <strong id="waiting-count">0</strong>
-                </div>
-                <div class="summary-card preparing">
-                    <p>Đang thực hiện</p>
-                    <strong id="preparing-count">0</strong>
-                </div>
-                <div class="summary-card ready">
-                    <p>Hoàn tất trong ca</p>
-                    <strong id="ready-count">0</strong>
-                </div>
-            </section>
+            <div class="stat-box stat-preparing">
+                <svg width="28" height="28" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor"
+                     stroke-width="1.8" aria-hidden="true">
+                    <path d="M4 5h12v10a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V5Z"/>
+                    <path d="M16 6h2a3 3 0 1 1 0 6h-2M3 22h16"/>
+                </svg>
 
-            <div id="error-message" class="error-message"></div>
-
-            <section class="toolbar">
-                <div class="filters" aria-label="Lọc nhóm sản phẩm">
-                    <button class="filter-button active" data-group="all" type="button">Tất cả sản phẩm</button>
-                    <button class="filter-button" data-group="coffee" type="button">Cà phê</button>
-                    <button class="filter-button" data-group="tea" type="button">Trà & Đá xay</button>
-                    <button class="filter-button" data-group="bakery" type="button">Bánh</button>
-                    <button class="filter-button" data-group="bottled" type="button">Đóng chai</button>
-                </div>
-                <div class="refresh-info">Tự cập nhật mỗi <strong>5 giây</strong></div>
-            </section>
-
-            <section class="columns">
-                <div class="column waiting">
-                    <div class="column-header">
-                        <h2>Đang chờ pha</h2>
-                        <span id="waiting-column-count">0</span>
+                <div>
+                    <div class="stat-label">Đang thực hiện</div>
+                    <div>
+                        <strong id="preparing-count" class="stat-value">0</strong>
+                        <span>đơn</span>
                     </div>
-                    <div id="waiting-orders"></div>
                 </div>
+            </div>
 
-                <div class="column preparing">
-                    <div class="column-header">
-                        <h2>Đang thực hiện</h2>
-                        <span id="preparing-column-count">0</span>
+            <div class="stat-box">
+                <svg width="28" height="28" viewBox="0 0 24 24"
+                     fill="none" stroke="#059669"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="m8 12 3 3 5-6"/>
+                </svg>
+
+                <div>
+                    <div class="stat-label">Hoàn tất trong ca</div>
+                    <div>
+                        <strong id="ready-count" class="stat-value">0</strong>
+                        <span>đơn</span>
                     </div>
-                    <div id="preparing-orders"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <button id="sound-button"
+                class="btn btn-light border sound-button
+                       d-flex align-items-center gap-2"
+                type="button"
+                aria-pressed="false">
+
+            <svg width="22" height="22" viewBox="0 0 24 24"
+                 fill="none" stroke="#900b1a"
+                 stroke-width="1.8" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <path d="M11 5 6 9H3v6h3l5 4V5Z"/>
+                <path d="M15 8a6 6 0 0 1 0 8"/>
+                <path d="M18 5a10 10 0 0 1 0 14"/>
+            </svg>
+
+            <span id="sound-label">Âm chuông: Tắt</span>
+        </button>
+    </div>
+
+    <div class="border-top mt-3 pt-3">
+        <div class="d-flex flex-wrap gap-2" aria-label="Lọc nhóm sản phẩm">
+            <button class="btn filter-button active"
+                    data-group="all" aria-pressed="true" type="button">
+                Tất cả sản phẩm
+            </button>
+
+            <button class="btn filter-button"
+                    data-group="coffee" aria-pressed="false" type="button">
+                Cà phê
+            </button>
+
+            <button class="btn filter-button"
+                    data-group="tea" aria-pressed="false" type="button">
+                Trà & Đá xay
+            </button>
+
+            <button class="btn filter-button"
+                    data-group="bakery" aria-pressed="false" type="button">
+                Bánh
+            </button>
+
+            <button class="btn filter-button"
+                    data-group="bottled" aria-pressed="false" type="button">
+                Đóng chai
+            </button>
+        </div>
+    </div>
+</section>
+
+<main class="container-fluid px-3 px-xl-4 py-4">
+
+    <div id="error-message"
+         class="alert alert-danger"
+         role="alert"
+         hidden>
+    </div>
+
+    <div id="sound-message"
+         class="alert alert-warning"
+         role="status"
+         hidden>
+    </div>
+
+    <section class="row g-3" aria-label="Danh sách đơn pha chế">
+
+        <div class="col-12 col-lg-4">
+            <div class="order-column column-waiting">
+                <div class="d-flex align-items-center
+                            justify-content-between mb-3 px-1">
+                    <h2 class="h6 fw-bold mb-0">Đang chờ pha</h2>
+                    <span id="waiting-column-count"
+                          class="badge rounded-pill"
+                          style="background: #900b1a">0</span>
                 </div>
 
-                <div class="column ready">
-                    <div class="column-header">
-                        <h2>Đã hoàn tất</h2>
-                        <span id="ready-column-count">0</span>
-                    </div>
-                    <div id="ready-orders"></div>
+                <div id="waiting-orders"></div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="order-column column-preparing">
+                <div class="d-flex align-items-center
+                            justify-content-between mb-3 px-1">
+                    <h2 class="h6 fw-bold mb-0">Đang thực hiện</h2>
+                    <span id="preparing-column-count"
+                          class="badge text-bg-warning rounded-pill">0</span>
                 </div>
-            </section>
-        </main>
 
-        <script>
-            const contextPath = '${pageContext.request.contextPath}';
-            const refreshIntervalMs = 5000;
-            let activeGroup = 'all';
-            let isLoading = false;
+                <div id="preparing-orders"></div>
+            </div>
+        </div>
 
-            const waitingOrders = document.getElementById('waiting-orders');
-            const preparingOrders = document.getElementById('preparing-orders');
-            const readyOrders = document.getElementById('ready-orders');
-            const errorMessage = document.getElementById('error-message');
+        <div class="col-12 col-lg-4">
+            <div class="order-column column-ready">
+                <div class="d-flex align-items-center
+                            justify-content-between mb-3 px-1">
+                    <h2 class="h6 fw-bold mb-0">Đã hoàn tất</h2>
+                    <span id="ready-column-count"
+                          class="badge text-bg-success rounded-pill">0</span>
+                </div>
 
-            document.querySelectorAll('.filter-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    activeGroup = button.dataset.group;
+                <div id="ready-orders"></div>
+            </div>
+        </div>
 
-                    document.querySelectorAll('.filter-button').forEach(item => {
-                        item.classList.toggle('active', item === button);
-                    });
+    </section>
+</main>
 
-                    loadOrders();
-                });
+<script>
+    "use strict";
+
+    const contextPath = document.body.dataset.contextPath;
+    const refreshIntervalMs = 5000;
+
+    let activeGroup = "all";
+    let isUpdating = false;
+    let loadController = null;
+    let refreshTimer = null;
+
+    // Chuông luôn theo dõi hàng đợi đầy đủ, không theo bộ lọc.
+    let notificationInitialized = false;
+    const seenOrderIds = new Set();
+
+    let soundEnabled = false;
+    let audioContext = null;
+
+    const containers = {
+        CONFIRMED: document.getElementById("waiting-orders"),
+        PREPARING: document.getElementById("preparing-orders"),
+        READY: document.getElementById("ready-orders")
+    };
+
+    const errorMessage = document.getElementById("error-message");
+    const soundMessage = document.getElementById("sound-message");
+
+    // =====================================================
+    // NAVBAR
+    // =====================================================
+
+    const employeeName = document.getElementById("employee-name")
+        .textContent.trim();
+
+    document.getElementById("employee-avatar").textContent =
+        employeeName.split(/\s+/)
+            .filter(Boolean)
+            .slice(-2)
+            .map(part => part.charAt(0))
+            .join("")
+            .toLocaleUpperCase("vi-VN") || "NV";
+
+    document.addEventListener("keydown", event => {
+        if (event.altKey || event.ctrlKey || event.metaKey) {
+            return;
+        }
+
+        const linkId = event.key === "F1"
+            ? "orders-link"
+            : event.key === "F2"
+                ? "recipes-link"
+                : null;
+
+        if (linkId) {
+            event.preventDefault();
+            window.location.assign(
+                document.getElementById(linkId).href
+            );
+        }
+    });
+
+    // =====================================================
+    // ÂM CHUÔNG
+    // =====================================================
+
+    function updateSoundButton() {
+        document.getElementById("sound-label").textContent =
+            "Âm chuông: " + (soundEnabled ? "Bật" : "Tắt");
+
+        document.getElementById("sound-button").setAttribute(
+            "aria-pressed",
+            String(soundEnabled)
+        );
+    }
+
+    function playNotificationSound() {
+        if (!soundEnabled || !audioContext) {
+            return;
+        }
+
+        if (audioContext.state !== "running") {
+            soundEnabled = false;
+            updateSoundButton();
+
+            soundMessage.textContent =
+                "Âm thanh đang bị trình duyệt tạm dừng. "
+                + "Bấm bật chuông để kích hoạt lại.";
+
+            soundMessage.hidden = false;
+            return;
+        }
+
+        const start = audioContext.currentTime;
+
+        // Hai nốt ngắn, âm lượng nhẹ.
+        [660, 880].forEach((frequency, index) => {
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            const time = start + index * 0.18;
+
+            oscillator.type = "sine";
+            oscillator.frequency.value = frequency;
+
+            gain.gain.setValueAtTime(0, time);
+            gain.gain.linearRampToValueAtTime(0.12, time + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.16);
+
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+
+            oscillator.start(time);
+            oscillator.stop(time + 0.18);
+
+            oscillator.onended = () => {
+                oscillator.disconnect();
+                gain.disconnect();
+            };
+        });
+    }
+
+    document.getElementById("sound-button").addEventListener(
+        "click",
+        async () => {
+            soundMessage.hidden = true;
+
+            if (soundEnabled) {
+                soundEnabled = false;
+                updateSoundButton();
+                return;
+            }
+
+            try {
+                const AudioContextClass =
+                    window.AudioContext || window.webkitAudioContext;
+
+                if (!AudioContextClass) {
+                    throw new Error("Trình duyệt không hỗ trợ âm thanh.");
+                }
+
+                if (!audioContext) {
+                    audioContext = new AudioContextClass();
+                }
+
+                await audioContext.resume();
+
+                if (audioContext.state !== "running") {
+                    throw new Error("Không thể kích hoạt âm thanh.");
+                }
+
+                soundEnabled = true;
+                updateSoundButton();
+
+                // Tiếng thử khi nhân viên chủ động bật chuông.
+                playNotificationSound();
+
+            } catch (error) {
+                soundEnabled = false;
+                updateSoundButton();
+
+                soundMessage.textContent =
+                    "Không bật được chuông. " + error.message;
+
+                soundMessage.hidden = false;
+            }
+        }
+    );
+
+    function detectNewOrders(allOrders) {
+        let hasNewOrder = false;
+
+        allOrders.forEach(order => {
+            if (order.id === null || order.id === undefined) {
+                return;
+            }
+
+            const id = String(order.id);
+
+            const inQueue =
+                order.status === "CONFIRMED"
+                || order.status === "PREPARING";
+
+            if (notificationInitialized
+                    && inQueue
+                    && !seenOrderIds.has(id)) {
+                hasNewOrder = true;
+            }
+
+            // Vẫn ghi nhận khi tắt chuông.
+            // Bật lại sẽ không phát lại các đơn đã nhìn thấy.
+            seenOrderIds.add(id);
+        });
+
+        if (notificationInitialized && hasNewOrder) {
+            playNotificationSound();
+        }
+
+        notificationInitialized = true;
+    }
+
+    // =====================================================
+    // API
+    // =====================================================
+
+    async function readJsonResponse(response, allowEmpty) {
+        if (response.redirected) {
+            throw new Error(
+                "Yêu cầu bị chuyển hướng. Vui lòng kiểm tra đăng nhập."
+            );
+        }
+
+        const text = await response.text();
+
+        if (!text.trim()) {
+            if (response.ok && allowEmpty) {
+                return {};
+            }
+
+            throw new Error(
+                "Máy chủ trả về nội dung rỗng (HTTP "
+                + response.status + ")."
+            );
+        }
+
+        let data;
+
+        try {
+            data = JSON.parse(text);
+        } catch (error) {
+            throw new Error(
+                "Máy chủ không trả về JSON hợp lệ. "
+                + "Kiểm tra BaristaServlet hoặc phiên đăng nhập."
+            );
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data && data.message
+                    ? data.message
+                    : "Yêu cầu thất bại: HTTP " + response.status
+            );
+        }
+
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+            throw new Error("Cấu trúc JSON không hợp lệ.");
+        }
+
+        return data;
+    }
+
+    async function fetchOrders(group, signal) {
+        const response = await fetch(
+            contextPath
+                + "/barista?action=orders&group="
+                + encodeURIComponent(group),
+            {
+                method: "GET",
+                headers: { "Accept": "application/json" },
+                credentials: "same-origin",
+                cache: "no-store",
+                signal: signal
+            }
+        );
+
+        const data = await readJsonResponse(response, false);
+
+        if (!Array.isArray(data.orders)) {
+            throw new Error("Phản hồi thiếu mảng orders.");
+        }
+
+        return data;
+    }
+
+    function scheduleRefresh() {
+        clearTimeout(refreshTimer);
+
+        refreshTimer = setTimeout(() => {
+            loadOrders();
+        }, refreshIntervalMs);
+    }
+
+    async function loadOrders() {
+        if (isUpdating) {
+            return;
+        }
+
+        clearTimeout(refreshTimer);
+
+        if (loadController) {
+            loadController.abort();
+        }
+
+        const controller = new AbortController();
+        loadController = controller;
+
+        const requestedGroup = activeGroup;
+
+        try {
+            // Luôn lấy hàng đợi đầy đủ để:
+            // 1. Phát hiện đơn mới.
+            // 2. Xác định FIFO không bị ảnh hưởng bởi bộ lọc.
+            const allRequest = fetchOrders("all", controller.signal);
+
+            const filteredRequest = requestedGroup === "all"
+                ? allRequest
+                : fetchOrders(requestedGroup, controller.signal);
+
+            const [allData, filteredData] = await Promise.all([
+                allRequest,
+                filteredRequest
+            ]);
+
+            if (loadController !== controller) {
+                return;
+            }
+
+            const allOrders = sortOldestFirst(allData.orders);
+            const displayOrders = sortOldestFirst(filteredData.orders);
+
+            updateStatistics(allData.statistics || {});
+            renderOrders(displayOrders, allOrders);
+            detectNewOrders(allOrders);
+
+            hideError();
+
+        } catch (error) {
+            if (error.name !== "AbortError"
+                    && loadController === controller) {
+                showError(error.message);
+            }
+
+        } finally {
+            if (loadController === controller) {
+                loadController = null;
+                scheduleRefresh();
+            }
+        }
+    }
+
+    // =====================================================
+    // BỘ LỌC VÀ SẮP XẾP
+    // =====================================================
+
+    document.querySelectorAll(".filter-button").forEach(button => {
+        button.addEventListener("click", () => {
+            activeGroup = button.dataset.group;
+
+            document.querySelectorAll(".filter-button").forEach(item => {
+                const selected = item === button;
+
+                item.classList.toggle("active", selected);
+                item.setAttribute("aria-pressed", String(selected));
             });
 
-            document.getElementById('refresh-button').addEventListener('click', loadOrders);
-
-            async function loadOrders() {
-                if (isLoading) {
-                    return;
-                }
-
-                isLoading = true;
-                hideError();
-
-                try {
-                    const url = contextPath
-                        + '/barista?action=orders&group='
-                        + encodeURIComponent(activeGroup);
-
-                    const response = await fetch(url, {
-                        method: 'GET',
-                        headers: { 'Accept': 'application/json' },
-                        cache: 'no-store'
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.message || 'Không thể tải danh sách đơn.');
-                    }
-
-                    updateStatistics(data.statistics || {});
-                    renderOrders(data.orders || []);
-                    document.getElementById('last-updated').textContent =
-                        'Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN');
-                } catch (error) {
-                    showError(error.message);
-                } finally {
-                    isLoading = false;
-                }
-            }
-
-            function updateStatistics(statistics) {
-                document.getElementById('waiting-count').textContent = statistics.waiting || 0;
-                document.getElementById('preparing-count').textContent = statistics.preparing || 0;
-                document.getElementById('ready-count').textContent = statistics.ready || 0;
-            }
-
-            function renderOrders(orders) {
-                clearOrders();
-
-                const activeOrders = orders.filter(order =>
-                    order.status === 'CONFIRMED' || order.status === 'PREPARING'
-                );
-
-                // Backend cũng kiểm tra FIFO. Biến này chỉ giúp khóa nút sớm trên giao diện.
-                const firstActionableOrderId = activeOrders.length > 0
-                    ? activeOrders[0].id
-                    : null;
-
-                let waitingTotal = 0;
-                let preparingTotal = 0;
-                let readyTotal = 0;
-
-                orders.forEach(order => {
-                    const card = createOrderCard(
-                        order,
-                        order.id === firstActionableOrderId
-                    );
-
-                    if (order.status === 'CONFIRMED') {
-                        waitingOrders.appendChild(card);
-                        waitingTotal++;
-                    } else if (order.status === 'PREPARING') {
-                        preparingOrders.appendChild(card);
-                        preparingTotal++;
-                    } else if (order.status === 'READY') {
-                        readyOrders.appendChild(card);
-                        readyTotal++;
-                    }
-                });
-
-                setEmptyState(waitingOrders, waitingTotal === 0, 'Không có đơn đang chờ.');
-                setEmptyState(preparingOrders, preparingTotal === 0, 'Không có đơn đang thực hiện.');
-                setEmptyState(readyOrders, readyTotal === 0, 'Chưa có đơn hoàn tất.');
-
-                document.getElementById('waiting-column-count').textContent = waitingTotal;
-                document.getElementById('preparing-column-count').textContent = preparingTotal;
-                document.getElementById('ready-column-count').textContent = readyTotal;
-            }
-
-            function clearOrders() {
-                waitingOrders.replaceChildren();
-                preparingOrders.replaceChildren();
-                readyOrders.replaceChildren();
-            }
-
-            function createOrderCard(order, canAct) {
-                const card = document.createElement('article');
-                card.className = 'order-card';
-
-                const header = document.createElement('div');
-                header.className = 'order-card-header';
-
-                const titleRow = document.createElement('div');
-                titleRow.className = 'order-title-row';
-
-                const title = document.createElement('strong');
-                title.textContent = '#' + (order.orderCode || order.id);
-
-                const time = document.createElement('span');
-                time.className = 'order-time';
-                time.textContent = formatCreatedAt(order.createdAt);
-
-                titleRow.append(title, time);
-
-                const type = document.createElement('span');
-                type.className = 'order-type';
-                type.textContent = getOrderTypeLabel(order);
-
-                const meta = document.createElement('div');
-                meta.className = 'order-meta-row';
-                meta.textContent = getOrderMeta(order);
-
-                header.append(titleRow, type, meta);
-
-                if (order.orderNote && order.orderNote.trim()) {
-                    const note = document.createElement('div');
-                    note.className = 'order-note';
-                    note.textContent = 'Ghi chú: ' + order.orderNote;
-                    header.appendChild(note);
-                }
-
-                const itemContainer = document.createElement('div');
-                itemContainer.className = 'order-items';
-
-                (order.items || []).forEach(item => {
-                    itemContainer.appendChild(createItemRow(item, canAct, order.status));
-                });
-
-                card.append(header, itemContainer);
-                return card;
-            }
-
-            function createItemRow(item, canAct, orderStatus) {
-                const row = document.createElement('div');
-                row.className = 'item-row';
-
-                const info = document.createElement('div');
-                info.className = 'item-info';
-
-                const name = document.createElement('div');
-                name.className = 'item-name';
-
-                const quantity = document.createElement('span');
-                quantity.className = 'item-quantity';
-                quantity.textContent = item.quantity + 'x';
-
-                const productName = document.createElement('span');
-                productName.textContent = ' ' + (item.productName || 'Sản phẩm');
-
-                name.append(quantity, productName);
-                info.appendChild(name);
-
-                const customization = parseCustomization(item.customization);
-                if (customization.length > 0) {
-                    const options = document.createElement('div');
-                    options.className = 'customization';
-
-                    customization.forEach(value => {
-                        const option = document.createElement('span');
-                        option.textContent = value;
-                        options.appendChild(option);
-                    });
-
-                    info.appendChild(options);
-                }
-
-                const action = document.createElement('button');
-                action.type = 'button';
-                action.className = 'item-action';
-
-                const isReady = item.preparationStatus === 'READY';
-
-                if (isReady) {
-                    action.textContent = 'XONG';
-                    action.classList.add('done');
-                    action.disabled = true;
-                } else {
-                    action.textContent = 'ĐANG LÀM';
-                    action.disabled = !canAct || orderStatus === 'READY';
-
-                    action.addEventListener('click', () => {
-                        updateItemStatus(item.id, action);
-                    });
-                }
-
-                row.append(info, action);
-                return row;
-            }
-
-            async function updateItemStatus(itemId, button) {
-                button.disabled = true;
-
-                try {
-                    const body = new URLSearchParams();
-                    body.append('action', 'update-item-status');
-                    body.append('itemId', itemId);
-
-                    const response = await fetch(contextPath + '/barista', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'Accept': 'application/json'
-                        },
-                        body
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.message || 'Không thể cập nhật món.');
-                    }
-
-                    await loadOrders();
-                } catch (error) {
-                    button.disabled = false;
-                    showError(error.message);
-                }
-            }
-
-            function parseCustomization(customization) {
-                if (!customization) {
-                    return [];
-                }
-
-                try {
-                    const parsed = JSON.parse(customization);
-                    const values = [];
-
-                    Object.entries(parsed).forEach(([key, value]) => {
-                        if (Array.isArray(value)) {
-                            value.forEach(item => values.push(String(item)));
-                        } else {
-                            values.push(key + ': ' + value);
-                        }
-                    });
-
-                    return values;
-                } catch (error) {
-                    return [customization];
-                }
-            }
-
-            function getOrderTypeLabel(order) {
-                if (order.orderType === 'DINE_IN') {
-                    return 'Dùng tại quán';
-                }
-
-                if (order.orderType === 'ONLINE') {
-                    return 'Giao hàng nội bộ';
-                }
-
-                return 'Mua mang đi';
-            }
-
-            function getOrderMeta(order) {
-                if (order.orderType === 'DINE_IN') {
-                    return order.tableNumber
-                        ? 'Bàn ' + order.tableNumber
-                        : 'Khách dùng tại quán';
-                }
-
-                if (order.orderType === 'ONLINE') {
-                    return order.recipientName
-                        ? 'Khách: ' + order.recipientName
-                        : 'Nhân viên quán giao';
-                }
-
-                return 'Khách mua mang đi';
-            }
-
-            function formatCreatedAt(createdAt) {
-                if (!createdAt) {
-                    return '';
-                }
-
-                const date = new Date(createdAt);
-                if (Number.isNaN(date.getTime())) {
-                    return createdAt;
-                }
-
-                return date.toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            }
-
-            function setEmptyState(container, isEmpty, message) {
-                if (!isEmpty) {
-                    return;
-                }
-
-                const empty = document.createElement('div');
-                empty.className = 'empty-column';
-                empty.textContent = message;
-                container.appendChild(empty);
-            }
-
-            function showError(message) {
-                errorMessage.textContent = message;
-                errorMessage.style.display = 'block';
-            }
-
-            function hideError() {
-                errorMessage.textContent = '';
-                errorMessage.style.display = 'none';
-            }
-
             loadOrders();
-            setInterval(loadOrders, refreshIntervalMs);
-        </script>
-    </body>
+        });
+    });
 
-    </html>
+    function sortOldestFirst(orders) {
+        const result = orders.slice();
+
+        // Nếu thiếu thời gian hợp lệ, giữ thứ tự backend cung cấp.
+        const validDates = result.every(order =>
+            order.createdAt
+            && Number.isFinite(new Date(order.createdAt).getTime())
+        );
+
+        if (validDates) {
+            result.sort((a, b) =>
+                new Date(a.createdAt).getTime()
+                - new Date(b.createdAt).getTime()
+            );
+        }
+
+        return result;
+    }
+
+    // =====================================================
+    // HIỂN THỊ
+    // =====================================================
+
+    function element(tag, className, text) {
+        const node = document.createElement(tag);
+        node.className = className;
+
+        if (text !== undefined && text !== null) {
+            node.textContent = text;
+        }
+
+        return node;
+    }
+
+    function updateStatistics(statistics) {
+        document.getElementById("waiting-count").textContent =
+            statistics.waiting ?? 0;
+
+        document.getElementById("preparing-count").textContent =
+            statistics.preparing ?? 0;
+
+        document.getElementById("ready-count").textContent =
+            statistics.ready ?? 0;
+    }
+
+    function renderOrders(displayOrders, allOrders) {
+        Object.values(containers).forEach(container => {
+            container.replaceChildren();
+        });
+
+        // Giữ quy tắc FIFO của JSP cũ, nhưng xét toàn bộ hàng đợi.
+        // Backend vẫn phải kiểm tra quyền cập nhật và FIFO.
+        const firstActionableOrder = allOrders.find(order =>
+            order.status === "CONFIRMED"
+            || order.status === "PREPARING"
+        );
+
+        const firstId = firstActionableOrder
+            ? String(firstActionableOrder.id)
+            : null;
+
+        const counts = {
+            CONFIRMED: 0,
+            PREPARING: 0,
+            READY: 0
+        };
+
+        displayOrders.forEach(order => {
+            const container = containers[order.status];
+
+            if (!container) {
+                return;
+            }
+
+            const canAct = String(order.id) === firstId;
+
+            container.appendChild(createOrderCard(order, canAct));
+            counts[order.status]++;
+        });
+
+        const settings = [
+            ["CONFIRMED", "waiting-column-count", "Không có đơn đang chờ."],
+            ["PREPARING", "preparing-column-count", "Không có đơn đang thực hiện."],
+            ["READY", "ready-column-count", "Chưa có đơn hoàn tất."]
+        ];
+
+        settings.forEach(([status, countId, message]) => {
+            document.getElementById(countId).textContent = counts[status];
+
+            if (!counts[status]) {
+                containers[status].appendChild(
+                    element("div", "empty-column", message)
+                );
+            }
+        });
+    }
+
+    function createOrderCard(order, canAct) {
+        const card = element("article", "card order-card mb-3");
+        const header = element("div", "card-header bg-white p-3");
+
+        const titleRow = element(
+            "div",
+            "d-flex flex-wrap justify-content-between align-items-center gap-2"
+        );
+
+        titleRow.append(
+            element(
+                "strong",
+                "order-code",
+                "#" + (order.orderCode || order.id)
+            ),
+            element(
+                "span",
+                "order-time",
+                formatCreatedAt(order.createdAt)
+            )
+        );
+
+        header.append(
+            titleRow,
+            element(
+                "span",
+                "badge text-bg-light border mt-2",
+                getOrderTypeLabel(order)
+            ),
+            element(
+                "div",
+                "order-meta mt-2",
+                getOrderMeta(order)
+            )
+        );
+
+        if (order.orderNote && String(order.orderNote).trim()) {
+            header.appendChild(
+                element(
+                    "div",
+                    "order-note mt-2",
+                    "Ghi chú: " + order.orderNote
+                )
+            );
+        }
+
+        const itemsContainer = element(
+            "div",
+            "card-body p-3 d-flex flex-column gap-2"
+        );
+
+        const items = Array.isArray(order.items) ? order.items : [];
+
+        items.forEach(item => {
+            itemsContainer.appendChild(
+                createItemRow(item, canAct, order.status)
+            );
+        });
+
+        if (!items.length) {
+            itemsContainer.appendChild(
+                element(
+                    "div",
+                    "small text-secondary",
+                    "Chưa có thông tin món."
+                )
+            );
+        }
+
+        card.append(header, itemsContainer);
+
+        return card;
+    }
+
+    function createItemRow(item, canAct, orderStatus) {
+        const row = element(
+            "div",
+            "item-row d-flex align-items-start justify-content-between gap-2"
+        );
+
+        const info = element("div", "flex-grow-1 min-width-zero");
+        const name = element("div", "item-name");
+
+        name.append(
+            element(
+                "span",
+                "item-quantity me-1",
+                (item.quantity ?? 0) + "×"
+            ),
+            element("span", "", item.productName || "Sản phẩm")
+        );
+
+        info.appendChild(name);
+
+        const customizations = parseCustomization(item.customization);
+
+        if (customizations.length) {
+            const options = element(
+                "div",
+                "d-flex flex-wrap gap-1 mt-2"
+            );
+
+            customizations.forEach(value => {
+                options.appendChild(
+                    element("span", "item-tag", value)
+                );
+            });
+
+            info.appendChild(options);
+        }
+
+        const action = element(
+            "button",
+            "btn item-action flex-shrink-0"
+        );
+
+        action.type = "button";
+
+        const isReady = item.preparationStatus === "READY";
+
+        if (isReady) {
+            action.textContent = "XONG ✓";
+            action.classList.add("btn-outline-success");
+            action.disabled = true;
+
+        } else {
+            action.textContent = "ĐANG LÀM";
+            action.classList.add("btn-light", "border");
+
+            action.disabled =
+                !canAct || orderStatus === "READY" || isUpdating;
+
+            action.title = canAct
+                ? "Đánh dấu món đã pha xong"
+                : "Xử lý đơn đến trước trước khi cập nhật món này";
+
+            action.addEventListener("click", () => {
+                updateItemStatus(item.id);
+            });
+        }
+
+        row.append(info, action);
+
+        return row;
+    }
+
+    // =====================================================
+    // CẬP NHẬT TRẠNG THÁI MÓN
+    // =====================================================
+
+    async function updateItemStatus(itemId) {
+        if (isUpdating) {
+            return;
+        }
+
+        if (itemId === null || itemId === undefined) {
+            showError("Món thiếu itemId nên không thể cập nhật.");
+            return;
+        }
+
+        isUpdating = true;
+        clearTimeout(refreshTimer);
+
+        if (loadController) {
+            loadController.abort();
+            loadController = null;
+        }
+
+        const buttons = Array.from(
+            document.querySelectorAll(".item-action")
+        );
+
+        const previousStates = buttons.map(button => button.disabled);
+
+        buttons.forEach(button => {
+            button.disabled = true;
+        });
+
+        hideError();
+
+        let succeeded = false;
+
+        try {
+            const body = new URLSearchParams();
+            body.append("action", "update-item-status");
+            body.append("itemId", String(itemId));
+
+            const response = await fetch(contextPath + "/barista", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json"
+                },
+                body: body
+            });
+
+            await readJsonResponse(response, response.status === 204);
+            succeeded = true;
+
+        } catch (error) {
+            showError(error.message);
+
+        } finally {
+            isUpdating = false;
+
+            if (!succeeded) {
+                buttons.forEach((button, index) => {
+                    button.disabled = previousStates[index];
+                });
+
+                scheduleRefresh();
+            }
+        }
+
+        if (succeeded) {
+            // Lấy lại trạng thái do backend quyết định.
+            await loadOrders();
+        }
+    }
+
+    // =====================================================
+    // HÀM HỖ TRỢ
+    // =====================================================
+
+    function parseCustomization(customization) {
+        if (!customization) {
+            return [];
+        }
+
+        let parsed = customization;
+
+        if (typeof parsed === "string") {
+            try {
+                parsed = JSON.parse(parsed);
+            } catch (error) {
+                return [customization];
+            }
+        }
+
+        if (parsed === null) {
+            return [];
+        }
+
+        if (Array.isArray(parsed)) {
+            return parsed.map(value => String(value));
+        }
+
+        if (typeof parsed === "object") {
+            const values = [];
+
+            Object.entries(parsed).forEach(([key, value]) => {
+                if (value === null || value === undefined) {
+                    return;
+                }
+
+                if (Array.isArray(value)) {
+                    value.forEach(entry => {
+                        values.push(String(entry));
+                    });
+                } else {
+                    values.push(key + ": " + String(value));
+                }
+            });
+
+            return values;
+        }
+
+        return [String(parsed)];
+    }
+
+    function getOrderTypeLabel(order) {
+        if (order.orderType === "DINE_IN") {
+            return "Dùng tại quán";
+        }
+
+        if (order.orderType === "ONLINE") {
+            return "Giao hàng nội bộ";
+        }
+
+        return "Mua mang đi";
+    }
+
+    function getOrderMeta(order) {
+        if (order.orderType === "DINE_IN") {
+            return order.tableNumber
+                ? "Bàn " + order.tableNumber
+                : "Khách dùng tại quán";
+        }
+
+        if (order.orderType === "ONLINE") {
+            return order.recipientName
+                ? "Khách: " + order.recipientName
+                : "Nhân viên quán giao";
+        }
+
+        return "Khách mua mang đi";
+    }
+
+    function formatCreatedAt(createdAt) {
+        if (!createdAt) {
+            return "";
+        }
+
+        const date = new Date(createdAt);
+
+        if (Number.isNaN(date.getTime())) {
+            return String(createdAt);
+        }
+
+        return date.toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    }
+
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.hidden = false;
+    }
+
+    function hideError() {
+        errorMessage.textContent = "";
+        errorMessage.hidden = true;
+    }
+
+    loadOrders();
+</script>
+
+</body>
+</html>
