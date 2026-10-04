@@ -708,6 +708,63 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
+     * Định dạng chuỗi tuỳ chọn món tại quầy thành chuỗi JSON hợp lệ với cột customization (JSON) của MySQL.
+     */
+    private String formatCustomizationJson(String customStr) {
+        if (customStr == null || customStr.trim().isEmpty()) {
+            return null;
+        }
+        String trimmed = customStr.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            return trimmed;
+        }
+
+        String size = null;
+        List<String> toppings = new ArrayList<>();
+        List<String> extras = new ArrayList<>();
+
+        String[] parts = trimmed.split("\\s*\\|\\s*");
+        for (String part : parts) {
+            String p = part.trim();
+            if (p.toLowerCase().startsWith("size ")) {
+                size = p.substring(5).trim();
+            } else if (p.startsWith("+ ")) {
+                String toppingsPart = p.substring(2).trim();
+                for (String t : toppingsPart.split("\\s*,\\s*")) {
+                    if (!t.isEmpty()) {
+                        toppings.add(t);
+                    }
+                }
+            } else if (!p.isEmpty()) {
+                extras.add(p);
+            }
+        }
+
+        StringBuilder sb = new StringBuilder("{");
+        if (size != null) {
+            sb.append("\"size\":").append(toJsonString(size));
+        } else {
+            sb.append("\"size\":null");
+        }
+
+        sb.append(",\"toppings\":[");
+        for (int i = 0; i < toppings.size(); i++) {
+            if (i > 0) {
+                sb.append(",");
+            }
+            sb.append(toJsonString(toppings.get(i)));
+        }
+        sb.append("]");
+
+        if (!extras.isEmpty()) {
+            sb.append(",\"notes\":").append(toJsonString(String.join(", ", extras)));
+        }
+
+        sb.append("}");
+        return sb.toString();
+    }
+
+    /**
      * Tạo và thanh toán đơn hàng tại quầy (Counter Order POS)
      */
     public int createCounterOrder(Order order, List<OrderDetail> items, String paymentMethod,
@@ -773,7 +830,12 @@ public class OrderDAO extends BaseDAO {
                     ps.setBigDecimal(4, item.getUnitPrice());
                     ps.setInt(5, item.getQuantity());
                     ps.setBigDecimal(6, item.getSubtotal());
-                    ps.setString(7, item.getCustomization());
+                    String customJson = formatCustomizationJson(item.getCustomization());
+                    if (customJson != null) {
+                        ps.setString(7, customJson);
+                    } else {
+                        ps.setNull(7, Types.VARCHAR);
+                    }
                     ps.addBatch();
                 }
                 ps.executeBatch();
