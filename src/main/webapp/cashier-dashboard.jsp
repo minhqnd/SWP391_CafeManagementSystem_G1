@@ -1369,72 +1369,406 @@
         }
 
         /* Payment Modal Specifics */
+        #paymentModal .modal-dialog {
+            max-width: 480px;
+        }
+
+        #paymentModal .modal-content {
+            border-radius: 16px;
+            border: 1px solid var(--slate-200);
+            box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.2);
+            overflow: hidden;
+        }
+
+        #paymentModal .modal-header {
+            padding: 16px 20px 14px;
+            border-bottom: 1px solid var(--slate-100);
+            background: #ffffff;
+        }
+
+        .pay-modal-icon-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--aura-primary-light);
+            color: var(--aura-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .pay-total-banner {
-            background: var(--slate-900);
+            background: linear-gradient(135deg, #8b0e1d 0%, #5c0510 100%);
             color: #ffffff;
-            border-radius: 8px;
-            padding: 14px 18px;
+            border-radius: 12px;
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 6px 18px rgba(139, 14, 29, 0.22);
+        }
+
+        .pay-total-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 2px;
         }
 
         .pay-total-value {
-            font-size: 22px;
+            font-size: 26px;
             font-weight: 800;
-            color: #fde047;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
         }
 
+        .pay-order-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(4px);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+        }
+
+        /* Segmented Method Tabs */
         .pay-method-tabs {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 16px;
+            gap: 4px;
+            padding: 4px;
+            background: var(--slate-100);
+            border-radius: 10px;
+            margin-bottom: 18px;
         }
 
         .pay-method-btn {
-            padding: 10px;
-            border-radius: 8px;
-            border: 2px solid var(--slate-200);
-            background: #ffffff;
-            font-weight: 700;
+            padding: 9px 12px;
+            border-radius: 7px;
+            border: none;
+            background: transparent;
+            font-weight: 600;
             font-size: 13.5px;
-            color: var(--slate-700);
+            color: var(--slate-600);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: all 0.15s;
+            gap: 7px;
+            transition: all 0.15s ease;
+        }
+
+        .pay-method-btn:hover {
+            color: var(--slate-900);
         }
 
         .pay-method-btn.active {
-            border-color: var(--aura-primary);
+            background: #ffffff;
             color: var(--aura-primary);
-            background: var(--aura-primary-light);
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
 
+        /* Cash Input */
+        .input-cash-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .cash-input-icon {
+            position: absolute;
+            left: 12px;
+            font-size: 20px;
+            color: var(--slate-400);
+            pointer-events: none;
+        }
+
+        .input-cash-field {
+            width: 100%;
+            padding: 10px 50px 10px 38px;
+            border: 1.5px solid var(--slate-200);
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--slate-900);
+            background: #ffffff;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .input-cash-field:focus {
+            outline: none;
+            border-color: var(--aura-primary);
+            box-shadow: 0 0 0 3px rgba(144, 11, 26, 0.1);
+        }
+
+        .input-cash-field::-webkit-outer-spin-button,
+        .input-cash-field::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-cash-field[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .cash-currency-tag {
+            position: absolute;
+            right: 14px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate-400);
+            pointer-events: none;
+        }
+
+        /* Quick Cash Chips */
         .quick-cash-row {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-top: 8px;
+            gap: 7px;
+            margin-top: 10px;
+            margin-bottom: 16px;
         }
 
         .btn-quick-cash {
             border: 1px solid var(--slate-200);
-            background: var(--slate-50);
-            padding: 7px;
-            border-radius: 6px;
-            font-size: 12.5px;
+            background: #ffffff;
+            padding: 8px 4px;
+            border-radius: 8px;
+            font-size: 13px;
             font-weight: 700;
+            color: var(--slate-700);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .btn-quick-cash:hover {
+            background: var(--slate-50);
+            border-color: var(--slate-300);
+            color: var(--slate-900);
+            transform: translateY(-1px);
+        }
+
+        .btn-quick-cash.exact-cash {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #065f46;
+        }
+
+        .btn-quick-cash.exact-cash:hover {
+            background: #d1fae5;
+            border-color: #6ee7b7;
+        }
+
+        /* Cash Change Card */
+        .cash-change-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border: 1.5px dashed var(--slate-200);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .cash-change-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate-800);
+        }
+
+        .cash-change-sub {
+            font-size: 11px;
+            color: var(--slate-400);
+        }
+
+        .cash-change-amount {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        /* VietQR Styling */
+        .qr-payment-panel {
+            text-align: center;
+            padding: 4px 0 10px;
+        }
+
+        .qr-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .qr-pulse-dot {
+            width: 7px;
+            height: 7px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
+            animation: pulse-dot 1.8s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .qr-card-wrapper {
+            background: #ffffff;
+            border: 1px solid var(--slate-200);
+            border-radius: 12px;
+            padding: 14px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+            margin-bottom: 14px;
+        }
+
+        .qr-frame {
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qr-image {
+            width: 190px;
+            height: 190px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .qr-scan-guide {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--slate-500);
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .bank-details-card {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-align: left;
+        }
+
+        .bank-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12.5px;
+        }
+
+        .bank-label {
+            color: var(--slate-500);
+            font-weight: 500;
+        }
+
+        .bank-val {
+            color: var(--slate-800);
+            font-weight: 600;
+        }
+
+        .btn-copy-stk {
+            background: transparent;
+            border: none;
+            color: var(--slate-400);
+            padding: 2px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.15s;
+        }
+
+        .btn-copy-stk:hover {
+            color: var(--aura-primary);
+            background: var(--slate-200);
+        }
+
+        /* Pay Modal Footer */
+        .pay-modal-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--slate-100);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            background: #ffffff;
+        }
+
+        .btn-pay-cancel {
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: 1px solid var(--slate-200);
+            background: #ffffff;
+            font-weight: 600;
+            font-size: 13.5px;
+            color: var(--slate-600);
             cursor: pointer;
             transition: all 0.15s;
         }
 
-        .btn-quick-cash:hover {
-            background: var(--slate-200);
+        .btn-pay-cancel:hover {
+            background: var(--slate-100);
+            color: var(--slate-800);
+        }
+
+        .btn-pay-submit {
+            padding: 9px 22px;
+            border-radius: 8px;
+            border: none;
+            background: var(--aura-primary);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(144, 11, 26, 0.25);
+            transition: all 0.15s;
+        }
+
+        .btn-pay-submit:hover {
+            background: var(--aura-primary-hover);
+            box-shadow: 0 6px 16px rgba(144, 11, 26, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-pay-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
         }
 
         /* Toast Container */
@@ -1995,42 +2329,57 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <div class="modal-title d-flex align-items-center gap-2">
-                        <span class="material-symbols-outlined text-success">verified</span>
-                        <span>Xác nhận thanh toán tại quầy</span>
+                        <div class="pay-modal-icon-badge">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">payments</span>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark" style="font-size: 15px; line-height: 1.2;">Xác nhận thanh toán tại quầy</div>
+                            <div class="text-muted" style="font-size: 11.5px; font-weight: 500;">Bán hàng trực tiếp & thu ngân</div>
+                        </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-3">
                     <!-- Banner Total -->
                     <div class="pay-total-banner">
                         <div>
-                            <div class="small text-white-50">TỔNG TIỀN PHẢI THU</div>
+                            <div class="pay-total-label">TỔNG TIỀN PHẢI THU</div>
                             <div class="pay-total-value" id="payModalTotalDisplay">0đ</div>
                         </div>
-                        <div class="text-end small text-white-50" id="payModalSummaryDesc">
-                            Tại quán | Bàn 01
+                        <div class="pay-order-badge" id="payModalSummaryDesc">
+                            <span class="material-symbols-outlined" style="font-size: 14px;">storefront</span>
+                            <span>Dùng tại quán</span>
                         </div>
                     </div>
 
                     <!-- Method Tabs -->
                     <div class="pay-method-tabs">
                         <button type="button" class="pay-method-btn active" id="btnMethodCash" onclick="selectPaymentMethod('CASH')">
-                            <span class="material-symbols-outlined">payments</span>
+                            <span class="material-symbols-outlined" style="font-size: 18px;">payments</span>
                             <span>Tiền mặt</span>
                         </button>
                         <button type="button" class="pay-method-btn" id="btnMethodQR" onclick="selectPaymentMethod('BANK_TRANSFER')">
-                            <span class="material-symbols-outlined">qr_code_2</span>
+                            <span class="material-symbols-outlined" style="font-size: 18px;">qr_code_2</span>
                             <span>VietQR Quét mã</span>
                         </button>
                     </div>
 
                     <!-- Tab CASH -->
                     <div id="panelCashPayment">
-                        <label class="form-label small fw-bold text-secondary">Khách đưa (VNĐ):</label>
-                        <input type="number" id="inputCashGiven" class="form-control form-control-lg fw-bold text-success" placeholder="0" oninput="calculateChange()">
+                        <div class="mb-2">
+                            <label class="form-label d-flex justify-content-between align-items-center mb-1">
+                                <span class="small fw-bold text-secondary">Khách đưa (VNĐ):</span>
+                                <span class="small text-muted">Chọn nhanh hoặc nhập số</span>
+                            </label>
+                            <div class="input-cash-wrapper">
+                                <span class="material-symbols-outlined cash-input-icon">attach_money</span>
+                                <input type="number" id="inputCashGiven" class="input-cash-field" placeholder="0" oninput="calculateChange()">
+                                <span class="cash-currency-tag">VNĐ</span>
+                            </div>
+                        </div>
                         
                         <div class="quick-cash-row">
-                            <button type="button" class="btn-quick-cash" onclick="addQuickCash(0)">Đúng số tiền</button>
+                            <button type="button" class="btn-quick-cash exact-cash" onclick="addQuickCash(0)">Đúng số tiền</button>
                             <button type="button" class="btn-quick-cash" onclick="setCashAmount(50000)">50.000đ</button>
                             <button type="button" class="btn-quick-cash" onclick="setCashAmount(100000)">100.000đ</button>
                             <button type="button" class="btn-quick-cash" onclick="setCashAmount(200000)">200.000đ</button>
@@ -2038,27 +2387,59 @@
                             <button type="button" class="btn-quick-cash" onclick="setCashAmount(1000000)">1.000.000đ</button>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center mt-3 p-2 bg-light rounded border">
-                            <span class="fw-bold">Tiền thừa trả khách:</span>
-                            <span class="fw-bold fs-5 text-danger" id="lblCashChange">0đ</span>
+                        <div class="cash-change-card" id="boxCashChange">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="material-symbols-outlined text-success" id="iconCashChange" style="font-size: 22px;">change_circle</span>
+                                <div>
+                                    <div class="cash-change-title" id="titleCashChange">Tiền thừa trả khách</div>
+                                    <div class="cash-change-sub" id="subCashChange">Khách đưa vừa đủ</div>
+                                </div>
+                            </div>
+                            <div class="cash-change-amount text-success" id="lblCashChange">0đ</div>
                         </div>
                     </div>
 
                     <!-- Tab VIETQR -->
-                    <div id="panelQRPayment" style="display: none;" class="text-center py-2">
-                        <div class="mb-2 text-muted small">Quét mã thanh toán qua tài khoản cửa hàng Aura Café:</div>
-                        <div class="d-inline-block p-2 bg-white rounded border shadow-sm">
-                            <img id="vietQrImg" src="" alt="VietQR" style="width: 200px; height: 200px; object-fit: contain;">
+                    <div id="panelQRPayment" style="display: none;" class="qr-payment-panel">
+                        <div class="qr-status-pill">
+                            <span class="qr-pulse-dot"></span>
+                            <span>Đang chờ khách quét mã thanh toán</span>
                         </div>
-                        <div class="mt-2 small text-secondary">
-                            <div><strong>Ngân hàng Quân Đội (MBBank)</strong> - STK: <strong>0987654321</strong></div>
-                            <div>Chủ TK: <strong>AURA CAFE SYSTEM</strong></div>
+
+                        <div class="qr-card-wrapper">
+                            <div class="qr-frame">
+                                <img id="vietQrImg" src="" alt="VietQR" class="qr-image">
+                            </div>
+                            <div class="qr-scan-guide">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">qr_code_scanner</span>
+                                <span>Mở ứng dụng Ngân hàng hoặc Ví điện tử để quét</span>
+                            </div>
+                        </div>
+
+                        <div class="bank-details-card">
+                            <div class="bank-row">
+                                <span class="bank-label">Ngân hàng thụ hưởng:</span>
+                                <span class="bank-val">MBBank (Quân Đội)</span>
+                            </div>
+                            <div class="bank-row">
+                                <span class="bank-label">Số tài khoản:</span>
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="bank-val font-monospace fw-bold" id="bankStk">0987654321</span>
+                                    <button type="button" class="btn-copy-stk" onclick="copyBankSTK()" title="Sao chép số tài khoản">
+                                        <span class="material-symbols-outlined" style="font-size: 15px;">content_copy</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bank-row">
+                                <span class="bank-label">Chủ tài khoản:</span>
+                                <span class="bank-val fw-bold" style="color: var(--aura-primary);">AURA CAFE SYSTEM</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
-                    <button type="button" class="btn btn-primary" id="btnSubmitOrder" style="background-color: var(--aura-primary); border-color: var(--aura-primary);" onclick="submitCounterOrder()">
+                <div class="modal-footer pay-modal-footer">
+                    <button type="button" class="btn-pay-cancel" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn-pay-submit" id="btnSubmitOrder" onclick="submitCounterOrder()">
                         <span class="material-symbols-outlined" style="font-size: 18px;">receipt</span>
                         <span>Hoàn tất & In hóa đơn</span>
                     </button>
@@ -2427,11 +2808,22 @@
             const { finalTotal } = updateSummary(sub);
 
             document.getElementById('payModalTotalDisplay').textContent = formatCurrency(finalTotal);
-            document.getElementById('payModalSummaryDesc').textContent = (orderType === 'DINE_IN' ? 'Dùng tại quán' : 'Mang về');
+            const summaryDescEl = document.getElementById('payModalSummaryDesc');
+            if (summaryDescEl) {
+                summaryDescEl.innerHTML = `<span class="material-symbols-outlined" style="font-size: 14px;">\${orderType === 'DINE_IN' ? 'storefront' : 'shopping_bag'}</span><span>\${orderType === 'DINE_IN' ? 'Dùng tại quán' : 'Mang về'}</span>`;
+            }
 
             selectPaymentMethod('CASH');
             setCashAmount(finalTotal);
             paymentModalInstance.show();
+        }
+
+        function copyBankSTK() {
+            navigator.clipboard.writeText('0987654321').then(() => {
+                showToast('Đã sao chép STK: 0987654321');
+            }).catch(() => {
+                showToast('STK: 0987654321');
+            });
         }
 
         function selectPaymentMethod(method) {
@@ -2481,8 +2873,41 @@
             const sub = cartItems.reduce((acc, it) => acc + it.subtotal, 0);
             const { finalTotal } = updateSummary(sub);
             const given = Number(document.getElementById('inputCashGiven').value) || 0;
-            const change = Math.max(0, given - finalTotal);
-            document.getElementById('lblCashChange').textContent = formatCurrency(change);
+            const changeEl = document.getElementById('lblCashChange');
+            const titleEl = document.getElementById('titleCashChange');
+            const subEl = document.getElementById('subCashChange');
+            const iconEl = document.getElementById('iconCashChange');
+            const boxEl = document.getElementById('boxCashChange');
+
+            if (given >= finalTotal) {
+                const change = given - finalTotal;
+                changeEl.textContent = formatCurrency(change);
+                changeEl.className = 'cash-change-amount text-success';
+                if (titleEl) titleEl.textContent = 'Tiền thừa trả khách';
+                if (subEl) subEl.textContent = (change === 0) ? 'Khách đưa vừa đủ' : 'Thối lại tiền mặt';
+                if (iconEl) {
+                    iconEl.textContent = 'check_circle';
+                    iconEl.className = 'material-symbols-outlined text-success';
+                }
+                if (boxEl) {
+                    boxEl.style.borderColor = '#bbf7d0';
+                    boxEl.style.background = '#f0fdf4';
+                }
+            } else {
+                const missing = finalTotal - given;
+                changeEl.textContent = '-' + formatCurrency(missing);
+                changeEl.className = 'cash-change-amount text-danger';
+                if (titleEl) titleEl.textContent = 'Còn thiếu';
+                if (subEl) subEl.textContent = 'Khách đưa chưa đủ tiền';
+                if (iconEl) {
+                    iconEl.textContent = 'error';
+                    iconEl.className = 'material-symbols-outlined text-danger';
+                }
+                if (boxEl) {
+                    boxEl.style.borderColor = '#fecaca';
+                    boxEl.style.background = '#fef2f2';
+                }
+            }
         }
 
         // 9. Submit Order via AJAX
