@@ -7,7 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Model Feedback / Complaint - Phản ánh & Khiếu nại của khách hàng
+ * Model Feedback / Customer Review - Phản ánh & Khiếu nại của khách hàng
+ * Ánh xạ trực tiếp từ bảng `customer_reviews` trong database `aura_cafe.sql`
  */
 public class Feedback implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -17,7 +18,12 @@ public class Feedback implements Serializable {
     private Integer customerId;
     private String customerName;
     private String customerPhone;
+    private int orderId;
     private String orderCode;
+    
+    // Core database field: issue_type ENUM('RATING', 'COMPLAINT')
+    private String issueType = "COMPLAINT";
+    
     private String category;
     private String categoryLabel;
     private int rating = 5;
@@ -25,13 +31,19 @@ public class Feedback implements Serializable {
     private String content;
     private String images;
     private String contactMethod = "phone";
-    private String status = "PROCESSING";
-    private String statusLabel = "Đã tiếp nhận";
-    private int progressPercent = 25;
-    private String agentName;
+    
+    // Core database field: status ENUM('PENDING', 'RESOLVED', 'REJECTED')
+    private String status = "PENDING";
+    private String statusLabel = "Đang chờ tiếp nhận";
+    private int progressPercent = 35;
+    
+    // Core database field: admin_response TEXT
+    private String adminResponse;
+    private String agentName = "Ban Quản lý Aura Café";
     private String agentNote;
     private String resolution;
     private String giftVoucher;
+    
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -47,7 +59,10 @@ public class Feedback implements Serializable {
     }
 
     public String getTicketCode() {
-        return ticketCode;
+        if (ticketCode != null && !ticketCode.trim().isEmpty()) {
+            return ticketCode;
+        }
+        return "#CR-" + String.format("%04d", id);
     }
 
     public void setTicketCode(String ticketCode) {
@@ -78,12 +93,31 @@ public class Feedback implements Serializable {
         this.customerPhone = customerPhone;
     }
 
+    public int getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(int orderId) {
+        this.orderId = orderId;
+    }
+
     public String getOrderCode() {
-        return orderCode;
+        if (orderCode != null && !orderCode.trim().isEmpty()) {
+            return orderCode;
+        }
+        return orderId > 0 ? ("AURA-00" + orderId) : "";
     }
 
     public void setOrderCode(String orderCode) {
         this.orderCode = orderCode;
+    }
+
+    public String getIssueType() {
+        return issueType != null ? issueType : "COMPLAINT";
+    }
+
+    public void setIssueType(String issueType) {
+        this.issueType = issueType;
     }
 
     public String getCategory() {
@@ -95,7 +129,13 @@ public class Feedback implements Serializable {
     }
 
     public String getCategoryLabel() {
-        return categoryLabel;
+        if (categoryLabel != null && !categoryLabel.trim().isEmpty()) {
+            return categoryLabel;
+        }
+        if ("RATING".equalsIgnoreCase(issueType)) {
+            return "Đánh giá chất lượng (" + rating + "★)";
+        }
+        return "Khiếu nại đơn hàng";
     }
 
     public void setCategoryLabel(String categoryLabel) {
@@ -111,7 +151,14 @@ public class Feedback implements Serializable {
     }
 
     public String getTitle() {
-        return title;
+        if (title != null && !title.trim().isEmpty()) {
+            return title;
+        }
+        String oc = getOrderCode();
+        if ("RATING".equalsIgnoreCase(issueType)) {
+            return "Đánh giá đơn hàng #" + (oc.isEmpty() ? id : oc);
+        }
+        return "Khiếu nại đơn hàng #" + (oc.isEmpty() ? id : oc);
     }
 
     public void setTitle(String title) {
@@ -151,7 +198,15 @@ public class Feedback implements Serializable {
     }
 
     public String getStatusLabel() {
-        return statusLabel;
+        if (statusLabel != null && !statusLabel.isEmpty()) {
+            return statusLabel;
+        }
+        if ("RESOLVED".equalsIgnoreCase(status)) {
+            return "Đã giải quyết xong";
+        } else if ("REJECTED".equalsIgnoreCase(status)) {
+            return "Từ chối xử lý";
+        }
+        return "Đang chờ tiếp nhận";
     }
 
     public void setStatusLabel(String statusLabel) {
@@ -159,15 +214,29 @@ public class Feedback implements Serializable {
     }
 
     public int getProgressPercent() {
-        return progressPercent;
+        if (progressPercent > 0) {
+            return progressPercent;
+        }
+        if ("RESOLVED".equalsIgnoreCase(status) || "REJECTED".equalsIgnoreCase(status)) {
+            return 100;
+        }
+        return 35;
     }
 
     public void setProgressPercent(int progressPercent) {
         this.progressPercent = progressPercent;
     }
 
+    public String getAdminResponse() {
+        return adminResponse;
+    }
+
+    public void setAdminResponse(String adminResponse) {
+        this.adminResponse = adminResponse;
+    }
+
     public String getAgentName() {
-        return agentName;
+        return agentName != null ? agentName : "Ban Quản lý Aura Café";
     }
 
     public void setAgentName(String agentName) {
@@ -175,7 +244,13 @@ public class Feedback implements Serializable {
     }
 
     public String getAgentNote() {
-        return agentNote;
+        if (agentNote != null && !agentNote.trim().isEmpty()) {
+            return agentNote;
+        }
+        if (adminResponse != null && !adminResponse.trim().isEmpty()) {
+            return adminResponse;
+        }
+        return "Bộ phận Chăm sóc khách hàng đang tiếp nhận và rà soát lại đơn hàng.";
     }
 
     public void setAgentNote(String agentNote) {
@@ -183,7 +258,10 @@ public class Feedback implements Serializable {
     }
 
     public String getResolution() {
-        return resolution;
+        if (resolution != null && !resolution.trim().isEmpty()) {
+            return resolution;
+        }
+        return adminResponse;
     }
 
     public void setResolution(String resolution) {

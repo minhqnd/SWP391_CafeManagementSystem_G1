@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Maps orders. Nullable foreign keys use Integer; amounts preserve DECIMAL precision.
+ * Maps orders. Nullable foreign keys use Integer; amounts preserve DECIMAL precision with double helpers.
  */
 public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -17,12 +17,12 @@ public class Order implements Serializable {
     private Integer customerId;
     private Integer cashierId;
     private Integer voucherId;
-    private String orderType;
-    private String status;
-    private BigDecimal totalAmount;
-    private BigDecimal discountAmount;
-    private BigDecimal deliveryFee;
-    private BigDecimal finalAmount;
+    private String orderType;   // DINE_IN, TAKEAWAY, ONLINE
+    private String status;      // PENDING, CONFIRMED, PREPARING, READY, DELIVERING, COMPLETED, CANCELLED
+    private BigDecimal totalAmount = BigDecimal.ZERO;
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+    private BigDecimal deliveryFee = BigDecimal.ZERO;
+    private BigDecimal finalAmount = BigDecimal.ZERO;
     private String recipientName;
     private String recipientPhone;
     private String deliveryAddress;
@@ -30,17 +30,9 @@ public class Order implements Serializable {
     private String tableNumber;
     private String orderNote;
     private LocalDateTime createdAt;
-    private Integer voucherId;
-    private String orderType;   // DINE_IN, TAKEAWAY, ONLINE
-    private String status;      // PENDING, CONFIRMED, PREPARING, READY, DELIVERING, COMPLETED, CANCELLED
-    private double totalAmount;
-    private double discountAmount;
-    private double deliveryFee;
-    private double finalAmount;
-    private String recipientName;
-    private String recipientPhone;
-    private String deliveryAddress;
-    private String orderNote;
+
+    // UI relationship, loaded from order_items; not a column in orders.
+    private List<OrderDetail> items = new ArrayList<>();
 
     public Order() {
     }
@@ -70,10 +62,10 @@ public class Order implements Serializable {
         this.voucherId = voucherId;
         this.orderType = orderType;
         this.status = status;
-        this.totalAmount = totalAmount;
-        this.discountAmount = discountAmount;
-        this.deliveryFee = deliveryFee;
-        this.finalAmount = finalAmount;
+        this.totalAmount = totalAmount != null ? totalAmount : BigDecimal.ZERO;
+        this.discountAmount = discountAmount != null ? discountAmount : BigDecimal.ZERO;
+        this.deliveryFee = deliveryFee != null ? deliveryFee : BigDecimal.ZERO;
+        this.finalAmount = finalAmount != null ? finalAmount : BigDecimal.ZERO;
         this.recipientName = recipientName;
         this.recipientPhone = recipientPhone;
         this.deliveryAddress = deliveryAddress;
@@ -139,65 +131,68 @@ public class Order implements Serializable {
         this.status = status;
     }
 
-    public BigDecimal getTotalAmount() {
+    public double getTotalAmount() {
+        return totalAmount != null ? totalAmount.doubleValue() : 0.0;
+    }
+
+    public BigDecimal getTotalAmountBigDecimal() {
         return totalAmount;
     }
 
     public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
+        this.totalAmount = totalAmount != null ? totalAmount : BigDecimal.ZERO;
     }
 
-    public BigDecimal getDiscountAmount() {
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = BigDecimal.valueOf(totalAmount);
+    }
+
+    public double getDiscountAmount() {
+        return discountAmount != null ? discountAmount.doubleValue() : 0.0;
+    }
+
+    public BigDecimal getDiscountAmountBigDecimal() {
         return discountAmount;
     }
 
     public void setDiscountAmount(BigDecimal discountAmount) {
-        this.discountAmount = discountAmount;
+        this.discountAmount = discountAmount != null ? discountAmount : BigDecimal.ZERO;
     }
 
-    public BigDecimal getDeliveryFee() {
+    public void setDiscountAmount(double discountAmount) {
+        this.discountAmount = BigDecimal.valueOf(discountAmount);
+    }
+
+    public double getDeliveryFee() {
+        return deliveryFee != null ? deliveryFee.doubleValue() : 0.0;
+    }
+
+    public BigDecimal getDeliveryFeeBigDecimal() {
         return deliveryFee;
     }
 
     public void setDeliveryFee(BigDecimal deliveryFee) {
-        this.deliveryFee = deliveryFee;
+        this.deliveryFee = deliveryFee != null ? deliveryFee : BigDecimal.ZERO;
     }
 
-    public BigDecimal getFinalAmount() {
+    public void setDeliveryFee(double deliveryFee) {
+        this.deliveryFee = BigDecimal.valueOf(deliveryFee);
+    }
+
+    public double getFinalAmount() {
+        return finalAmount != null ? finalAmount.doubleValue() : 0.0;
+    }
+
+    public BigDecimal getFinalAmountBigDecimal() {
         return finalAmount;
     }
 
     public void setFinalAmount(BigDecimal finalAmount) {
-    public double getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(double totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
-    public double getDiscountAmount() {
-        return discountAmount;
-    }
-
-    public void setDiscountAmount(double discountAmount) {
-        this.discountAmount = discountAmount;
-    }
-
-    public double getDeliveryFee() {
-        return deliveryFee;
-    }
-
-    public void setDeliveryFee(double deliveryFee) {
-        this.deliveryFee = deliveryFee;
-    }
-
-    public double getFinalAmount() {
-        return finalAmount;
+        this.finalAmount = finalAmount != null ? finalAmount : BigDecimal.ZERO;
     }
 
     public void setFinalAmount(double finalAmount) {
-        this.finalAmount = finalAmount;
+        this.finalAmount = BigDecimal.valueOf(finalAmount);
     }
 
     public String getRecipientName() {
@@ -255,10 +250,6 @@ public class Order implements Serializable {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-
-
-    // UI relationship, loaded from order_items; not a column in orders.
-    private List<OrderDetail> items = new ArrayList<>();
 
     public List<OrderDetail> getItems() {
         return items;

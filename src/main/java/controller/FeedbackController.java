@@ -13,22 +13,21 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Random;
 
 /**
  * FeedbackController - Trung tâm hỗ trợ & Phản ánh khách hàng (Customer Care & Service Hub)
+ * Thiết kế chuẩn hóa theo bảng `customer_reviews` trong cơ sở dữ liệu `aura_cafe.sql`
  * URL: /feedback
  */
 @WebServlet(name = "FeedbackController", urlPatterns = {"/feedback"})
 public class FeedbackController extends HttpServlet {
 
     private final FeedbackDAO feedbackDAO = new FeedbackDAO();
-    private final Random random = new Random();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         HttpSession session = request.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
@@ -36,7 +35,7 @@ public class FeedbackController extends HttpServlet {
         if (user != null) {
             feedbacks = feedbackDAO.getFeedbacksByCustomerId(user.getId());
             if (feedbacks.isEmpty()) {
-                // Hiển thị các phản ánh mẫu để giao diện trực quan
+                // Hiển thị các phản ánh mẫu đã có trong DB
                 feedbacks = feedbackDAO.getAllFeedbacks(10);
             }
             List<String[]> userOrders = feedbackDAO.getRecentOrdersForCustomer(user.getId());
@@ -55,7 +54,7 @@ public class FeedbackController extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
         String isAjax = request.getHeader("X-Requested-With");
-        boolean ajax = "XMLHttpRequest".equalsIgnoreCase(isAjax) || 
+        boolean ajax = "XMLHttpRequest".equalsIgnoreCase(isAjax) ||
                        (request.getContentType() != null && request.getContentType().contains("application/json")) ||
                        "1".equals(request.getParameter("ajax"));
 
@@ -63,30 +62,12 @@ public class FeedbackController extends HttpServlet {
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
         String orderCode = request.getParameter("orderCode");
+        String issueTypeParam = request.getParameter("issueType");
         String category = request.getParameter("category");
         String ratingStr = request.getParameter("rating");
         String content = request.getParameter("content");
         String images = request.getParameter("images");
         String contactMethod = request.getParameter("contactMethod");
-
-        if (orderCode == null || orderCode.trim().isEmpty()) {
-            orderCode = "#AUR-86410";
-        }
-        if (category == null || category.trim().isEmpty()) {
-            category = "other";
-        }
-        if (contactMethod == null || contactMethod.trim().isEmpty()) {
-            contactMethod = "phone";
-        }
-
-        int rating = 5;
-        try {
-            if (ratingStr != null && !ratingStr.trim().isEmpty()) {
-                rating = Integer.parseInt(ratingStr.trim());
-                if (rating < 1) rating = 1;
-                if (rating > 5) rating = 5;
-            }
-        } catch (NumberFormatException ignored) {}
 
         if (content == null || content.trim().isEmpty()) {
             if (ajax) {
@@ -101,72 +82,96 @@ public class FeedbackController extends HttpServlet {
             }
         }
 
-        // Map label & title
+        // Xác định loại vấn đề theo schema database: issue_type ENUM('RATING', 'COMPLAINT')
+        String issueType = "COMPLAINT";
+        if ("RATING".equalsIgnoreCase(issueTypeParam) || "rating".equalsIgnoreCase(category)) {
+            issueType = "RATING";
+        } else if ("COMPLAINT".equalsIgnoreCase(issueTypeParam)) {
+            issueType = "COMPLAINT";
+        } else {
+            // Tự động phân loại dựa trên category hoặc điểm đánh giá
+            if ("rating".equals(category) || "compliment".equals(category)) {
+                issueType = "RATING";
+            } else {
+                issueType = "COMPLAINT";
+            }
+        }
+
+        int rating = 5;
+        try {
+            if (ratingStr != null && !ratingStr.trim().isEmpty()) {
+                rating = Integer.parseInt(ratingStr.trim());
+                if (rating < 1) rating = 1;
+                if (rating > 5) rating = 5;
+            }
+        } catch (NumberFormatException ignored) {}
+
+        // Map nhãn phân loại để thêm vào nội dung
         String categoryLabel;
-        String title;
+        if (category == null) category = "other";
         switch (category) {
             case "wrong_size":
                 categoryLabel = "Sai kích cỡ / Món";
-                title = "Sai kích thước hoặc tùy chọn ly";
                 break;
             case "quality":
                 categoryLabel = "Hương vị / Nhiệt độ";
-                title = "Chất lượng hương vị chưa đạt chuẩn";
                 break;
             case "delivery":
                 categoryLabel = "Giao trễ / Đổ vỡ";
-                title = "Giao hàng chậm / Khâu vận chuyển";
                 break;
             case "attitude":
                 categoryLabel = "Thái độ phục vụ";
-                title = "Thái độ phục vụ của nhân viên";
                 break;
             case "packaging":
                 categoryLabel = "Thiếu ống hút/đồ ăn";
-                title = "Thiếu ống hút và khăn giấy phụ kiện";
+                break;
+            case "rating":
+                categoryLabel = "Đánh giá chất lượng";
                 break;
             default:
-                categoryLabel = "Vấn đề khác";
-                title = "Ý kiến đóng góp dịch vụ";
+                categoryLabel = "Góp ý khác";
                 break;
         }
 
-        // Generate Ticket Code: #FB-2024-XXX or #FB-XXXX
-        int randNum = 1000 + random.nextInt(9000);
-        String ticketCode = "#FB-" + randNum;
+        // Tạo nội dung hoàn chỉnh lưu vào TEXT content
+        String fullContent = content.trim();
+        if (!fullContent.startsWith("[")) {
+            fullContent = "[" + categoryLabel + "] " + fullContent;
+        }
+
+        // Xác định customer_id (yêu cầu NOT NULL bởi FK fk_review_customer trong aura_cafe.sql)
+        int customerId;
+        if (user != null) {
+            customerId = user.getId();
+        } else {
+            // Nếu chưa đăng nhập trong môi trường test/khách, liên kết tài khoản khách hàng mặc định (id 4 - Le Minh Anh)
+            customerId = 4;
+        }
+
+        // Xác định order_id (yêu cầu NOT NULL bởi FK fk_review_order trong aura_cafe.sql)
+        int orderId = feedbackDAO.findOrderId(orderCode, customerId);
 
         Feedback fb = new Feedback();
-        fb.setTicketCode(ticketCode);
-        if (user != null) {
-            fb.setCustomerId(user.getId());
-            fb.setCustomerName(user.getFullName());
-            fb.setCustomerPhone(user.getPhone());
-        } else {
-            fb.setCustomerName("Khách hàng");
-        }
-        fb.setOrderCode(orderCode);
+        fb.setCustomerId(customerId);
+        fb.setOrderId(orderId);
+        fb.setIssueType(issueType);
+        fb.setRating(rating);
+        fb.setContent(fullContent);
+        fb.setStatus("PENDING");
         fb.setCategory(category);
         fb.setCategoryLabel(categoryLabel);
-        fb.setRating(rating);
-        fb.setTitle(title);
-        fb.setContent(content.trim());
         fb.setImages(images != null ? images.trim() : "");
-        fb.setContactMethod(contactMethod);
-        fb.setStatus("PROCESSING");
-        fb.setStatusLabel("Đã tiếp nhận");
-        fb.setProgressPercent(25);
-        fb.setAgentName("Thanh Trúc (Trưởng ca CSKH)");
-        fb.setAgentNote("Bộ phận CSKH Aura đã tiếp nhận và đang liên hệ cửa hàng chi nhánh để giải quyết ngay cho bạn.");
+        fb.setContactMethod(contactMethod != null ? contactMethod : "phone");
 
         boolean saved = feedbackDAO.createFeedback(fb);
 
         if (ajax) {
             response.setContentType("application/json;charset=UTF-8");
             if (saved) {
-                response.getWriter().write("{\"success\":true,\"ticketCode\":\"" + ticketCode + "\",\"message\":\"Đã gửi phản ánh thành công! Chuyên viên CSKH Aura sẽ phản hồi trong 15 phút.\"}");
+                response.getWriter().write("{\"success\":true,\"ticketCode\":\"" + fb.getTicketCode() + "\",\"message\":\"Đã gửi phản ánh thành công! Phiếu #" + fb.getTicketCode() + " đã được ghi nhận vào hệ thống.\"}");
             } else {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                response.getWriter().write("{\"success\":false,\"message\":\"Có lỗi xảy ra khi lưu phản ánh. Vui lòng thử lại!\"}");
+                response.getWriter().write("{\"success\":false,\"message\":\"Có lỗi xảy ra khi lưu vào cơ sở dữ liệu. Vui lòng thử lại!\"}");
             }
             return;
         }

@@ -499,29 +499,47 @@
                     </div>
 
                     <form id="feedbackForm" action="${pageContext.request.contextPath}/feedback" method="POST">
+                        <input type="hidden" name="issueType" id="selectedIssueType" value="COMPLAINT">
                         <input type="hidden" name="category" id="selectedCategory" value="wrong_size">
                         <input type="hidden" name="rating" id="selectedRating" value="5">
                         <input type="hidden" name="images" id="selectedImages" value="https://lh3.googleusercontent.com/aida-public/AB6AXuDmpTys3KoN-gBpIZ2NHZpRJuTwcv-5IYk5GLa4_0uVM_hhieERDkGhxBxjxrEkep1JSAnjV_4SPCgWBVKnMb6fwivTCsPDIZrULPy7mL5ADYCvY6PIwelzBqc3MDBhcvjIWD8AIfWl4SwKLbsFrj0d1ysYfNX_B5EnxoRyDrgKDFgvdcyO-Ms8_F5cd-FImpqdFCuvDZb5yW0IJIY2nfBTxVlU5v0Ss4rTwrmL4ZtFkSiyLaAxWJKC">
 
+                        <!-- Phân loại theo Database aura_cafe.sql: issue_type (RATING / COMPLAINT) -->
+                        <div class="mb-4">
+                            <label class="form-label-custom">Mục đích gửi phản hồi</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <button type="button" id="btnTypeComplaint" class="w-100 btn btn-danger fw-bold d-flex align-items-center justify-content-center gap-2 py-2 text-white shadow-sm" onclick="setIssueType('COMPLAINT')">
+                                        <span class="material-symbols-outlined fs-5">report_problem</span>
+                                        Khiếu nại sự cố
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" id="btnTypeRating" class="w-100 btn btn-outline-warning fw-bold d-flex align-items-center justify-content-center gap-2 py-2 text-dark" onclick="setIssueType('RATING')">
+                                        <span class="material-symbols-outlined fs-5">hotel_class</span>
+                                        Đánh giá & Góp ý
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Chọn đơn hàng -->
                         <div class="mb-4">
                             <label class="form-label-custom" for="orderCodeSelect">
-                                Chọn đơn hàng cần khiếu nại hoặc góp ý
+                                Chọn đơn hàng cần phản ánh (Dữ liệu từ đơn hàng đã đặt)
                             </label>
                             <select class="form-select-custom" id="orderCodeSelect" name="orderCode">
                                 <c:choose>
                                     <c:when test="${not empty userOrders}">
                                         <c:forEach items="${userOrders}" var="uo">
-                                            <option value="${uo[0]}">Đơn hàng ${uo[0]} (${uo[1]} - ${uo[2]}đ)</option>
+                                            <option value="${uo[1]}">Đơn hàng #${uo[1]} (${uo[2]} - <fmt:formatNumber value="${uo[3]}" pattern="#,###" />đ)</option>
                                         </c:forEach>
                                     </c:when>
                                     <c:otherwise>
-                                        <option value="#AUR-86410">Đơn hàng #AUR-86410 (Hôm nay 15:30 - Bạc Xỉu Kem Trứng, Croissant)</option>
-                                        <option value="#AUR-81209">Đơn hàng #AUR-81209 (14/10 - Cold Brew Cam Quế)</option>
+                                        <option value="AURA-001">Đơn hàng #AURA-001 (COMPLETED - 72.000đ)</option>
+                                        <option value="AURA-003">Đơn hàng #AURA-003 (CONFIRMED - 100.000đ)</option>
                                     </c:otherwise>
                                 </c:choose>
-                                <option value="store_experience">Trải nghiệm trực tiếp tại cửa hàng (Không qua app)</option>
-                                <option value="other">Góp ý phát triển hệ thống & thực đơn chung</option>
                             </select>
                         </div>
 
@@ -570,10 +588,10 @@
                             </div>
                         </div>
 
-                        <!-- Mức độ hài lòng (Star Rating) -->
-                        <div class="mb-4">
+                        <!-- Mức độ hài lòng (Star Rating - chỉ hiển thị khi chọn Đánh giá) -->
+                        <div class="mb-4" id="starRatingContainer" style="display: none;">
                             <label class="form-label-custom">
-                                Mức độ hài lòng với lần phục vụ này
+                                Mức độ hài lòng với lần phục vụ này (1 - 5 sao)
                             </label>
                             <div class="star-rating-box">
                                 <c:forEach var="star" begin="1" end="5">
@@ -665,13 +683,17 @@
                                 <div class="ticket-item ${fb.processing ? 'processing' : ''}">
                                     <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                                         <div>
-                                            <div class="d-flex align-items-center gap-2">
+                                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                                <span class="badge ${fb.issueType == 'RATING' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'} fw-bold" style="font-size: 0.65rem;">
+                                                    ${fb.issueType == 'RATING' ? 'ĐÁNH GIÁ (RATING)' : 'KHIẾU NẠI (COMPLAINT)'}
+                                                </span>
                                                 <span class="font-monospace fw-bold small text-dark">${fb.ticketCode}</span>
                                                 <c:if test="${not empty fb.orderCode}">
-                                                    <span class="text-muted small">(${fb.orderCode})</span>
+                                                    <span class="text-muted small">(#${fb.orderCode})</span>
                                                 </c:if>
                                             </div>
-                                            <h4 class="fw-bold text-dark small mb-0 mt-1">${fb.title}</h4>
+                                            <h4 class="fw-bold text-dark small mb-1 mt-1">${fb.title}</h4>
+                                            <p class="text-muted small mb-1" style="font-size: 0.8rem; line-height: 1.4;">${fb.content}</p>
                                         </div>
                                         <span class="${fb.processing ? 'ticket-badge-processing' : 'ticket-badge-resolved'}">
                                             ${fb.statusLabel}
@@ -827,6 +849,25 @@
             4: 'Hài lòng',
             5: 'Tuyệt vời'
         };
+
+        // Switch Issue Type (RATING vs COMPLAINT)
+        function setIssueType(type) {
+            document.getElementById('selectedIssueType').value = type;
+            var btnC = document.getElementById('btnTypeComplaint');
+            var btnR = document.getElementById('btnTypeRating');
+            var starBox = document.getElementById('starRatingContainer');
+            if (type === 'RATING') {
+                btnR.className = 'w-100 btn btn-warning fw-bold d-flex align-items-center justify-content-center gap-2 py-2 text-dark shadow-sm';
+                btnC.className = 'w-100 btn btn-outline-danger fw-bold d-flex align-items-center justify-content-center gap-2 py-2';
+                if (starBox) starBox.style.display = 'block';
+                setRating(5);
+            } else {
+                btnC.className = 'w-100 btn btn-danger fw-bold d-flex align-items-center justify-content-center gap-2 py-2 text-white shadow-sm';
+                btnR.className = 'w-100 btn btn-outline-warning fw-bold d-flex align-items-center justify-content-center gap-2 py-2 text-dark';
+                if (starBox) starBox.style.display = 'none';
+                document.getElementById('selectedRating').value = '';
+            }
+        }
 
         // Select Category Chip
         function selectCategory(cat, element) {
