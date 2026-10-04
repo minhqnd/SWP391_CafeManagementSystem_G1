@@ -1808,19 +1808,22 @@
         // 5. Cart Management
         function renderCart() {
             const listEl = document.getElementById('cartItemsList');
-            const emptyEl = document.getElementById('emptyCartMessage');
             const btnCheckout = document.getElementById('btnCheckout');
 
             if (cartItems.length === 0) {
-                listEl.innerHTML = '';
-                listEl.appendChild(emptyEl);
-                emptyEl.style.display = 'flex';
+                listEl.innerHTML = `
+                    <div class="empty-cart-state" id="emptyCartMessage">
+                        <span class="material-symbols-outlined empty-cart-icon">shopping_cart</span>
+                        <div>Chưa có món nào trong đơn</div>
+                        <div class="small">Vui lòng chọn món từ menu bên trái</div>
+                    </div>
+                `;
                 btnCheckout.disabled = true;
+                document.getElementById('cartCountTotal').textContent = '0';
                 updateSummary(0);
                 return;
             }
 
-            emptyEl.style.display = 'none';
             btnCheckout.disabled = false;
 
             let html = '';
@@ -2065,6 +2068,7 @@
                 }))
             };
 
+            let res;
             try {
                 const response = await fetch(`\${CONTEXT_PATH}/cashier?action=create-order`, {
                     method: 'POST',
@@ -2081,34 +2085,35 @@
                     return;
                 }
 
-                const res = await response.json();
-
-                if (res.success) {
-                    paymentModalInstance.hide();
-                    showToast('Tạo đơn thành công! Mã đơn: ' + res.orderCode);
-                    
-                    // Reset cart
-                    cartItems = [];
-                    clearCustomer();
-                    document.getElementById('orderNoteInput').value = '';
-                    renderCart();
-
-                    // Offer to open e-Bill
-                    setTimeout(() => {
-                        if (confirm(`Đơn hàng \${res.orderCode} đã được tạo thành công!\nBạn có muốn mở xem / in hóa đơn ngay không?`)) {
-                            window.open(`\${CONTEXT_PATH}/bill?orderId=\${res.orderId}`, '_blank');
-                        }
-                        window.location.reload();
-                    }, 400);
-                } else {
-                    alert(res.error || 'Có lỗi xảy ra khi tạo đơn.');
-                }
+                res = await response.json();
             } catch (err) {
                 console.error(err);
                 alert('Lỗi kết nối máy chủ.');
+                return;
             } finally {
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">receipt</span><span>Hoàn tất & In hóa đơn</span>`;
+            }
+
+            if (res && res.success) {
+                paymentModalInstance.hide();
+                showToast('Tạo đơn thành công! Mã đơn: ' + res.orderCode);
+                
+                // Reset cart
+                cartItems = [];
+                clearCustomer();
+                document.getElementById('orderNoteInput').value = '';
+                renderCart();
+
+                // Offer to open e-Bill
+                setTimeout(() => {
+                    if (confirm(`Đơn hàng \${res.orderCode} đã được tạo thành công!\nBạn có muốn mở xem / in hóa đơn ngay không?`)) {
+                        window.open(`\${CONTEXT_PATH}/bill?orderId=\${res.orderId}`, '_blank');
+                    }
+                    window.location.reload();
+                }, 400);
+            } else if (res) {
+                alert(res.error || 'Có lỗi xảy ra khi tạo đơn.');
             }
         }
 
