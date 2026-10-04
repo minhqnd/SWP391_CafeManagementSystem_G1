@@ -14,7 +14,7 @@ public class OrderDAO extends BaseDAO {
     public int getOrCreateCartOrder(int customerId) {
         String checkSql = "SELECT id FROM orders WHERE customer_id = ? AND status = 'PENDING' LIMIT 1";
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psCheck = conn.prepareStatement(checkSql)) {
+                PreparedStatement psCheck = conn.prepareStatement(checkSql)) {
             psCheck.setInt(1, customerId);
             try (ResultSet rs = psCheck.executeQuery()) {
                 if (rs.next()) {
@@ -26,10 +26,11 @@ public class OrderDAO extends BaseDAO {
         }
 
         // Create new pending order
-        String insertSql = "INSERT INTO orders (order_code, customer_id, order_type, status, total_amount, discount_amount, delivery_fee, final_amount) " +
-                           "VALUES (?, ?, 'ONLINE', 'PENDING', 0, 0, 0, 0)";
+        String insertSql = "INSERT INTO orders (order_code, customer_id, order_type, status, total_amount, discount_amount, delivery_fee, final_amount) "
+                +
+                "VALUES (?, ?, 'ONLINE', 'PENDING', 0, 0, 0, 0)";
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psInsert = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+                PreparedStatement psInsert = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
             psInsert.setString(1, "CART-" + System.currentTimeMillis());
             psInsert.setInt(2, customerId);
             psInsert.executeUpdate();
@@ -50,7 +51,7 @@ public class OrderDAO extends BaseDAO {
         String productName = "";
         double unitPrice = 0;
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psProd = conn.prepareStatement(prodSql)) {
+                PreparedStatement psProd = conn.prepareStatement(prodSql)) {
             psProd.setInt(1, productId);
             try (ResultSet rs = psProd.executeQuery()) {
                 if (rs.next()) {
@@ -69,7 +70,7 @@ public class OrderDAO extends BaseDAO {
         // 2. Check if order_item exists
         String checkItemSql = "SELECT id, quantity FROM order_items WHERE order_id = ? AND product_id = ?";
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psCheck = conn.prepareStatement(checkItemSql)) {
+                PreparedStatement psCheck = conn.prepareStatement(checkItemSql)) {
             psCheck.setInt(1, orderId);
             psCheck.setInt(2, productId);
             try (ResultSet rs = psCheck.executeQuery()) {
@@ -87,8 +88,9 @@ public class OrderDAO extends BaseDAO {
                 } else {
                     // Insert
                     double subtotal = quantity * unitPrice;
-                    String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, unit_price, quantity, subtotal) " +
-                                           "VALUES (?, ?, ?, ?, ?, ?)";
+                    String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, unit_price, quantity, subtotal) "
+                            +
+                            "VALUES (?, ?, ?, ?, ?, ?)";
                     try (PreparedStatement psInsert = conn.prepareStatement(insertItemSql)) {
                         psInsert.setInt(1, orderId);
                         psInsert.setInt(2, productId);
@@ -117,14 +119,14 @@ public class OrderDAO extends BaseDAO {
         String sumSql = "SELECT SUM(subtotal) FROM order_items WHERE order_id = ?";
         double totalAmount = 0;
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psSum = conn.prepareStatement(sumSql)) {
+                PreparedStatement psSum = conn.prepareStatement(sumSql)) {
             psSum.setInt(1, orderId);
             try (ResultSet rs = psSum.executeQuery()) {
                 if (rs.next()) {
                     totalAmount = rs.getDouble(1);
                 }
             }
-            
+
             String updateOrderSql = "UPDATE orders SET total_amount = ?, final_amount = ? + delivery_fee - discount_amount WHERE id = ?";
             try (PreparedStatement psUpdateOrder = conn.prepareStatement(updateOrderSql)) {
                 psUpdateOrder.setDouble(1, totalAmount);
@@ -140,7 +142,7 @@ public class OrderDAO extends BaseDAO {
     public int getCartItemTotalQuantity(int orderId) {
         String sql = "SELECT SUM(quantity) FROM order_items WHERE order_id = ?";
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
