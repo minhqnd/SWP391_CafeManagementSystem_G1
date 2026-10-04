@@ -327,7 +327,7 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                                 <span class="text-secondary-custom" style="font-size: 0.75rem;">Phục vụ: Nóng / Lạnh</span>
-                                <a href="#" class="text-primary-custom fw-semibold text-decoration-none" style="font-size: 0.875rem;">Chi tiết</a>
+                                <a href="${pageContext.request.contextPath}/menu" class="text-primary-custom fw-semibold text-decoration-none" style="font-size: 0.875rem;">Chi tiết</a>
                             </div>
                         </div>
                     </div>
@@ -475,15 +475,17 @@
                         .then(data => {
                             if (data.success) {
                                 // Jump cart number animation and update
-                                const badge = document.getElementById('cart-badge');
-                                badge.textContent = data.totalItems;
-                                
-                                // Simple pop animation
-                                badge.style.transform = 'scale(1.5)';
-                                badge.style.transition = 'transform 0.2s';
-                                setTimeout(() => {
-                                    badge.style.transform = 'scale(1)';
-                                }, 200);
+                                const badge = document.getElementById('headerCartBadge');
+                                if (badge) {
+                                    badge.textContent = data.totalItems;
+                                    
+                                    // Simple pop animation
+                                    badge.style.transform = 'scale(1.5)';
+                                    badge.style.transition = 'transform 0.2s';
+                                    setTimeout(() => {
+                                        badge.style.transform = 'scale(1)';
+                                    }, 200);
+                                }
                             }
                         })
                         .catch(error => {
