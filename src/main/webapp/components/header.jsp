@@ -102,7 +102,14 @@
                        href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link aura-nav-link text-muted" href="#" onclick="alert('Tính năng Đơn hàng của tôi đang được phát triển!')">Đơn hàng của tôi</a>
+                    <c:choose>
+                        <c:when test="${not empty sessionScope.user}">
+                            <a class="nav-link aura-nav-link ${param.activePage == 'orders' ? 'active-nav' : ''}" href="${pageContext.request.contextPath}/orders">Đơn hàng của tôi</a>
+                        </c:when>
+                        <c:otherwise>
+                            <a class="nav-link aura-nav-link" href="#" data-bs-toggle="modal" data-bs-target="#authModal">Đơn hàng của tôi</a>
+                        </c:otherwise>
+                    </c:choose>
                 </li>
                 <li class="nav-item">
                     <c:choose>
@@ -177,20 +184,3 @@
         </div>
     </div>
 </nav>
-
-<c:if test="${param.showCart != 'false' && param.navbarMode != 'barista'}">
-<script>
-    // Đồng bộ số lượng giỏ hàng trên tất cả các trang
-    (function syncHeaderCart() {
-        try {
-            var cartData = JSON.parse(localStorage.getItem('aura_cart') || '[]');
-            var count = 0;
-            for (var i = 0; i < cartData.length; i++) {
-                count += (cartData[i].quantity || 1);
-            }
-            var badge = document.getElementById('headerCartBadge');
-            if (badge) badge.innerText = count;
-        } catch (e) {}
-    })();
-</script>
-</c:if>

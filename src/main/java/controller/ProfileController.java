@@ -42,7 +42,6 @@ public class ProfileController extends HttpServlet {
         request.setAttribute("currentDisplayTier", currentDisplayTier);
         request.setAttribute("nextPoints", nextPoints);
         request.setAttribute("progressPercent", progressPercent);
-        request.setAttribute("discountValue", points * 100);
     }
 
     @Override
@@ -139,20 +138,12 @@ public class ProfileController extends HttpServlet {
             try {
                 int rewardId = Integer.parseInt(request.getParameter("rewardId"));
                 dao.RewardDAO rewardDAO = new dao.RewardDAO();
-                boolean success = rewardDAO.redeemReward(user.getId(), rewardId);
-                if (success) {
-                    // Manually fetch the updated total points
-                    int updatedPoints = 0;
-                    try (java.sql.Connection conn = context.DBContext.getConnection();
-                         java.sql.PreparedStatement ps = conn.prepareStatement("SELECT total_points FROM users WHERE id = ?")) {
-                        ps.setInt(1, user.getId());
-                        try (java.sql.ResultSet rs = ps.executeQuery()) {
-                            if (rs.next()) updatedPoints = rs.getInt("total_points");
-                        }
-                    }
-                    user.setTotalPoints(updatedPoints);
+                String voucherCode = rewardDAO.redeemReward(user.getId(), rewardId);
+                if (voucherCode != null) {
+                    user.setTotalPoints(new dao.UserDAO().getTotalPoints(user.getId()));
                     session.setAttribute("user", user);
-                    request.setAttribute("successMsg", "Đổi thưởng thành công! Quà đã được thêm vào túi đồ của bạn.");
+                    request.setAttribute("successMsg", "Đổi thưởng thành công! Voucher " + voucherCode
+                            + " đã được thêm vào tài khoản, chọn mã này ở Giỏ hàng để được giảm giá.");
                 } else {
                     request.setAttribute("errorMsg", "Đổi thưởng thất bại. Có thể bạn không đủ điểm hoặc phần quà đã hết!");
                 }

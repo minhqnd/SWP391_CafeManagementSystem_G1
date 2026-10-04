@@ -285,7 +285,7 @@
                             <div class="text-end bg-white bg-opacity-10 p-3 rounded-3 border border-white border-opacity-25">
                                 <div class="text-white-50 mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Điểm tích luỹ Aura</div>
                                 <div class="fs-2 fw-bold text-white lh-1 mb-1">${sessionScope.user.totalPoints != null ? sessionScope.user.totalPoints : 0} <span class="fs-6 fw-normal">pts</span></div>
-                                <div class="text-white-50" style="font-size: 0.7rem;">&approx; <fmt:formatNumber value="${discountValue != null ? discountValue : 0}" pattern="#,###" />đ trừ trực tiếp hóa đơn</div>
+                                <div class="text-white-50" style="font-size: 0.7rem;">Dùng điểm để đổi voucher giảm giá</div>
                             </div>
                         </div>
 

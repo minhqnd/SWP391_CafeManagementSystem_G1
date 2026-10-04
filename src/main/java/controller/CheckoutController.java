@@ -48,7 +48,7 @@ public class CheckoutController extends HttpServlet {
 
         HttpSession session = request.getSession();
         Cart cart = CartController.getCart(session);
-        cartService.refreshCart(cart);
+        cartService.refreshCart(cart, CartController.getCustomerId(session));
 
         if (cart.getSelectedItems().isEmpty()) {
             session.setAttribute("cartError", "Vui lòng chọn ít nhất một món để đặt hàng.");
@@ -68,7 +68,7 @@ public class CheckoutController extends HttpServlet {
         HttpSession session = request.getSession();
         Cart cart = CartController.getCart(session);
         String voucherCode = cart.getVoucher() != null ? cart.getVoucher().getCode() : null;
-        boolean voucherStillValid = cartService.refreshCart(cart);
+        boolean voucherStillValid = cartService.refreshCart(cart, CartController.getCustomerId(session));
 
         if (cart.getSelectedItems().isEmpty()) {
             session.setAttribute("cartError", "Vui lòng chọn ít nhất một món để đặt hàng.");

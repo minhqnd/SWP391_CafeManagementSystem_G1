@@ -512,7 +512,7 @@
                                 <c:choose>
                                     <c:when test="${not empty userOrders}">
                                         <c:forEach items="${userOrders}" var="uo">
-                                            <option value="${uo[0]}">Đơn hàng ${uo[0]} (${uo[1]} - ${uo[2]}đ)</option>
+                                            <option value="${uo[0]}" ${param.orderCode == uo[0] ? 'selected' : ''}>Đơn hàng ${uo[0]} (${uo[1]} - ${uo[2]}đ)</option>
                                         </c:forEach>
                                     </c:when>
                                     <c:otherwise>

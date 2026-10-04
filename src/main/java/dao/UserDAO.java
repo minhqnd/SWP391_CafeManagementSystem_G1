@@ -131,6 +131,23 @@ public class UserDAO extends BaseDAO {
         return false;
     }
 
+    /** Điểm Aura hiện tại (đọc lại sau khi thanh toán / đổi điểm để cập nhật user trong session) */
+    public int getTotalPoints(int userId) {
+        String sql = "SELECT total_points FROM users WHERE id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total_points");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     public java.util.List<model.LoyaltyTransaction> getLoyaltyHistoryByUserId(int userId) {
         java.util.List<model.LoyaltyTransaction> list = new java.util.ArrayList<>();
         String sql = "SELECT id, customer_id, order_id, points_change, transaction_type, created_at " +
