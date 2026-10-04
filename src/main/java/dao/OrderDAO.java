@@ -718,8 +718,8 @@ public class OrderDAO extends BaseDAO {
                 "VALUES (?, ?, ?, ?, ?, 'CONFIRMED', ?, ?, 0, ?, ?, ?, ?, ?, NOW())";
 
         String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, " +
-                "unit_price, quantity, subtotal, customization, note) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                "unit_price, quantity, subtotal, customization) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         String insertPaymentSql = "INSERT INTO payments (order_id, payment_method, transaction_code, amount, status, paid_at, payment_note) " +
                 "VALUES (?, ?, ?, ?, 'SUCCESS', NOW(), ?)";
@@ -774,7 +774,6 @@ public class OrderDAO extends BaseDAO {
                     ps.setInt(5, item.getQuantity());
                     ps.setBigDecimal(6, item.getSubtotal());
                     ps.setString(7, item.getCustomization());
-                    ps.setString(8, item.getCustomization());
                     ps.addBatch();
                 }
                 ps.executeBatch();
