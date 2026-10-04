@@ -1,6 +1,7 @@
 package dao;
 
 import context.DBContext;
+import model.Cart;
 import model.CartItem;
 import model.Order;
 
@@ -704,5 +705,175 @@ public class OrderDAO extends BaseDAO {
             return "null";
         }
         return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+
+    /**
+     * Tạo và thanh toán đơn hàng tại quầy (Counter Order POS)
+     */
+    public int createCounterOrder(Order order, List<OrderDetail> items, String paymentMethod,
+                                  int pointsUsed, String paymentNote) {
+        String insertOrderSql = "INSERT INTO orders (order_code, customer_id, cashier_id, voucher_id, " +
+                "order_type, status, total_amount, discount_amount, delivery_fee, final_amount, " +
+                "recipient_name, recipient_phone, table_number, order_note, created_at) " +
+                "VALUES (?, ?, ?, ?, ?, 'CONFIRMED', ?, ?, 0, ?, ?, ?, ?, ?, NOW())";
+
+        String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, " +
+                "unit_price, quantity, subtotal, customization, note) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        String insertPaymentSql = "INSERT INTO payments (order_id, payment_method, transaction_code, amount, status, paid_at, payment_note) " +
+                "VALUES (?, ?, ?, ?, 'SUCCESS', NOW(), ?)";
+
+        String redeemPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) " +
+                "VALUES (?, ?, ?, 'REDEEM')";
+        String deductUserPointsSql = "UPDATE users SET total_points = total_points - ? WHERE id = ?";
+
+        String earnPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) " +
+                "VALUES (?, ?, ?, 'EARN')";
+        String addUserPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";
+
+        Connection conn = null;
+        try {
+            conn = DBContext.getConnection();
+            conn.setAutoCommit(false);
+
+            int orderId = 0;
+            try (PreparedStatement ps = conn.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, order.getOrderCode());
+                ps.setObject(2, order.getCustomerId(), Types.INTEGER);
+                ps.setObject(3, order.getCashierId(), Types.INTEGER);
+                ps.setObject(4, order.getVoucherId(), Types.INTEGER);
+                ps.setString(5, order.getOrderType());
+                ps.setDouble(6, order.getTotalAmount());
+                ps.setDouble(7, order.getDiscountAmount());
+                ps.setDouble(8, order.getFinalAmount());
+                ps.setString(9, order.getRecipientName());
+                ps.setString(10, order.getRecipientPhone());
+                ps.setString(11, order.getTableNumber());
+                ps.setString(12, order.getOrderNote());
+                ps.executeUpdate();
+
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        orderId = rs.getInt(1);
+                    }
+                }
+            }
+
+            if (orderId <= 0) {
+                conn.rollback();
+                return -1;
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(insertItemSql)) {
+                for (OrderDetail item : items) {
+                    ps.setInt(1, orderId);
+                    ps.setInt(2, item.getProductId());
+                    ps.setString(3, item.getProductName());
+                    ps.setBigDecimal(4, item.getUnitPrice());
+                    ps.setInt(5, item.getQuantity());
+                    ps.setBigDecimal(6, item.getSubtotal());
+                    ps.setString(7, item.getCustomization());
+                    ps.setString(8, item.getCustomization());
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(insertPaymentSql)) {
+                ps.setInt(1, orderId);
+                ps.setString(2, paymentMethod != null ? paymentMethod : "CASH");
+                ps.setString(3, "POS-" + order.getOrderCode());
+                ps.setDouble(4, order.getFinalAmount());
+                ps.setString(5, paymentNote);
+                ps.executeUpdate();
+            }
+
+            if (order.getCustomerId() != null && order.getCustomerId() > 0) {
+                if (pointsUsed > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(redeemPointsSql)) {
+                        ps.setInt(1, order.getCustomerId());
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, -pointsUsed);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(deductUserPointsSql)) {
+                        ps.setInt(1, pointsUsed);
+                        ps.setInt(2, order.getCustomerId());
+                        ps.executeUpdate();
+                    }
+                }
+
+                int earnedPoints = (int) Math.floor((order.getTotalAmount() - order.getDiscountAmount()) / Cart.MONEY_PER_POINT);
+                if (earnedPoints > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(earnPointsSql)) {
+                        ps.setInt(1, order.getCustomerId());
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, earnedPoints);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(addUserPointsSql)) {
+                        ps.setInt(1, earnedPoints);
+                        ps.setInt(2, order.getCustomerId());
+                        ps.executeUpdate();
+                    }
+                }
+            }
+
+            conn.commit();
+            return orderId;
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
+            return -1;
+        } finally {
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
+
+    /**
+     * Danh sách các đơn quầy tạo trong ngày hôm nay
+     */
+    public List<Order> getCounterOrdersToday() {
+        String sql = CUSTOMER_ORDER_SELECT + 
+                     "WHERE DATE(o.created_at) = CURDATE() " +
+                     "  AND (o.cashier_id IS NOT NULL OR o.order_type IN ('DINE_IN', 'TAKEAWAY')) " +
+                     "ORDER BY o.created_at DESC, o.id DESC";
+
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        List<Order> list = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Order order = mapCustomerOrder(rs);
+                orders.put(order.getId(), order);
+                list.add(order);
+            }
+            loadOrderItems(conn, orders);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Hủy đơn tại quầy (chỉ khi đơn chưa hoàn thành)
+     */
+    public boolean cancelCounterOrder(int orderId) {
+        String sql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ? AND status IN ('CONFIRMED', 'PENDING', 'PREPARING')";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

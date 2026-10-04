@@ -222,4 +222,38 @@ public class UserDAO extends BaseDAO {
         }
         return list;
     }
+
+    /**
+     * Tìm kiếm khách hàng theo SĐT (hoặc email) để tích/đổi điểm tại quầy POS
+     */
+    public model.User findCustomerByPhone(String phone) {
+        if (phone == null || phone.trim().isEmpty()) return null;
+        String sql = "SELECT id, full_name, phone, email, role, position, status, tier_name, total_points " +
+                     "FROM users WHERE role = 'CUSTOMER' AND (phone = ? OR email = ?)";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, phone.trim());
+            ps.setString(2, phone.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new model.User(
+                            rs.getInt("id"),
+                            rs.getString("full_name"),
+                            rs.getString("phone"),
+                            rs.getString("email"),
+                            rs.getString("role"),
+                            rs.getString("position"),
+                            rs.getString("status"),
+                            "",
+                            "",
+                            rs.getString("tier_name") != null ? rs.getString("tier_name") : "MEMBER",
+                            rs.getInt("total_points")
+                    );
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
