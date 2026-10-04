@@ -80,7 +80,8 @@
                     </c:choose>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link aura-nav-link text-muted" href="#" onclick="alert('Tính năng Phản ánh & Khiếu nại đang được phát triển!')">Phản ánh & Khiếu nại</a>
+                    <a class="nav-link aura-nav-link ${param.activePage == 'feedback' ? 'active-nav' : ''}" 
+                       href="${pageContext.request.contextPath}/feedback">Phản ánh & Khiếu nại</a>
                 </li>
             </ul>
 
