@@ -1923,7 +1923,14 @@
             }
 
             try {
-                const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=search-customer&phone=\${encodeURIComponent(phone)}`);
+                const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=search-customer&phone=\${encodeURIComponent(phone)}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (resp.status === 401) {
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = `\${CONTEXT_PATH}/login`;
+                    return;
+                }
                 const data = await resp.json();
                 if (data.success && data.customer) {
                     currentCustomer = data.customer;
@@ -2061,9 +2068,19 @@
             try {
                 const response = await fetch(`\${CONTEXT_PATH}/cashier?action=create-order`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     body: JSON.stringify(payload)
                 });
+
+                if (response.status === 401) {
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = `\${CONTEXT_PATH}/login`;
+                    return;
+                }
+
                 const res = await response.json();
 
                 if (res.success) {
@@ -2103,8 +2120,14 @@
 
             try {
                 const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=cancel-order&orderId=\${orderId}`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' }
                 });
+                if (resp.status === 401) {
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = `\${CONTEXT_PATH}/login`;
+                    return;
+                }
                 const res = await resp.json();
                 if (res.success) {
                     showToast('Đã hủy đơn thành công');

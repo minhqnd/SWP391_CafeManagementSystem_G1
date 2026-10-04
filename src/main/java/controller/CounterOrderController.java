@@ -44,10 +44,15 @@ public class CounterOrderController extends HttpServlet {
         HttpSession session = request.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
+        String accept = request.getHeader("Accept");
+        String contentType = request.getContentType();
+        boolean isApi = (accept != null && accept.contains("application/json"))
+                || (contentType != null && contentType.contains("application/json"))
+                || request.getParameter("action") != null;
+
         if (user == null) {
-            String accept = request.getHeader("Accept");
-            if (accept != null && accept.contains("application/json")) {
-                sendJson(response, HttpServletResponse.SC_UNAUTHORIZED, "{\"success\":false,\"error\":\"Vui lòng đăng nhập.\"}");
+            if (isApi) {
+                sendJson(response, HttpServletResponse.SC_UNAUTHORIZED, "{\"success\":false,\"error\":\"Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\"}");
             } else {
                 response.sendRedirect(request.getContextPath() + "/login");
             }
@@ -56,8 +61,7 @@ public class CounterOrderController extends HttpServlet {
 
         String role = user.getRole();
         if (!"ACTIVE".equalsIgnoreCase(user.getStatus()) || (!"STAFF".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role))) {
-            String accept = request.getHeader("Accept");
-            if (accept != null && accept.contains("application/json")) {
+            if (isApi) {
                 sendJson(response, HttpServletResponse.SC_FORBIDDEN, "{\"success\":false,\"error\":\"Chỉ nhân viên hoặc quản trị viên được phép truy cập POS.\"}");
             } else {
                 response.sendRedirect(request.getContextPath() + "/login?error=unauthorized");
