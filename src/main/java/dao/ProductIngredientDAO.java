@@ -29,14 +29,16 @@ public class ProductIngredientDAO extends BaseDAO {
                 psDelete.setInt(1, productId);
                 psDelete.executeUpdate();
                 
-                // 3. Insert new ingredients BOM using batch
-                for (ProductIngredient pi : ingredients) {
-                    psInsert.setInt(1, productId);
-                    psInsert.setInt(2, pi.getIngredientId());
-                    psInsert.setDouble(3, pi.getQuantityRequired());
-                    psInsert.addBatch();
+                // 3. Insert new ingredients BOM using batch (if any)
+                if (ingredients != null && !ingredients.isEmpty()) {
+                    for (ProductIngredient pi : ingredients) {
+                        psInsert.setInt(1, productId);
+                        psInsert.setInt(2, pi.getIngredientId());
+                        psInsert.setDouble(3, pi.getQuantityRequired());
+                        psInsert.addBatch();
+                    }
+                    psInsert.executeBatch();
                 }
-                psInsert.executeBatch();
                 
                 conn.commit();
             } catch (Exception e) {
@@ -46,5 +48,57 @@ public class ProductIngredientDAO extends BaseDAO {
                 conn.setAutoCommit(true);
             }
         }
+    }
+
+    public List<ProductIngredient> getIngredientsByProductId(int productId) {
+        List<ProductIngredient> list = new java.util.ArrayList<>();
+        String sql = "SELECT pi.product_id, pi.ingredient_id, pi.quantity_required, i.name AS ingredient_name, i.unit "
+                   + "FROM product_ingredients pi "
+                   + "JOIN ingredients i ON pi.ingredient_id = i.id "
+                   + "WHERE pi.product_id = ? "
+                   + "ORDER BY i.name ASC";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new ProductIngredient(
+                        rs.getInt("product_id"),
+                        rs.getInt("ingredient_id"),
+                        rs.getDouble("quantity_required"),
+                        rs.getString("ingredient_name"),
+                        rs.getString("unit")
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public java.util.Map<Integer, List<ProductIngredient>> getAllProductIngredientsMap() {
+        java.util.Map<Integer, List<ProductIngredient>> map = new java.util.LinkedHashMap<>();
+        String sql = "SELECT pi.product_id, pi.ingredient_id, pi.quantity_required, i.name AS ingredient_name, i.unit "
+                   + "FROM product_ingredients pi "
+                   + "JOIN ingredients i ON pi.ingredient_id = i.id "
+                   + "ORDER BY pi.product_id, i.name ASC";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             java.sql.ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                int pId = rs.getInt("product_id");
+                map.computeIfAbsent(pId, k -> new java.util.ArrayList<>()).add(new ProductIngredient(
+                    pId,
+                    rs.getInt("ingredient_id"),
+                    rs.getDouble("quantity_required"),
+                    rs.getString("ingredient_name"),
+                    rs.getString("unit")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return map;
     }
 }
