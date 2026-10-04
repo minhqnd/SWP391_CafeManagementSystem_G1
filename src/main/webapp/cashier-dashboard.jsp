@@ -1334,20 +1334,31 @@
         .opt-chips-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
+            row-gap: 12px;
             margin-bottom: 16px;
+        }
+
+        .opt-chips-grid label {
+            display: inline-flex;
+            margin: 0;
         }
 
         .opt-radio-label {
             cursor: pointer;
-            padding: 6px 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
             background: var(--slate-100);
             border: 1px solid var(--slate-200);
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 13px;
             font-weight: 600;
+            line-height: 1.4;
             color: var(--slate-700);
             transition: all 0.15s;
+            user-select: none;
         }
 
         input[type="radio"]:checked + .opt-radio-label,
@@ -1430,7 +1441,8 @@
         #toastContainer {
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            left: 20px;
+            right: auto;
             z-index: 2000;
             display: flex;
             flex-direction: column;
@@ -1644,20 +1656,6 @@
 
         <!-- ================= VIEW 2: TODAY'S ORDERS HISTORY ================= -->
         <c:set var="todayCount" value="${not empty counterOrders ? counterOrders.size() : 0}" />
-        <c:set var="todayRevenue" value="0" />
-        <c:set var="todaySuccessCount" value="0" />
-        <c:set var="todayCancelledCount" value="0" />
-        <c:forEach var="chk" items="${counterOrders}">
-            <c:choose>
-                <c:when test="${chk.status eq 'CANCELLED'}">
-                    <c:set var="todayCancelledCount" value="${todayCancelledCount + 1}" />
-                </c:when>
-                <c:otherwise>
-                    <c:set var="todayRevenue" value="${todayRevenue + chk.finalAmount}" />
-                    <c:set var="todaySuccessCount" value="${todaySuccessCount + 1}" />
-                </c:otherwise>
-            </c:choose>
-        </c:forEach>
 
         <div class="orders-panel" id="viewOrdersList">
             <!-- Header Section -->
@@ -1676,55 +1674,6 @@
                         <span class="material-symbols-outlined" style="font-size: 18px;">sync</span>
                         <span>Tải lại dữ liệu</span>
                     </button>
-                </div>
-            </div>
-
-            <!-- Stats Overview Cards -->
-            <div class="orders-kpi-grid">
-                <div class="kpi-stat-card">
-                    <div class="kpi-stat-icon total">
-                        <span class="material-symbols-outlined" style="font-size: 26px;">receipt</span>
-                    </div>
-                    <div class="kpi-stat-info">
-                        <span class="kpi-stat-label">Tổng đơn tạo</span>
-                        <span class="kpi-stat-value">${todayCount}</span>
-                        <span class="kpi-stat-sub">Đơn phát sinh trong ca</span>
-                    </div>
-                </div>
-
-                <div class="kpi-stat-card">
-                    <div class="kpi-stat-icon revenue">
-                        <span class="material-symbols-outlined" style="font-size: 26px;">monetization_on</span>
-                    </div>
-                    <div class="kpi-stat-info">
-                        <span class="kpi-stat-label">Doanh thu thực thu</span>
-                        <span class="kpi-stat-value">
-                            <fmt:formatNumber value="${todayRevenue}" pattern="###,###,###" />đ
-                        </span>
-                        <span class="kpi-stat-sub">Không tính đơn đã hủy</span>
-                    </div>
-                </div>
-
-                <div class="kpi-stat-card">
-                    <div class="kpi-stat-icon success">
-                        <span class="material-symbols-outlined" style="font-size: 26px;">check_circle</span>
-                    </div>
-                    <div class="kpi-stat-info">
-                        <span class="kpi-stat-label">Đơn thành công</span>
-                        <span class="kpi-stat-value">${todaySuccessCount}</span>
-                        <span class="kpi-stat-sub">Đã thanh toán & phục vụ</span>
-                    </div>
-                </div>
-
-                <div class="kpi-stat-card">
-                    <div class="kpi-stat-icon cancelled">
-                        <span class="material-symbols-outlined" style="font-size: 26px;">cancel</span>
-                    </div>
-                    <div class="kpi-stat-info">
-                        <span class="kpi-stat-label">Đơn đã hủy</span>
-                        <span class="kpi-stat-value">${todayCancelledCount}</span>
-                        <span class="kpi-stat-sub">Giao dịch đã hủy</span>
-                    </div>
                 </div>
             </div>
 
