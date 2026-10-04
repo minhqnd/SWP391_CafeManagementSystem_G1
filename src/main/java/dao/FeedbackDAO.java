@@ -50,34 +50,6 @@ public class FeedbackDAO extends BaseDAO {
             fb.setOrderCode(rs.getString("order_code"));
         } catch (Exception ignored) {}
 
-        // Thiết lập trường hiển thị cho giao diện
-        if ("RATING".equalsIgnoreCase(issueType)) {
-            fb.setCategory("rating");
-            fb.setCategoryLabel("Đánh giá & Góp ý (" + rating + "★)");
-            fb.setTitle("Đánh giá đơn hàng #" + fb.getOrderCode());
-        } else {
-            fb.setCategory("complaint");
-            fb.setCategoryLabel("Khiếu nại sự cố đơn hàng");
-            fb.setTitle("Khiếu nại đơn hàng #" + fb.getOrderCode());
-        }
-
-        if ("RESOLVED".equalsIgnoreCase(fb.getStatus())) {
-            fb.setStatusLabel("Đã giải quyết xong");
-            fb.setProgressPercent(100);
-            fb.setResolution(fb.getAdminResponse());
-            fb.setAgentNote(fb.getAdminResponse());
-        } else if ("REJECTED".equalsIgnoreCase(fb.getStatus())) {
-            fb.setStatusLabel("Từ chối xử lý");
-            fb.setProgressPercent(100);
-            fb.setResolution(fb.getAdminResponse());
-            fb.setAgentNote(fb.getAdminResponse());
-        } else {
-            fb.setStatusLabel("Đang chờ tiếp nhận");
-            fb.setProgressPercent(35);
-            fb.setAgentNote("Bộ phận CSKH đang tiếp nhận và rà soát lại đơn hàng #" + fb.getOrderCode() + ".");
-        }
-
-        fb.setAgentName("Ban Quản lý Aura Café");
         return fb;
     }
 

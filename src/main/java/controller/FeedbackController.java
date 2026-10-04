@@ -63,11 +63,8 @@ public class FeedbackController extends HttpServlet {
 
         String orderCode = request.getParameter("orderCode");
         String issueTypeParam = request.getParameter("issueType");
-        String category = request.getParameter("category");
         String ratingStr = request.getParameter("rating");
         String content = request.getParameter("content");
-        String images = request.getParameter("images");
-        String contactMethod = request.getParameter("contactMethod");
 
         if (content == null || content.trim().isEmpty()) {
             if (ajax) {
@@ -83,60 +80,19 @@ public class FeedbackController extends HttpServlet {
         }
 
         // Xác định loại vấn đề theo schema database: issue_type ENUM('RATING', 'COMPLAINT')
-        String issueType = "COMPLAINT";
-        if ("RATING".equalsIgnoreCase(issueTypeParam) || "rating".equalsIgnoreCase(category)) {
-            issueType = "RATING";
-        } else if ("COMPLAINT".equalsIgnoreCase(issueTypeParam)) {
-            issueType = "COMPLAINT";
-        } else {
-            // Tự động phân loại dựa trên category hoặc điểm đánh giá
-            if ("rating".equals(category) || "compliment".equals(category)) {
-                issueType = "RATING";
-            } else {
-                issueType = "COMPLAINT";
-            }
-        }
+        String issueType = "RATING".equalsIgnoreCase(issueTypeParam) ? "RATING" : "COMPLAINT";
 
         int rating = 5;
-        try {
-            if (ratingStr != null && !ratingStr.trim().isEmpty()) {
-                rating = Integer.parseInt(ratingStr.trim());
-                if (rating < 1) rating = 1;
-                if (rating > 5) rating = 5;
-            }
-        } catch (NumberFormatException ignored) {}
-
-        // Map nhãn phân loại để thêm vào nội dung
-        String categoryLabel;
-        if (category == null) category = "other";
-        switch (category) {
-            case "wrong_size":
-                categoryLabel = "Sai kích cỡ / Món";
-                break;
-            case "quality":
-                categoryLabel = "Hương vị / Nhiệt độ";
-                break;
-            case "delivery":
-                categoryLabel = "Giao trễ / Đổ vỡ";
-                break;
-            case "attitude":
-                categoryLabel = "Thái độ phục vụ";
-                break;
-            case "packaging":
-                categoryLabel = "Thiếu ống hút/đồ ăn";
-                break;
-            case "rating":
-                categoryLabel = "Đánh giá chất lượng";
-                break;
-            default:
-                categoryLabel = "Góp ý khác";
-                break;
-        }
-
-        // Tạo nội dung hoàn chỉnh lưu vào TEXT content
-        String fullContent = content.trim();
-        if (!fullContent.startsWith("[")) {
-            fullContent = "[" + categoryLabel + "] " + fullContent;
+        if ("RATING".equals(issueType)) {
+            try {
+                if (ratingStr != null && !ratingStr.trim().isEmpty()) {
+                    rating = Integer.parseInt(ratingStr.trim());
+                    if (rating < 1) rating = 1;
+                    if (rating > 5) rating = 5;
+                }
+            } catch (NumberFormatException ignored) {}
+        } else {
+            rating = 0; // Khiếu nại (COMPLAINT) không có rating (lưu NULL theo DB chk_review_type)
         }
 
         // Xác định customer_id (yêu cầu NOT NULL bởi FK fk_review_customer trong aura_cafe.sql)
@@ -144,7 +100,7 @@ public class FeedbackController extends HttpServlet {
         if (user != null) {
             customerId = user.getId();
         } else {
-            // Nếu chưa đăng nhập trong môi trường test/khách, liên kết tài khoản khách hàng mặc định (id 4 - Le Minh Anh)
+            // Mặc định tài khoản khách hàng mẫu trong DB
             customerId = 4;
         }
 
@@ -154,21 +110,19 @@ public class FeedbackController extends HttpServlet {
         Feedback fb = new Feedback();
         fb.setCustomerId(customerId);
         fb.setOrderId(orderId);
+        fb.setOrderCode(orderCode);
         fb.setIssueType(issueType);
         fb.setRating(rating);
-        fb.setContent(fullContent);
+        fb.setContent(content.trim());
         fb.setStatus("PENDING");
-        fb.setCategory(category);
-        fb.setCategoryLabel(categoryLabel);
-        fb.setImages(images != null ? images.trim() : "");
-        fb.setContactMethod(contactMethod != null ? contactMethod : "phone");
 
         boolean saved = feedbackDAO.createFeedback(fb);
 
         if (ajax) {
             response.setContentType("application/json;charset=UTF-8");
             if (saved) {
-                response.getWriter().write("{\"success\":true,\"ticketCode\":\"" + fb.getTicketCode() + "\",\"message\":\"Đã gửi phản ánh thành công! Phiếu #" + fb.getTicketCode() + " đã được ghi nhận vào hệ thống.\"}");
+                String safeContent = fb.getContent().replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
+                response.getWriter().write("{\"success\":true,\"ticketCode\":\"" + fb.getTicketCode() + "\",\"orderCode\":\"" + (orderCode != null ? orderCode : "") + "\",\"issueType\":\"" + fb.getIssueType() + "\",\"rating\":" + fb.getRating() + ",\"content\":\"" + safeContent + "\",\"message\":\"Đã gửi thành công! Phiếu " + fb.getTicketCode() + " đã được ghi nhận vào hệ thống.\"}");
             } else {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.getWriter().write("{\"success\":false,\"message\":\"Có lỗi xảy ra khi lưu vào cơ sở dữ liệu. Vui lòng thử lại!\"}");
