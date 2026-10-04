@@ -224,4 +224,34 @@ public class ProductDAO extends BaseDAO {
         }
         return 0;
     }
+
+    /**
+     * Lấy danh sách sản phẩm liên quan (cùng danh mục), loại trừ sản phẩm hiện tại
+     */
+    public List<Product> getRelatedProducts(int categoryId, int excludeProductId, int limit) {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.name AS category_name " +
+                     "FROM products p " +
+                     "JOIN categories c ON p.category_id = c.id " +
+                     "WHERE p.is_available = 1 AND p.category_id = ? AND p.id != ? " +
+                     "ORDER BY RAND() " +
+                     "LIMIT ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, categoryId);
+            ps.setInt(2, excludeProductId);
+            ps.setInt(3, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }
