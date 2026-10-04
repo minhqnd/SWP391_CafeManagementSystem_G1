@@ -68,10 +68,10 @@ public class OrderDAO extends BaseDAO {
                     order.setShipperId(rs.getObject("shipper_id", Integer.class));
                     order.setOrderType(rs.getString("order_type"));
                     order.setStatus(rs.getString("status"));
-                    order.setTotalAmount(rs.getBigDecimal("total_amount"));
-                    order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
-                    order.setDeliveryFee(rs.getBigDecimal("delivery_fee"));
-                    order.setFinalAmount(rs.getBigDecimal("final_amount"));
+                    order.setTotalAmount(rs.getDouble("total_amount"));
+                    order.setDiscountAmount(rs.getDouble("discount_amount"));
+                    order.setDeliveryFee(rs.getDouble("delivery_fee"));
+                    order.setFinalAmount(rs.getDouble("final_amount"));
                     order.setRecipientName(rs.getString("recipient_name"));
                     order.setRecipientPhone(rs.getString("recipient_phone"));
                     order.setDeliveryAddress(rs.getString("delivery_address"));
@@ -82,9 +82,9 @@ public class OrderDAO extends BaseDAO {
                 }
                 order.getItems().add(new OrderDetail(
                         rs.getInt("item_id"), id, rs.getInt("product_id"),
-                        rs.getString("product_name_at_time"), rs.getBigDecimal("unit_price"),
+                        rs.getString("product_name_at_time"), rs.getDouble("unit_price"),
                         rs.getString("customization"), rs.getInt("quantity"),
-                        rs.getBigDecimal("subtotal"), rs.getInt("category_id"),
+                        rs.getDouble("subtotal"), rs.getInt("category_id"),
                         rs.getString("category_name")));
             }
         }

@@ -1,14 +1,10 @@
 package model;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Maps orders. Nullable foreign keys use Integer; amounts preserve DECIMAL precision.
- */
 public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -19,20 +15,6 @@ public class Order implements Serializable {
     private Integer voucherId;
     private String orderType;
     private String status;
-    private BigDecimal totalAmount;
-    private BigDecimal discountAmount;
-    private BigDecimal deliveryFee;
-    private BigDecimal finalAmount;
-    private String recipientName;
-    private String recipientPhone;
-    private String deliveryAddress;
-    private Integer shipperId;
-    private String tableNumber;
-    private String orderNote;
-    private LocalDateTime createdAt;
-    private Integer voucherId;
-    private String orderType;   // DINE_IN, TAKEAWAY, ONLINE
-    private String status;      // PENDING, CONFIRMED, PREPARING, READY, DELIVERING, COMPLETED, CANCELLED
     private double totalAmount;
     private double discountAmount;
     private double deliveryFee;
@@ -40,7 +22,10 @@ public class Order implements Serializable {
     private String recipientName;
     private String recipientPhone;
     private String deliveryAddress;
+    private Integer shipperId;
+    private String tableNumber;
     private String orderNote;
+    private LocalDateTime createdAt;
 
     public Order() {
     }
@@ -52,10 +37,10 @@ public class Order implements Serializable {
                  Integer voucherId,
                  String orderType,
                  String status,
-                 BigDecimal totalAmount,
-                 BigDecimal discountAmount,
-                 BigDecimal deliveryFee,
-                 BigDecimal finalAmount,
+                 double totalAmount,
+                 double discountAmount,
+                 double deliveryFee,
+                 double finalAmount,
                  String recipientName,
                  String recipientPhone,
                  String deliveryAddress,
@@ -83,192 +68,65 @@ public class Order implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public int getId() {
-        return id;
-    }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public String getOrderCode() { return orderCode; }
+    public void setOrderCode(String orderCode) { this.orderCode = orderCode; }
 
-    public String getOrderCode() {
-        return orderCode;
-    }
+    public Integer getCustomerId() { return customerId; }
+    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
 
-    public void setOrderCode(String orderCode) {
-        this.orderCode = orderCode;
-    }
+    public Integer getCashierId() { return cashierId; }
+    public void setCashierId(Integer cashierId) { this.cashierId = cashierId; }
 
-    public Integer getCustomerId() {
-        return customerId;
-    }
+    public Integer getVoucherId() { return voucherId; }
+    public void setVoucherId(Integer voucherId) { this.voucherId = voucherId; }
 
-    public void setCustomerId(Integer customerId) {
-        this.customerId = customerId;
-    }
+    public String getOrderType() { return orderType; }
+    public void setOrderType(String orderType) { this.orderType = orderType; }
 
-    public Integer getCashierId() {
-        return cashierId;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public void setCashierId(Integer cashierId) {
-        this.cashierId = cashierId;
-    }
+    public double getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
 
-    public Integer getVoucherId() {
-        return voucherId;
-    }
+    public double getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(double discountAmount) { this.discountAmount = discountAmount; }
 
-    public void setVoucherId(Integer voucherId) {
-        this.voucherId = voucherId;
-    }
+    public double getDeliveryFee() { return deliveryFee; }
+    public void setDeliveryFee(double deliveryFee) { this.deliveryFee = deliveryFee; }
 
-    public String getOrderType() {
-        return orderType;
-    }
+    public double getFinalAmount() { return finalAmount; }
+    public void setFinalAmount(double finalAmount) { this.finalAmount = finalAmount; }
 
-    public void setOrderType(String orderType) {
-        this.orderType = orderType;
-    }
+    public String getRecipientName() { return recipientName; }
+    public void setRecipientName(String recipientName) { this.recipientName = recipientName; }
 
-    public String getStatus() {
-        return status;
-    }
+    public String getRecipientPhone() { return recipientPhone; }
+    public void setRecipientPhone(String recipientPhone) { this.recipientPhone = recipientPhone; }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public String getDeliveryAddress() { return deliveryAddress; }
+    public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
 
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
+    public Integer getShipperId() { return shipperId; }
+    public void setShipperId(Integer shipperId) { this.shipperId = shipperId; }
 
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
+    public String getTableNumber() { return tableNumber; }
+    public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
 
-    public BigDecimal getDiscountAmount() {
-        return discountAmount;
-    }
+    public String getOrderNote() { return orderNote; }
+    public void setOrderNote(String orderNote) { this.orderNote = orderNote; }
 
-    public void setDiscountAmount(BigDecimal discountAmount) {
-        this.discountAmount = discountAmount;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public BigDecimal getDeliveryFee() {
-        return deliveryFee;
-    }
-
-    public void setDeliveryFee(BigDecimal deliveryFee) {
-        this.deliveryFee = deliveryFee;
-    }
-
-    public BigDecimal getFinalAmount() {
-        return finalAmount;
-    }
-
-    public void setFinalAmount(BigDecimal finalAmount) {
-    public double getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(double totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
-    public double getDiscountAmount() {
-        return discountAmount;
-    }
-
-    public void setDiscountAmount(double discountAmount) {
-        this.discountAmount = discountAmount;
-    }
-
-    public double getDeliveryFee() {
-        return deliveryFee;
-    }
-
-    public void setDeliveryFee(double deliveryFee) {
-        this.deliveryFee = deliveryFee;
-    }
-
-    public double getFinalAmount() {
-        return finalAmount;
-    }
-
-    public void setFinalAmount(double finalAmount) {
-        this.finalAmount = finalAmount;
-    }
-
-    public String getRecipientName() {
-        return recipientName;
-    }
-
-    public void setRecipientName(String recipientName) {
-        this.recipientName = recipientName;
-    }
-
-    public String getRecipientPhone() {
-        return recipientPhone;
-    }
-
-    public void setRecipientPhone(String recipientPhone) {
-        this.recipientPhone = recipientPhone;
-    }
-
-    public String getDeliveryAddress() {
-        return deliveryAddress;
-    }
-
-    public void setDeliveryAddress(String deliveryAddress) {
-        this.deliveryAddress = deliveryAddress;
-    }
-
-    public Integer getShipperId() {
-        return shipperId;
-    }
-
-    public void setShipperId(Integer shipperId) {
-        this.shipperId = shipperId;
-    }
-
-    public String getTableNumber() {
-        return tableNumber;
-    }
-
-    public void setTableNumber(String tableNumber) {
-        this.tableNumber = tableNumber;
-    }
-
-    public String getOrderNote() {
-        return orderNote;
-    }
-
-    public void setOrderNote(String orderNote) {
-        this.orderNote = orderNote;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-
-    // UI relationship, loaded from order_items; not a column in orders.
     private List<OrderDetail> items = new ArrayList<>();
 
-    public List<OrderDetail> getItems() {
-        return items;
-    }
+    public List<OrderDetail> getItems() { return items; }
+    public void setItems(List<OrderDetail> items) { this.items = items != null ? items : new ArrayList<>(); }
 
-    public void setItems(List<OrderDetail> items) {
-        this.items = items != null ? items : new ArrayList<>();
-    }
-
-    // Total units, not the number of order_items rows.
     public int getItemCount() {
         return items.stream().mapToInt(OrderDetail::getQuantity).sum();
     }
