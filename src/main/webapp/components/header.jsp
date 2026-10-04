@@ -4,6 +4,9 @@
 <style>
     /* Shared Header Navbar Styling */
     .aura-navbar {
+        font-family: 'Inter', sans-serif;
+        font-size: 1rem;
+        line-height: 1.5;
         background-color: #ffffff;
         box-shadow: 0 2px 10px rgba(0,0,0,0.04);
         position: sticky;
@@ -40,7 +43,7 @@
 <nav class="navbar navbar-expand-lg aura-navbar py-3">
     <div class="container-fluid px-4 px-lg-5">
         <!-- Brand Logo -->
-        <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2 me-4" href="${pageContext.request.contextPath}/">
+        <c:set var="auraBrandMarkup">
             <div class="bg-danger text-white rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                 <span class="material-symbols-outlined fs-4">local_cafe</span>
             </div>
@@ -48,16 +51,48 @@
                 <span class="fs-4 lh-1 text-dark fw-bold">Aura Café</span>
                 <span class="text-secondary fw-semibold" style="font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase;">Specialty Coffee</span>
             </div>
-        </a>
+        </c:set>
+        <c:choose>
+            <c:when test="${param.navbarMode == 'barista'}">
+                <span class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2 me-4">
+                    ${auraBrandMarkup}
+                </span>
+            </c:when>
+            <c:otherwise>
+                <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2 me-4"
+                   href="${pageContext.request.contextPath}/">
+                    ${auraBrandMarkup}
+                </a>
+            </c:otherwise>
+        </c:choose>
 
         <!-- Mobile Toggler -->
-        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                aria-controls="mainNavbar" aria-expanded="false" aria-label="Mở điều hướng">
             <span class="material-symbols-outlined">menu</span>
         </button>
 
         <div class="collapse navbar-collapse" id="mainNavbar">
             <!-- Navigation Links -->
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1 gap-lg-2" style="font-size: 0.95rem;">
+                <c:choose>
+                    <c:when test="${param.navbarMode == 'barista'}">
+                        <li class="nav-item">
+                            <a id="orders-link"
+                               class="nav-link aura-nav-link ${param.activePage == 'barista-orders' ? 'active-nav' : ''}"
+                               href="${pageContext.request.contextPath}/barista">
+                                Đơn pha chế <span class="d-none d-sm-inline">(F1)</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a id="recipes-link"
+                               class="nav-link aura-nav-link ${param.activePage == 'barista-recipes' ? 'active-nav' : ''}"
+                               href="${pageContext.request.contextPath}/barista?action=recipes">
+                                Công thức &amp; Định lượng <span class="d-none d-sm-inline">(F2)</span>
+                            </a>
+                        </li>
+                    </c:when>
+                    <c:otherwise>
                 <li class="nav-item">
                     <a class="nav-link aura-nav-link ${param.activePage == 'home' ? 'active-nav' : ''}" 
                        href="${pageContext.request.contextPath}/">Trang chủ</a>
@@ -83,11 +118,14 @@
                     <a class="nav-link aura-nav-link ${param.activePage == 'feedback' ? 'active-nav' : ''}" 
                        href="${pageContext.request.contextPath}/feedback">Phản ánh & Khiếu nại</a>
                 </li>
+                    </c:otherwise>
+                </c:choose>
             </ul>
 
             <!-- Right Actions: Cart & Profile -->
             <div class="d-flex align-items-center gap-3 ms-lg-auto">
                 <!-- Cart Button -->
+                <c:if test="${param.showCart != 'false' && param.navbarMode != 'barista'}">
                 <a href="${pageContext.request.contextPath}/cart" 
                    class="text-decoration-none text-dark d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-light border"
                    style="transition: background-color 0.2s;" title="Giỏ hàng">
@@ -96,6 +134,7 @@
                     <span id="headerCartBadge" class="badge rounded-pill bg-danger" style="font-size: 0.72rem;">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span>
                 </a>
 
+                </c:if>
                 <!-- Profile / Auth Button -->
                 <c:choose>
                     <c:when test="${not empty sessionScope.user}">
@@ -138,3 +177,20 @@
         </div>
     </div>
 </nav>
+
+<c:if test="${param.showCart != 'false' && param.navbarMode != 'barista'}">
+<script>
+    // Đồng bộ số lượng giỏ hàng trên tất cả các trang
+    (function syncHeaderCart() {
+        try {
+            var cartData = JSON.parse(localStorage.getItem('aura_cart') || '[]');
+            var count = 0;
+            for (var i = 0; i < cartData.length; i++) {
+                count += (cartData[i].quantity || 1);
+            }
+            var badge = document.getElementById('headerCartBadge');
+            if (badge) badge.innerText = count;
+        } catch (e) {}
+    })();
+</script>
+</c:if>

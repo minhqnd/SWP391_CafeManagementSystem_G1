@@ -101,7 +101,7 @@ public class LoginController extends HttpServlet {
             if ("CASHIER".equalsIgnoreCase(position)) {
                 response.sendRedirect("cashier-dashboard.jsp");
             } else if ("BARISTA".equalsIgnoreCase(position)) {
-                response.sendRedirect("barista-dashboard.jsp");
+                response.sendRedirect(request.getContextPath() + "/barista");
             } else if ("SHIPPER".equalsIgnoreCase(position)) {
                 response.sendRedirect("delivery-dashboard.jsp");
             } else {
