@@ -102,25 +102,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             flex-shrink: 0;
         }
-        .btn-care-hotline {
-            background-color: #ffffff;
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 0.85rem;
-            padding: 0.65rem 1.25rem;
-            border-radius: 0.75rem;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        .btn-care-hotline:hover {
-            background-color: #f8fafc;
-            color: var(--primary-hover);
-            transform: translateY(-1px);
-        }
 
         /* Form Card */
         .feedback-card {
@@ -376,23 +357,15 @@
 
         <!-- Hero Care Banner -->
         <div class="hero-care-banner">
-            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="hero-agent-icon">
-                        <span class="material-symbols-outlined" style="font-size: 2rem;">support_agent</span>
-                    </div>
-                    <div>
-                        <h1 class="h4 fw-bold mb-1 text-white">Aura Customer Care & Reviews</h1>
-                        <p class="text-white-50 mb-0 small" style="max-width: 580px;">
-                            Lắng nghe mọi phản hồi để hoàn thiện hương vị cà phê và chất lượng phục vụ. Cam kết hỗ trợ nhanh chóng và minh bạch.
-                        </p>
-                    </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="hero-agent-icon">
+                    <span class="material-symbols-outlined" style="font-size: 2rem;">rate_review</span>
                 </div>
                 <div>
-                    <a href="tel:19006868" class="btn-care-hotline">
-                        <span class="material-symbols-outlined" style="font-size: 1.15rem;">call</span>
-                        Tổng đài 1900 6868
-                    </a>
+                    <h1 class="h4 fw-bold mb-1 text-white">Aura Customer Care & Reviews</h1>
+                    <p class="text-white-50 mb-0 small" style="max-width: 680px;">
+                        Lắng nghe mọi phản hồi để hoàn thiện hương vị cà phê và chất lượng phục vụ. Cam kết hỗ trợ nhanh chóng và minh bạch.
+                    </p>
                 </div>
             </div>
         </div>
@@ -774,7 +747,7 @@
                     if (issueType === 'RATING' && data.rating > 0) {
                         starsHtml = '<div class="stars-mini mb-2">';
                         for (var i = 1; i <= data.rating; i++) {
-                            starsHtml += '<span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: \'FILL\' 1;">star</span>';
+                            starsHtml += '<span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: \\\'FILL\\\' 1;">star</span>';
                         }
                         starsHtml += '<span class="ms-1 small text-muted fw-semibold" style="font-size: 0.725rem;">(' + data.rating + '/5 sao)</span></div>';
                     }
