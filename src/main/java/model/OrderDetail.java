@@ -1,29 +1,50 @@
 package model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Entity OrderDetail - Bám sát mục 3.2 Entity Descriptions trong tài liệu SRS.
- * Lưu trữ danh sách món ăn, số lượng, đơn giá và tùy chỉnh đi kèm trong đơn hàng.
+ * Maps order_items. productName is product_name_at_time (the sale snapshot).
+ * categoryId/categoryName are joined from products/categories for UI filtering.
  */
 public class OrderDetail implements Serializable {
     private static final long serialVersionUID = 1L;
+
+    // Cột customization lưu dạng {"size":"L","toppings":["Kem whipping"]}
+    private static final Pattern SIZE_FIELD = Pattern.compile("\"size\"\\s*:\\s*\"([^\"]*)\"");
+    private static final Pattern TOPPINGS_FIELD = Pattern.compile("\"toppings?\"\\s*:\\s*\\[([^\\]]*)\\]");
+    private static final Pattern QUOTED_TEXT = Pattern.compile("\"([^\"]+)\"");
 
     private int id;
     private int orderId;
     private int productId;
     private String productName;
-    private double unitPrice;
-    private String customization; // Ví dụ: Size M • Ít ngọt (50%) • Kem béo
+    private BigDecimal unitPrice;
+    private String customization;
     private int quantity;
-    private double subtotal;
+    private BigDecimal subtotal;
+    private int categoryId;
+    private String categoryName;
+    private String imageUrl;
 
     public OrderDetail() {
     }
 
-    public OrderDetail(int id, int orderId, int productId, String productName,
-                       double unitPrice, String customization, int quantity, double subtotal) {
+    public OrderDetail(int id,
+                 int orderId,
+                 int productId,
+                 String productName,
+                 BigDecimal unitPrice,
+                 String customization,
+                 int quantity,
+                 BigDecimal subtotal,
+                 int categoryId,
+                 String categoryName) {
         this.id = id;
         this.orderId = orderId;
         this.productId = productId;
@@ -32,9 +53,10 @@ public class OrderDetail implements Serializable {
         this.customization = customization;
         this.quantity = quantity;
         this.subtotal = subtotal;
+        this.categoryId = categoryId;
+        this.categoryName = categoryName;
     }
 
-    // Getters and Setters
     public int getId() {
         return id;
     }
@@ -67,11 +89,11 @@ public class OrderDetail implements Serializable {
         this.productName = productName;
     }
 
-    public double getUnitPrice() {
+    public BigDecimal getUnitPrice() {
         return unitPrice;
     }
 
-    public void setUnitPrice(double unitPrice) {
+    public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
     }
 
@@ -91,20 +113,88 @@ public class OrderDetail implements Serializable {
         this.quantity = quantity;
     }
 
-    public double getSubtotal() {
+    public BigDecimal getSubtotal() {
         return subtotal;
     }
 
-    public void setSubtotal(double subtotal) {
+    public void setSubtotal(BigDecimal subtotal) {
         this.subtotal = subtotal;
     }
 
-    // Helper formatters
+    public int getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(int categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    /** Size khách đã chọn, null nếu không có */
+    public String getSizeOption() {
+        if (customization == null) {
+            return null;
+        }
+        Matcher size = SIZE_FIELD.matcher(customization);
+        return size.find() ? size.group(1) : null;
+    }
+
+    /** Các topping khách đã chọn */
+    public List<String> getToppingOptions() {
+        List<String> toppings = new ArrayList<>();
+        if (customization == null) {
+            return toppings;
+        }
+        Matcher block = TOPPINGS_FIELD.matcher(customization);
+        if (block.find()) {
+            Matcher name = QUOTED_TEXT.matcher(block.group(1));
+            while (name.find()) {
+                toppings.add(name.group(1));
+            }
+        }
+        return toppings;
+    }
+
+    /** Mô tả tuỳ chọn để hiển thị, VD: "Size L • Kem whipping, Hạt chia" */
+    public String getOptionsText() {
+        StringBuilder text = new StringBuilder();
+        String size = getSizeOption();
+        if (size != null && !size.isEmpty()) {
+            // Size dạng chữ cái (M, L) thì thêm chữ "Size", còn "Chai 500ml", "Tiêu chuẩn" giữ nguyên
+            text.append(size.length() <= 2 ? "Size " + size : size);
+        }
+        List<String> toppings = getToppingOptions();
+        if (!toppings.isEmpty()) {
+            if (text.length() > 0) {
+                text.append(" • ");
+            }
+            text.append(String.join(", ", toppings));
+        }
+        return text.toString();
+    }
+
     public String getFormattedUnitPrice() {
+        if (unitPrice == null) return "0 đ";
         return new DecimalFormat("###,###,###").format(unitPrice).replace(",", ".") + " đ";
     }
 
     public String getFormattedSubtotal() {
+        if (subtotal == null) return "0 đ";
         return new DecimalFormat("###,###,###").format(subtotal).replace(",", ".") + " đ";
     }
 

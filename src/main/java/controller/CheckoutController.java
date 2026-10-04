@@ -1,9 +1,11 @@
 package controller;
 
 import dao.OrderDAO;
-import model.CustomerOrder;
-import model.OrderDetail;
+import model.Cart;
+import model.CartItem;
+import model.Order;
 import model.User;
+import service.CartService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -12,273 +14,214 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
- * CheckoutController - Xử lý màn hình Xác nhận đơn & Giao nhận hàng
- * Mapped: /checkout
+ * CheckoutController - Bước 2: Xác nhận đơn & Giao nhận
+ * GET  /checkout : Ai cũng xem được, nhưng chưa đăng nhập thì các lựa chọn bị khoá
+ * POST /checkout : Bắt buộc đăng nhập - tạo đơn hàng rồi chuyển sang bước Thanh toán
  */
 @WebServlet(name = "CheckoutController", urlPatterns = {"/checkout"})
 public class CheckoutController extends HttpServlet {
 
+    public static final String METHOD_DELIVERY = "DELIVERY";
+    public static final String METHOD_TAKEAWAY = "TAKEAWAY";
+    public static final String STORE_ADDRESS = "28 Phố Tràng Tiền, Hoàn Kiếm, Hà Nội";
+
+    private static final ZoneId SHOP_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final int MIN_SCHEDULE_MINUTES = 30;
+    private static final String PHONE_PATTERN = "0\\d{9,10}";
+
+    private final CartService cartService = new CartService();
     private final OrderDAO orderDAO = new OrderDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Forward tới giao diện checkout.jsp
-        request.getRequestDispatcher("/checkout.jsp").forward(request, response);
+
+        HttpSession session = request.getSession();
+        Cart cart = CartController.getCart(session);
+        cartService.refreshCart(cart, CartController.getCustomerId(session));
+
+        if (cart.getSelectedItems().isEmpty()) {
+            session.setAttribute("cartError", "Vui lòng chọn ít nhất một món để đặt hàng.");
+            response.sendRedirect(request.getContextPath() + "/cart");
+            return;
+        }
+
+        String method = METHOD_TAKEAWAY.equals(request.getParameter("method")) ? METHOD_TAKEAWAY : METHOD_DELIVERY;
+        showCheckout(request, response, cart, method);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
         request.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json;charset=UTF-8");
-
         HttpSession session = request.getSession();
+        Cart cart = CartController.getCart(session);
+        String voucherCode = cart.getVoucher() != null ? cart.getVoucher().getCode() : null;
+        boolean voucherStillValid = cartService.refreshCart(cart, CartController.getCustomerId(session));
+
+        if (cart.getSelectedItems().isEmpty()) {
+            session.setAttribute("cartError", "Vui lòng chọn ít nhất một món để đặt hàng.");
+            response.sendRedirect(request.getContextPath() + "/cart");
+            return;
+        }
+
+        String method = METHOD_TAKEAWAY.equals(request.getParameter("method")) ? METHOD_TAKEAWAY : METHOD_DELIVERY;
+
+        // Đổi hình thức nhận hàng: hiển thị lại trang và giữ nguyên thông tin đã nhập
+        String switchTo = request.getParameter("switchTo");
+        if (switchTo != null) {
+            method = METHOD_TAKEAWAY.equals(switchTo) ? METHOD_TAKEAWAY : METHOD_DELIVERY;
+            showCheckout(request, response, cart, method);
+            return;
+        }
+
+        // Bắt buộc đăng nhập mới được đặt hàng
         User user = (User) session.getAttribute("user");
-        Integer customerId = user != null ? user.getId() : null;
-
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = request.getReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-        }
-
-        String rawJson = sb.toString().trim();
-        if (rawJson.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("{\"success\":false,\"error\":\"Dữ liệu yêu cầu rỗng!\"}");
+        if (user == null) {
+            session.setAttribute("errorMsg", "Vui lòng đăng nhập để tiếp tục đặt hàng.");
+            response.sendRedirect(request.getContextPath() + "/checkout");
             return;
         }
 
-        List<OrderDetail> items = new ArrayList<>();
-        double calculatedTotal = 0;
-
-        dao.ProductDAO productDAO = new dao.ProductDAO();
-
-        // Trích xuất các items từ JSON gửi lên
-        if (rawJson.contains("\"items\":")) {
-            String itemsPart = rawJson.substring(rawJson.indexOf("\"items\":"));
-            int start = itemsPart.indexOf("[");
-            int end = itemsPart.lastIndexOf("]");
-            if (start != -1 && end != -1 && end > start) {
-                String arrayContent = itemsPart.substring(start + 1, end).trim();
-                if (!arrayContent.isEmpty()) {
-                    String[] itemTokens = arrayContent.split("\\},\\s*\\{");
-                    for (String token : itemTokens) {
-                        try {
-                            int prodId = extractInt(token, "id");
-                            int qty = extractInt(token, "quantity");
-                            if (qty <= 0) qty = 1;
-
-                            // RÀNG BUỘC BR-07: Số lượng món phải lớn hơn 0
-                            if (qty <= 0) {
-                                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                                response.getWriter().write("{\"success\":false,\"error\":\"Số lượng món phải lớn hơn 0 (Quy tắc BR-07)!\"}");
-                                return;
-                            }
-
-                            // Xác thực sản phẩm từ Database thông qua ProductDAO
-                            model.Product dbProduct = null;
-                            if (prodId > 0) {
-                                dbProduct = productDAO.getProductById(prodId);
-                            }
-
-                            String prodName;
-                            double unitPrice;
-
-                            if (dbProduct != null && dbProduct.isAvailable()) {
-                                prodName = dbProduct.getName();
-                                unitPrice = dbProduct.getBasePrice();
-                            } else {
-                                // Fallback an toàn nếu sản phẩm trong giỏ vẫn tồn tại
-                                prodName = extractString(token, "name");
-                                if (prodName == null || prodName.trim().isEmpty()) {
-                                    prodName = "Cà phê Aura";
-                                }
-                                unitPrice = extractDouble(token, "unitPrice");
-                                if (unitPrice <= 0) unitPrice = extractDouble(token, "price");
-                                if (unitPrice <= 0) unitPrice = 45000;
-                            }
-
-                            // Size và Topping tùy chọn
-                            String size = extractString(token, "size");
-                            if (size != null && !size.isEmpty()) {
-                                if ("M".equalsIgnoreCase(size)) {
-                                    unitPrice += 5000;
-                                } else if ("L".equalsIgnoreCase(size)) {
-                                    unitPrice += 10000;
-                                }
-                            }
-
-                            // RÀNG BUỘC BR-08: Subtotal phải bằng quantity * unitPrice
-                            double subtotal = unitPrice * qty;
-                            calculatedTotal += subtotal;
-
-                            String customization = (size != null && !size.isEmpty()) ? "Size " + size : "Tiêu chuẩn";
-
-                            OrderDetail detail = new OrderDetail();
-                            detail.setProductId(prodId > 0 ? prodId : 1);
-                            detail.setProductName(prodName);
-                            detail.setUnitPrice(unitPrice);
-                            detail.setCustomization(customization);
-                            detail.setQuantity(qty);
-                            detail.setSubtotal(subtotal);
-
-                            items.add(detail);
-                        } catch (Exception ignored) {
-                        }
-                    }
-                }
-            }
-        }
-
-        // RÀNG BUỘC BR-06: Đơn hàng phải có ít nhất 1 món (Không được tạo đơn ảo khi giỏ hàng trống)
-        if (items.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("{\"success\":false,\"error\":\"Giỏ hàng của bạn đang trống! Vui lòng chọn ít nhất một món trước khi đặt hàng (Quy tắc BR-06).\"}");
+        if (!voucherStillValid) {
+            request.setAttribute("checkoutError", "Mã " + voucherCode
+                    + " vừa hết hạn hoặc hết lượt sử dụng. Tổng tiền đã được cập nhật lại, vui lòng kiểm tra trước khi xác nhận.");
+            showCheckout(request, response, cart, method);
             return;
         }
 
-        // Trích xuất & Xác thực thông tin người nhận
-        String recipientName = extractString(rawJson, "recipientName");
-        if (recipientName == null || recipientName.trim().isEmpty()) {
-            recipientName = user != null ? user.getFullName() : null;
-        }
-        if (recipientName == null || recipientName.trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("{\"success\":false,\"error\":\"Vui lòng cung cấp họ và tên người nhận hàng!\"}");
-            return;
-        }
-        recipientName = recipientName.trim();
-        if (recipientName.length() > 100) {
-            recipientName = recipientName.substring(0, 100);
+        boolean homeDelivery = METHOD_DELIVERY.equals(method);
+        String recipientName = trim(request.getParameter("recipientName"));
+        String recipientPhone = trim(request.getParameter("recipientPhone")).replaceAll("[\\s.]", "");
+        String deliveryAddress = trim(request.getParameter("deliveryAddress"));
+        String scheduledTime = trim(request.getParameter("scheduledTime"));
+        String orderNote = trim(request.getParameter("orderNote"));
+        boolean scheduled = "SCHEDULED".equals(request.getParameter("deliveryTime"));
+
+        String error = null;
+        if (recipientName.isEmpty() || recipientName.length() > 100) {
+            error = "Vui lòng nhập họ tên người nhận (tối đa 100 ký tự).";
+        } else if (!recipientPhone.matches(PHONE_PATTERN)) {
+            error = "Số điện thoại không hợp lệ (10 - 11 chữ số, bắt đầu bằng số 0).";
+        } else if (homeDelivery && (deliveryAddress.length() < 10 || deliveryAddress.length() > 255)) {
+            error = "Vui lòng nhập địa chỉ giao hàng chi tiết (số nhà, đường, phường/xã, quận/huyện).";
+        } else if (orderNote.length() > 500) {
+            error = "Ghi chú tối đa 500 ký tự.";
+        } else if (scheduled) {
+            error = validateScheduledTime(scheduledTime);
         }
 
-        // Xác thực số điện thoại
-        String recipientPhone = extractString(rawJson, "recipientPhone");
-        if (recipientPhone == null || recipientPhone.trim().isEmpty()) {
-            recipientPhone = user != null ? user.getPhone() : null;
-        }
-        if (recipientPhone == null || recipientPhone.trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("{\"success\":false,\"error\":\"Vui lòng cung cấp số điện thoại người nhận hàng!\"}");
-            return;
-        }
-        recipientPhone = recipientPhone.trim();
-        String cleanPhone = recipientPhone.replaceAll("[^0-9+]", "");
-        if (cleanPhone.length() < 9 || cleanPhone.length() > 12) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("{\"success\":false,\"error\":\"Số điện thoại nhận hàng không hợp lệ (yêu cầu từ 9 đến 11 số)!\"}");
+        if (error != null) {
+            request.setAttribute("checkoutError", error);
+            showCheckout(request, response, cart, method);
             return;
         }
 
-        // Xác thực phương thức nhận hàng (ONLINE, TAKEAWAY, DINE_IN)
-        String orderType = extractString(rawJson, "orderType");
-        if (orderType == null || (!orderType.equals("ONLINE") && !orderType.equals("TAKEAWAY") && !orderType.equals("DINE_IN"))) {
-            orderType = "ONLINE";
-        }
+        List<CartItem> items = cart.getSelectedItems();
+        double deliveryFee = cart.getDeliveryFee(homeDelivery);
 
-        // Xác thực địa chỉ giao hàng
-        String deliveryAddress = extractString(rawJson, "deliveryAddress");
-        if ("ONLINE".equals(orderType)) {
-            if (deliveryAddress == null || deliveryAddress.trim().isEmpty() || deliveryAddress.trim().length() < 5) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().write("{\"success\":false,\"error\":\"Đơn giao hàng tận nơi yêu cầu cung cấp địa chỉ nhận hàng chi tiết và hợp lệ!\"}");
-                return;
-            }
-            deliveryAddress = deliveryAddress.trim();
-        } else {
-            deliveryAddress = "Nhận trực tiếp tại quầy: 28 Phố Tràng Tiền, Hoàn Kiếm, Hà Nội";
-        }
-
-        String orderNote = extractString(rawJson, "orderNote");
-        if (orderNote != null && orderNote.trim().isEmpty()) {
-            orderNote = null;
-        }
-
-        // Tính phí vận chuyển (ONLINE: Freeship từ 150.000đ, TAKEAWAY: 0đ)
-        double deliveryFee = 0;
-        if ("ONLINE".equals(orderType)) {
-            deliveryFee = calculatedTotal >= 150000 ? 0 : 18000;
-        }
-
-        double discountAmount = 0;
-        double finalAmount = Math.max(0, calculatedTotal + deliveryFee - discountAmount);
-
-        // Khởi tạo CustomerOrder chuẩn xác
-        CustomerOrder order = new CustomerOrder();
-        // Mã đơn hàng định dạng chuẩn: AUR- + timestamp
-        order.setOrderCode("AUR-" + (System.currentTimeMillis() % 1000000000L));
-        order.setCustomerId(customerId);
-        order.setOrderType(orderType);
+        Order order = new Order();
+        order.setOrderCode("AURA" + LocalDateTime.now(SHOP_ZONE).format(DateTimeFormatter.ofPattern("yyMMddHHmmssSSS")));
+        order.setCustomerId(user.getId());
+        order.setVoucherId(cart.isVoucherEligible() ? cart.getVoucher().getId() : null);
+        order.setOrderType(homeDelivery ? "ONLINE" : "TAKEAWAY");
         order.setStatus("PENDING");
-        order.setTotalAmount(calculatedTotal);
-        order.setDiscountAmount(discountAmount);
+        order.setTotalAmount(cart.getSelectedSubtotal());
+        order.setDiscountAmount(cart.getDiscount());
         order.setDeliveryFee(deliveryFee);
-        order.setFinalAmount(finalAmount);
+        order.setFinalAmount(cart.getTotal() + deliveryFee);
         order.setRecipientName(recipientName);
         order.setRecipientPhone(recipientPhone);
-        order.setDeliveryAddress(deliveryAddress);
-        order.setOrderNote(orderNote);
+        order.setDeliveryAddress(homeDelivery ? deliveryAddress : null);
+        order.setOrderNote(buildOrderNote(homeDelivery, scheduled ? scheduledTime : null, orderNote));
 
-        int newOrderId = orderDAO.createOrder(order, items);
-
-        if (newOrderId > 0) {
-            String redirectUrl = request.getContextPath() + "/payment?orderId=" + newOrderId;
-            response.getWriter().write("{\"success\":true,\"orderId\":" + newOrderId + ",\"redirectUrl\":\"" + redirectUrl + "\"}");
-        } else {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.getWriter().write("{\"success\":false,\"error\":\"Không thể tạo đơn hàng do lỗi hệ thống cơ sở dữ liệu! Vui lòng thử lại.\"}");
+        int orderId = orderDAO.placeOrder(order, items);
+        if (orderId <= 0) {
+            request.setAttribute("checkoutError", "Không thể tạo đơn hàng lúc này. Vui lòng thử lại sau ít phút.");
+            showCheckout(request, response, cart, method);
+            return;
         }
+
+        // Đặt hàng thành công: bỏ các món đã đặt khỏi giỏ và chuyển sang bước Thanh toán
+        cart.getItems().removeAll(items);
+        cart.setVoucher(null);
+        response.sendRedirect(request.getContextPath() + "/payment?orderId=" + orderId);
     }
 
-    private String extractString(String json, String key) {
-        String pattern = "\"" + key + "\":\"";
-        int start = json.indexOf(pattern);
-        if (start == -1) return null;
-        start += pattern.length();
-        int end = json.indexOf("\"", start);
-        if (end == -1) return null;
-        return json.substring(start, end).trim();
+    private void showCheckout(HttpServletRequest request, HttpServletResponse response, Cart cart, String method)
+            throws ServletException, IOException {
+
+        User user = (User) request.getSession().getAttribute("user");
+        boolean homeDelivery = METHOD_DELIVERY.equals(method);
+        double deliveryFee = cart.getDeliveryFee(homeDelivery);
+
+        // Lần đầu mở trang: điền sẵn thông tin từ tài khoản; khi gửi lại form: giữ nguyên dữ liệu khách đã nhập
+        String defaultName = user != null ? user.getFullName() : "";
+        String defaultPhone = user != null && user.getPhone() != null && user.getPhone().matches(PHONE_PATTERN)
+                ? user.getPhone() : "";
+
+        request.setAttribute("cart", cart);
+        request.setAttribute("method", method);
+        request.setAttribute("deliveryFee", deliveryFee);
+        request.setAttribute("grandTotal", cart.getTotal() + deliveryFee);
+        request.setAttribute("storeAddress", STORE_ADDRESS);
+        request.setAttribute("recipientName", paramOrDefault(request, "recipientName", defaultName));
+        request.setAttribute("recipientPhone", paramOrDefault(request, "recipientPhone", defaultPhone));
+        request.setAttribute("deliveryAddress", paramOrDefault(request, "deliveryAddress", ""));
+        request.setAttribute("deliveryTime", paramOrDefault(request, "deliveryTime", "NOW"));
+        request.setAttribute("scheduledTime", paramOrDefault(request, "scheduledTime", ""));
+        request.setAttribute("orderNote", paramOrDefault(request, "orderNote", ""));
+        // Đăng nhập / đăng ký từ trang này xong sẽ quay lại đúng trang Checkout
+        request.setAttribute("authRedirect", "/checkout");
+
+        request.getRequestDispatcher("/checkout.jsp").forward(request, response);
     }
 
-    private int extractInt(String json, String key) {
+    private String validateScheduledTime(String value) {
+        LocalTime time;
         try {
-            String pattern = "\"" + key + "\":";
-            int start = json.indexOf(pattern);
-            if (start == -1) return 0;
-            start += pattern.length();
-            int end = start;
-            while (end < json.length() && (Character.isDigit(json.charAt(end)) || json.charAt(end) == '-')) {
-                end++;
-            }
-            return Integer.parseInt(json.substring(start, end).trim());
-        } catch (Exception e) {
-            return 0;
+            time = LocalTime.parse(value);
+        } catch (DateTimeParseException e) {
+            return "Vui lòng chọn giờ hẹn nhận hàng.";
         }
+        LocalDateTime scheduledAt = LocalDate.now(SHOP_ZONE).atTime(time);
+        if (scheduledAt.isBefore(LocalDateTime.now(SHOP_ZONE).plusMinutes(MIN_SCHEDULE_MINUTES))) {
+            return "Giờ hẹn phải sau thời điểm hiện tại ít nhất " + MIN_SCHEDULE_MINUTES + " phút (trong ngày hôm nay).";
+        }
+        return null;
     }
 
-    private double extractDouble(String json, String key) {
-        try {
-            String pattern = "\"" + key + "\":";
-            int start = json.indexOf(pattern);
-            if (start == -1) return 0;
-            start += pattern.length();
-            int end = start;
-            while (end < json.length() && (Character.isDigit(json.charAt(end)) || json.charAt(end) == '.')) {
-                end++;
-            }
-            return Double.parseDouble(json.substring(start, end).trim());
-        } catch (Exception e) {
-            return 0;
+    private String buildOrderNote(boolean homeDelivery, String scheduledTime, String note) {
+        StringBuilder result = new StringBuilder();
+        if (scheduledTime != null) {
+            result.append(homeDelivery ? "Hẹn giờ giao: " : "Hẹn giờ lấy: ").append(scheduledTime);
         }
+        if (!note.isEmpty()) {
+            if (result.length() > 0) {
+                result.append(" | ");
+            }
+            result.append(note);
+        }
+        return result.length() > 0 ? result.toString() : null;
+    }
+
+    private String paramOrDefault(HttpServletRequest request, String name, String defaultValue) {
+        String value = request.getParameter(name);
+        return value != null ? value : defaultValue;
+    }
+
+    private String trim(String value) {
+        return value != null ? value.trim() : "";
     }
 }

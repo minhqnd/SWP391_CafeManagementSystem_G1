@@ -2,15 +2,17 @@ package controller;
 
 import dao.OrderDAO;
 import dao.PaymentDAO;
-import model.CustomerOrder;
+import model.Order;
 import model.OrderDetail;
 import model.Payment;
+import model.User;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,8 +31,8 @@ public class BillController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        jakarta.servlet.http.HttpSession session = request.getSession();
-        model.User user = (model.User) session.getAttribute("user");
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
 
         String orderIdStr = request.getParameter("orderId");
         int orderId = -1;
@@ -42,7 +44,7 @@ public class BillController extends HttpServlet {
         }
 
         if (orderId <= 0) {
-            List<CustomerOrder> recent = orderDAO.getRecentOrders(1);
+            List<Order> recent = orderDAO.getRecentOrders(1);
             if (!recent.isEmpty()) {
                 orderId = recent.get(0).getId();
             } else {
@@ -52,7 +54,7 @@ public class BillController extends HttpServlet {
         }
 
         // Lấy thông tin đơn hàng
-        CustomerOrder order = orderDAO.getOrderById(orderId);
+        Order order = orderDAO.getOrderById(orderId);
         if (order == null) {
             session.setAttribute("errorMsg", "Không tìm thấy hóa đơn cho đơn hàng #" + orderId);
             response.sendRedirect(request.getContextPath() + "/menu");
@@ -71,7 +73,10 @@ public class BillController extends HttpServlet {
         }
 
         // Lấy danh sách chi tiết các món trong đơn hàng
-        List<OrderDetail> orderDetails = orderDAO.getOrderDetails(orderId);
+        List<OrderDetail> orderDetails = order.getItems();
+        if (orderDetails == null || orderDetails.isEmpty()) {
+            orderDetails = orderDAO.getOrderDetails(orderId);
+        }
 
         // Lấy thông tin giao dịch thanh toán
         Payment payment = paymentDAO.getPaymentByOrderId(orderId);

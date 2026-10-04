@@ -1,204 +1,155 @@
 package dao;
 
 import context.DBContext;
-import model.CustomerOrder;
-import model.OrderDetail;
+import model.CartItem;
+import model.Order;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import model.Order;
+import model.OrderDetail;
+import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * OrderDAO - Tương tác dữ liệu đơn hàng và chi tiết đơn hàng
+ * OrderDAO - Tương tác dữ liệu đơn hàng
  */
 public class OrderDAO extends BaseDAO {
 
-    /**
-     * Lấy thông tin đơn hàng theo ID kèm thông tin khách hàng và voucher
-     */
-    public CustomerOrder getOrderById(int orderId) {
-        String sql = "SELECT o.*, u.full_name AS user_full_name, u.phone AS user_phone, v.code AS voucher_code " +
-                     "FROM orders o " +
-                     "LEFT JOIN users u ON o.customer_id = u.id " +
-                     "LEFT JOIN vouchers v ON o.voucher_id = v.id " +
-                     "WHERE o.id = ?";
+    // All channels share orders. No per-item preparation status exists in the schema.
+    private static final String BARISTA_TYPES =
+            "o.order_type IN ('DINE_IN', 'TAKEAWAY', 'ONLINE')";
+    private static final String BARISTA_PAID =
+            "EXISTS (SELECT 1 FROM payments pay WHERE pay.order_id = o.id AND pay.status = 'SUCCESS')";
 
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, orderId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    CustomerOrder order = new CustomerOrder();
-                    order.setId(rs.getInt("id"));
+    public List<Order> getOrdersForBarista() throws SQLException, ClassNotFoundException {
+        // Limit orders BEFORE joining items; multiple successful payments must not duplicate items.
+        String sql = "WITH eligible_orders AS (SELECT o.* FROM orders o WHERE "
+                + BARISTA_TYPES + " AND " + BARISTA_PAID
+                + " AND o.status IN ('CONFIRMED', 'PREPARING', 'READY') "
+                + "AND EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id)), "
+                + "recent_ready AS (SELECT * FROM eligible_orders WHERE status = 'READY' "
+                + "ORDER BY created_at DESC, id DESC LIMIT 3) "
+                + "SELECT o.*, i.id AS item_id, i.product_id, i.product_name_at_time, "
+                + "i.unit_price, i.customization, i.quantity, i.subtotal, "
+                + "p.category_id, c.name AS category_name "
+                + "FROM (SELECT * FROM eligible_orders WHERE status IN ('CONFIRMED', 'PREPARING') "
+                + "UNION ALL SELECT * FROM recent_ready) o "
+                + "JOIN order_items i ON i.order_id = o.id "
+                + "JOIN products p ON p.id = i.product_id "
+                + "JOIN categories c ON c.id = p.category_id "
+                + "ORDER BY CASE WHEN o.status = 'READY' THEN 1 ELSE 0 END, "
+                + "CASE WHEN o.status <> 'READY' THEN o.created_at END ASC, "
+                + "CASE WHEN o.status <> 'READY' THEN o.id END ASC, "
+                + "CASE WHEN o.status = 'READY' THEN o.created_at END DESC, "
+                + "CASE WHEN o.status = 'READY' THEN o.id END DESC, i.id ASC";
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                Order order = orders.get(id);
+                if (order == null) {
+                    order = new Order();
+                    order.setId(id);
                     order.setOrderCode(rs.getString("order_code"));
-
-                    int custId = rs.getInt("customer_id");
-                    if (!rs.wasNull()) {
-                        order.setCustomerId(custId);
-                    }
-
-                    int cashId = rs.getInt("cashier_id");
-                    if (!rs.wasNull()) {
-                        order.setCashierId(cashId);
-                    }
-
-                    int vId = rs.getInt("voucher_id");
-                    if (!rs.wasNull()) {
-                        order.setVoucherId(vId);
-                    }
-
+                    order.setCustomerId(rs.getObject("customer_id", Integer.class));
+                    order.setCashierId(rs.getObject("cashier_id", Integer.class));
+                    order.setVoucherId(rs.getObject("voucher_id", Integer.class));
+                    order.setShipperId(rs.getObject("shipper_id", Integer.class));
                     order.setOrderType(rs.getString("order_type"));
                     order.setStatus(rs.getString("status"));
-                    order.setTotalAmount(rs.getDouble("total_amount"));
-                    order.setDiscountAmount(rs.getDouble("discount_amount"));
-                    order.setDeliveryFee(rs.getDouble("delivery_fee"));
-                    order.setFinalAmount(rs.getDouble("final_amount"));
-
-                    // Tên và SĐT người nhận: ưu tiên recipient_name, fallback sang tên tài khoản user
-                    String rName = rs.getString("recipient_name");
-                    if (rName == null || rName.trim().isEmpty()) {
-                        rName = rs.getString("user_full_name");
-                    }
-                    order.setRecipientName(rName != null ? rName : "Khách vãng lai");
-
-                    String rPhone = rs.getString("recipient_phone");
-                    if (rPhone == null || rPhone.trim().isEmpty()) {
-                        rPhone = rs.getString("user_phone");
-                    }
-                    order.setRecipientPhone(rPhone != null ? rPhone : "---");
-
+                    order.setTotalAmount(rs.getBigDecimal("total_amount"));
+                    order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
+                    order.setDeliveryFee(rs.getBigDecimal("delivery_fee"));
+                    order.setFinalAmount(rs.getBigDecimal("final_amount"));
+                    order.setRecipientName(rs.getString("recipient_name"));
+                    order.setRecipientPhone(rs.getString("recipient_phone"));
                     order.setDeliveryAddress(rs.getString("delivery_address"));
-
-                    int sId = rs.getInt("shipper_id");
-                    if (!rs.wasNull()) {
-                        order.setShipperId(sId);
-                    }
-
                     order.setTableNumber(rs.getString("table_number"));
                     order.setOrderNote(rs.getString("order_note"));
-                    order.setCreatedAt(rs.getTimestamp("created_at"));
-                    order.setVoucherCode(rs.getString("voucher_code"));
-
-                    // Gán chi tiết món ăn
-                    order.setOrderDetails(getOrderDetails(orderId));
-
-                    return order;
+                    order.setCreatedAt(rs.getObject("created_at", java.time.LocalDateTime.class));
+                    orders.put(id, order);
                 }
+                order.getItems().add(new OrderDetail(
+                        rs.getInt("item_id"), id, rs.getInt("product_id"),
+                        rs.getString("product_name_at_time"), rs.getBigDecimal("unit_price"),
+                        rs.getString("customization"), rs.getInt("quantity"),
+                        rs.getBigDecimal("subtotal"), rs.getInt("category_id"),
+                        rs.getString("category_name")));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return null;
-    }
-
-    public List<CustomerOrder> getRecentOrders(int limit) {
-        List<CustomerOrder> list = new ArrayList<>();
-        String sql = "SELECT o.id FROM orders o ORDER BY o.id DESC LIMIT ?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, limit > 0 ? limit : 10);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    CustomerOrder order = getOrderById(rs.getInt("id"));
-                    if (order != null) {
-                        list.add(order);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
+        return new ArrayList<>(orders.values());
     }
 
     /**
-     * Lấy danh sách chi tiết các món trong đơn hàng
+     * Preserve the dashboard's global FIFO rule across all category filters.
+     * Lock the queue and compare status so concurrent clicks cannot skip a stage.
      */
-    public List<OrderDetail> getOrderDetails(int orderId) {
-        List<OrderDetail> list = new ArrayList<>();
-        String sql = "SELECT oi.id, oi.order_id, oi.product_id, oi.product_name_at_time, " +
-                     "       oi.unit_price, oi.customization, oi.quantity, oi.subtotal " +
-                     "FROM order_items oi " +
-                     "WHERE oi.order_id = ? " +
-                     "ORDER BY oi.id ASC";
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, orderId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    OrderDetail detail = new OrderDetail();
-                    detail.setId(rs.getInt("id"));
-                    detail.setOrderId(rs.getInt("order_id"));
-                    detail.setProductId(rs.getInt("product_id"));
-                    detail.setProductName(rs.getString("product_name_at_time"));
-                    detail.setUnitPrice(rs.getDouble("unit_price"));
-
-                    // Làm sạch chuỗi customization JSON nếu có (ví dụ: {"size":"L"} -> Size L)
-                    String rawCust = rs.getString("customization");
-                    detail.setCustomization(formatCustomization(rawCust));
-
-                    detail.setQuantity(rs.getInt("quantity"));
-                    detail.setSubtotal(rs.getDouble("subtotal"));
-
-                    list.add(detail);
+    public boolean updateBaristaOrderStatus(int orderId, String targetStatus)
+            throws SQLException, ClassNotFoundException {
+        String expectedStatus;
+        if ("PREPARING".equals(targetStatus)) {
+            expectedStatus = "CONFIRMED";
+        } else if ("READY".equals(targetStatus)) {
+            expectedStatus = "PREPARING";
+        } else {
+            throw new IllegalArgumentException("Unsupported barista status");
+        }
+        if (orderId <= 0) {
+            throw new IllegalArgumentException("Invalid order ID");
+        }
+        String queueSql = "SELECT o.id, o.status FROM orders o WHERE " + BARISTA_TYPES
+                + " AND " + BARISTA_PAID
+                + " AND o.status IN ('CONFIRMED', 'PREPARING') "
+                + "AND EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id) "
+                + "ORDER BY o.created_at, o.id FOR UPDATE";
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = conn.prepareStatement(queueSql);
+                     ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next() || rs.getInt("id") != orderId
+                            || !expectedStatus.equals(rs.getString("status"))) {
+                        conn.rollback();
+                        return false;
+                    }
                 }
+                String updateSql = "UPDATE orders o SET status = ? WHERE o.id = ? AND o.status = ? "
+                        + "AND " + BARISTA_PAID;
+                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                    ps.setString(1, targetStatus);
+                    ps.setInt(2, orderId);
+                    ps.setString(3, expectedStatus);
+                    if (ps.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+                conn.commit();
+                return true;
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return list;
-    }
-
-    private String formatCustomization(String raw) {
-        if (raw == null || raw.trim().isEmpty() || "null".equalsIgnoreCase(raw.trim())) {
-            return "Mặc định";
-        }
-        // Làm sạch đơn giản dấu ngoặc nhọn, ngoặc kép từ JSON
-        return raw.replace("{", "")
-                  .replace("}", "")
-                  .replace("\"", "")
-                  .replace("note:", "")
-                  .replace("size:", "Size ")
-                  .replace("topping:", "Topping: ")
-                  .replace("toppings:", "Topping: ")
-                  .replace(",", " • ")
-                  .replace("[", "")
-                  .replace("]", "")
-                  .trim();
-    }
-
-    private String toJsonCustomization(String raw) {
-        if (raw == null || raw.trim().isEmpty() || "null".equalsIgnoreCase(raw.trim())) {
-            return null;
-        }
-        String trimmed = raw.trim();
-        // Nếu đã là chuỗi JSON Object hoặc JSON Array thì giữ nguyên
-        if ((trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-            (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
-            return trimmed;
-        }
-        // Bao bọc chuỗi văn bản thông thường thành JSON Object hợp lệ: {"note":"..."}
-        String escaped = trimmed.replace("\\", "\\\\")
-                                .replace("\"", "\\\"")
-                                .replace("\n", " ")
-                                .replace("\r", " ")
-                                .replace("\t", " ");
-        return "{\"note\":\"" + escaped + "\"}";
     }
 
     public int getOrCreateCartOrder(int customerId) {
         String checkSql = "SELECT id FROM orders WHERE customer_id = ? AND status = 'PENDING' LIMIT 1";
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psCheck = conn.prepareStatement(checkSql)) {
+                PreparedStatement psCheck = conn.prepareStatement(checkSql)) {
             psCheck.setInt(1, customerId);
             try (ResultSet rs = psCheck.executeQuery()) {
                 if (rs.next()) {
@@ -210,11 +161,12 @@ public class OrderDAO extends BaseDAO {
         }
 
         // Create new pending order
-        String insertSql = "INSERT INTO orders (order_code, customer_id, order_type, status, total_amount, discount_amount, delivery_fee, final_amount) " +
-                           "VALUES (?, ?, 'ONLINE', 'PENDING', 0, 0, 0, 0)";
+        String insertSql = "INSERT INTO orders (order_code, customer_id, order_type, status, total_amount, discount_amount, delivery_fee, final_amount) "
+                +
+                "VALUES (?, ?, 'ONLINE', 'PENDING', 0, 0, 0, 0)";
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psInsert = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
-            psInsert.setString(1, "AUR-" + (System.currentTimeMillis() % 100000));
+                PreparedStatement psInsert = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+            psInsert.setString(1, "CART-" + System.currentTimeMillis());
             psInsert.setInt(2, customerId);
             psInsert.executeUpdate();
             try (ResultSet rs = psInsert.getGeneratedKeys()) {
@@ -229,18 +181,19 @@ public class OrderDAO extends BaseDAO {
     }
 
     public boolean addProductToCart(int orderId, int productId, int quantity) {
+        // 1. Get product info
         String prodSql = "SELECT name, base_price FROM products WHERE id = ?";
         String productName = "";
         double unitPrice = 0;
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psProd = conn.prepareStatement(prodSql)) {
+                PreparedStatement psProd = conn.prepareStatement(prodSql)) {
             psProd.setInt(1, productId);
             try (ResultSet rs = psProd.executeQuery()) {
                 if (rs.next()) {
                     productName = rs.getString("name");
                     unitPrice = rs.getDouble("base_price");
                 } else {
-                    return false;
+                    return false; // Product not found
                 }
             }
         } catch (Exception e) {
@@ -249,13 +202,15 @@ public class OrderDAO extends BaseDAO {
         }
 
         boolean itemAddedOrUpdated = false;
+        // 2. Check if order_item exists
         String checkItemSql = "SELECT id, quantity FROM order_items WHERE order_id = ? AND product_id = ?";
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psCheck = conn.prepareStatement(checkItemSql)) {
+                PreparedStatement psCheck = conn.prepareStatement(checkItemSql)) {
             psCheck.setInt(1, orderId);
             psCheck.setInt(2, productId);
             try (ResultSet rs = psCheck.executeQuery()) {
                 if (rs.next()) {
+                    // Update
                     int newQty = rs.getInt("quantity") + quantity;
                     double newSubtotal = newQty * unitPrice;
                     String updateItemSql = "UPDATE order_items SET quantity = ?, subtotal = ? WHERE id = ?";
@@ -266,9 +221,11 @@ public class OrderDAO extends BaseDAO {
                         itemAddedOrUpdated = psUpdate.executeUpdate() > 0;
                     }
                 } else {
+                    // Insert
                     double subtotal = quantity * unitPrice;
-                    String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, unit_price, quantity, subtotal) " +
-                                           "VALUES (?, ?, ?, ?, ?, ?)";
+                    String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, unit_price, quantity, subtotal) "
+                            +
+                            "VALUES (?, ?, ?, ?, ?, ?)";
                     try (PreparedStatement psInsert = conn.prepareStatement(insertItemSql)) {
                         psInsert.setInt(1, orderId);
                         psInsert.setInt(2, productId);
@@ -285,6 +242,7 @@ public class OrderDAO extends BaseDAO {
             return false;
         }
 
+        // 3. Update order totals
         if (itemAddedOrUpdated) {
             updateOrderTotals(orderId);
             return true;
@@ -296,7 +254,7 @@ public class OrderDAO extends BaseDAO {
         String sumSql = "SELECT SUM(subtotal) FROM order_items WHERE order_id = ?";
         double totalAmount = 0;
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement psSum = conn.prepareStatement(sumSql)) {
+                PreparedStatement psSum = conn.prepareStatement(sumSql)) {
             psSum.setInt(1, orderId);
             try (ResultSet rs = psSum.executeQuery()) {
                 if (rs.next()) {
@@ -304,25 +262,10 @@ public class OrderDAO extends BaseDAO {
                 }
             }
 
-            // Lấy delivery_fee và discount_amount hiện tại của đơn hàng
-            double deliveryFee = 0;
-            double discountAmount = 0;
-            String feesSql = "SELECT delivery_fee, discount_amount FROM orders WHERE id = ?";
-            try (PreparedStatement psFees = conn.prepareStatement(feesSql)) {
-                psFees.setInt(1, orderId);
-                try (ResultSet rs2 = psFees.executeQuery()) {
-                    if (rs2.next()) {
-                        deliveryFee = rs2.getDouble("delivery_fee");
-                        discountAmount = rs2.getDouble("discount_amount");
-                    }
-                }
-            }
-
-            double finalAmount = totalAmount + deliveryFee - discountAmount;
-            String updateOrderSql = "UPDATE orders SET total_amount = ?, final_amount = ? WHERE id = ?";
+            String updateOrderSql = "UPDATE orders SET total_amount = ?, final_amount = ? + delivery_fee - discount_amount WHERE id = ?";
             try (PreparedStatement psUpdateOrder = conn.prepareStatement(updateOrderSql)) {
                 psUpdateOrder.setDouble(1, totalAmount);
-                psUpdateOrder.setDouble(2, finalAmount);
+                psUpdateOrder.setDouble(2, totalAmount);
                 psUpdateOrder.setInt(3, orderId);
                 psUpdateOrder.executeUpdate();
             }
@@ -334,7 +277,7 @@ public class OrderDAO extends BaseDAO {
     public int getCartItemTotalQuantity(int orderId) {
         String sql = "SELECT SUM(quantity) FROM order_items WHERE order_id = ?";
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -347,116 +290,168 @@ public class OrderDAO extends BaseDAO {
         return 0;
     }
 
-    public int createOrder(CustomerOrder order, List<OrderDetail> details) {
-        String insertOrderSql = "INSERT INTO orders (order_code, customer_id, order_type, status, " +
+    /**
+     * Tạo đơn hàng từ các món đã chọn ở Checkout (orders + order_items + trừ lượt voucher)
+     * trong cùng một transaction. Trả về id đơn hàng mới, hoặc -1 nếu thất bại.
+     */
+    public int placeOrder(Order order, List<CartItem> items) {
+        // Voucher phải còn hạn, còn lượt và là mã công khai hoặc voucher đổi điểm của chính khách đặt
+        String useVoucherSql = "UPDATE vouchers SET used_count = used_count + 1 " +
+                               "WHERE id = ? AND status = 'ACTIVE' " +
+                               "AND (start_date IS NULL OR start_date <= NOW()) " +
+                               "AND (valid_until IS NULL OR valid_until >= NOW()) " +
+                               "AND (usage_limit IS NULL OR used_count < usage_limit) " +
+                               "AND (customer_id IS NULL OR customer_id = ?)";
+        String insertOrderSql = "INSERT INTO orders (order_code, customer_id, voucher_id, order_type, status, " +
                                 "total_amount, discount_amount, delivery_fee, final_amount, " +
                                 "recipient_name, recipient_phone, delivery_address, order_note) " +
-                                "VALUES (?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, unit_price, customization, quantity, subtotal) " +
-                               "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, unit_price, " +
+                               "customization, quantity, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         try {
             conn = DBContext.getConnection();
             conn.setAutoCommit(false);
 
-            int orderId = -1;
-            try (PreparedStatement psOrder = conn.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
-                String code = order.getOrderCode();
-                if (code == null || code.trim().isEmpty()) {
-                    code = "AUR-" + (System.currentTimeMillis() % 100000);
+            // 1. Trừ lượt sử dụng voucher (thất bại nếu voucher vừa hết lượt)
+            if (order.getVoucherId() != null) {
+                try (PreparedStatement ps = conn.prepareStatement(useVoucherSql)) {
+                    ps.setInt(1, order.getVoucherId());
+                    ps.setInt(2, order.getCustomerId());
+                    if (ps.executeUpdate() == 0) {
+                        conn.rollback();
+                        return -1;
+                    }
                 }
-                psOrder.setString(1, code);
+            }
 
-                if (order.getCustomerId() != null && order.getCustomerId() > 0) {
-                    psOrder.setInt(2, order.getCustomerId());
+            // 2. Tạo đơn hàng
+            int orderId;
+            try (PreparedStatement ps = conn.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, order.getOrderCode());
+                ps.setInt(2, order.getCustomerId());
+                if (order.getVoucherId() != null) {
+                    ps.setInt(3, order.getVoucherId());
                 } else {
-                    psOrder.setNull(2, java.sql.Types.INTEGER);
+                    ps.setNull(3, Types.INTEGER);
                 }
+                ps.setString(4, order.getOrderType());
+                ps.setString(5, order.getStatus());
+                ps.setDouble(6, order.getTotalAmount());
+                ps.setDouble(7, order.getDiscountAmount());
+                ps.setDouble(8, order.getDeliveryFee());
+                ps.setDouble(9, order.getFinalAmount());
+                ps.setString(10, order.getRecipientName());
+                ps.setString(11, order.getRecipientPhone());
+                ps.setString(12, order.getDeliveryAddress());
+                ps.setString(13, order.getOrderNote());
+                ps.executeUpdate();
 
-                psOrder.setString(3, order.getOrderType() != null ? order.getOrderType() : "ONLINE");
-                psOrder.setDouble(4, order.getTotalAmount());
-                psOrder.setDouble(5, order.getDiscountAmount());
-                psOrder.setDouble(6, order.getDeliveryFee());
-                psOrder.setDouble(7, order.getFinalAmount());
-                psOrder.setString(8, order.getRecipientName() != null ? order.getRecipientName() : "Khách hàng Aura");
-                psOrder.setString(9, order.getRecipientPhone() != null ? order.getRecipientPhone() : "0908 123 456");
-                psOrder.setString(10, order.getDeliveryAddress() != null ? order.getDeliveryAddress() : "28 Phố Tràng Tiền, Hoàn Kiếm, Hà Nội");
-                psOrder.setString(11, order.getOrderNote());
-
-                int affected = psOrder.executeUpdate();
-                if (affected == 0) {
-                    conn.rollback();
-                    return -1;
-                }
-                try (ResultSet rs = psOrder.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        orderId = rs.getInt(1);
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return -1;
                     }
+                    orderId = rs.getInt(1);
                 }
             }
 
-            if (orderId == -1) {
-                conn.rollback();
-                return -1;
-            }
-
-            if (details != null && !details.isEmpty()) {
-                try (PreparedStatement psItem = conn.prepareStatement(insertItemSql)) {
-                    for (OrderDetail item : details) {
-                        psItem.setInt(1, orderId);
-                        psItem.setInt(2, item.getProductId() > 0 ? item.getProductId() : 1);
-                        psItem.setString(3, item.getProductName() != null ? item.getProductName() : "Đồ uống Aura");
-                        psItem.setDouble(4, item.getUnitPrice());
-                        psItem.setString(5, toJsonCustomization(item.getCustomization()));
-                        psItem.setInt(6, item.getQuantity() > 0 ? item.getQuantity() : 1);
-                        double sub = item.getSubtotal() > 0 ? item.getSubtotal() : (item.getUnitPrice() * item.getQuantity());
-                        psItem.setDouble(7, sub);
-                        psItem.addBatch();
-                    }
-                    psItem.executeBatch();
+            // 3. Lưu các món của đơn
+            try (PreparedStatement ps = conn.prepareStatement(insertItemSql)) {
+                for (CartItem item : items) {
+                    ps.setInt(1, orderId);
+                    ps.setInt(2, item.getProductId());
+                    ps.setString(3, item.getProductName());
+                    ps.setDouble(4, item.getUnitPrice());
+                    ps.setString(5, buildCustomizationJson(item));
+                    ps.setInt(6, item.getQuantity());
+                    ps.setDouble(7, item.getSubtotal());
+                    ps.addBatch();
                 }
+                ps.executeBatch();
             }
 
             conn.commit();
             return orderId;
         } catch (Exception e) {
-            if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
-            }
             e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ignored) {
+                }
+            }
             return -1;
         } finally {
             if (conn != null) {
                 try {
-                    conn.setAutoCommit(true);
                     conn.close();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
+                } catch (SQLException ignored) {
                 }
             }
         }
     }
 
+    // ===================== Đơn hàng của khách (Thanh toán / Đơn hàng của tôi) =====================
+
+    // Kèm mã voucher và lần thanh toán thành công gần nhất (nếu có)
+    private static final String CUSTOMER_ORDER_SELECT =
+            "SELECT o.*, v.code AS voucher_code, pay.payment_method, pay.paid_at " +
+            "FROM orders o " +
+            "LEFT JOIN vouchers v ON v.id = o.voucher_id " +
+            "LEFT JOIN payments pay ON pay.id = (SELECT MAX(p2.id) FROM payments p2 " +
+            "                                    WHERE p2.order_id = o.id AND p2.status = 'SUCCESS') ";
+
     /**
-     * Lấy danh sách đơn hàng của một khách hàng cụ thể (UC17: View Order History)
+     * Lấy 1 đơn kèm các món theo orderId (cho màn Bill, Payment)
      */
-    public List<CustomerOrder> getOrdersByCustomerId(int customerId, int limit) {
-        List<CustomerOrder> list = new ArrayList<>();
-        String sql = "SELECT id FROM orders WHERE customer_id = ? ORDER BY id DESC LIMIT ?";
+    public Order getOrderById(int orderId) {
+        String sql = CUSTOMER_ORDER_SELECT + "WHERE o.id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ps.setInt(2, limit > 0 ? limit : 20);
+            ps.setInt(1, orderId);
+            Map<Integer, Order> orders = new LinkedHashMap<>();
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    CustomerOrder order = getOrderById(rs.getInt("id"));
-                    if (order != null) {
-                        list.add(order);
-                    }
+                if (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
                 }
             }
+            loadOrderItems(conn, orders);
+            return orders.get(orderId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Lấy danh sách OrderDetail của 1 đơn hàng
+     */
+    public List<OrderDetail> getOrderDetails(int orderId) {
+        Order order = getOrderById(orderId);
+        return order != null ? order.getItems() : new ArrayList<>();
+    }
+
+    /**
+     * Lấy các đơn hàng gần nhất
+     */
+    public List<Order> getRecentOrders(int limit) {
+        String sql = CUSTOMER_ORDER_SELECT + "ORDER BY o.created_at DESC, o.id DESC LIMIT ?";
+        List<Order> list = new ArrayList<>();
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
+                    list.add(order);
+                }
+            }
+            loadOrderItems(conn, orders);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -464,42 +459,250 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Cập nhật trạng thái đơn hàng (UC25: Update Order Status)
-     * Bám sát các giá trị ENUM DB: PENDING, CONFIRMED, PREPARING, READY, DELIVERING, COMPLETED, CANCELLED
+     * Lấy 1 đơn kèm các món, chỉ khi đơn thuộc về khách này (null nếu không có)
      */
-    public boolean updateOrderStatus(int orderId, String newStatus) {
-        String sql = "UPDATE orders SET status = ? WHERE id = ?";
+    public Order getCustomerOrder(int orderId, int customerId) {
+        String sql = CUSTOMER_ORDER_SELECT + "WHERE o.id = ? AND o.customer_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newStatus);
-            ps.setInt(2, orderId);
-            return ps.executeUpdate() > 0;
+            ps.setInt(1, orderId);
+            ps.setInt(2, customerId);
+            Map<Integer, Order> orders = new LinkedHashMap<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
+                }
+            }
+            loadOrderItems(conn, orders);
+            return orders.get(orderId);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Danh sách đơn của khách, mới nhất trước.
+     * statuses rỗng = mọi trạng thái; keyword: tìm theo mã đơn; date: lọc theo ngày đặt (null = mọi ngày)
+     */
+    public List<Order> getCustomerOrders(int customerId, List<String> statuses, String keyword,
+                                         LocalDate date, int limit) {
+        List<Object> params = new ArrayList<>();
+        String sql = CUSTOMER_ORDER_SELECT + buildCustomerFilter(customerId, statuses, keyword, date, params)
+                + " ORDER BY o.created_at DESC, o.id DESC LIMIT ?";
+        params.add(limit);
+
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            setParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
+                }
+            }
+            loadOrderItems(conn, orders);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>(orders.values());
+    }
+
+    /** Tổng số đơn khớp bộ lọc (để hiển thị "Hiển thị x / y đơn hàng") */
+    public int countCustomerOrders(int customerId, List<String> statuses, String keyword, LocalDate date) {
+        List<Object> params = new ArrayList<>();
+        String sql = "SELECT COUNT(*) FROM orders o " + buildCustomerFilter(customerId, statuses, keyword, date, params);
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            setParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /** Số đơn của khách theo từng trạng thái (cho các tab lọc) */
+    public Map<String, Integer> countCustomerOrdersByStatus(int customerId) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        String sql = "SELECT status, COUNT(*) AS total FROM orders WHERE customer_id = ? GROUP BY status";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    counts.put(rs.getString("status"), rs.getInt("total"));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return counts;
+    }
+
+    /**
+     * Khách hủy đơn chưa thanh toán: đổi sang CANCELLED và trả lại lượt dùng voucher (nếu có) trong cùng transaction
+     */
+    public boolean cancelPendingOrder(int orderId, int customerId) {
+        String cancelSql = "UPDATE orders SET status = 'CANCELLED' " +
+                           "WHERE id = ? AND customer_id = ? AND status = 'PENDING' " +
+                           "AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.order_id = orders.id AND p.status = 'SUCCESS')";
+        String returnVoucherSql = "UPDATE vouchers v JOIN orders o ON o.voucher_id = v.id " +
+                                  "SET v.used_count = v.used_count - 1 WHERE o.id = ? AND v.used_count > 0";
+
+        Connection conn = null;
+        try {
+            conn = DBContext.getConnection();
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement ps = conn.prepareStatement(cancelSql)) {
+                ps.setInt(1, orderId);
+                ps.setInt(2, customerId);
+                if (ps.executeUpdate() == 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
+            try (PreparedStatement ps = conn.prepareStatement(returnVoucherSql)) {
+                ps.setInt(1, orderId);
+                ps.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ignored) {
+                }
+            }
             return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException ignored) {
+                }
+            }
+        }
+    }
+
+    private String buildCustomerFilter(int customerId, List<String> statuses, String keyword,
+                                       LocalDate date, List<Object> params) {
+        StringBuilder where = new StringBuilder("WHERE o.customer_id = ?");
+        params.add(customerId);
+        if (statuses != null && !statuses.isEmpty()) {
+            where.append(" AND o.status IN (");
+            for (int i = 0; i < statuses.size(); i++) {
+                where.append(i > 0 ? ", ?" : "?");
+                params.add(statuses.get(i));
+            }
+            where.append(")");
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            where.append(" AND o.order_code LIKE ?");
+            params.add("%" + keyword + "%");
+        }
+        if (date != null) {
+            where.append(" AND DATE(o.created_at) = ?");
+            params.add(java.sql.Date.valueOf(date));
+        }
+        return where.toString();
+    }
+
+    private void setParams(PreparedStatement ps, List<Object> params) throws SQLException {
+        for (int i = 0; i < params.size(); i++) {
+            ps.setObject(i + 1, params.get(i));
+        }
+    }
+
+    private Order mapCustomerOrder(ResultSet rs) throws SQLException {
+        Order order = new Order();
+        order.setId(rs.getInt("id"));
+        order.setOrderCode(rs.getString("order_code"));
+        order.setCustomerId(rs.getObject("customer_id", Integer.class));
+        order.setVoucherId(rs.getObject("voucher_id", Integer.class));
+        order.setOrderType(rs.getString("order_type"));
+        order.setStatus(rs.getString("status"));
+        order.setTotalAmount(rs.getDouble("total_amount"));
+        order.setDiscountAmount(rs.getDouble("discount_amount"));
+        order.setDeliveryFee(rs.getDouble("delivery_fee"));
+        order.setFinalAmount(rs.getDouble("final_amount"));
+        order.setRecipientName(rs.getString("recipient_name"));
+        order.setRecipientPhone(rs.getString("recipient_phone"));
+        order.setDeliveryAddress(rs.getString("delivery_address"));
+        order.setTableNumber(rs.getString("table_number"));
+        order.setOrderNote(rs.getString("order_note"));
+        order.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
+        order.setVoucherCode(rs.getString("voucher_code"));
+        order.setPaymentMethod(rs.getString("payment_method"));
+        order.setPaidAt(rs.getObject("paid_at", LocalDateTime.class));
+        return order;
+    }
+
+    /** Nạp các món (kèm ảnh món) cho các đơn đã lấy, bằng 1 câu truy vấn */
+    private void loadOrderItems(Connection conn, Map<Integer, Order> orders) throws SQLException {
+        if (orders.isEmpty()) {
+            return;
+        }
+        StringBuilder sql = new StringBuilder(
+                "SELECT oi.*, p.image_url FROM order_items oi " +
+                "LEFT JOIN products p ON p.id = oi.product_id WHERE oi.order_id IN (");
+        int index = 0;
+        for (int i = 0; i < orders.size(); i++) {
+            sql.append(i > 0 ? ", ?" : "?");
+        }
+        sql.append(") ORDER BY oi.id");
+
+        try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (Integer orderId : orders.keySet()) {
+                ps.setInt(++index, orderId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    OrderDetail item = new OrderDetail();
+                    item.setId(rs.getInt("id"));
+                    item.setOrderId(rs.getInt("order_id"));
+                    item.setProductId(rs.getInt("product_id"));
+                    item.setProductName(rs.getString("product_name_at_time"));
+                    item.setUnitPrice(rs.getBigDecimal("unit_price"));
+                    item.setCustomization(rs.getString("customization"));
+                    item.setQuantity(rs.getInt("quantity"));
+                    item.setSubtotal(rs.getBigDecimal("subtotal"));
+                    item.setImageUrl(rs.getString("image_url"));
+                    orders.get(item.getOrderId()).getItems().add(item);
+                }
+            }
         }
     }
 
     /**
-     * Hủy đơn hàng trực tuyến bởi khách hàng (UC16: Cancel Online Order)
-     * Chỉ được phép hủy khi đơn ở trạng thái PENDING hoặc CONFIRMED
+     * Ghi tuỳ chọn món vào cột customization (JSON), VD: {"size":"L","toppings":["Kem whipping"]}
      */
-    public boolean cancelOrder(int orderId, Integer customerId) {
-        String sql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ? AND (status = 'PENDING' OR status = 'CONFIRMED')";
-        if (customerId != null && customerId > 0) {
-            sql += " AND customer_id = ?";
-        }
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, orderId);
-            if (customerId != null && customerId > 0) {
-                ps.setInt(2, customerId);
+    private String buildCustomizationJson(CartItem item) {
+        StringBuilder json = new StringBuilder("{\"size\":").append(toJsonString(item.getSize()));
+        json.append(",\"toppings\":[");
+        for (int i = 0; i < item.getToppings().size(); i++) {
+            if (i > 0) {
+                json.append(",");
             }
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            json.append(toJsonString(item.getToppings().get(i)));
         }
+        return json.append("]}").toString();
+    }
+
+    private String toJsonString(String value) {
+        if (value == null) {
+            return "null";
+        }
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 }
-

@@ -139,6 +139,33 @@ public class Product implements Serializable {
         isAvailable = available;
     }
 
+    private java.util.List<ProductIngredient> ingredients = new java.util.ArrayList<>();
+
+    public java.util.List<ProductIngredient> getIngredients() {
+        return ingredients;
+    }
+
+    public void setIngredients(java.util.List<ProductIngredient> ingredients) {
+        this.ingredients = ingredients;
+    }
+
+    /**
+     * Trích xuất hướng dẫn pha chế SOP từ variantsConfig (JSON)
+     */
+    public String getRecipeInstructions() {
+        if (variantsConfig == null || !variantsConfig.contains("\"instructions\"")) {
+            return "";
+        }
+        try {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"instructions\"\\s*:\\s*\"([^\"]*)\"").matcher(variantsConfig);
+            if (m.find()) {
+                return m.group(1).replace("\\n", "\n").replace("\\\"", "\"");
+            }
+        } catch (Exception ignored) {
+        }
+        return "";
+    }
+
     /**
      * Định dạng giá tiền dạng 45.000đ
      */

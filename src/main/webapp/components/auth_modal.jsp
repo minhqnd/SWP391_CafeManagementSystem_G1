@@ -2,7 +2,8 @@
     <% /* Xy ly activeTab tu session/request */ String activeTab=request.getParameter("tab"); if (activeTab==null) {
         activeTab=(String) request.getAttribute("activeTab"); } if (activeTab==null) { activeTab="login" ; } boolean
         isLoginTab="login" .equals(activeTab); boolean isRegisterTab="register" .equals(activeTab); boolean
-        isForgotTab="forgot" .equals(activeTab); %>
+        isForgotTab="forgot" .equals(activeTab); /* Trang cần quay lại sau khi đăng nhập / đăng ký (VD: /checkout), do
+        Controller đặt sẵn */ String authRedirect=(String) request.getAttribute("authRedirect"); %>
         <style>
             :root {
                 --surface-container-lowest: #ffffff;
@@ -185,28 +186,34 @@
                                                         </div>
                                                         <form action="${pageContext.request.contextPath}/login"
                                                             method="POST">
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-medium"
-                                                                    style="font-size: 0.85rem;">Số điện thoại /
-                                                                    Email</label>
-                                                                <input type="text"
-                                                                    class="form-control bg-light border-0 p-2"
-                                                                    name="username"
-                                                                    placeholder="barista.nguyen@auracafe.vn" required>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-medium"
-                                                                    style="font-size: 0.85rem;">Mật khẩu</label>
-                                                                <input type="password"
-                                                                    class="form-control bg-light border-0 p-2"
-                                                                    name="password" placeholder="••••••••••••" required>
-                                                            </div>
-                                                            <button type="submit"
-                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
-                                                                style="background-color: var(--primary-container); height: 48px;">
-                                                                Đăng nhập hệ thống <span
-                                                                    class="material-symbols-outlined fs-5">arrow_forward</span>
-                                                            </button>
+                                                            <% if (authRedirect !=null) { %>
+                                                                <input type="hidden" name="redirect"
+                                                                    value="<%= authRedirect %>">
+                                                                <% } %>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">Số điện thoại /
+                                                                            Email</label>
+                                                                        <input type="text"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="username"
+                                                                            placeholder="barista.nguyen@auracafe.vn"
+                                                                            required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">Mật khẩu</label>
+                                                                        <input type="password"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="password" placeholder="••••••••••••"
+                                                                            minlength="6" required>
+                                                                    </div>
+                                                                    <button type="submit"
+                                                                        class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
+                                                                        style="background-color: var(--primary-container); height: 48px;">
+                                                                        Đăng nhập hệ thống <span
+                                                                            class="material-symbols-outlined fs-5">arrow_forward</span>
+                                                                    </button>
                                                         </form>
                                                     </div>
 
@@ -220,38 +227,57 @@
                                                         </div>
                                                         <form action="${pageContext.request.contextPath}/register"
                                                             method="POST">
-                                                            <div class="row g-2 mb-3">
-                                                                <div class="col-12">
-                                                                    <label class="form-label fw-medium"
-                                                                        style="font-size: 0.85rem;">Họ tên</label>
-                                                                    <input type="text"
-                                                                        class="form-control bg-light border-0 p-2"
-                                                                        name="fullname" placeholder="Nguyễn Văn A"
-                                                                        required>
-                                                                </div>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-medium"
-                                                                    style="font-size: 0.85rem;">SĐT / Email</label>
-                                                                <input type="text"
-                                                                    class="form-control bg-light border-0 p-2"
-                                                                    name="username" placeholder="SĐT hoặc Email"
-                                                                    required>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-medium"
-                                                                    style="font-size: 0.85rem;">Mật khẩu</label>
-                                                                <input type="password"
-                                                                    class="form-control bg-light border-0 p-2"
-                                                                    name="password" placeholder="Tối thiểu 8 ký tự"
-                                                                    required>
-                                                            </div>
-                                                            <button type="submit"
-                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
-                                                                style="background-color: var(--primary-container); height: 48px;">
-                                                                Tạo tài khoản mới <span
-                                                                    class="material-symbols-outlined fs-5">how_to_reg</span>
-                                                            </button>
+                                                            <% if (authRedirect !=null) { %>
+                                                                <input type="hidden" name="redirect"
+                                                                    value="<%= authRedirect %>">
+                                                                <% } %>
+                                                                    <div class="row g-2 mb-3">
+                                                                        <div class="col-12">
+                                                                            <label class="form-label fw-medium"
+                                                                                style="font-size: 0.85rem;">Họ
+                                                                                tên</label>
+                                                                            <input type="text"
+                                                                                class="form-control bg-light border-0 p-2"
+                                                                                name="fullname"
+                                                                                placeholder="Nguyễn Văn A" required>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">SĐT /
+                                                                            Email</label>
+                                                                        <input type="text"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="username" placeholder="SĐT hoặc Email"
+                                                                            pattern="^(\d{10,11}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$"
+                                                                            title="Vui lòng nhập số điện thoại hợp lệ (10-11 số) hoặc Email"
+                                                                            required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">Mật khẩu</label>
+                                                                        <input type="password" id="reg-password"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="password"
+                                                                            placeholder="Tối thiểu 6 ký tự"
+                                                                            minlength="6" required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">Xác nhận mật
+                                                                            khẩu</label>
+                                                                        <input type="password" id="reg-confirm-password"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="confirm_password"
+                                                                            placeholder="Nhập lại mật khẩu"
+                                                                            minlength="6" required>
+                                                                    </div>
+                                                                    <button type="submit"
+                                                                        class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
+                                                                        style="background-color: var(--primary-container); height: 48px;">
+                                                                        Tạo tài khoản mới <span
+                                                                            class="material-symbols-outlined fs-5">how_to_reg</span>
+                                                                    </button>
                                                         </form>
                                                     </div>
 
@@ -317,4 +343,18 @@
                     myModal.show();
                 }
             });
+            // Validate mật khẩu khớp nhau khi đăng ký
+            const regPassword = document.getElementById("reg-password");
+            const regConfirm = document.getElementById("reg-confirm-password");
+            if (regPassword && regConfirm) {
+                function validatePassword() {
+                    if (regPassword.value != regConfirm.value) {
+                        regConfirm.setCustomValidity("Mật khẩu xác nhận không khớp");
+                    } else {
+                        regConfirm.setCustomValidity('');
+                    }
+                }
+                regPassword.addEventListener("change", validatePassword);
+                regConfirm.addEventListener("keyup", validatePassword);
+            }
         </script>

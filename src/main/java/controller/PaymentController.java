@@ -2,74 +2,69 @@ package controller;
 
 import dao.OrderDAO;
 import dao.PaymentDAO;
-import model.CustomerOrder;
-import model.OrderDetail;
-import model.Payment;
+import dao.UserDAO;
+import model.Order;
+import model.User;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
- * PaymentController - Điều hướng và xử lý thanh toán cho đơn hàng
- * URL: /payment
+ * PaymentController - Bước 3: Thanh toán chuyển khoản VietQR
+ * GET  /payment?orderId= : Mã QR + thông tin chuyển khoản của đơn đang chờ thanh toán
+ * POST /payment          : Khách xác nhận đã chuyển khoản -> ghi nhận thanh toán, cộng điểm, chuyển sang Hóa đơn điện tử (Bill)
  */
 @WebServlet(name = "PaymentController", urlPatterns = {"/payment"})
 public class PaymentController extends HttpServlet {
 
+    // Tài khoản nhận tiền của quán (chuẩn VietQR)
+    public static final String BANK_ID = "VCB";   // mã ngân hàng theo chuẩn VietQR
+    public static final String BANK_NAME = "Vietcombank";
+    public static final String ACCOUNT_NO = "9888823456";
+    public static final String ACCOUNT_NAME = "CONG TY TNHH AURA CAFE";
+
     private final OrderDAO orderDAO = new OrderDAO();
     private final PaymentDAO paymentDAO = new PaymentDAO();
+    private final UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String orderIdStr = request.getParameter("orderId");
-        int orderId = 1; // Mặc định đơn hàng số 1 nếu chưa truyền orderId để tiện trải nghiệm
-
-        if (orderIdStr != null && !orderIdStr.trim().isEmpty()) {
-            try {
-                orderId = Integer.parseInt(orderIdStr.trim());
-            } catch (NumberFormatException e) {
-                orderId = 1;
-            }
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/?login=true");
+            return;
         }
 
-        // Truy vấn dữ liệu đơn hàng và chi tiết các món
-        CustomerOrder order = orderDAO.getOrderById(orderId);
-
+        Order order = orderDAO.getCustomerOrder(parseInt(request.getParameter("orderId")), user.getId());
         if (order == null) {
-            request.getSession().setAttribute("errorMsg", "Không tìm thấy đơn hàng với mã ID: " + orderId);
-            response.sendRedirect(request.getContextPath() + "/menu");
+            session.setAttribute("ordersError", "Không tìm thấy đơn hàng cần thanh toán.");
+            response.sendRedirect(request.getContextPath() + "/orders");
+            return;
+        }
+        if (!order.isPending()) {
+            // Đơn đã thanh toán -> chuyển sang màn hình Hóa đơn điện tử
+            response.sendRedirect(request.getContextPath() + "/bill?orderId=" + order.getId());
             return;
         }
 
-        // Nếu đơn hàng ĐÃ ĐƯỢC THANH TOÁN -> Chuyển thẳng sang màn hình Hóa đơn (Bill)
-        if (order.isPaid()) {
-            response.sendRedirect(request.getContextPath() + "/bill?orderId=" + orderId);
-            return;
-        }
-
-        // Nếu đơn hàng ĐÃ BỊ HỦY -> Không cho phép thanh toán tiếp
-        if ("CANCELLED".equalsIgnoreCase(order.getStatus())) {
-            request.getSession().setAttribute("errorMsg", "Đơn hàng #" + order.getOrderCode() + " đã bị hủy, không thể thanh toán!");
-            response.sendRedirect(request.getContextPath() + "/orders?orderId=" + orderId);
-            return;
-        }
-
-        List<OrderDetail> orderDetails = orderDAO.getOrderDetails(orderId);
-
-        // Đẩy dữ liệu vào request attributes
+        CartController.moveFlashMessage(session, request, "paymentError");
         request.setAttribute("order", order);
-        request.setAttribute("orderDetails", orderDetails);
-
-        // Chuyển tiếp tới giao diện payment.jsp
+        request.setAttribute("bankName", BANK_NAME);
+        request.setAttribute("accountNo", ACCOUNT_NO);
+        request.setAttribute("accountName", ACCOUNT_NAME);
+        request.setAttribute("qrUrl", buildQrUrl(order));
+        request.setAttribute("storeAddress", CheckoutController.STORE_ADDRESS);
         request.getRequestDispatcher("/payment.jsp").forward(request, response);
     }
 
@@ -77,91 +72,56 @@ public class PaymentController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.setCharacterEncoding("UTF-8");
-
-        String orderIdStr = request.getParameter("orderId");
-        String paymentMethodParam = request.getParameter("payment_method");
-        String amountStr = request.getParameter("amount");
-
-        if (orderIdStr == null || orderIdStr.trim().isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/menu");
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/?login=true");
             return;
         }
 
-        int orderId;
-        double amountPaid;
-
-        try {
-            orderId = Integer.parseInt(orderIdStr.trim());
-            amountPaid = Double.parseDouble(amountStr.trim());
-        } catch (Exception e) {
-            request.setAttribute("error", "Dữ liệu thanh toán không hợp lệ!");
-            doGet(request, response);
-            return;
-        }
-
-        // Lấy thông tin đơn hàng hiện tại từ cơ sở dữ liệu
-        CustomerOrder order = orderDAO.getOrderById(orderId);
+        int orderId = parseInt(request.getParameter("orderId"));
+        Order order = orderDAO.getCustomerOrder(orderId, user.getId());
         if (order == null) {
-            response.sendRedirect(request.getContextPath() + "/menu");
+            session.setAttribute("ordersError", "Không tìm thấy đơn hàng cần thanh toán.");
+            response.sendRedirect(request.getContextPath() + "/orders");
             return;
         }
 
-        // Nếu đơn hàng đã được thanh toán, chuyển thẳng sang màn hình Hóa đơn (tránh trừ tiền trùng lặp)
-        if (order.isPaid()) {
-            response.sendRedirect(request.getContextPath() + "/bill?orderId=" + orderId);
+        int earnedPoints = paymentDAO.payByBankTransfer(orderId, user.getId());
+        if (earnedPoints == PaymentDAO.FAILED) {
+            // Đơn có thể vừa được thanh toán / hủy ở tab khác
+            if (!order.isPending()) {
+                response.sendRedirect(request.getContextPath() + "/bill?orderId=" + orderId);
+            } else {
+                session.setAttribute("paymentError", "Chưa ghi nhận được thanh toán, vui lòng thử lại sau ít phút.");
+                response.sendRedirect(request.getContextPath() + "/payment?orderId=" + orderId);
+            }
             return;
         }
 
-        // =========================================================================
-        // KIỂM TRA RÀNG BUỘC NGHIỆP VỤ BR-09 (Data Business Rules trong tài liệu SRS)
-        // BR-09: "Payment amount must match the order amount." (Enforced On: Payment.amount, CustomerOrder.total_amount/final_amount)
-        // =========================================================================
-        double expectedAmount = order.getFinalAmount();
-        if (Math.abs(amountPaid - expectedAmount) > 0.01) {
-            request.setAttribute("error", "Lỗi vi phạm quy tắc BR-09: Số tiền thanh toán (" 
-                    + String.format("%,.0f", amountPaid) + "đ) không khớp với giá trị cần thanh toán của đơn hàng (" 
-                    + String.format("%,.0f", expectedAmount) + "đ)!");
-            request.setAttribute("order", order);
-            request.setAttribute("orderDetails", orderDAO.getOrderDetails(orderId));
-            request.getRequestDispatcher("/payment.jsp").forward(request, response);
-            return;
-        }
+        // Cập nhật điểm Aura trong session theo Database
+        user.setTotalPoints(userDAO.getTotalPoints(user.getId()));
+        session.setAttribute("ordersMessage", "Thanh toán thành công đơn #" + order.getOrderCode()
+                + (earnedPoints > 0 ? ". Bạn được cộng " + earnedPoints + " điểm Aura." : "."));
+        // Chuyển hướng sang màn hình Hóa đơn điện tử (Bill Screen)
+        response.sendRedirect(request.getContextPath() + "/bill?orderId=" + orderId);
+    }
 
-        // Chuẩn hóa phương thức thanh toán bám sát ENUM trong Database: 'CASH', 'VNPAY', 'MOMO', 'BANK_TRANSFER'
-        String dbPaymentMethod = "BANK_TRANSFER"; // Default: VietQR / Chuyển khoản
-        if ("momo".equalsIgnoreCase(paymentMethodParam)) {
-            dbPaymentMethod = "MOMO";
-        } else if ("card".equalsIgnoreCase(paymentMethodParam)) {
-            dbPaymentMethod = "VNPAY";
-        } else if ("cod".equalsIgnoreCase(paymentMethodParam) || "cash".equalsIgnoreCase(paymentMethodParam)) {
-            dbPaymentMethod = "CASH";
-        } else if ("vietqr".equalsIgnoreCase(paymentMethodParam) || "bank_transfer".equalsIgnoreCase(paymentMethodParam)) {
-            dbPaymentMethod = "BANK_TRANSFER";
-        }
+    /**
+     * Ảnh mã VietQR (quét bằng app ngân hàng nào cũng được) đã điền sẵn số tiền và nội dung = mã đơn
+     */
+    private String buildQrUrl(Order order) {
+        return "https://img.vietqr.io/image/" + BANK_ID + "-" + ACCOUNT_NO + "-qr_only.png"
+                + "?amount=" + Math.round(order.getFinalAmount())
+                + "&addInfo=" + URLEncoder.encode(order.getOrderCode(), StandardCharsets.UTF_8)
+                + "&accountName=" + URLEncoder.encode(ACCOUNT_NAME, StandardCharsets.UTF_8);
+    }
 
-        // Khởi tạo đối tượng Payment
-        Payment payment = new Payment();
-        payment.setOrderId(orderId);
-        payment.setPaymentMethod(dbPaymentMethod);
-        payment.setTransactionCode("PAY-" + order.getOrderCode().replace("#", "") + "-" + (System.currentTimeMillis() % 1000000));
-        payment.setAmount(amountPaid);
-        payment.setStatus("SUCCESS");
-        payment.setPaidAt(new Timestamp(System.currentTimeMillis()));
-        payment.setPaymentNote("Thanh toán đơn hàng " + order.getOrderCode() + " qua " + dbPaymentMethod);
-
-        // Gọi DAO thực thi JDBC Transaction (Ghi vào payments & đổi trạng thái orders sang CONFIRMED)
-        boolean paymentSuccess = paymentDAO.processPayment(payment);
-
-        if (paymentSuccess) {
-            // Thanh toán thành công -> Chuyển hướng sang màn hình Hóa đơn (Bill Screen)
-            response.sendRedirect(request.getContextPath() + "/bill?orderId=" + orderId);
-        } else {
-            // Thất bại -> Báo lỗi và cho phép thử lại
-            request.setAttribute("error", "Giao dịch thanh toán thất bại! Vui lòng thử lại hoặc chọn phương thức khác.");
-            request.setAttribute("order", order);
-            request.setAttribute("orderDetails", orderDAO.getOrderDetails(orderId));
-            request.getRequestDispatcher("/payment.jsp").forward(request, response);
+    private int parseInt(String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (Exception e) {
+            return -1;
         }
     }
 }
