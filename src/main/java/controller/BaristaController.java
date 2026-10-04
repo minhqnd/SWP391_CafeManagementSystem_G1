@@ -96,10 +96,13 @@ public class BaristaController extends HttpServlet {
                 if (session.getAttribute("baristaCsrfToken") == null) {
                     session.setAttribute("baristaCsrfToken", UUID.randomUUID().toString());
                 }
-                request.setAttribute("baristaDashboard", true);
-                request.getRequestDispatcher("/barista-dashboard.jsp").forward(request, response);
-                return;
             }
+            request.setAttribute("baristaDashboard", true);
+            request.getRequestDispatcher("/barista-dashboard.jsp").forward(request, response);
+            return;
+        }
+
+        try {
             if ("recipes".equals(action)) {
                 handleRecipesView(request, response);
                 return;
@@ -108,15 +111,13 @@ public class BaristaController extends HttpServlet {
                 error(response, 400, "Chức năng chưa được hỗ trợ.");
                 return;
             }
-            try {
-                writeJson(response, 200, dashboardData(orderDAO.getOrdersForBarista()));
-            } catch (SQLException | ClassNotFoundException e) {
-                getServletContext().log("Cannot load barista orders", e);
-                error(response, 500, "Không tải được đơn hàng: " + e.getMessage());
-            } catch (RuntimeException e) {
-                getServletContext().log("Unexpected error in barista orders", e);
-                error(response, 500, "Lỗi máy chủ: " + e.getMessage());
-            }
+            writeJson(response, 200, dashboardData(orderDAO.getOrdersForBarista()));
+        } catch (SQLException | ClassNotFoundException e) {
+            getServletContext().log("Cannot load barista orders", e);
+            error(response, 500, "Không tải được đơn hàng: " + e.getMessage());
+        } catch (RuntimeException e) {
+            getServletContext().log("Unexpected error in barista orders", e);
+            error(response, 500, "Lỗi máy chủ: " + e.getMessage());
         } catch (Exception e) {
             // Lưới an toàn cuối cùng: bất kỳ exception nào chưa được bắt
             // đều trả JSON thay vì để Tomcat redirect về index.jsp
@@ -129,8 +130,8 @@ public class BaristaController extends HttpServlet {
             try {
                 request.setAttribute("baristaInitialData",
                         json(dashboardData(orderDAO.getOrdersForBarista())));
-            } catch (SQLException | ClassNotFoundException | RuntimeException e) {
-                getServletContext().log("Cannot load initial barista orders", e);
+            } catch (SQLException | ClassNotFoundException | RuntimeException ex) {
+                getServletContext().log("Cannot load initial barista orders", ex);
                 request.setAttribute("baristaInitialError",
                         "Không tải được đơn hàng từ cơ sở dữ liệu.");
             }
@@ -138,6 +139,7 @@ public class BaristaController extends HttpServlet {
             request.getRequestDispatcher("/barista-dashboard.jsp").forward(request, response);
             return;
         }
+
         if (!ordersApi) {
             error(response, 400, "Chức năng chưa được hỗ trợ.");
             return;
@@ -147,10 +149,19 @@ public class BaristaController extends HttpServlet {
     private void handleRecipesView(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            writeJson(response, 200, dashboardData(orderDAO.getOrdersForBarista()));
-        } catch (SQLException | ClassNotFoundException | RuntimeException e) {
-            getServletContext().log("Cannot load barista orders", e);
-            error(response, 500, "Không tải được đơn hàng. Vui lòng thử lại.");
+            String selectedProductIdStr = request.getParameter("productId");
+            if (selectedProductIdStr != null && !selectedProductIdStr.isEmpty()) {
+                request.setAttribute("selectedProductId", Integer.parseInt(selectedProductIdStr));
+            }
+            
+            request.setAttribute("products", productDAO.getAllProducts());
+            request.setAttribute("categories", categoryDAO.getAllActiveCategoriesWithCount());
+            request.setAttribute("baristaRecipes", productIngredientDAO.getAllProductIngredientsMap());
+            
+            request.getRequestDispatcher("/barista-recipes.jsp").forward(request, response);
+        } catch (Exception e) {
+            getServletContext().log("Cannot load barista recipes", e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không tải được sổ tay công thức. Vui lòng thử lại.");
         }
     }
 
