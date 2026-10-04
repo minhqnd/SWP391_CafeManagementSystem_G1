@@ -5,11 +5,138 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import model.Order;
+import model.OrderDetail;
 
 /**
  * OrderDAO - Tương tác dữ liệu đơn hàng
  */
 public class OrderDAO extends BaseDAO {
+
+    // All channels share orders. No per-item preparation status exists in the schema.
+    private static final String BARISTA_TYPES =
+            "o.order_type IN ('DINE_IN', 'TAKEAWAY', 'ONLINE')";
+    private static final String BARISTA_PAID =
+            "EXISTS (SELECT 1 FROM payments pay WHERE pay.order_id = o.id AND pay.status = 'SUCCESS')";
+
+    public List<Order> getOrdersForBarista() throws SQLException, ClassNotFoundException {
+        // Limit orders BEFORE joining items; multiple successful payments must not duplicate items.
+        String sql = "WITH eligible_orders AS (SELECT o.* FROM orders o WHERE "
+                + BARISTA_TYPES + " AND " + BARISTA_PAID
+                + " AND o.status IN ('CONFIRMED', 'PREPARING', 'READY') "
+                + "AND EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id)), "
+                + "recent_ready AS (SELECT * FROM eligible_orders WHERE status = 'READY' "
+                + "ORDER BY created_at DESC, id DESC LIMIT 3) "
+                + "SELECT o.*, i.id AS item_id, i.product_id, i.product_name_at_time, "
+                + "i.unit_price, i.customization, i.quantity, i.subtotal, "
+                + "p.category_id, c.name AS category_name "
+                + "FROM (SELECT * FROM eligible_orders WHERE status IN ('CONFIRMED', 'PREPARING') "
+                + "UNION ALL SELECT * FROM recent_ready) o "
+                + "JOIN order_items i ON i.order_id = o.id "
+                + "JOIN products p ON p.id = i.product_id "
+                + "JOIN categories c ON c.id = p.category_id "
+                + "ORDER BY CASE WHEN o.status = 'READY' THEN 1 ELSE 0 END, "
+                + "CASE WHEN o.status <> 'READY' THEN o.created_at END ASC, "
+                + "CASE WHEN o.status <> 'READY' THEN o.id END ASC, "
+                + "CASE WHEN o.status = 'READY' THEN o.created_at END DESC, "
+                + "CASE WHEN o.status = 'READY' THEN o.id END DESC, i.id ASC";
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                Order order = orders.get(id);
+                if (order == null) {
+                    order = new Order();
+                    order.setId(id);
+                    order.setOrderCode(rs.getString("order_code"));
+                    order.setCustomerId(rs.getObject("customer_id", Integer.class));
+                    order.setCashierId(rs.getObject("cashier_id", Integer.class));
+                    order.setVoucherId(rs.getObject("voucher_id", Integer.class));
+                    order.setShipperId(rs.getObject("shipper_id", Integer.class));
+                    order.setOrderType(rs.getString("order_type"));
+                    order.setStatus(rs.getString("status"));
+                    order.setTotalAmount(rs.getBigDecimal("total_amount"));
+                    order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
+                    order.setDeliveryFee(rs.getBigDecimal("delivery_fee"));
+                    order.setFinalAmount(rs.getBigDecimal("final_amount"));
+                    order.setRecipientName(rs.getString("recipient_name"));
+                    order.setRecipientPhone(rs.getString("recipient_phone"));
+                    order.setDeliveryAddress(rs.getString("delivery_address"));
+                    order.setTableNumber(rs.getString("table_number"));
+                    order.setOrderNote(rs.getString("order_note"));
+                    order.setCreatedAt(rs.getObject("created_at", java.time.LocalDateTime.class));
+                    orders.put(id, order);
+                }
+                order.getItems().add(new OrderDetail(
+                        rs.getInt("item_id"), id, rs.getInt("product_id"),
+                        rs.getString("product_name_at_time"), rs.getBigDecimal("unit_price"),
+                        rs.getString("customization"), rs.getInt("quantity"),
+                        rs.getBigDecimal("subtotal"), rs.getInt("category_id"),
+                        rs.getString("category_name")));
+            }
+        }
+        return new ArrayList<>(orders.values());
+    }
+
+    /**
+     * Preserve the dashboard's global FIFO rule across all category filters.
+     * Lock the queue and compare status so concurrent clicks cannot skip a stage.
+     */
+    public boolean updateBaristaOrderStatus(int orderId, String targetStatus)
+            throws SQLException, ClassNotFoundException {
+        String expectedStatus;
+        if ("PREPARING".equals(targetStatus)) {
+            expectedStatus = "CONFIRMED";
+        } else if ("READY".equals(targetStatus)) {
+            expectedStatus = "PREPARING";
+        } else {
+            throw new IllegalArgumentException("Unsupported barista status");
+        }
+        if (orderId <= 0) {
+            throw new IllegalArgumentException("Invalid order ID");
+        }
+        String queueSql = "SELECT o.id, o.status FROM orders o WHERE " + BARISTA_TYPES
+                + " AND " + BARISTA_PAID
+                + " AND o.status IN ('CONFIRMED', 'PREPARING') "
+                + "AND EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id) "
+                + "ORDER BY o.created_at, o.id FOR UPDATE";
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = conn.prepareStatement(queueSql);
+                     ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next() || rs.getInt("id") != orderId
+                            || !expectedStatus.equals(rs.getString("status"))) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+                String updateSql = "UPDATE orders o SET status = ? WHERE o.id = ? AND o.status = ? "
+                        + "AND " + BARISTA_PAID;
+                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                    ps.setString(1, targetStatus);
+                    ps.setInt(2, orderId);
+                    ps.setString(3, expectedStatus);
+                    if (ps.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+                conn.commit();
+                return true;
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            }
+        }
+    }
 
     public int getOrCreateCartOrder(int customerId) {
         String checkSql = "SELECT id FROM orders WHERE customer_id = ? AND status = 'PENDING' LIMIT 1";

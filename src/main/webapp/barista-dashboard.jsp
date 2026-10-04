@@ -2,6 +2,9 @@
          pageEncoding="UTF-8"
          language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:if test="${empty requestScope.baristaDashboard}">
+    <c:redirect url="/barista"/>
+</c:if>
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -12,8 +15,11 @@
     <title>Aura Café - Barista</title>
 
     <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
         rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 
     <style>
         :root {
@@ -27,7 +33,7 @@
             margin: 0;
             background: #f5f5f4;
             color: #292524;
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 14px;
         }
 
@@ -38,98 +44,6 @@
             --bs-btn-hover-color: #fff;
             --bs-btn-hover-bg: var(--aura-red-dark);
             --bs-btn-hover-border-color: var(--aura-red-dark);
-        }
-
-        /* NAVBAR */
-
-        .barista-navbar {
-            background: #fff;
-            border-bottom: 1px solid var(--aura-border);
-        }
-
-        .navbar-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-            align-items: center;
-            gap: 20px;
-            min-height: 86px;
-            padding: 12px 0;
-        }
-
-        .brand-name {
-            color: var(--aura-red);
-            font-size: 24px;
-            font-weight: 800;
-            white-space: nowrap;
-        }
-
-        .terminal-badge {
-            background: var(--aura-red);
-            color: #fff;
-            font-size: 10px;
-            padding: 8px 10px;
-            white-space: nowrap;
-        }
-
-        .barista-navigation {
-            justify-self: center;
-            flex-wrap: nowrap;
-            padding: 5px;
-            gap: 5px;
-            background: #f5f5f4;
-            border-radius: 16px;
-        }
-
-        .barista-navigation .nav-link {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 9px;
-            padding: 13px 16px;
-            border-radius: 11px;
-            color: #625e58;
-            font-size: 14px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .barista-navigation .nav-link.active {
-            background: var(--aura-red);
-            color: #fff;
-        }
-
-        .barista-navigation .nav-link:hover:not(.active) {
-            background: #eae7e5;
-        }
-
-        .employee {
-            justify-self: end;
-            min-width: 0;
-        }
-
-        .employee-name {
-            max-width: 210px;
-            overflow-wrap: anywhere;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .employee-role {
-            color: var(--aura-muted);
-            font-size: 12px;
-            margin-top: 3px;
-        }
-
-        .employee-avatar {
-            width: 44px;
-            height: 44px;
-            display: grid;
-            place-items: center;
-            flex-shrink: 0;
-            border-radius: 50%;
-            background: var(--aura-red);
-            color: #fff;
-            font-weight: 800;
         }
 
         /* THANH THỐNG KÊ */
@@ -217,6 +131,15 @@
             border-top: 4px solid;
         }
 
+        .order-list {
+            max-height: 65vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            scrollbar-gutter: stable;
+            padding-right: 4px;
+        }
+
         .column-waiting {
             border-top-color: var(--aura-red);
         }
@@ -301,58 +224,7 @@
             min-width: 0;
         }
 
-        @media (max-width: 1199.98px) {
-            .navbar-layout {
-                grid-template-columns: minmax(0, 1fr) auto;
-                gap: 12px;
-            }
-
-            .barista-navigation {
-                grid-column: 1 / -1;
-                grid-row: 2;
-            }
-
-            .employee {
-                grid-column: 2;
-                grid-row: 1;
-            }
-        }
-
         @media (max-width: 575.98px) {
-            .terminal-badge {
-                display: none;
-            }
-
-            .brand-name {
-                font-size: 21px;
-            }
-
-            .employee-name {
-                max-width: 135px;
-                font-size: 12px;
-            }
-
-            .employee-avatar {
-                width: 36px;
-                height: 36px;
-            }
-
-            .barista-navigation {
-                width: 100%;
-            }
-
-            .barista-navigation .nav-link {
-                flex: 1;
-                padding: 11px 7px;
-                font-size: 11px;
-                white-space: normal;
-                text-align: center;
-            }
-
-            .shortcut {
-                display: none;
-            }
-
             .stat-box {
                 flex: 1 1 140px;
                 padding: 10px;
@@ -365,85 +237,15 @@
     </style>
 </head>
 
-<body data-context-path="${pageContext.request.contextPath}">
+<body data-context-path="${pageContext.request.contextPath}"
+      data-csrf-token="${sessionScope.baristaCsrfToken}">
 
-<!-- NAVBAR -->
-<header class="barista-navbar">
-    <div class="container-fluid px-3 px-xl-4">
-        <div class="navbar-layout">
-
-            <div class="d-flex align-items-center gap-3">
-                <span class="brand-name">Aura Café</span>
-
-                <span class="badge terminal-badge">
-                    BARISTA KDS TERMINAL
-                </span>
-            </div>
-
-            <nav class="nav nav-pills barista-navigation"
-                 aria-label="Điều hướng Barista">
-
-                <a id="orders-link"
-                   class="nav-link active"
-                   aria-current="page"
-                   href="${pageContext.request.contextPath}/barista">
-
-                    <svg width="22" height="22" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor"
-                         stroke-width="1.8" stroke-linecap="round"
-                         stroke-linejoin="round" aria-hidden="true">
-                        <path d="M4 8h12v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8Z"/>
-                        <path d="M16 9h2a3 3 0 1 1 0 6h-2"/>
-                        <path d="M7 3v2M11 3v2M3 22h16"/>
-                    </svg>
-
-                    <span>
-                        Đơn pha chế <span class="shortcut">(F1)</span>
-                    </span>
-                </a>
-
-                <a id="recipes-link"
-                   class="nav-link"
-                   href="${pageContext.request.contextPath}/barista?action=recipes">
-
-                    <svg width="23" height="23" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor"
-                         stroke-width="1.8" stroke-linecap="round"
-                         stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 5v16"/>
-                        <path d="M12 5C9 3 5 3 2 4v16c3-1 7-1 10 1"/>
-                        <path d="M12 5c3-2 7-2 10-1v16c-3-1-7-1-10 1"/>
-                    </svg>
-
-                    <span>
-                        Công thức & Định lượng
-                        <span class="shortcut">(F2)</span>
-                    </span>
-                </a>
-            </nav>
-
-            <div class="employee d-flex align-items-center gap-3">
-                <div class="text-end">
-                    <div id="employee-name" class="employee-name">
-                        <c:out value="${sessionScope.user.fullName}"
-                               default="Nhân viên"/>
-                    </div>
-
-                    <div class="employee-role">
-                        Nhân viên pha chế
-                    </div>
-                </div>
-
-                <div id="employee-avatar"
-                     class="employee-avatar"
-                     aria-hidden="true">
-                    NV
-                </div>
-            </div>
-
-        </div>
-    </div>
-</header>
+<!-- Shared Customer header with Barista navigation and a non-clickable brand. -->
+<jsp:include page="/components/header.jsp">
+    <jsp:param name="navbarMode" value="barista"/>
+    <jsp:param name="showCart" value="false"/>
+    <jsp:param name="activePage" value="barista-orders"/>
+</jsp:include>
 
 <!-- THỐNG KÊ VÀ BỘ LỌC -->
 <section class="toolbar px-3 px-xl-4 py-3"
@@ -475,7 +277,7 @@
                 </svg>
 
                 <div>
-                    <div class="stat-label">Đang thực hiện</div>
+                    <div class="stat-label">Đang pha</div>
                     <div>
                         <strong id="preparing-count" class="stat-value">0</strong>
                         <span>đơn</span>
@@ -493,7 +295,7 @@
                 </svg>
 
                 <div>
-                    <div class="stat-label">Hoàn tất trong ca</div>
+                    <div class="stat-label">Đã xong</div>
                     <div>
                         <strong id="ready-count" class="stat-value">0</strong>
                         <span>đơn</span>
@@ -523,30 +325,10 @@
     </div>
 
     <div class="border-top mt-3 pt-3">
-        <div class="d-flex flex-wrap gap-2" aria-label="Lọc nhóm sản phẩm">
+        <div id="category-filters" class="d-flex flex-wrap gap-2" aria-label="Lọc nhóm sản phẩm">
             <button class="btn filter-button active"
                     data-group="all" aria-pressed="true" type="button">
                 Tất cả sản phẩm
-            </button>
-
-            <button class="btn filter-button"
-                    data-group="coffee" aria-pressed="false" type="button">
-                Cà phê
-            </button>
-
-            <button class="btn filter-button"
-                    data-group="tea" aria-pressed="false" type="button">
-                Trà & Đá xay
-            </button>
-
-            <button class="btn filter-button"
-                    data-group="bakery" aria-pressed="false" type="button">
-                Bánh
-            </button>
-
-            <button class="btn filter-button"
-                    data-group="bottled" aria-pressed="false" type="button">
-                Đóng chai
             </button>
         </div>
     </div>
@@ -578,7 +360,7 @@
                           style="background: #900b1a">0</span>
                 </div>
 
-                <div id="waiting-orders"></div>
+                <div id="waiting-orders" class="order-list" tabindex="0" role="region" aria-label="Đang chờ pha"></div>
             </div>
         </div>
 
@@ -586,12 +368,12 @@
             <div class="order-column column-preparing">
                 <div class="d-flex align-items-center
                             justify-content-between mb-3 px-1">
-                    <h2 class="h6 fw-bold mb-0">Đang thực hiện</h2>
+                    <h2 class="h6 fw-bold mb-0">Đang pha</h2>
                     <span id="preparing-column-count"
                           class="badge text-bg-warning rounded-pill">0</span>
                 </div>
 
-                <div id="preparing-orders"></div>
+                <div id="preparing-orders" class="order-list" tabindex="0" role="region" aria-label="Đang pha"></div>
             </div>
         </div>
 
@@ -599,18 +381,19 @@
             <div class="order-column column-ready">
                 <div class="d-flex align-items-center
                             justify-content-between mb-3 px-1">
-                    <h2 class="h6 fw-bold mb-0">Đã hoàn tất</h2>
+                    <h2 class="h6 fw-bold mb-0">Đã xong</h2>
                     <span id="ready-column-count"
                           class="badge text-bg-success rounded-pill">0</span>
                 </div>
 
-                <div id="ready-orders"></div>
+                <div id="ready-orders" class="order-list" tabindex="0" role="region" aria-label="Đã xong"></div>
             </div>
         </div>
 
     </section>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     "use strict";
 
@@ -618,6 +401,7 @@
     const refreshIntervalMs = 5000;
 
     let activeGroup = "all";
+    let currentOrders = [];
     let isUpdating = false;
     let loadController = null;
     let refreshTimer = null;
@@ -641,17 +425,6 @@
     // =====================================================
     // NAVBAR
     // =====================================================
-
-    const employeeName = document.getElementById("employee-name")
-        .textContent.trim();
-
-    document.getElementById("employee-avatar").textContent =
-        employeeName.split(/\s+/)
-            .filter(Boolean)
-            .slice(-2)
-            .map(part => part.charAt(0))
-            .join("")
-            .toLocaleUpperCase("vi-VN") || "NV";
 
     document.addEventListener("keydown", event => {
         if (event.altKey || event.ctrlKey || event.metaKey) {
@@ -790,8 +563,7 @@
             const id = String(order.id);
 
             const inQueue =
-                order.status === "CONFIRMED"
-                || order.status === "PREPARING";
+                order.status === "CONFIRMED";
 
             if (notificationInitialized
                     && inQueue
@@ -842,7 +614,7 @@
         } catch (error) {
             throw new Error(
                 "Máy chủ không trả về JSON hợp lệ. "
-                + "Kiểm tra BaristaServlet hoặc phiên đăng nhập."
+                + "Kiểm tra BaristaController hoặc phiên đăng nhập."
             );
         }
 
@@ -861,11 +633,10 @@
         return data;
     }
 
-    async function fetchOrders(group, signal) {
+    async function fetchOrders(signal) {
         const response = await fetch(
             contextPath
-                + "/barista?action=orders&group="
-                + encodeURIComponent(group),
+                + "/barista?action=orders",
             {
                 method: "GET",
                 headers: { "Accept": "application/json" },
@@ -906,33 +677,16 @@
         const controller = new AbortController();
         loadController = controller;
 
-        const requestedGroup = activeGroup;
-
         try {
-            // Luôn lấy hàng đợi đầy đủ để:
-            // 1. Phát hiện đơn mới.
-            // 2. Xác định FIFO không bị ảnh hưởng bởi bộ lọc.
-            const allRequest = fetchOrders("all", controller.signal);
-
-            const filteredRequest = requestedGroup === "all"
-                ? allRequest
-                : fetchOrders(requestedGroup, controller.signal);
-
-            const [allData, filteredData] = await Promise.all([
-                allRequest,
-                filteredRequest
-            ]);
-
+            const data = await fetchOrders(controller.signal);
             if (loadController !== controller) {
                 return;
             }
-
-            const allOrders = sortOldestFirst(allData.orders);
-            const displayOrders = sortOldestFirst(filteredData.orders);
-
-            updateStatistics(allData.statistics || {});
-            renderOrders(displayOrders, allOrders);
-            detectNewOrders(allOrders);
+            currentOrders = sortDashboardOrders(data.orders);
+            renderCategoryFilters(data.categories || []);
+            updateStatistics(data.statistics || {});
+            renderFilteredOrders();
+            detectNewOrders(currentOrders);
 
             hideError();
 
@@ -954,20 +708,55 @@
     // BỘ LỌC VÀ SẮP XẾP
     // =====================================================
 
-    document.querySelectorAll(".filter-button").forEach(button => {
-        button.addEventListener("click", () => {
-            activeGroup = button.dataset.group;
-
-            document.querySelectorAll(".filter-button").forEach(item => {
-                const selected = item === button;
-
-                item.classList.toggle("active", selected);
-                item.setAttribute("aria-pressed", String(selected));
-            });
-
-            loadOrders();
+    document.getElementById("category-filters").addEventListener("click", event => {
+        const button = event.target.closest(".filter-button");
+        if (!button) return;
+        activeGroup = button.dataset.group;
+        document.querySelectorAll(".filter-button").forEach(item => {
+            const selected = item === button;
+            item.classList.toggle("active", selected);
+            item.setAttribute("aria-pressed", String(selected));
         });
+        renderFilteredOrders();
     });
+
+    function renderCategoryFilters(categories) {
+        if (activeGroup !== "all"
+                && !categories.some(category => String(category.id) === activeGroup)) {
+            activeGroup = "all";
+        }
+        const container = document.getElementById("category-filters");
+        container.replaceChildren();
+        [{id: "all", name: "Tất cả sản phẩm"}, ...categories].forEach(category => {
+            const button = element("button", "btn filter-button", category.name);
+            button.type = "button";
+            button.dataset.group = String(category.id);
+            const selected = button.dataset.group === activeGroup;
+            button.classList.toggle("active", selected);
+            button.setAttribute("aria-pressed", String(selected));
+            container.appendChild(button);
+        });
+    }
+
+    function renderFilteredOrders() {
+        // Match orders by category but show ALL their items: the action completes the whole order.
+        const displayOrders = activeGroup === "all" ? currentOrders
+            : currentOrders.filter(order => order.items.some(item =>
+                String(item.categoryId) === activeGroup));
+        renderOrders(displayOrders, currentOrders);
+    }
+
+    function sortDashboardOrders(orders) {
+        const working = sortOldestFirst(orders.filter(order =>
+            order.status === "CONFIRMED" || order.status === "PREPARING"));
+        const ready = orders.filter(order => order.status === "READY");
+        if (ready.every(order => order.createdAt
+                && Number.isFinite(new Date(order.createdAt).getTime()))) {
+            ready.sort((a, b) => new Date(b.createdAt).getTime()
+                - new Date(a.createdAt).getTime() || b.id - a.id);
+        }
+        return [...working, ...ready.slice(0, 3)];
+    }
 
     function sortOldestFirst(orders) {
         const result = orders.slice();
@@ -981,7 +770,7 @@
         if (validDates) {
             result.sort((a, b) =>
                 new Date(a.createdAt).getTime()
-                - new Date(b.createdAt).getTime()
+                - new Date(b.createdAt).getTime() || a.id - b.id
             );
         }
 
@@ -1015,6 +804,8 @@
     }
 
     function renderOrders(displayOrders, allOrders) {
+        const scrollPositions = Object.fromEntries(Object.entries(containers)
+            .map(([status, container]) => [status, container.scrollTop]));
         Object.values(containers).forEach(container => {
             container.replaceChildren();
         });
@@ -1051,8 +842,8 @@
 
         const settings = [
             ["CONFIRMED", "waiting-column-count", "Không có đơn đang chờ."],
-            ["PREPARING", "preparing-column-count", "Không có đơn đang thực hiện."],
-            ["READY", "ready-column-count", "Chưa có đơn hoàn tất."]
+            ["PREPARING", "preparing-column-count", "Không có đơn đang pha."],
+            ["READY", "ready-column-count", "Chưa có đơn đã xong."]
         ];
 
         settings.forEach(([status, countId, message]) => {
@@ -1064,9 +855,31 @@
                 );
             }
         });
+        Object.entries(containers).forEach(([status, container]) => {
+            container.scrollTop = scrollPositions[status];
+        });
+    }
+
+    function createReadyCard(order) {
+        const card = element("article", "card order-card mb-3");
+        const header = element("div", "card-header bg-white p-3");
+        header.append(
+            element("strong", "order-code", "#" + (order.orderCode || order.id)),
+            element("div", "order-time mt-1", "Giờ đặt: " + formatCreatedAt(order.createdAt))
+        );
+        const body = element("div", "card-body p-3 d-flex flex-column gap-2");
+        (Array.isArray(order.items) ? order.items : []).forEach(item => {
+            body.appendChild(element("div", "item-name",
+                (item.quantity ?? 0) + "× " + (item.productName || "Sản phẩm")));
+        });
+        card.append(header, body);
+        return card;
     }
 
     function createOrderCard(order, canAct) {
+        if (order.status === "READY") {
+            return createReadyCard(order);
+        }
         const card = element("article", "card order-card mb-3");
         const header = element("div", "card-header bg-white p-3");
 
@@ -1084,7 +897,7 @@
             element(
                 "span",
                 "order-time",
-                formatCreatedAt(order.createdAt)
+                "Giờ đặt: " + formatCreatedAt(order.createdAt)
             )
         );
 
@@ -1121,7 +934,7 @@
 
         items.forEach(item => {
             itemsContainer.appendChild(
-                createItemRow(item, canAct, order.status)
+                createItemRow(item)
             );
         });
 
@@ -1135,12 +948,24 @@
             );
         }
 
-        card.append(header, itemsContainer);
+        const footer = element("div", "card-footer bg-white p-3");
+        footer.appendChild(element("div", "order-meta mb-2",
+            "Tổng: " + order.itemCount + " món • Cập nhật áp dụng cho toàn bộ đơn"));
+        const action = element("button", "btn btn-aura item-action w-100");
+        action.type = "button";
+        action.disabled = !canAct || order.status === "READY" || isUpdating;
+        action.textContent = order.status === "CONFIRMED" ? "BẮT ĐẦU PHA" : "HOÀN THÀNH";
+        action.title = canAct ? "Cập nhật trạng thái toàn bộ đơn"
+            : "Xử lý đơn đến trước trước khi cập nhật đơn này";
+        action.addEventListener("click", () => updateOrderStatus(order.id,
+            order.status === "CONFIRMED" ? "PREPARING" : "READY"));
+        footer.appendChild(action);
+        card.append(header, itemsContainer, footer);
 
         return card;
     }
 
-    function createItemRow(item, canAct, orderStatus) {
+    function createItemRow(item) {
         const row = element(
             "div",
             "item-row d-flex align-items-start justify-content-between gap-2"
@@ -1177,52 +1002,22 @@
             info.appendChild(options);
         }
 
-        const action = element(
-            "button",
-            "btn item-action flex-shrink-0"
-        );
-
-        action.type = "button";
-
-        const isReady = item.preparationStatus === "READY";
-
-        if (isReady) {
-            action.textContent = "XONG ✓";
-            action.classList.add("btn-outline-success");
-            action.disabled = true;
-
-        } else {
-            action.textContent = "ĐANG LÀM";
-            action.classList.add("btn-light", "border");
-
-            action.disabled =
-                !canAct || orderStatus === "READY" || isUpdating;
-
-            action.title = canAct
-                ? "Đánh dấu món đã pha xong"
-                : "Xử lý đơn đến trước trước khi cập nhật món này";
-
-            action.addEventListener("click", () => {
-                updateItemStatus(item.id);
-            });
-        }
-
-        row.append(info, action);
+        row.append(info);
 
         return row;
     }
 
     // =====================================================
-    // CẬP NHẬT TRẠNG THÁI MÓN
+    // CẬP NHẬT TRẠNG THÁI ĐƠN
     // =====================================================
 
-    async function updateItemStatus(itemId) {
+    async function updateOrderStatus(orderId, status) {
         if (isUpdating) {
             return;
         }
 
-        if (itemId === null || itemId === undefined) {
-            showError("Món thiếu itemId nên không thể cập nhật.");
+        if (orderId === null || orderId === undefined) {
+            showError("Đơn thiếu orderId nên không thể cập nhật.");
             return;
         }
 
@@ -1247,11 +1042,14 @@
         hideError();
 
         let succeeded = false;
+        let updateError = null;
 
         try {
             const body = new URLSearchParams();
-            body.append("action", "update-item-status");
-            body.append("itemId", String(itemId));
+            body.append("action", "update-order-status");
+            body.append("orderId", String(orderId));
+            body.append("status", status);
+            body.append("csrfToken", document.body.dataset.csrfToken);
 
             const response = await fetch(contextPath + "/barista", {
                 method: "POST",
@@ -1267,7 +1065,8 @@
             succeeded = true;
 
         } catch (error) {
-            showError(error.message);
+            updateError = error.message;
+            showError(updateError);
 
         } finally {
             isUpdating = false;
@@ -1281,10 +1080,9 @@
             }
         }
 
-        if (succeeded) {
-            // Lấy lại trạng thái do backend quyết định.
-            await loadOrders();
-        }
+        // Reload after conflicts/errors too, since another terminal may have changed the queue.
+        await loadOrders();
+        if (updateError) showError(updateError);
     }
 
     // =====================================================
@@ -1324,7 +1122,8 @@
 
                 if (Array.isArray(value)) {
                     value.forEach(entry => {
-                        values.push(String(entry));
+                        values.push(typeof entry === "object" && entry !== null
+                            ? (entry.name || JSON.stringify(entry)) : String(entry));
                     });
                 } else {
                     values.push(key + ": " + String(value));
@@ -1343,7 +1142,7 @@
         }
 
         if (order.orderType === "ONLINE") {
-            return "Giao hàng nội bộ";
+            return "Online";
         }
 
         return "Mua mang đi";

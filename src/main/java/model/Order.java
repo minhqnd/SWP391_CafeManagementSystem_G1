@@ -1,47 +1,75 @@
 package model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Maps orders. Nullable foreign keys use Integer; amounts preserve DECIMAL precision.
+ */
 public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private int id;
     private String orderCode;
+    private Integer customerId;
+    private Integer cashierId;
+    private Integer voucherId;
     private String orderType;
     private String status;
-    private String tableNumber;
+    private BigDecimal totalAmount;
+    private BigDecimal discountAmount;
+    private BigDecimal deliveryFee;
+    private BigDecimal finalAmount;
     private String recipientName;
     private String recipientPhone;
     private String deliveryAddress;
+    private Integer shipperId;
+    private String tableNumber;
     private String orderNote;
     private LocalDateTime createdAt;
-    private int itemCount;
-    private int readyItemCount;
-    private List<OrderDetail> items = new ArrayList<>();
 
     public Order() {
     }
 
-    public Order(int id, String orderCode, String orderType, String status,
-                 String tableNumber, String recipientName,
-                 String recipientPhone, String deliveryAddress,
-                 String orderNote, LocalDateTime createdAt,
-                 int itemCount, int readyItemCount) {
+    public Order(int id,
+                 String orderCode,
+                 Integer customerId,
+                 Integer cashierId,
+                 Integer voucherId,
+                 String orderType,
+                 String status,
+                 BigDecimal totalAmount,
+                 BigDecimal discountAmount,
+                 BigDecimal deliveryFee,
+                 BigDecimal finalAmount,
+                 String recipientName,
+                 String recipientPhone,
+                 String deliveryAddress,
+                 Integer shipperId,
+                 String tableNumber,
+                 String orderNote,
+                 LocalDateTime createdAt) {
         this.id = id;
         this.orderCode = orderCode;
+        this.customerId = customerId;
+        this.cashierId = cashierId;
+        this.voucherId = voucherId;
         this.orderType = orderType;
         this.status = status;
-        this.tableNumber = tableNumber;
+        this.totalAmount = totalAmount;
+        this.discountAmount = discountAmount;
+        this.deliveryFee = deliveryFee;
+        this.finalAmount = finalAmount;
         this.recipientName = recipientName;
         this.recipientPhone = recipientPhone;
         this.deliveryAddress = deliveryAddress;
+        this.shipperId = shipperId;
+        this.tableNumber = tableNumber;
         this.orderNote = orderNote;
         this.createdAt = createdAt;
-        this.itemCount = itemCount;
-        this.readyItemCount = readyItemCount;
     }
 
     public int getId() {
@@ -60,6 +88,30 @@ public class Order implements Serializable {
         this.orderCode = orderCode;
     }
 
+    public Integer getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Integer customerId) {
+        this.customerId = customerId;
+    }
+
+    public Integer getCashierId() {
+        return cashierId;
+    }
+
+    public void setCashierId(Integer cashierId) {
+        this.cashierId = cashierId;
+    }
+
+    public Integer getVoucherId() {
+        return voucherId;
+    }
+
+    public void setVoucherId(Integer voucherId) {
+        this.voucherId = voucherId;
+    }
+
     public String getOrderType() {
         return orderType;
     }
@@ -76,12 +128,36 @@ public class Order implements Serializable {
         this.status = status;
     }
 
-    public String getTableNumber() {
-        return tableNumber;
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
     }
 
-    public void setTableNumber(String tableNumber) {
-        this.tableNumber = tableNumber;
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public BigDecimal getDeliveryFee() {
+        return deliveryFee;
+    }
+
+    public void setDeliveryFee(BigDecimal deliveryFee) {
+        this.deliveryFee = deliveryFee;
+    }
+
+    public BigDecimal getFinalAmount() {
+        return finalAmount;
+    }
+
+    public void setFinalAmount(BigDecimal finalAmount) {
+        this.finalAmount = finalAmount;
     }
 
     public String getRecipientName() {
@@ -108,6 +184,22 @@ public class Order implements Serializable {
         this.deliveryAddress = deliveryAddress;
     }
 
+    public Integer getShipperId() {
+        return shipperId;
+    }
+
+    public void setShipperId(Integer shipperId) {
+        this.shipperId = shipperId;
+    }
+
+    public String getTableNumber() {
+        return tableNumber;
+    }
+
+    public void setTableNumber(String tableNumber) {
+        this.tableNumber = tableNumber;
+    }
+
     public String getOrderNote() {
         return orderNote;
     }
@@ -124,21 +216,9 @@ public class Order implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public int getItemCount() {
-        return itemCount;
-    }
 
-    public void setItemCount(int itemCount) {
-        this.itemCount = itemCount;
-    }
-
-    public int getReadyItemCount() {
-        return readyItemCount;
-    }
-
-    public void setReadyItemCount(int readyItemCount) {
-        this.readyItemCount = readyItemCount;
-    }
+    // UI relationship, loaded from order_items; not a column in orders.
+    private List<OrderDetail> items = new ArrayList<>();
 
     public List<OrderDetail> getItems() {
         return items;
@@ -146,5 +226,10 @@ public class Order implements Serializable {
 
     public void setItems(List<OrderDetail> items) {
         this.items = items != null ? items : new ArrayList<>();
+    }
+
+    // Total units, not the number of order_items rows.
+    public int getItemCount() {
+        return items.stream().mapToInt(OrderDetail::getQuantity).sum();
     }
 }

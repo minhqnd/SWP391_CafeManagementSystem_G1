@@ -1,7 +1,12 @@
 package model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
+/**
+ * Maps order_items. productName is product_name_at_time (the sale snapshot).
+ * categoryId/categoryName are joined from products/categories for UI filtering.
+ */
 public class OrderDetail implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -9,29 +14,35 @@ public class OrderDetail implements Serializable {
     private int orderId;
     private int productId;
     private String productName;
+    private BigDecimal unitPrice;
     private String customization;
     private int quantity;
-    private double unitPrice;
-    private double subtotal;
-    private String preparationStatus;
+    private BigDecimal subtotal;
+    private int categoryId;
     private String categoryName;
 
     public OrderDetail() {
     }
 
-    public OrderDetail(int id, int orderId, int productId,
-                       String productName, String customization,
-                       int quantity, double unitPrice, double subtotal,
-                       String preparationStatus, String categoryName) {
+    public OrderDetail(int id,
+                 int orderId,
+                 int productId,
+                 String productName,
+                 BigDecimal unitPrice,
+                 String customization,
+                 int quantity,
+                 BigDecimal subtotal,
+                 int categoryId,
+                 String categoryName) {
         this.id = id;
         this.orderId = orderId;
         this.productId = productId;
         this.productName = productName;
+        this.unitPrice = unitPrice;
         this.customization = customization;
         this.quantity = quantity;
-        this.unitPrice = unitPrice;
         this.subtotal = subtotal;
-        this.preparationStatus = preparationStatus;
+        this.categoryId = categoryId;
         this.categoryName = categoryName;
     }
 
@@ -67,6 +78,14 @@ public class OrderDetail implements Serializable {
         this.productName = productName;
     }
 
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
     public String getCustomization() {
         return customization;
     }
@@ -83,28 +102,20 @@ public class OrderDetail implements Serializable {
         this.quantity = quantity;
     }
 
-    public double getUnitPrice() {
-        return unitPrice;
-    }
-
-    public void setUnitPrice(double unitPrice) {
-        this.unitPrice = unitPrice;
-    }
-
-    public double getSubtotal() {
+    public BigDecimal getSubtotal() {
         return subtotal;
     }
 
-    public void setSubtotal(double subtotal) {
+    public void setSubtotal(BigDecimal subtotal) {
         this.subtotal = subtotal;
     }
 
-    public String getPreparationStatus() {
-        return preparationStatus;
+    public int getCategoryId() {
+        return categoryId;
     }
 
-    public void setPreparationStatus(String preparationStatus) {
-        this.preparationStatus = preparationStatus;
+    public void setCategoryId(int categoryId) {
+        this.categoryId = categoryId;
     }
 
     public String getCategoryName() {
@@ -114,4 +125,5 @@ public class OrderDetail implements Serializable {
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
     }
+
 }
