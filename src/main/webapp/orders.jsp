@@ -213,6 +213,7 @@
             background: #f0fdf4;
             color: #166534;
             border: 1px solid #bbf7d0;
+            transition: all 0.2s ease;
         }
         .pulse-dot {
             width: 8px;
@@ -224,6 +225,56 @@
         @keyframes pulse-ring {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        /* 1. Đang chuẩn bị món (PREPARING) - Màu vàng hổ phách ấm */
+        .live-status-badge.status-preparing {
+            background: #fef9c3;
+            color: #854d0e;
+            border: 1px solid #fde047;
+        }
+        .live-status-badge.status-preparing .pulse-dot {
+            background: #eab308;
+        }
+
+        /* 2. Sẵn sàng tại quầy / Chờ giao (READY) - Màu xanh lá cây tươi (đã sẵn sàng) */
+        .live-status-badge.status-ready {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .live-status-badge.status-ready .pulse-dot {
+            background: #22c55e;
+        }
+
+        /* 3. Đã thanh toán / Chờ pha chế (CONFIRMED) - Màu xanh lam nhẹ */
+        .live-status-badge.status-confirmed {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+        .live-status-badge.status-confirmed .pulse-dot {
+            background: #3b82f6;
+        }
+
+        /* 4. Đang giao hàng (DELIVERING) - Màu tím */
+        .live-status-badge.status-delivering {
+            background: #faf5ff;
+            color: #7e22ce;
+            border: 1px solid #e9d5ff;
+        }
+        .live-status-badge.status-delivering .pulse-dot {
+            background: #a855f7;
+        }
+
+        /* 5. Chờ thanh toán (PENDING) - Màu vàng cam */
+        .live-status-badge.status-pending {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+        .live-status-badge.status-pending .pulse-dot {
+            background: #f59e0b;
         }
 
         /* Modern Stepper */
@@ -471,6 +522,8 @@
         .status-pill.cancelled { background: #fee2e2; color: #b91c1c; }
         .status-pill.pending { background: #fef9c3; color: #854d0e; }
         .status-pill.processing { background: #e0f2fe; color: #0369a1; }
+        .status-pill.preparing { background: #fef9c3; color: #854d0e; }
+        .status-pill.ready { background: #dcfce7; color: #15803d; }
         .status-pill.delivering { background: #f3e8ff; color: #6b21a8; }
 
         @media (max-width: 767.98px) {
@@ -586,7 +639,7 @@
                     </div>
 
                     <div class="d-flex align-items-center gap-3">
-                        <div class="live-status-badge">
+                        <div class="live-status-badge status-${fn:toLowerCase(o.status)}">
                             <span class="pulse-dot"></span>
                             <span>${o.statusLabel}</span>
                         </div>
