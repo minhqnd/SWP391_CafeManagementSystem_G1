@@ -578,15 +578,15 @@
                 </main>
 
                 <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Bấm Xem món ra popup) -->
-                <div id="stickyMiniCart" class="sticky-cart-bar d-none" onclick="openSelectedItemsModal()"
+                <div id="stickyMiniCart" class="sticky-cart-bar ${empty sessionScope.cart || sessionScope.cart.totalQuantity == 0 ? 'd-none' : ''}" onclick="openSelectedItemsModal()"
                     style="cursor: pointer;" title="Bấm để xem danh sách món">
                     <div class="d-flex align-items-center gap-3">
                         <div class="cart-badge-icon">
                             <span class="material-symbols-outlined fs-5">shopping_bag</span>
-                            <span id="stickyCartBadge" class="badge-count-pill">0</span>
+                            <span id="stickyCartBadge" class="badge-count-pill">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span>
                         </div>
                         <div class="fw-bold text-white" style="font-size: 0.95rem;">
-                            Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">0</span> món
+                            Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span> món
                         </div>
                     </div>
                     <button type="button"
@@ -627,11 +627,6 @@
                             // Đồ uống: mở popup để khách chọn đổi size L, thêm topping
                             openProductDetailModal(id);
                         }
-                    }
-
-                    // Xem các món đã chọn tại trang Giỏ hàng
-                    function openSelectedItemsModal() {
-                        window.location.href = '${pageContext.request.contextPath}/cart';
                     }
 
                     var openCartModal = openSelectedItemsModal;
