@@ -94,6 +94,12 @@ public class CounterOrderController extends HttpServlet {
             return;
         }
 
+        // API: Lấy danh sách đơn hàng hôm nay (cho realtime polling)
+        if ("orders".equals(action)) {
+            handleGetOrders(request, response);
+            return;
+        }
+
         // Mặc định: Hiển thị giao diện POS
         List<Category> categories = categoryDAO.getAllActiveCategoriesWithCount();
         List<Product> products = productDAO.filterProducts(null, null);
@@ -124,6 +130,8 @@ public class CounterOrderController extends HttpServlet {
             handleCreateOrder(request, response);
         } else if ("cancel-order".equals(action)) {
             handleCancelOrder(request, response);
+        } else if ("deliver-order".equals(action)) {
+            handleDeliverOrder(request, response);
         } else if ("complete-order".equals(action)) {
             handleCompleteOrder(request, response);
         } else {
@@ -292,6 +300,36 @@ public class CounterOrderController extends HttpServlet {
         }
     }
 
+    private void handleGetOrders(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        List<Order> orders = orderDAO.getCounterOrdersToday();
+        StringBuilder sb = new StringBuilder("{\"success\":true,\"todayCount\":").append(orders.size()).append(",\"orders\":[");
+        for (int i = 0; i < orders.size(); i++) {
+            Order o = orders.get(i);
+            if (i > 0) sb.append(",");
+            sb.append("{")
+              .append("\"id\":").append(o.getId()).append(",")
+              .append("\"orderCode\":\"").append(escapeJson(o.getOrderCode())).append("\",")
+              .append("\"createdTimeText\":\"").append(escapeJson(o.getCreatedTimeText())).append("\",")
+              .append("\"orderType\":\"").append(escapeJson(o.getOrderType())).append("\",")
+              .append("\"status\":\"").append(escapeJson(o.getStatus())).append("\",")
+              .append("\"statusLabel\":\"").append(escapeJson(o.getStatusLabel())).append("\",")
+              .append("\"recipientName\":\"").append(escapeJson(o.getRecipientName() != null ? o.getRecipientName() : "Khách tại quầy")).append("\",")
+              .append("\"recipientPhone\":\"").append(escapeJson(o.getRecipientPhone() != null ? o.getRecipientPhone() : "")).append("\",")
+              .append("\"deliveryAddress\":\"").append(escapeJson(o.getDeliveryAddress() != null ? o.getDeliveryAddress() : "")).append("\",")
+              .append("\"tableNumber\":\"").append(escapeJson(o.getTableNumber() != null ? o.getTableNumber() : "")).append("\",")
+              .append("\"itemSummary\":\"").append(escapeJson(o.getItemSummary())).append("\",")
+              .append("\"itemCount\":").append(o.getItemCount()).append(",")
+              .append("\"totalAmount\":").append(o.getTotalAmount()).append(",")
+              .append("\"finalAmount\":").append(o.getFinalAmount()).append(",")
+              .append("\"formattedFinalAmount\":\"").append(escapeJson(o.getFormattedFinalAmount())).append("\",")
+              .append("\"paymentMethodLabel\":\"").append(escapeJson(o.getPaymentMethodLabel())).append("\",")
+              .append("\"orderNote\":\"").append(escapeJson(o.getOrderNote() != null ? o.getOrderNote() : ""))
+              .append("\"}");
+        }
+        sb.append("]}");
+        sendJson(response, HttpServletResponse.SC_OK, sb.toString());
+    }
+
     private void handleCancelOrder(HttpServletRequest request, HttpServletResponse response) throws IOException {
         int orderId = parseInt(request.getParameter("orderId"), -1);
         if (orderId <= 0) {
@@ -299,11 +337,26 @@ public class CounterOrderController extends HttpServlet {
             return;
         }
 
-        boolean success = orderDAO.cancelCounterOrder(orderId);
-        if (success) {
+        String errorMsg = orderDAO.cancelCounterOrderWithReason(orderId);
+        if (errorMsg == null) {
             sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã hủy đơn hàng thành công.\"}");
         } else {
-            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Không thể hủy đơn hàng này (đơn đã hoàn thành hoặc không tồn tại).\"}");
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"" + escapeJson(errorMsg) + "\"}");
+        }
+    }
+
+    private void handleDeliverOrder(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int orderId = parseInt(request.getParameter("orderId"), -1);
+        if (orderId <= 0) {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Mã đơn không hợp lệ.\"}");
+            return;
+        }
+
+        boolean success = orderDAO.deliverCounterOrder(orderId);
+        if (success) {
+            sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã chuyển đơn sang trạng thái Đang giao hàng.\"}");
+        } else {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Không thể chuyển trạng thái giao hàng (chỉ áp dụng cho đơn Online đã pha chế xong).\"}");
         }
     }
 

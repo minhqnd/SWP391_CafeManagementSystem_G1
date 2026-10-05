@@ -1238,12 +1238,25 @@
         }
         .badge-status.ready .status-dot { background: #f59e0b; }
 
+        .badge-type.delivery {
+            background: #fdf2f8;
+            color: #9d174d;
+            border: 1px solid #fbcfe8;
+        }
+
         .badge-status.completed {
             background: #f1f5f9;
             color: #334155;
             border: 1px solid #cbd5e1;
         }
         .badge-status.completed .status-dot { background: #64748b; }
+
+        .badge-status.delivering {
+            background: #fae8ff;
+            color: #86198f;
+            border: 1px solid #f0abfc;
+        }
+        .badge-status.delivering .status-dot { background: #d946ef; }
 
         .badge-status.cancelled {
             background: #fff1f2;
@@ -1253,8 +1266,8 @@
         .badge-status.cancelled .status-dot { background: #f43f5e; }
 
         .col-actions {
-            width: 180px;
-            min-width: 180px;
+            width: 210px;
+            min-width: 210px;
             text-align: center;
             white-space: nowrap;
         }
@@ -1282,6 +1295,56 @@
             background: var(--slate-50);
             border-color: var(--slate-300);
             color: var(--slate-900);
+        }
+
+        .btn-action-deliver-order {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 5px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #fae8ff;
+            border: 1px solid #f0abfc;
+            color: #86198f;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+            height: 32px;
+        }
+
+        .btn-action-deliver-order:hover {
+            background: #f5d0fe;
+            border-color: #e879f9;
+            color: #701a75;
+        }
+
+        .btn-action-complete-order {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 5px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #047857;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+            height: 32px;
+        }
+
+        .btn-action-complete-order:hover {
+            background: #d1fae5;
+            border-color: #6ee7b7;
+            color: #065f46;
         }
 
         .btn-action-cancel-order {
@@ -2051,6 +2114,10 @@
                             <span class="material-symbols-outlined" style="font-size: 16px;">takeout_dining</span>
                             <span>Mang về</span>
                         </button>
+                        <button type="button" class="btn-filter-type" data-type="ONLINE" onclick="setOrderTypeFilter('ONLINE', this)">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">delivery_dining</span>
+                            <span>Giao hàng</span>
+                        </button>
                     </div>
                 </div>
 
@@ -2058,7 +2125,7 @@
                 <div class="filter-status-pills">
                     <span class="text-xs fw-bold text-muted me-1 text-uppercase" style="letter-spacing: 0.5px;">Trạng thái:</span>
                     <button type="button" class="btn-status-pill active" data-status="ALL" onclick="setOrderStatusFilter('ALL', this)">
-                        <span>Tất cả (${todayCount})</span>
+                        <span>Tất cả (<span id="statusCountAll">${todayCount}</span>)</span>
                     </button>
                     <button type="button" class="btn-status-pill" data-status="CONFIRMED" onclick="setOrderStatusFilter('CONFIRMED', this)">
                         <span class="status-dot" style="background: #10b981;"></span>
@@ -2071,6 +2138,10 @@
                     <button type="button" class="btn-status-pill" data-status="READY" onclick="setOrderStatusFilter('READY', this)">
                         <span class="status-dot" style="background: #f59e0b;"></span>
                         <span>Sẵn sàng</span>
+                    </button>
+                    <button type="button" class="btn-status-pill" data-status="DELIVERING" onclick="setOrderStatusFilter('DELIVERING', this)">
+                        <span class="status-dot" style="background: #d946ef;"></span>
+                        <span>Đang giao</span>
                     </button>
                     <button type="button" class="btn-status-pill" data-status="COMPLETED" onclick="setOrderStatusFilter('COMPLETED', this)">
                         <span class="status-dot" style="background: #64748b;"></span>
@@ -2100,14 +2171,14 @@
                                 <th class="col-actions">Thao tác</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="ordersTableBody">
                             <c:choose>
                                 <c:when test="${not empty counterOrders}">
                                     <c:forEach var="o" items="${counterOrders}">
                                     <tr class="order-table-row" 
                                         data-type="${o.orderType}" 
                                         data-status="${o.status}" 
-                                        data-search="${o.orderCode} ${o.recipientName} ${o.recipientPhone} ${o.itemSummary}">
+                                        data-search="${o.orderCode} ${o.recipientName} ${o.recipientPhone} ${o.itemSummary} ${o.deliveryAddress}">
                                         <td>
                                             <span class="order-code-badge" onclick="copyOrderCode('${o.orderCode}')" title="Bấm để sao chép mã" style="cursor: pointer;">
                                                 <span class="material-symbols-outlined" style="font-size: 14px; color: var(--slate-500);">tag</span>
@@ -2120,6 +2191,12 @@
                                         </td>
                                         <td>
                                             <c:choose>
+                                                <c:when test="${o.orderType eq 'ONLINE'}">
+                                                    <span class="badge-type delivery">
+                                                        <span class="material-symbols-outlined" style="font-size: 14px;">delivery_dining</span>
+                                                        <span>Giao hàng</span>
+                                                    </span>
+                                                </c:when>
                                                 <c:when test="${o.orderType eq 'TAKEAWAY'}">
                                                     <span class="badge-type takeaway">
                                                         <span class="material-symbols-outlined" style="font-size: 14px;">takeout_dining</span>
@@ -2129,7 +2206,7 @@
                                                 <c:otherwise>
                                                     <span class="badge-type dine-in">
                                                         <span class="material-symbols-outlined" style="font-size: 14px;">storefront</span>
-                                                        <span>Tại quán</span>
+                                                        <span>Tại quán<c:if test="${not empty o.tableNumber}"> (Bàn ${o.tableNumber})</c:if></span>
                                                     </span>
                                                 </c:otherwise>
                                             </c:choose>
@@ -2144,6 +2221,9 @@
                                             <c:if test="${not empty o.recipientPhone}">
                                                 <div style="font-size: 11px; color: var(--slate-500); padding-left: 20px;">${o.recipientPhone}</div>
                                             </c:if>
+                                            <c:if test="${not empty o.deliveryAddress}">
+                                                <div style="font-size: 11px; color: var(--slate-400); padding-left: 20px;" class="text-truncate" style="max-width: 130px;" title="${o.deliveryAddress}">${o.deliveryAddress}</div>
+                                            </c:if>
                                         </td>
                                         <td>
                                             <div class="order-items-snippet" title="${o.itemSummary}">
@@ -2156,7 +2236,7 @@
                                         </td>
                                         <td>
                                             <c:choose>
-                                                <c:when test="${o.paymentMethod eq 'BANK_TRANSFER'}">
+                                                <c:when test="${o.paymentMethod eq 'BANK_TRANSFER' || (not empty o.paymentMethodLabel && o.paymentMethodLabel.contains('VietQR'))}">
                                                     <span class="badge-payment qr">
                                                         <span class="material-symbols-outlined" style="font-size: 14px;">qr_code_2</span>
                                                         <span>VietQR</span>
@@ -2190,6 +2270,12 @@
                                                         <span>Sẵn sàng</span>
                                                     </span>
                                                 </c:when>
+                                                <c:when test="${o.status eq 'DELIVERING'}">
+                                                    <span class="badge-status delivering">
+                                                        <span class="status-dot"></span>
+                                                        <span>Đang giao</span>
+                                                    </span>
+                                                </c:when>
                                                 <c:when test="${o.status eq 'COMPLETED'}">
                                                     <span class="badge-status completed">
                                                         <span class="status-dot"></span>
@@ -2200,6 +2286,12 @@
                                                     <span class="badge-status cancelled">
                                                         <span class="status-dot"></span>
                                                         <span>Đã hủy</span>
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${o.status eq 'PENDING'}">
+                                                    <span class="badge-status" style="background:#fef9c3;color:#854d0e;border:1px solid #fef08a;">
+                                                        <span class="status-dot" style="background:#eab308;"></span>
+                                                        <span>Chờ thanh toán</span>
                                                     </span>
                                                 </c:when>
                                                 <c:otherwise>
@@ -2213,7 +2305,19 @@
                                                     <span class="material-symbols-outlined" style="font-size: 15px;">receipt_long</span>
                                                     <span>Hóa đơn</span>
                                                 </a>
-                                                <c:if test="${o.status ne 'COMPLETED' && o.status ne 'CANCELLED'}">
+                                                <c:if test="${o.orderType eq 'ONLINE' && o.status eq 'READY'}">
+                                                    <button type="button" class="btn-action-deliver-order" onclick="deliverOrder(${o.id})" title="Chuyển sang Đang giao hàng">
+                                                        <span class="material-symbols-outlined" style="font-size: 15px;">delivery_dining</span>
+                                                        <span>Giao</span>
+                                                    </button>
+                                                </c:if>
+                                                <c:if test="${o.status eq 'READY' || o.status eq 'DELIVERING' || (o.status eq 'CONFIRMED' && o.orderType ne 'ONLINE')}">
+                                                    <button type="button" class="btn-action-complete-order" onclick="completeOrder(${o.id})" title="Đánh dấu hoàn tất">
+                                                        <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
+                                                        <span>Hoàn tất</span>
+                                                    </button>
+                                                </c:if>
+                                                <c:if test="${o.status eq 'PENDING' || o.status eq 'CONFIRMED'}">
                                                     <button type="button" class="btn-action-cancel-order" onclick="cancelOrder(${o.id})" title="Hủy đơn hàng này">
                                                         <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
                                                         <span>Hủy</span>
@@ -3007,26 +3111,82 @@
             }
         }
 
-        // 10. Cancel Order
+        // 10. Order Actions & Realtime Sync
+        async function deliverOrder(orderId) {
+            if (!confirm(`Xác nhận bắt đầu giao đơn hàng #${orderId}?`)) {
+                return;
+            }
+
+            try {
+                const resp = await fetch(`${CONTEXT_PATH}/cashier?action=deliver-order&orderId=${orderId}`, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (resp.status === 401) {
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = `${CONTEXT_PATH}/login`;
+                    return;
+                }
+                const res = await resp.json();
+                if (res.success) {
+                    showToast(res.message || 'Đã chuyển đơn sang trạng thái Đang giao hàng.');
+                    refreshOrdersList();
+                } else {
+                    alert(res.error || 'Không thể chuyển trạng thái giao hàng.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Lỗi kết nối máy chủ.');
+            }
+        }
+
+        async function completeOrder(orderId) {
+            if (!confirm(`Xác nhận hoàn tất đơn hàng #${orderId}?`)) {
+                return;
+            }
+
+            try {
+                const resp = await fetch(`${CONTEXT_PATH}/cashier?action=complete-order&orderId=${orderId}`, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (resp.status === 401) {
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = `${CONTEXT_PATH}/login`;
+                    return;
+                }
+                const res = await resp.json();
+                if (res.success) {
+                    showToast(res.message || 'Đã hoàn tất đơn hàng.');
+                    refreshOrdersList();
+                } else {
+                    alert(res.error || 'Không thể hoàn tất đơn hàng.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Lỗi kết nối máy chủ.');
+            }
+        }
+
         async function cancelOrder(orderId) {
             if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${orderId}?`)) {
                 return;
             }
 
             try {
-                const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=cancel-order&orderId=\${orderId}`, {
+                const resp = await fetch(`${CONTEXT_PATH}/cashier?action=cancel-order&orderId=${orderId}`, {
                     method: 'POST',
                     headers: { 'Accept': 'application/json' }
                 });
                 if (resp.status === 401) {
                     alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
-                    window.location.href = `\${CONTEXT_PATH}/login`;
+                    window.location.href = `${CONTEXT_PATH}/login`;
                     return;
                 }
                 const res = await resp.json();
                 if (res.success) {
-                    showToast('Đã hủy đơn thành công');
-                    setTimeout(() => window.location.reload(), 600);
+                    showToast(res.message || 'Đã hủy đơn thành công');
+                    refreshOrdersList();
                 } else {
                     alert(res.error || 'Không thể hủy đơn.');
                 }
@@ -3035,6 +3195,203 @@
                 alert('Lỗi kết nối máy chủ.');
             }
         }
+
+        // Realtime Polling for Today's Orders (Every 5 seconds)
+        let isRefreshingOrders = false;
+        async function refreshOrdersList() {
+            if (isRefreshingOrders) return;
+            isRefreshingOrders = true;
+
+            try {
+                const resp = await fetch(`${CONTEXT_PATH}/cashier?action=orders`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (!data.success || !Array.isArray(data.orders)) return;
+
+                const tbody = document.getElementById('ordersTableBody');
+                if (!tbody) return;
+
+                if (data.orders.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center py-5">
+                                <div class="d-flex flex-column align-items-center justify-content-center text-muted">
+                                    <span class="material-symbols-outlined mb-2" style="font-size: 48px; color: var(--slate-300);">inbox</span>
+                                    <div class="fw-bold fs-6 text-slate-700">Chưa có đơn hàng nào tại quầy hôm nay</div>
+                                    <div class="small text-slate-400 mt-1">Các đơn hàng phát sinh trong ca làm việc sẽ hiển thị tại đây</div>
+                                </div>
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                let html = '';
+                for (const o of data.orders) {
+                    html += renderOrderRowHtml(o);
+                }
+
+                html += `
+                    <tr id="noFilterResultsRow" style="display: none;">
+                        <td colspan="9" class="text-center py-5">
+                            <div class="d-flex flex-column align-items-center justify-content-center text-muted">
+                                <span class="material-symbols-outlined mb-2" style="font-size: 40px; color: var(--slate-300);">search_off</span>
+                                <div class="fw-bold fs-6 text-slate-700">Không tìm thấy đơn hàng nào phù hợp</div>
+                                <div class="small text-slate-400 mt-1">Thử thay đổi từ khóa hoặc bộ lọc trạng thái</div>
+                            </div>
+                        </td>
+                    </tr>`;
+
+                tbody.innerHTML = html;
+                applyOrderFilters();
+            } catch (err) {
+                console.warn('Orders poll error:', err);
+            } finally {
+                isRefreshingOrders = false;
+            }
+        }
+
+        function renderOrderRowHtml(o) {
+            let typeBadgeHtml = '';
+            if (o.orderType === 'ONLINE') {
+                typeBadgeHtml = `
+                    <span class="badge-type delivery">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">delivery_dining</span>
+                        <span>Giao hàng</span>
+                    </span>`;
+            } else if (o.orderType === 'TAKEAWAY') {
+                typeBadgeHtml = `
+                    <span class="badge-type takeaway">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">takeout_dining</span>
+                        <span>Mang về</span>
+                    </span>`;
+            } else {
+                typeBadgeHtml = `
+                    <span class="badge-type dine-in">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">storefront</span>
+                        <span>Tại quán${o.tableNumber ? ' (Bàn ' + escapeHtml(o.tableNumber) + ')' : ''}</span>
+                    </span>`;
+            }
+
+            let custHtml = `
+                <div class="fw-semibold text-slate-800 d-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined text-slate-400" style="font-size: 16px;">person</span>
+                    <span class="text-truncate" style="max-width: 130px;" title="${escapeHtml(o.recipientName)}">
+                        ${escapeHtml(o.recipientName)}
+                    </span>
+                </div>`;
+            if (o.recipientPhone) {
+                custHtml += `<div style="font-size: 11px; color: var(--slate-500); padding-left: 20px;">${escapeHtml(o.recipientPhone)}</div>`;
+            }
+            if (o.deliveryAddress) {
+                custHtml += `<div style="font-size: 11px; color: var(--slate-400); padding-left: 20px;" class="text-truncate" style="max-width: 130px;" title="${escapeHtml(o.deliveryAddress)}">${escapeHtml(o.deliveryAddress)}</div>`;
+            }
+
+            let paymentBadgeHtml = '';
+            if (o.paymentMethodLabel && o.paymentMethodLabel.includes('VietQR')) {
+                paymentBadgeHtml = `
+                    <span class="badge-payment qr">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">qr_code_2</span>
+                        <span>VietQR</span>
+                    </span>`;
+            } else {
+                paymentBadgeHtml = `
+                    <span class="badge-payment cash">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">payments</span>
+                        <span>Tiền mặt</span>
+                    </span>`;
+            }
+
+            let statusBadgeHtml = '';
+            if (o.status === 'CONFIRMED') {
+                statusBadgeHtml = `<span class="badge-status confirmed"><span class="status-dot"></span><span>Đã thanh toán</span></span>`;
+            } else if (o.status === 'PREPARING') {
+                statusBadgeHtml = `<span class="badge-status preparing"><span class="status-dot"></span><span>Đang pha chế</span></span>`;
+            } else if (o.status === 'READY') {
+                statusBadgeHtml = `<span class="badge-status ready"><span class="status-dot"></span><span>Sẵn sàng</span></span>`;
+            } else if (o.status === 'DELIVERING') {
+                statusBadgeHtml = `<span class="badge-status delivering"><span class="status-dot"></span><span>Đang giao</span></span>`;
+            } else if (o.status === 'COMPLETED') {
+                statusBadgeHtml = `<span class="badge-status completed"><span class="status-dot"></span><span>Hoàn thành</span></span>`;
+            } else if (o.status === 'CANCELLED') {
+                statusBadgeHtml = `<span class="badge-status cancelled"><span class="status-dot"></span><span>Đã hủy</span></span>`;
+            } else if (o.status === 'PENDING') {
+                statusBadgeHtml = `<span class="badge-status" style="background:#fef9c3;color:#854d0e;border:1px solid #fef08a;"><span class="status-dot" style="background:#eab308;"></span><span>Chờ thanh toán</span></span>`;
+            } else {
+                statusBadgeHtml = `<span class="badge bg-secondary">${escapeHtml(o.statusLabel || o.status)}</span>`;
+            }
+
+            let actionBtnsHtml = `
+                <a href="${CONTEXT_PATH}/bill?orderId=${o.id}" target="_blank" class="btn-action-bill" title="Mở xem và in hóa đơn">
+                    <span class="material-symbols-outlined" style="font-size: 15px;">receipt_long</span>
+                    <span>Hóa đơn</span>
+                </a>`;
+
+            if (o.orderType === 'ONLINE' && o.status === 'READY') {
+                actionBtnsHtml += `
+                    <button type="button" class="btn-action-deliver-order" onclick="deliverOrder(${o.id})" title="Chuyển sang Đang giao hàng">
+                        <span class="material-symbols-outlined" style="font-size: 15px;">delivery_dining</span>
+                        <span>Giao</span>
+                    </button>`;
+            }
+
+            if (o.status === 'READY' || o.status === 'DELIVERING' || (o.status === 'CONFIRMED' && o.orderType !== 'ONLINE')) {
+                actionBtnsHtml += `
+                    <button type="button" class="btn-action-complete-order" onclick="completeOrder(${o.id})" title="Đánh dấu hoàn tất">
+                        <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
+                        <span>Hoàn tất</span>
+                    </button>`;
+            }
+
+            if (o.status === 'PENDING' || o.status === 'CONFIRMED') {
+                actionBtnsHtml += `
+                    <button type="button" class="btn-action-cancel-order" onclick="cancelOrder(${o.id})" title="Hủy đơn hàng này">
+                        <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
+                        <span>Hủy</span>
+                    </button>`;
+            }
+
+            const searchStr = `${escapeHtml(o.orderCode)} ${escapeHtml(o.recipientName)} ${escapeHtml(o.recipientPhone)} ${escapeHtml(o.itemSummary)} ${escapeHtml(o.deliveryAddress)}`;
+
+            return `
+                <tr class="order-table-row" 
+                    data-type="${escapeHtml(o.orderType)}" 
+                    data-status="${escapeHtml(o.status)}" 
+                    data-search="${searchStr}">
+                    <td>
+                        <span class="order-code-badge" onclick="copyOrderCode('${escapeHtml(o.orderCode)}')" title="Bấm để sao chép mã" style="cursor: pointer;">
+                            <span class="material-symbols-outlined" style="font-size: 14px; color: var(--slate-500);">tag</span>
+                            <span>${escapeHtml(o.orderCode)}</span>
+                        </span>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-slate-800">${escapeHtml(o.createdTimeText)}</div>
+                        <div style="font-size: 11px; color: var(--slate-400);">Hôm nay</div>
+                    </td>
+                    <td>${typeBadgeHtml}</td>
+                    <td>${custHtml}</td>
+                    <td>
+                        <div class="order-items-snippet" title="${escapeHtml(o.itemSummary)}">
+                            <div class="order-items-text">${escapeHtml(o.itemSummary)}</div>
+                            <div class="order-items-qty">${o.itemCount} món</div>
+                        </div>
+                    </td>
+                    <td class="text-end">
+                        <div class="order-price-val">${escapeHtml(o.formattedFinalAmount)}</div>
+                    </td>
+                    <td>${paymentBadgeHtml}</td>
+                    <td>${statusBadgeHtml}</td>
+                    <td class="col-actions">
+                        <div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">
+                            ${actionBtnsHtml}
+                        </div>
+                    </td>
+                </tr>`;
+        }
+
+        // Start polling orders every 5 seconds
+        setInterval(refreshOrdersList, 5000);
 
         // 11. Instant Orders Filter
         let currentOrderTypeFilter = 'ALL';
@@ -3101,14 +3458,15 @@
 
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
         function showToast(msg) {
             const container = document.getElementById('toastContainer');
+            if (!container) return;
             const toast = document.createElement('div');
             toast.className = 'pos-toast';
-            toast.innerHTML = `<span class="material-symbols-outlined">check_circle</span><span>\${msg}</span>`;
+            toast.innerHTML = `<span class="material-symbols-outlined">check_circle</span><span>${msg}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';

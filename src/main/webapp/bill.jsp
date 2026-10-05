@@ -328,6 +328,13 @@
                 if (badge) badge.innerText = '0';
             } catch (e) {}
         });
+
+        <c:if test="${order.inProgress}">
+        // Tự động làm mới trang sau 8s để cập nhật tiến trình pha chế / giao hàng
+        setTimeout(function() {
+            window.location.reload();
+        }, 8000);
+        </c:if>
     </script>
 </body>
 </html>

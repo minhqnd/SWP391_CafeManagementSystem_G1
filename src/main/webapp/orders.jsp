@@ -379,5 +379,16 @@
 
     <!-- Bootstrap 5 JS Bundle (dropdown, menu mobile) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <c:if test="${not empty activeOrders}">
+    <script>
+        // Tự động làm mới trang sau 8s để cập nhật tiến trình đơn hàng (pha chế, giao hàng)
+        setTimeout(function() {
+            // Không tự reload nếu khách hàng đang tương tác với form hoặc nhập ô tìm kiếm
+            if (!document.querySelector('input:focus')) {
+                window.location.reload();
+            }
+        }, 8000);
+    </script>
+    </c:if>
 </body>
 </html>
