@@ -1,97 +1,163 @@
-# Café Management System (SWP391)
+# Cafe Management System (SWP391 - Group 1)
 
-Khung dự án Java Web chuẩn Maven dành cho môn học SWP391.
+He thong Quan ly Quan Ca phe Aura Cafe duoc xay dung tren nen tang Java Web Servlet/JSP theo mo hinh MVC, su dung co che quan ly thu vien bang Apache Maven.
 
-## 🛠 Yêu cầu môi trường
+---
+
+## 1. Yeu cau moi truong
+
 - **JDK**: Java Development Kit 17 (JDK 17)
-- **Web Server**: Apache Tomcat 10.1.x (Jakarta EE 10)
-- **IDE**: Apache NetBeans IDE 17
+- **Web Server**: Apache Tomcat 10.1.x (Jakarta EE 10 / Servlet 6.0)
 - **Database**: MySQL 8.x
+- **Build Tool**: Apache Maven 3.8+
+- **IDE khuyen dung**: Apache NetBeans IDE 17+, IntelliJ IDEA, hoac Eclipse
 
 ---
 
-## Danh sách tài khoản đăng nhập thử nghiệm (Demo Accounts)
+## 2. Huong dan thiet lap Co so du lieu (Database Setup)
 
-Mật khẩu mặc định cho tất cả tài khoản bên dưới: `123456` (hoặc `1234`).  
-Hệ thống cho phép đăng nhập bằng **Email**, **Số điện thoại**, hoặc **Tên đăng nhập** (tiền tố trước `@`).
+Toan bo cau truc co so du lieu gom 16 bang nghiep vu, rang buoc khoa ngoai, chi muc va toan bo du lieu mau (12 san pham dac san, 6 danh muc, cau hinh sizes & toppings JSON, voucher giam gia, kho qua doi diem thuong, tai khoan nhan su va khach hang) da duoc hop nhat vao **duy nhat mot file script**:
 
-| Vai trò (Role) | Vị trí (Position) | Họ và tên | Email đăng nhập | Số điện thoại | Đường dẫn truy cập chính |
+- File khoi tao: `database/aura_cafe.sql`
+- Ten database mac dinh: `aura_cafe_erp`
+
+Thanh vien moi hoac khi muon dat lai toan bo du lieu chi can thuc hien theo mot trong hai cach sau:
+
+### Cach 1: Chay truc tiep qua Terminal / Command Prompt (Nhanh nhat)
+
+```bash
+# Nhap mat khau root MySQL khi duoc hoi:
+mysql -u root -p < database/aura_cafe.sql
+```
+
+Neu su dung thiet lap mac dinh (user `root`, mat khau `1234`):
+```bash
+mysql -u root -p1234 < database/aura_cafe.sql
+```
+
+### Cach 2: Chay qua MySQL Workbench / DBeaver / Navicat
+
+1. Mo ung dung quan tri co so du lieu (MySQL Workbench, DBeaver, hoac DataGrip).
+2. Mo tep `database/aura_cafe.sql` (`File` -> `Open SQL Script...`).
+3. Bam **Execute** (hoac to hop phim `Ctrl + Shift + Enter` / `Cmd + Shift + Enter`) de thuc thi toan bo script. Script da tu dong chua cac lenh `CREATE DATABASE IF NOT EXISTS aura_cafe_erp;` va `USE aura_cafe_erp;`.
+
+### Luu y cau hinh ket noi Database trong du an
+
+Kiem tra va chinh sua thong tin ket noi tai file `src/main/java/context/DBContext.java` cho phu hop voi moi truong may ca nhan:
+
+```java
+private static final String HOST = "localhost";
+private static final String PORT = "3306";
+private static final String DB_NAME = "aura_cafe_erp";
+private static final String USER = "root";
+private static final String PASSWORD = "1234"; // Thay doi thanh mat khau MySQL tren may cua ban
+```
+
+---
+
+## 3. Danh sach tai khoan dang nhap thu nghiem (Demo Accounts)
+
+Mat khau mac dinh cho tat ca tai khoan: `123456` (hoac `1234`).  
+He thong ho tro dang nhap linh hoat bang **Email**, **So dien thoai**, hoac **Ten dang nhap** (phan tien to truoc `@`).
+
+| Vai tro (Role) | Vi tri (Position) | Ho va ten | Email dang nhap | So dien thoai | Muc dich su dung |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **ADMIN** | Quản lý (Manager) | Aura Admin | `admin@auracafe.vn` | `0900000001` | `/admin-dashboard.jsp` |
-| **STAFF** | Thu ngân (Cashier) | Tran Thi Binh | `binh@auracafe.vn` | `0900000003` | `/cashier` (POS bán hàng tại quầy) |
-| **STAFF** | Pha chế (Barista) | Nguyen Van An | `an@auracafe.vn` | `0900000002` | `/barista` (Màn hình KDS pha chế) |
-| **STAFF** | Giao hàng (Shipper) | Hoang Van Nam | `nam@auracafe.vn` | `0900000006` | `/delivery-dashboard.jsp` |
-| **CUSTOMER** | Hội viên Bạc (Silver) | Le Minh Anh | `anh@gmail.com` | `0900000004` | `/` (Trang chủ, 120 điểm tích lũy) |
-| **CUSTOMER** | Hội viên Đồng (Bronze) | Pham Quang Huy | `huy@gmail.com` | `0900000005` | `/` (Trang chủ, 50 điểm tích lũy) |
-
-### Đường dẫn truy cập nhanh (chạy qua ./run.sh):
-- Trang chủ: `http://localhost:8080/SWP391_CafeManagementSystem/`
-- Màn hình Thu ngân POS: `http://localhost:8080/SWP391_CafeManagementSystem/cashier`
-- Màn hình Barista KDS: `http://localhost:8080/SWP391_CafeManagementSystem/barista`
+| **ADMIN** | Quan ly (Manager) | Aura Admin | `admin@auracafe.vn` | `0900000001` | Bao cao doanh thu, quan ly thuc don, nhan su, kho |
+| **STAFF** | Thu ngan (Cashier) | Tran Thi Binh | `binh@auracafe.vn` | `0900000003` | POS ban hang tai quay, tao don, ap dung voucher, thu tien |
+| **STAFF** | Pha che (Barista) | Nguyen Van An | `an@auracafe.vn` | `0900000002` | Man hinh KDS pha che, tiep nhan mon, cap nhat trang thai READY |
+| **STAFF** | Giao hang (Shipper) | Hoang Van Nam | `nam@auracafe.vn` | `0900000006` | Man hinh giao hang, nhan don van chuyen, hoan tat giao hang |
+| **CUSTOMER** | Hoi vien Bac (Silver) | Le Minh Anh | `anh@gmail.com` | `0900000004` | Dat mon truc tuyen, tich diem (120 diem), doi qua tang voucher |
+| **CUSTOMER** | Hoi vien Dong (Bronze) | Pham Quang Huy | `huy@gmail.com` | `0900000005` | Dat mon truc tuyen, tich diem (50 diem) |
 
 ---
 
-## 🏛 Sơ đồ kiến trúc & Cấu trúc thư mục
+## 4. Danh sach cac duong dan truy cap chuc nang (URLs)
 
-Cấu trúc thư mục được khởi tạo đồng bộ 100% với sơ đồ kiến trúc:
+Sau khi chay ung dung tai `http://localhost:8080/SWP391_CafeManagementSystem/`:
+
+- **Khach hang (Customer)**:
+  - Trang chu & San pham ban chay: `/`
+  - Thuc don & Loc theo danh muc: `/menu`
+  - Gio hang & Chon topping/size: `/cart`
+  - Dat hang & Ap dung Voucher / Diem: `/checkout`
+  - Theo doi don hang: `/orders` (hoac `/orders?orderId={id}`)
+  - Cua hang doi thuong: `/rewards`
+  - Thong tin ca nhan & Doi mat khau: `/profile`
+
+- **Nhan vien & Quan ly (Internal Staff)**:
+  - Man hinh Thu ngan (POS): `/cashier`
+  - Man hinh Pha che (KDS): `/barista`
+  - Man hinh Giao hang: `/delivery-dashboard.jsp`
+  - Man hinh Quan tri tong quan: `/admin-dashboard.jsp`
+
+---
+
+## 5. Luong van hanh don hang (Order Processing Workflow)
+
+1. **Khoi tao don**:
+   - Khach hang dat tren web (`TAKE_AWAY` / `DELIVERY`) hoac Thu ngan tao tai quay (`DINE_IN`).
+   - Trang thai ban dau cua don hang: `PENDING` (Chua thanh toan) hoac `CONFIRMED` / `PREPARING` (Da thanh toan, chuyen sang bo phan pha che).
+2. **KDS Pha che**:
+   - Man hinh Barista hien thi danh sach cac don can pha che kem chi tiet size, topping va ghi chu.
+   - Barista co the bat dau pha che don bat ky (khong bat buoc theo thu tu FIFO cung nhac).
+   - Khi pha che xong, Barista an nut **San sang (READY)**. Don hang chuyen sang trang thai da san sang phuc vu.
+3. **Hoan tat don**:
+   - Voi don tai quan (`DINE_IN`) va mang ve (`TAKE_AWAY`): Thu ngan kiem tra don da `READY` va bam hoan tat de giao cho khach.
+   - Voi don giao hang (`DELIVERY`): Nhan vien giao hang tiep nhan va xac nhan khi giao thanh cong.
+
+---
+
+## 6. Cau truc ma nguon du an
 
 ```
 SWP391_CafeManagementSystem_G1/
-├── pom.xml                                   # Quản lý dependencies (Jakarta Servlet 6.0, JSP, JSTL, MySQL)
+├── pom.xml                                   # Quan ly thu vien Maven (Jakarta EE 10, MySQL Connector, Gson, JSTL)
+├── run.sh                                    # Script khoi chay tu dong (clean compile, package va deploy)
 ├── database/
-│   └── aura_cafe.sql                         # File SQL duy nhất: Tạo DB, bảng và nạp dữ liệu mẫu
+│   ├── aura_cafe.sql                         # File SQL duy nhat: Khoi tao Schema & Data toan dien
+│   ├── update_menu_data.sql                  # Script mau cap nhat thuc don
+│   └── update_rewards.sql                    # Script mau cap nhat he thong diem thuong
 └── src/
     └── main/
         ├── java/
-        │   ├── context/                      # Kết nối JDBC MySQL (DBContext.java)
-        │   ├── dao/                          # Các lớp DAO truy vấn cơ sở dữ liệu
-        │   ├── model/                        # Các lớp POJO Entity
-        │   ├── service/                      # Xử lý logic dịch vụ
-        │   └── controller/                   # Các Servlet điều hướng MVC
-        └── webapp/                           # Giao diện JSP, CSS, JS
+        │   ├── context/                      # Quan ly ket noi JDBC (DBContext.java)
+        │   ├── dao/                          # Data Access Objects (UserDAO, ProductDAO, OrderDAO, RewardDAO, v.v.)
+        │   ├── model/                        # Entity POJO (User, Product, Order, OrderDetail, Voucher, v.v.)
+        │   ├── service/                      # Logic nghiep vu & tich hop thanh toan
+        │   └── controller/                   # Servlet Controllers (Home, Menu, Cart, Cashier, Barista, v.v.)
+        └── webapp/
+            ├── index.jsp                     # Trang chu ung dung
+            ├── menu.jsp                      # Giao dien thuc don
+            ├── cart.jsp                      # Giao dien gio hang
+            ├── checkout.jsp                  # Giao dien thanh toan
+            ├── orders.jsp                    # Giao dien theo doi don hang
+            ├── rewards.jsp                   # Giao dien doi qua diem thuong
+            ├── cashier-dashboard.jsp         # Giao dien POS Thu ngan
+            ├── barista-dashboard.jsp         # Giao dien KDS Pha che
+            ├── components/                   # Cac thanh phan dung chung (header, footer, modal)
+            └── assets/                       # CSS, JS, hinh anh tinh
 ```
 
 ---
 
-## 💾 Hướng dẫn thiết lập Cơ sở dữ liệu (Database Setup)
+## 7. Huong dan khoi chay du an
 
-Toàn bộ cấu trúc bảng, khóa ngoại, ràng buộc và dữ liệu mẫu (12 món menu mới, 6 danh mục, topping/size variants JSON, voucher, quà tặng điểm thưởng, tài khoản phân quyền) đã được hợp nhất vào **duy nhất một file**:
-`database/aura_cafe.sql`
+### Cach 1: Su dung script tu dong (Khuyen dung cho macOS / Linux)
 
-Thành viên mới hoặc khi muốn reset lại toàn bộ DB chỉ cần làm theo 1 trong 2 cách sau:
-
-### Cách 1: Chạy lệnh trực tiếp qua Terminal (Khuyên dùng)
+Chay file script duoc chuan bi san tai thu muc goc cua du an:
 ```bash
-# Thay 'root' và nhập mật khẩu MySQL của bạn khi được nhắc:
-mysql -u root -p < database/aura_cafe.sql
+./run.sh
 ```
-*(Nếu dùng script run.sh mặc định với user root mật khẩu 1234: `mysql -u root -p1234 < database/aura_cafe.sql`)*
+Script se tu dong:
+- Kiem tra ket noi MySQL.
+- Goi Maven de build file WAR (`mvn clean package -DskipTests`).
+- Sao chep file WAR vao thu muc `webapps` cua Apache Tomcat 10.1.x va khoi dong may chu.
+- Mo trinh duyet den `http://localhost:8080/SWP391_CafeManagementSystem/`.
 
-### Cách 2: Chạy qua MySQL Workbench / DBeaver / Navicat / NetBeans
-1. Mở công cụ quản trị MySQL (ví dụ MySQL Workbench hoặc DBeaver).
-2. Mở file `database/aura_cafe.sql` (`File` -> `Open SQL Script...`).
-3. Bấm **Execute** (hình tia sét) để chạy toàn bộ file. Script đã tích hợp sẵn lệnh `CREATE DATABASE IF NOT EXISTS aura_cafe_erp;` và `USE aura_cafe_erp;`.
+### Cach 2: Chay tren Apache NetBeans 17
 
-### ⚠️ Lưu ý quan trọng về kết nối DB:
-Kiểm tra cấu hình trong file `src/main/java/context/DBContext.java`:
-- `PORT`: mặc định `3306`
-- `DB_NAME`: mặc định `aura_cafe_erp`
-- `USER`: tài khoản MySQL của bạn (mặc định `root`)
-- `PASSWORD`: mật khẩu MySQL trên máy của bạn (nếu máy bạn dùng mật khẩu khác `1234`, hãy đổi lại cho khớp).
-
----
-
-## 🚀 Hướng dẫn mở dự án trên Apache NetBeans 17
-
-1. **Mở NetBeans 17**: Chọn `File` -> `Open Project...`
-2. Trỏ đến thư mục `SWP391_CafeManagementSystem_G1`. NetBeans sẽ nhận diện biểu tượng dự án Maven tự động.
-3. **Cấu hình Server**:
-   - Chuột phải vào Project -> chọn **Properties**.
-   - Chọn mục **Run**.
-   - Tại mục **Server**, chọn **Apache Tomcat 10.1.x** (nếu chưa có, vào tab `Services` -> `Servers` -> `Add Server` -> chọn Tomcat 10.1.x).
-   - Kiểm tra **Java Platform**: chọn **JDK 17**.
-4. **Chạy ứng dụng**:
-   - Chuột phải vào Project -> **Run** (hoặc bấm phím `F6`).
-   - Hoặc chạy nhanh bằng script terminal: `./run.sh`
-   - Tomcat sẽ khởi động và mở ứng dụng tại: `http://localhost:8080/SWP391_CafeManagementSystem/`
-
+1. Mo NetBeans, chon `File` -> `Open Project...` va chon thu muc `SWP391_CafeManagementSystem_G1`.
+2. Chuot phai vao Project -> chon `Properties` -> muc `Run`.
+3. Chon Server: `Apache Tomcat 10.1.x` (neu chua co, them trong tab `Services` -> `Servers`).
+4. Kiem tra Java Platform la `JDK 17`.
+5. Bam chuot phai vao Project chon `Run` (hoac phim tat `F6`).
