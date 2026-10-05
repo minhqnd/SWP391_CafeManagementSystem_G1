@@ -76,7 +76,7 @@
 
 <!-- Selected Items Preview Modal (Món đang chọn - Hiện popup trước khi chuyển giỏ hàng) -->
 <div class="modal fade" id="selectedItemsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 490px;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 530px;">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
             <div class="modal-header border-0 pb-2 pt-4 px-4 d-flex align-items-center justify-content-between">
                 <div>
@@ -220,28 +220,26 @@
             var html = '';
             items.forEach(function(item) {
                 var toppingsText = (item.toppings && item.toppings.length > 0) ? item.toppings.join(', ') : '';
-                var itemPriceFormatted = (item.subtotal || 0).toLocaleString('vi-VN') + 'đ';
                 var imgUrl = item.imageUrl || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';
 
                 html += '<div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 bg-light border gap-3">'
-                    + '  <div class="d-flex align-items-center gap-2.5 overflow-hidden">'
-                    + '    <img src="' + imgUrl + '" class="rounded-3 object-fit-cover flex-shrink-0" style="width: 52px; height: 52px;" alt="' + item.name + '">'
-                    + '    <div class="overflow-hidden">'
-                    + '      <div class="fw-bold text-dark text-truncate small" style="max-width: 170px;">' + item.name + '</div>'
-                    + '      <div class="d-flex align-items-center gap-1.5 flex-wrap mt-0.5">'
-                    + (item.size ? '        <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.68rem; font-weight: 700; padding: 2px 7px;">' + (item.sizeLabel || ('Size ' + item.size)) + '</span>' : '')
-                    + (toppingsText ? '        <span class="text-muted small text-truncate" style="font-size: 0.72rem; max-width: 130px;">+ ' + toppingsText + '</span>' : '')
+                    + '  <div class="d-flex align-items-center gap-3 overflow-hidden flex-grow-1" style="min-width: 0;">'
+                    + '    <img src="' + imgUrl + '" class="rounded-3 object-fit-cover flex-shrink-0" style="width: 48px; height: 48px;" alt="' + item.name + '">'
+                    + '    <div class="overflow-hidden flex-grow-1" style="min-width: 0;">'
+                    + '      <div class="fw-bold text-dark text-truncate" style="font-size: 0.9rem;" title="' + item.name + '">' + item.name + '</div>'
+                    + '      <div class="d-flex align-items-center gap-1.5 flex-wrap mt-1">'
+                    + (item.size ? '        <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.7rem; font-weight: 600; padding: 2px 8px;">' + (item.sizeLabel || ('Size ' + item.size)) + '</span>' : '')
+                    + (toppingsText ? '        <span class="text-muted small text-truncate" style="font-size: 0.75rem; max-width: 170px;">+ ' + toppingsText + '</span>' : '')
                     + '      </div>'
-                    + '      <div class="text-danger fw-bold mt-1" style="font-size: 0.84rem;">' + itemPriceFormatted + '</div>'
                     + '    </div>'
                     + '  </div>'
                     + '  <div class="d-flex align-items-center gap-2 flex-shrink-0">'
-                    + '    <div class="d-flex align-items-center border rounded-pill bg-white px-1.5 py-0.5 shadow-2xs">'
-                    + '      <button type="button" class="btn btn-sm btn-link p-0 text-muted" style="width: 22px; height: 22px; text-decoration: none; font-weight: bold; line-height: 1;" onclick="changeCartItemQty(' + item.lineId + ', -1)">-</button>'
-                    + '      <span class="px-1.5 fw-bold text-dark small" style="min-width: 18px; text-align: center;">' + item.quantity + '</span>'
+                    + '    <div class="d-flex align-items-center border rounded-pill bg-white px-2 py-1 shadow-2xs">'
+                    + '      <button type="button" class="btn btn-sm btn-link p-0 text-muted" style="width: 22px; height: 22px; text-decoration: none; font-weight: bold; line-height: 1;" onclick="changeCartItemQty(' + item.lineId + ', -1)">−</button>'
+                    + '      <span class="px-2 fw-bold text-dark small" style="min-width: 18px; text-align: center;">' + item.quantity + '</span>'
                     + '      <button type="button" class="btn btn-sm btn-link p-0 text-muted" style="width: 22px; height: 22px; text-decoration: none; font-weight: bold; line-height: 1;" onclick="changeCartItemQty(' + item.lineId + ', 1)">+</button>'
                     + '    </div>'
-                    + '    <button class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0" style="width: 30px; height: 30px;" title="Xoá món" onclick="removeCartItem(' + item.lineId + ')">'
+                    + '    <button class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0" style="width: 32px; height: 32px;" title="Xoá món" onclick="removeCartItem(' + item.lineId + ')">'
                     + '      <span class="material-symbols-outlined" style="font-size: 18px;">delete_outline</span>'
                     + '    </button>'
                     + '  </div>'
