@@ -804,50 +804,46 @@
 
     <!-- Selected Items Preview Modal (Món đang chọn - Hiện popup trước khi chuyển giỏ hàng) -->
     <div class="modal fade" id="selectedItemsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 530px;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 550px;">
             <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
-                <div class="modal-header border-0 pb-2 pt-4 px-4 d-flex align-items-center justify-content-between">
+                <div class="modal-header border-0 pt-4 px-4 pb-2 d-flex align-items-center justify-content-between">
                     <div>
                         <div class="d-flex align-items-center gap-2">
-                            <h5 class="modal-title fw-bold text-dark mb-0" style="font-size: 1.15rem; letter-spacing: -0.01em;">Món đang chọn</h5>
-                            <span id="selectedModalBadge" class="badge rounded-pill bg-danger-subtle text-danger fw-bold" style="font-size: 0.75rem;">0 món</span>
+                            <h5 class="modal-title fw-bold text-dark mb-0" style="font-size: 1.25rem; letter-spacing: -0.01em;">Món đang chọn</h5>
+                            <span id="selectedModalBadge" class="badge rounded-pill bg-danger-subtle text-danger fw-bold" style="font-size: 0.8rem; padding: 4px 10px;">0 món</span>
                         </div>
-                        <p class="text-muted small mb-0 mt-1" style="font-size: 0.8rem;">Các món bạn vừa chọn tại Aura Café</p>
+                        <p class="text-muted small mb-0 mt-1" style="font-size: 0.85rem;">Các món bạn vừa chọn tại Aura Café</p>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0 small fw-semibold" style="font-size: 0.8rem;" onclick="clearAllCart()">
+                        <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-1 small fw-semibold" style="font-size: 0.85rem;" onclick="clearAllCart()">
                             Xoá tất cả
                         </button>
-                        <button type="button" class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none" 
-                                style="width: 34px; height: 34px; transition: background 0.2s;" data-bs-dismiss="modal" aria-label="Close">
+                        <button type="button" class="btn btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none" 
+                                style="width: 36px; height: 36px; transition: background 0.2s;" data-bs-dismiss="modal" aria-label="Close">
                             <span class="material-symbols-outlined fs-5">close</span>
                         </button>
                     </div>
                 </div>
-                <div class="modal-body px-4 py-3" style="overflow-x: hidden !important;">
+                <div class="modal-body px-4 pb-4 pt-2" style="overflow-x: hidden !important;">
                     <div id="cartEmptyState" class="text-center py-5 d-none">
                         <div class="bg-light rounded-circle p-3 d-inline-flex align-items-center justify-content-center text-muted mb-3" style="width: 60px; height: 60px;">
                             <span class="material-symbols-outlined fs-2">local_cafe</span>
                         </div>
                         <h6 class="fw-bold text-dark mb-1">Chưa có món nào được chọn</h6>
                         <p class="text-muted small mb-3">Hãy chọn các món yêu thích từ thực đơn nhé.</p>
-                        <a href="${pageContext.request.contextPath}/menu" class="btn btn-sm btn-outline-danger rounded-pill px-4 py-1.5 fw-semibold">
+                        <a href="${pageContext.request.contextPath}/menu" class="btn btn-sm btn-outline-danger rounded-pill px-4 py-2 fw-semibold">
                             Xem thực đơn
                         </a>
                     </div>
-                    <div id="cartItemList" class="d-flex flex-column gap-2 mb-3" style="max-height: 330px; overflow-y: auto; overflow-x: hidden !important; padding: 2px 2px 2px 0;"></div>
+                    <div id="cartItemList" class="d-flex flex-column gap-3 mb-4" style="max-height: 360px; overflow-y: auto; overflow-x: hidden !important; padding: 2px 2px 2px 0;"></div>
                     <div id="cartSummary" class="border-top pt-3 d-none">
-                        <div class="d-flex align-items-center justify-content-between mb-3 px-1">
-                            <span class="text-muted small fw-medium">Tổng tiền tạm tính:</span>
-                            <span id="selectedModalTotalPrice" class="fw-bold text-danger fs-5">0đ</span>
-                        </div>
                         <a href="${pageContext.request.contextPath}/cart"
-                            class="btn btn-danger w-100 py-2.5 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none"
-                            style="background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%); font-size: 0.95rem; box-shadow: 0 6px 20px rgba(139, 21, 40, 0.28) !important;">
+                            class="btn btn-danger w-100 py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none"
+                            style="background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%); font-size: 1rem; box-shadow: 0 6px 20px rgba(139, 21, 40, 0.28) !important;">
                             <span>Xem giỏ hàng</span>
                             <span class="material-symbols-outlined fs-5">arrow_forward</span>
                         </a>
-                        <button type="button" class="btn btn-link text-muted small text-decoration-none w-100 mt-2 py-0 d-block text-center fw-medium" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-link text-muted small text-decoration-none w-100 mt-2 py-2 d-block text-center fw-medium" data-bs-dismiss="modal" style="font-size: 0.9rem;">
                             + Chọn thêm món khác
                         </button>
                     </div>
@@ -1116,25 +1112,25 @@
                     var toppingsText = (item.toppings && item.toppings.length > 0) ? item.toppings.join(', ') : '';
                     var imgUrl = item.imageUrl || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';
 
-                    html += '<div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 bg-light border gap-3">'
+                    html += '<div class="d-flex align-items-center justify-content-between p-3 rounded-4 bg-light border gap-3" style="transition: all 0.2s;">'
                         + '  <div class="d-flex align-items-center gap-3 overflow-hidden flex-grow-1" style="min-width: 0;">'
-                        + '    <img src="' + imgUrl + '" class="rounded-3 object-fit-cover flex-shrink-0" style="width: 48px; height: 48px;" alt="' + item.name + '">'
+                        + '    <img src="' + imgUrl + '" class="rounded-3 object-fit-cover flex-shrink-0" style="width: 58px; height: 58px;" alt="' + item.name + '">'
                         + '    <div class="overflow-hidden flex-grow-1" style="min-width: 0;">'
-                        + '      <div class="fw-bold text-dark text-truncate" style="font-size: 0.9rem;" title="' + item.name + '">' + item.name + '</div>'
-                        + '      <div class="d-flex align-items-center gap-1.5 flex-wrap mt-1">'
-                        + (item.size ? '        <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.7rem; font-weight: 600; padding: 2px 8px;">' + (item.sizeLabel || ('Size ' + item.size)) + '</span>' : '')
-                        + (toppingsText ? '        <span class="text-muted small text-truncate" style="font-size: 0.75rem; max-width: 170px;">+ ' + toppingsText + '</span>' : '')
+                        + '      <div class="fw-bold text-dark text-truncate" style="font-size: 0.98rem; line-height: 1.3;" title="' + item.name + '">' + item.name + '</div>'
+                        + '      <div class="d-flex align-items-center gap-2 flex-wrap mt-1.5">'
+                        + (item.size ? '        <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.75rem; font-weight: 600; padding: 3px 10px;">' + (item.sizeLabel || ('Size ' + item.size)) + '</span>' : '')
+                        + (toppingsText ? '        <span class="text-muted small text-truncate" style="font-size: 0.8rem; max-width: 200px;">+ ' + toppingsText + '</span>' : '')
                         + '      </div>'
                         + '    </div>'
                         + '  </div>'
-                        + '  <div class="d-flex align-items-center gap-2 flex-shrink-0">'
+                        + '  <div class="d-flex align-items-center gap-2.5 flex-shrink-0">'
                         + '    <div class="d-flex align-items-center border rounded-pill bg-white px-2 py-1 shadow-2xs">'
-                        + '      <button type="button" class="btn btn-sm btn-link p-0 text-muted" style="width: 22px; height: 22px; text-decoration: none; font-weight: bold; line-height: 1;" onclick="changeCartItemQty(' + item.lineId + ', -1)">−</button>'
-                        + '      <span class="px-2 fw-bold text-dark small" style="min-width: 18px; text-align: center;">' + item.quantity + '</span>'
-                        + '      <button type="button" class="btn btn-sm btn-link p-0 text-muted" style="width: 22px; height: 22px; text-decoration: none; font-weight: bold; line-height: 1;" onclick="changeCartItemQty(' + item.lineId + ', 1)">+</button>'
+                        + '      <button type="button" class="btn btn-sm btn-link p-0 text-secondary d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; text-decoration: none; font-size: 1.25rem; font-weight: 700; line-height: 1;" onclick="changeCartItemQty(' + item.lineId + ', -1)">−</button>'
+                        + '      <span class="px-2 fw-bold text-dark" style="min-width: 22px; text-align: center; font-size: 0.95rem;">' + item.quantity + '</span>'
+                        + '      <button type="button" class="btn btn-sm btn-link p-0 text-secondary d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; text-decoration: none; font-size: 1.25rem; font-weight: 700; line-height: 1;" onclick="changeCartItemQty(' + item.lineId + ', 1)">+</button>'
                         + '    </div>'
-                        + '    <button class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0" style="width: 32px; height: 32px;" title="Xoá món" onclick="removeCartItem(' + item.lineId + ')">'
-                        + '      <span class="material-symbols-outlined" style="font-size: 18px;">delete_outline</span>'
+                        + '    <button class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center text-muted border-0" style="width: 36px; height: 36px;" title="Xoá món" onclick="removeCartItem(' + item.lineId + ')">'
+                        + '      <span class="material-symbols-outlined" style="font-size: 20px;">delete_outline</span>'
                         + '    </button>'
                         + '  </div>'
                         + '</div>';
