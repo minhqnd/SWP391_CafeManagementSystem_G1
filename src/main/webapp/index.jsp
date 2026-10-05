@@ -1,7 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ page import="dao.ProductDAO" %>
+<%@ page import="dao.CategoryDAO" %>
 <%@ page import="model.Product" %>
+<%@ page import="model.Category" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.text.DecimalFormat" %>
 <!DOCTYPE html>
@@ -64,11 +66,82 @@
         
         .voucher-floating { position: absolute; bottom: -1.5rem; left: -1.5rem; background: white; padding: 1rem; border-radius: 1rem; box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1); border: 1px solid var(--surface-container-high); display: flex; align-items: center; gap: 1rem; z-index: 2; max-width: 300px; }
         
-        /* Seasonal Section */
-        .seasonal-section { background-color: var(--surface-container-low); padding: 5rem 0; }
-        .seasonal-card { background: white; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; height: 100%; border: 1px solid var(--surface-container-high); }
-        .seasonal-img { height: 250px; background-size: cover; background-position: center; transition: transform 0.5s; }
-        .seasonal-card:hover .seasonal-img { transform: scale(1.05); }
+        /* Category Section */
+        .category-section { background-color: var(--surface-container-low); padding: 5rem 0; }
+        .cat-card {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            border: 1px solid var(--surface-container-high);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        .cat-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 32px rgba(144, 11, 26, 0.1);
+            border-color: rgba(144, 11, 26, 0.35);
+        }
+        .cat-img-box {
+            height: 170px;
+            position: relative;
+            overflow: hidden;
+            background-color: #f1f5f9;
+        }
+        .cat-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cat-card:hover .cat-img {
+            transform: scale(1.08);
+        }
+        .cat-icon-badge {
+            position: absolute;
+            bottom: 12px;
+            left: 14px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            color: var(--primary);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .cat-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+        .cat-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1a1c1e;
+            margin-bottom: 0.25rem;
+            transition: color 0.2s;
+        }
+        .cat-card:hover .cat-title {
+            color: var(--primary);
+        }
+        .cat-meta {
+            font-size: 0.85rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f1f5f9;
+        }
         
         /* Loyalty Section */
         .tier-card { border-radius: 1.5rem; padding: 2rem; display: flex; flex-direction: column; height: 100%; position: relative; overflow: hidden; }
@@ -205,75 +278,82 @@
         </div>
     </section>
 
-    <!-- Seasonal Releases Section -->
-    <section class="seasonal-section">
+    <!-- Menu Categories Section -->
+    <section class="category-section">
         <div class="container">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
                 <div>
-                    <span class="text-primary-custom fw-bold text-uppercase d-block mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">Aura Seasonal Releases</span>
-                    <h2 class="fw-bold text-dark fs-2 mb-2">Bộ sưu tập món mới - Mùa Thảo Mộc & Hạt</h2>
-                    <p class="text-secondary-custom mb-0">Sự thăng hoa của các loại hạt rang mộc và thảo dược tự nhiên được tuyển lựa đặc biệt cho mùa này.</p>
+                    <div class="d-flex align-items-center gap-1 text-primary-custom fw-bold mb-2">
+                        <span class="material-symbols-outlined fs-5">category</span>
+                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Khám phá thực đơn</span>
+                    </div>
+                    <h2 class="fw-bold text-dark fs-2 mb-2">Danh mục đồ uống & Món ngon</h2>
+                    <p class="text-secondary-custom mb-0">Lựa chọn hương vị tinh tế theo từng nhóm món yêu thích pha chế thủ công tại Aura Café.</p>
                 </div>
-                <div class="d-flex gap-2">
-                    <span class="badge bg-white text-secondary-custom border">Phiên bản giới hạn</span>
-                    <span class="badge bg-white text-secondary-custom border">Ra mắt tháng này</span>
-                </div>
+                <a href="${pageContext.request.contextPath}/menu" class="text-primary-custom fw-semibold text-decoration-none d-flex align-items-center gap-1">
+                    Xem tất cả menu <span class="material-symbols-outlined fs-5">chevron_right</span>
+                </a>
             </div>
             
-            <div class="row g-4">
-                <% 
-                    int maxSeasonal = 3;
-                    int countSeasonal = 0;
-                    for (int i = 3; i < productsList.size() && countSeasonal < maxSeasonal; i++) {
-                        Product p = productsList.get(i);
-                        String priceStr = formatter.format(p.getBasePrice()).replace(",", ".") + "đ";
-                        String desc = "Đồ uống đặc biệt theo mùa.";
-                        String imgUrl = p.getImageUrl() != null && !p.getImageUrl().isEmpty() ? p.getImageUrl() : "https://lh3.googleusercontent.com/aida-public/AB6AXuAcgRPc8BItsw3RcB_6EvOwKbblAJajE3GUnNQJzOqbV8wu_PNvyvs1Om33aV8PewUezJRcqBzMb-2WdFoD0_VkUZgNj07Jme5IP6Mc31_Si0ZlI7cwIlZLx17Gp2rVR49Rd9YwRNSQgPewzdmOqd1F4dkobPBHSXXpRULTAM8u0cxM1waClivynY60mAjv0ni79mgw7xTpUaF8stgm0Rrp4aQ_ClW65FsN3fI0pBTWd3KfpF-XMGQR";
-                        String badge = "New Arrival";
-                        
-                        switch(p.getId()) {
-                            case 4: 
-                                desc = "Trà đào mát lạnh cùng những miếng đào tươi giòn sần sật xua tan oi bức."; 
-                                imgUrl = "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=800";
-                                badge = "Signature Craft";
-                                break;
-                            case 5: 
-                                desc = "Trà chanh truyền thống với hương chanh tươi mát, chua ngọt thanh dịu."; 
-                                imgUrl = "https://images.unsplash.com/photo-1596704017254-9eb10a3e8ff6?auto=format&fit=crop&q=80&w=800";
-                                badge = "Summer Vibes";
-                                break;
-                            case 6: 
-                                desc = "Trà sữa vị lá trà đen tự nhiên, ngọt ngào quyện cùng trân châu dai giòn."; 
-                                imgUrl = "https://images.unsplash.com/photo-1558857563-b371032bda98?auto=format&fit=crop&q=80&w=800";
-                                badge = "Best Choice";
-                                break;
-                        }
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+                <%
+                    CategoryDAO categoryDAO = new CategoryDAO();
+                    List<Category> landingCategories = categoryDAO.getAllActiveCategoriesWithCount();
+                    request.setAttribute("landingCategories", landingCategories);
                 %>
-                <div class="col-md-4">
-                    <div class="seasonal-card">
-                        <div class="position-relative overflow-hidden">
-                            <div class="seasonal-img" style="background-image: url('<%= imgUrl %>');"></div>
-                            <div class="position-absolute top-0 start-0 m-3 bg-white px-2 py-1 rounded text-primary-custom fw-bold shadow-sm" style="font-size: 0.75rem;"><%= badge %></div>
-                        </div>
-                        <div class="p-4 d-flex flex-column flex-1 justify-content-between">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-baseline mb-2">
-                                    <h3 class="fs-5 fw-bold mb-0"><%= p.getName() %></h3>
-                                    <span class="text-primary-custom fw-bold"><%= priceStr %></span>
+                <c:forEach var="cat" items="${landingCategories}">
+                    <c:set var="catImg" value="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80" />
+                    <c:set var="catDesc" value="Hương vị trọn vẹn được tuyển chọn kỹ lưỡng." />
+                    <c:choose>
+                        <c:when test="${cat.id == 1}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Espresso, Caramel Macchiato đậm đà chuẩn gu hiện đại." />
+                        </c:when>
+                        <c:when test="${cat.id == 2}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Cà phê muối, sữa đá Sài Gòn ủ phin nguyên bản ngọt êm." />
+                        </c:when>
+                        <c:when test="${cat.id == 3}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Trà đào cam sả, hoa quả nhiệt đới tươi mát thanh nhiệt." />
+                        </c:when>
+                        <c:when test="${cat.id == 4}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Matcha Uji thơm bùi, đá xay mát lạnh đánh tan ngày hè." />
+                        </c:when>
+                        <c:when test="${cat.id == 5}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Bánh Croissant nướng bơ Pháp, cheesecake mềm béo hấp dẫn." />
+                        </c:when>
+                        <c:when test="${cat.id == 6}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Cold brew ủ lạnh 16h đóng chai tiện lợi mang đi bất cứ đâu." />
+                        </c:when>
+                    </c:choose>
+
+                    <div class="col">
+                        <a href="${pageContext.request.contextPath}/menu?category=${cat.id}" class="cat-card">
+                            <div class="cat-img-box">
+                                <img src="${catImg}" alt="${cat.name}" class="cat-img" loading="lazy" />
+                                <div class="cat-icon-badge">
+                                    <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon : 'local_cafe'}</span>
                                 </div>
-                                <p class="text-secondary-custom" style="font-size: 0.875rem;"><%= desc %></p>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-secondary-custom" style="font-size: 0.75rem;">Phục vụ: Nóng / Lạnh</span>
-                                <a href="${pageContext.request.contextPath}/menu" class="text-primary-custom fw-semibold text-decoration-none" style="font-size: 0.875rem;">Chi tiết</a>
+                            <div class="cat-body">
+                                <div>
+                                    <h3 class="cat-title">${cat.name}</h3>
+                                    <p class="text-secondary-custom mb-0 small" style="line-height: 1.5;">${catDesc}</p>
+                                </div>
+                                <div class="cat-meta">
+                                    <span class="fw-semibold text-primary-custom">${cat.productCount} món có sẵn</span>
+                                    <span class="d-inline-flex align-items-center text-primary-custom fw-semibold small">
+                                        Xem ngay <span class="material-symbols-outlined fs-6 ms-1">arrow_forward</span>
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
-                </div>
-                <% 
-                        countSeasonal++;
-                    } 
-                %>
+                </c:forEach>
             </div>
         </div>
     </section>
