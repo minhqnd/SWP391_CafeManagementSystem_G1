@@ -22,7 +22,7 @@ public class DBContext {
     private static final String PASSWORD = getEnv("DB_PASSWORD", "1234");
 
     private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DB_NAME
-            + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
+            + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8";
 
     public static Connection getConnection() throws SQLException, ClassNotFoundException {
         Class.forName("com.mysql.cj.jdbc.Driver");
