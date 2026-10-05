@@ -785,7 +785,7 @@
                                 <div class="pt-3 border-top mt-2">
                                     <a href="${ctx}/bill?orderId=${o.id}" class="btn btn-outline-secondary btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1" target="_blank" style="height: 38px; border-radius: 8px; font-weight: 600;">
                                         <span class="material-symbols-outlined" style="font-size: 17px;">receipt_long</span>
-                                        <span>Xem hóa đơn điện tử e-Bill</span>
+                                        <span>Xem hóa đơn</span>
                                     </a>
                                 </div>
                             </div>

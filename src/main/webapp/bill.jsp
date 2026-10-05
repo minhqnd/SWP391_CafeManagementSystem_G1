@@ -15,10 +15,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
-    <!-- Tailwind CSS (Play CDN với cấu hình theme chuẩn) -->
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Tailwind CSS (Play CDN với cấu hình theme chuẩn, tắt preflight để không đè vỡ header Bootstrap) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            },
             theme: {
                 extend: {
                     colors: {
@@ -289,35 +295,24 @@
                 </div>
             </div>
 
-            <!-- In / Tải Hóa đơn Buttons (ẩn khi in) -->
-            <div class="no-print flex flex-col sm:flex-row gap-space-sm pt-space-md border-t border-surface-container">
-                <button type="button" onclick="window.print()" class="flex-1 h-12 bg-primary hover:bg-[#780815] text-white rounded-xl font-label-lg flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer font-semibold">
+            <!-- In / Theo dõi tiến trình Buttons (ẩn khi in) -->
+            <div class="no-print flex flex-col sm:flex-row gap-3 pt-4 border-t border-surface-container">
+                <button type="button" onclick="window.print()" class="flex-1 h-12 bg-primary hover:bg-[#780815] text-white rounded-xl font-label-lg flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer font-semibold border-0">
                     <span class="material-symbols-outlined text-[20px]">print</span>
-                    <span>In hóa đơn PDF</span>
-                </button>
-                <button type="button" onclick="alert('Đã tải hóa đơn điện tử e-Bill #${order.orderCode}!')" class="flex-1 h-12 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-xl font-label-lg flex items-center justify-center gap-2 border border-surface-container-highest transition-colors cursor-pointer font-semibold">
-                    <span class="material-symbols-outlined text-[20px]">download</span>
-                    <span>Tải e-Bill PDF</span>
+                    <span>In hóa đơn</span>
                 </button>
                 <a href="${pageContext.request.contextPath}/orders?orderId=${order.id}" class="flex-1 h-12 bg-[#eff4ff] hover:bg-[#dee9fc] text-[#900b1a] rounded-xl font-label-lg flex items-center justify-center gap-2 border border-[#dee9fc] transition-colors font-semibold text-decoration-none">
                     <span class="material-symbols-outlined text-[20px]">moped</span>
                     <span>Theo dõi tiến trình</span>
                 </a>
-                <a href="${pageContext.request.contextPath}/menu" class="flex-1 h-12 bg-white hover:bg-[#f8f9ff] text-on-surface rounded-xl font-label-lg flex items-center justify-center gap-2 border border-[#dee9fc] transition-colors font-semibold text-decoration-none">
-                    <span class="material-symbols-outlined text-[20px]">restaurant_menu</span>
-                    <span>Xem Menu</span>
-                </a>
-            </div>
-
-            <!-- Legal Footnote -->
-            <div class="mt-space-md pt-space-sm text-center border-t border-surface-container text-xs text-secondary">
-                <span>CÔNG TY CỔ PHẦN CÀ PHÊ ĐẶC SẢN AURA • MST: 0109888888</span><br />
-                <span class="tracking-widest uppercase">Hóa đơn điện tử khởi tạo từ máy tính tiền theo Nghị định 123/2020/NĐ-CP</span>
             </div>
 
         </div>
 
     </main>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // Khi thanh toán thành công và mở trang Hóa đơn điện tử, tự động xóa giỏ hàng
