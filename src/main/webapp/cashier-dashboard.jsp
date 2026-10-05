@@ -3113,18 +3113,18 @@
 
         // 10. Order Actions & Realtime Sync
         async function deliverOrder(orderId) {
-            if (!confirm(`Xác nhận bắt đầu giao đơn hàng #${orderId}?`)) {
+            if (!confirm(`Xác nhận bắt đầu giao đơn hàng #\${orderId}?`)) {
                 return;
             }
 
             try {
-                const resp = await fetch(`${CONTEXT_PATH}/cashier?action=deliver-order&orderId=${orderId}`, {
+                const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=deliver-order&orderId=\${orderId}`, {
                     method: 'POST',
                     headers: { 'Accept': 'application/json' }
                 });
                 if (resp.status === 401) {
                     alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
-                    window.location.href = `${CONTEXT_PATH}/login`;
+                    window.location.href = `\${CONTEXT_PATH}/login`;
                     return;
                 }
                 const res = await resp.json();
@@ -3141,18 +3141,18 @@
         }
 
         async function completeOrder(orderId) {
-            if (!confirm(`Xác nhận hoàn tất đơn hàng #${orderId}?`)) {
+            if (!confirm(`Xác nhận hoàn tất đơn hàng #\${orderId}?`)) {
                 return;
             }
 
             try {
-                const resp = await fetch(`${CONTEXT_PATH}/cashier?action=complete-order&orderId=${orderId}`, {
+                const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=complete-order&orderId=\${orderId}`, {
                     method: 'POST',
                     headers: { 'Accept': 'application/json' }
                 });
                 if (resp.status === 401) {
                     alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
-                    window.location.href = `${CONTEXT_PATH}/login`;
+                    window.location.href = `\${CONTEXT_PATH}/login`;
                     return;
                 }
                 const res = await resp.json();
@@ -3169,18 +3169,18 @@
         }
 
         async function cancelOrder(orderId) {
-            if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${orderId}?`)) {
+            if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng #\${orderId}?`)) {
                 return;
             }
 
             try {
-                const resp = await fetch(`${CONTEXT_PATH}/cashier?action=cancel-order&orderId=${orderId}`, {
+                const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=cancel-order&orderId=\${orderId}`, {
                     method: 'POST',
                     headers: { 'Accept': 'application/json' }
                 });
                 if (resp.status === 401) {
                     alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
-                    window.location.href = `${CONTEXT_PATH}/login`;
+                    window.location.href = `\${CONTEXT_PATH}/login`;
                     return;
                 }
                 const res = await resp.json();
@@ -3203,7 +3203,7 @@
             isRefreshingOrders = true;
 
             try {
-                const resp = await fetch(`${CONTEXT_PATH}/cashier?action=orders`, {
+                const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=orders`, {
                     headers: { 'Accept': 'application/json' }
                 });
                 if (!resp.ok) return;
@@ -3270,22 +3270,22 @@
                 typeBadgeHtml = `
                     <span class="badge-type dine-in">
                         <span class="material-symbols-outlined" style="font-size: 14px;">storefront</span>
-                        <span>Tại quán${o.tableNumber ? ' (Bàn ' + escapeHtml(o.tableNumber) + ')' : ''}</span>
+                        <span>Tại quán\${o.tableNumber ? ' (Bàn ' + escapeHtml(o.tableNumber) + ')' : ''}</span>
                     </span>`;
             }
 
             let custHtml = `
                 <div class="fw-semibold text-slate-800 d-flex align-items-center gap-1">
                     <span class="material-symbols-outlined text-slate-400" style="font-size: 16px;">person</span>
-                    <span class="text-truncate" style="max-width: 130px;" title="${escapeHtml(o.recipientName)}">
-                        ${escapeHtml(o.recipientName)}
+                    <span class="text-truncate" style="max-width: 130px;" title="\${escapeHtml(o.recipientName)}">
+                        \${escapeHtml(o.recipientName)}
                     </span>
                 </div>`;
             if (o.recipientPhone) {
-                custHtml += `<div style="font-size: 11px; color: var(--slate-500); padding-left: 20px;">${escapeHtml(o.recipientPhone)}</div>`;
+                custHtml += `<div style="font-size: 11px; color: var(--slate-500); padding-left: 20px;">\${escapeHtml(o.recipientPhone)}</div>`;
             }
             if (o.deliveryAddress) {
-                custHtml += `<div style="font-size: 11px; color: var(--slate-400); padding-left: 20px;" class="text-truncate" style="max-width: 130px;" title="${escapeHtml(o.deliveryAddress)}">${escapeHtml(o.deliveryAddress)}</div>`;
+                custHtml += `<div style="font-size: 11px; color: var(--slate-400); padding-left: 20px;" class="text-truncate" style="max-width: 130px;" title="\${escapeHtml(o.deliveryAddress)}">\${escapeHtml(o.deliveryAddress)}</div>`;
             }
 
             let paymentBadgeHtml = '';
@@ -3319,18 +3319,18 @@
             } else if (o.status === 'PENDING') {
                 statusBadgeHtml = `<span class="badge-status" style="background:#fef9c3;color:#854d0e;border:1px solid #fef08a;"><span class="status-dot" style="background:#eab308;"></span><span>Chờ thanh toán</span></span>`;
             } else {
-                statusBadgeHtml = `<span class="badge bg-secondary">${escapeHtml(o.statusLabel || o.status)}</span>`;
+                statusBadgeHtml = `<span class="badge bg-secondary">\${escapeHtml(o.statusLabel || o.status)}</span>`;
             }
 
             let actionBtnsHtml = `
-                <a href="${CONTEXT_PATH}/bill?orderId=${o.id}" target="_blank" class="btn-action-bill" title="Mở xem và in hóa đơn">
+                <a href="\${CONTEXT_PATH}/bill?orderId=\${o.id}" target="_blank" class="btn-action-bill" title="Mở xem và in hóa đơn">
                     <span class="material-symbols-outlined" style="font-size: 15px;">receipt_long</span>
                     <span>Hóa đơn</span>
                 </a>`;
 
             if (o.orderType === 'ONLINE' && o.status === 'READY') {
                 actionBtnsHtml += `
-                    <button type="button" class="btn-action-deliver-order" onclick="deliverOrder(${o.id})" title="Chuyển sang Đang giao hàng">
+                    <button type="button" class="btn-action-deliver-order" onclick="deliverOrder(\${o.id})" title="Chuyển sang Đang giao hàng">
                         <span class="material-symbols-outlined" style="font-size: 15px;">delivery_dining</span>
                         <span>Giao</span>
                     </button>`;
@@ -3338,7 +3338,7 @@
 
             if (o.status === 'READY' || o.status === 'DELIVERING' || (o.status === 'CONFIRMED' && o.orderType !== 'ONLINE')) {
                 actionBtnsHtml += `
-                    <button type="button" class="btn-action-complete-order" onclick="completeOrder(${o.id})" title="Đánh dấu hoàn tất">
+                    <button type="button" class="btn-action-complete-order" onclick="completeOrder(\${o.id})" title="Đánh dấu hoàn tất">
                         <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
                         <span>Hoàn tất</span>
                     </button>`;
@@ -3346,45 +3346,45 @@
 
             if (o.status === 'PENDING' || o.status === 'CONFIRMED') {
                 actionBtnsHtml += `
-                    <button type="button" class="btn-action-cancel-order" onclick="cancelOrder(${o.id})" title="Hủy đơn hàng này">
+                    <button type="button" class="btn-action-cancel-order" onclick="cancelOrder(\${o.id})" title="Hủy đơn hàng này">
                         <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
                         <span>Hủy</span>
                     </button>`;
             }
 
-            const searchStr = `${escapeHtml(o.orderCode)} ${escapeHtml(o.recipientName)} ${escapeHtml(o.recipientPhone)} ${escapeHtml(o.itemSummary)} ${escapeHtml(o.deliveryAddress)}`;
+            const searchStr = `\${escapeHtml(o.orderCode)} \${escapeHtml(o.recipientName)} \${escapeHtml(o.recipientPhone)} \${escapeHtml(o.itemSummary)} \${escapeHtml(o.deliveryAddress)}`;
 
             return `
                 <tr class="order-table-row" 
-                    data-type="${escapeHtml(o.orderType)}" 
-                    data-status="${escapeHtml(o.status)}" 
-                    data-search="${searchStr}">
+                    data-type="\${escapeHtml(o.orderType)}" 
+                    data-status="\${escapeHtml(o.status)}" 
+                    data-search="\${searchStr}">
                     <td>
-                        <span class="order-code-badge" onclick="copyOrderCode('${escapeHtml(o.orderCode)}')" title="Bấm để sao chép mã" style="cursor: pointer;">
+                        <span class="order-code-badge" onclick="copyOrderCode('\${escapeHtml(o.orderCode)}')" title="Bấm để sao chép mã" style="cursor: pointer;">
                             <span class="material-symbols-outlined" style="font-size: 14px; color: var(--slate-500);">tag</span>
-                            <span>${escapeHtml(o.orderCode)}</span>
+                            <span>\${escapeHtml(o.orderCode)}</span>
                         </span>
                     </td>
                     <td>
-                        <div class="fw-semibold text-slate-800">${escapeHtml(o.createdTimeText)}</div>
+                        <div class="fw-semibold text-slate-800">\${escapeHtml(o.createdTimeText)}</div>
                         <div style="font-size: 11px; color: var(--slate-400);">Hôm nay</div>
                     </td>
-                    <td>${typeBadgeHtml}</td>
-                    <td>${custHtml}</td>
+                    <td>\${typeBadgeHtml}</td>
+                    <td>\${custHtml}</td>
                     <td>
-                        <div class="order-items-snippet" title="${escapeHtml(o.itemSummary)}">
-                            <div class="order-items-text">${escapeHtml(o.itemSummary)}</div>
-                            <div class="order-items-qty">${o.itemCount} món</div>
+                        <div class="order-items-snippet" title="\${escapeHtml(o.itemSummary)}">
+                            <div class="order-items-text">\${escapeHtml(o.itemSummary)}</div>
+                            <div class="order-items-qty">\${o.itemCount} món</div>
                         </div>
                     </td>
                     <td class="text-end">
-                        <div class="order-price-val">${escapeHtml(o.formattedFinalAmount)}</div>
+                        <div class="order-price-val">\${escapeHtml(o.formattedFinalAmount)}</div>
                     </td>
-                    <td>${paymentBadgeHtml}</td>
-                    <td>${statusBadgeHtml}</td>
+                    <td>\${paymentBadgeHtml}</td>
+                    <td>\${statusBadgeHtml}</td>
                     <td class="col-actions">
                         <div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">
-                            ${actionBtnsHtml}
+                            \${actionBtnsHtml}
                         </div>
                     </td>
                 </tr>`;
@@ -3466,7 +3466,7 @@
             if (!container) return;
             const toast = document.createElement('div');
             toast.className = 'pos-toast';
-            toast.innerHTML = `<span class="material-symbols-outlined">check_circle</span><span>${msg}</span>`;
+            toast.innerHTML = `<span class="material-symbols-outlined">check_circle</span><span>\${msg}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
