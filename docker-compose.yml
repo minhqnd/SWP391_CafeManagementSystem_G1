@@ -16,6 +16,7 @@ services:
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
+      --skip-name-resolve
       --innodb-buffer-pool-size=64M
       --max-connections=30
       --performance-schema=OFF
@@ -44,6 +45,7 @@ services:
       DB_PASSWORD: 1234
       JAVA_OPTS: "-Xms128m -Xmx256m"
     ports:
+      - "80:8080"
       - "8080:8080"
 
 volumes:
