@@ -62,7 +62,6 @@
         .hero-img-container:hover .hero-img-bg { transform: scale(1.05); }
         .hero-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 65%); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; color: white; }
         
-        .voucher-floating { position: absolute; bottom: -1.25rem; left: -1.25rem; background: #ffffff; padding: 0.85rem 1.25rem; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; gap: 0.85rem; z-index: 2; }
         
         /* Category Section */
         .category-section { background-color: var(--surface-container-low); padding: 5rem 0; }
@@ -287,13 +286,6 @@
                         </div>
                     </div>
                     
-                    <div class="voucher-floating d-none d-sm-flex">
-                        <div class="badge rounded-pill bg-primary-custom px-2.5 py-1 text-white fw-bold" style="font-size: 0.725rem;">50K</div>
-                        <div>
-                            <div class="text-dark fw-bold" style="font-size: 0.825rem;">Voucher chào mừng</div>
-                            <div class="text-muted" style="font-size: 0.75rem;">Áp dụng cho đơn hàng đầu tiên</div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
