@@ -2311,7 +2311,7 @@
                                                         <span>Giao</span>
                                                     </button>
                                                 </c:if>
-                                                <c:if test="${o.status eq 'READY' || o.status eq 'DELIVERING' || (o.status eq 'CONFIRMED' && o.orderType ne 'ONLINE')}">
+                                                <c:if test="${o.status eq 'READY' || o.status eq 'DELIVERING'}">
                                                     <button type="button" class="btn-action-complete-order" onclick="completeOrder(${o.id})" title="Đánh dấu hoàn tất">
                                                         <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
                                                         <span>Hoàn tất</span>
@@ -3336,7 +3336,7 @@
                     </button>`;
             }
 
-            if (o.status === 'READY' || o.status === 'DELIVERING' || (o.status === 'CONFIRMED' && o.orderType !== 'ONLINE')) {
+            if (o.status === 'READY' || o.status === 'DELIVERING') {
                 actionBtnsHtml += `
                     <button type="button" class="btn-action-complete-order" onclick="completeOrder(\${o.id})" title="Đánh dấu hoàn tất">
                         <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>

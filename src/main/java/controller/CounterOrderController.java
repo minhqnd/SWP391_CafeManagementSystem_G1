@@ -371,7 +371,7 @@ public class CounterOrderController extends HttpServlet {
         if (success) {
             sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã đánh dấu hoàn tất đơn hàng và giao khách thành công.\"}");
         } else {
-            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Không thể hoàn tất đơn hàng này.\"}");
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Không thể hoàn tất đơn hàng này (đơn phải được Barista pha chế xong hoặc đang giao).\"}");
         }
     }
 

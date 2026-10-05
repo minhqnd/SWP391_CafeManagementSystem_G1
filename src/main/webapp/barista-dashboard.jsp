@@ -665,12 +665,10 @@
                         board.appendChild(empty);
                         return;
                     }
-                    const firstActionable = currentOrders.find(order => order.status === "PREPARING")
-                        || currentOrders.find(order => order.status === "CONFIRMED");
-                    orders.forEach(order => board.appendChild(createTicket(order, firstActionable && order.id === firstActionable.id)));
+                    orders.forEach(order => board.appendChild(createTicket(order)));
                 }
 
-                function createTicket(order, canAct) {
+                function createTicket(order) {
                     const ageMinutes = getAgeMinutes(order.createdAt);
                     const overdue = order.status !== "READY" && ageMinutes >= 5;
                     const tone = order.status === "CONFIRMED" ? "waiting" : order.status === "PREPARING" ? "preparing" : "ready";
@@ -705,12 +703,11 @@
                     } else {
                         const action = node("button", "btn btn-aura ticket-action w-100 d-flex align-items-center justify-content-center gap-2");
                         action.type = "button";
-                        action.disabled = !canAct || isUpdating;
-                        action.title = canAct ? "Cập nhật trạng thái đơn" : "Cần xử lý đơn đến trước theo thứ tự";
+                        action.disabled = isUpdating;
+                        action.title = "Cập nhật trạng thái đơn";
                         action.append(node("span", "material-symbols-outlined", order.status === "CONFIRMED" ? "local_cafe" : "check"), node("span", "", order.status === "CONFIRMED" ? "BẮT ĐẦU PHA" : "HOÀN TẤT ĐƠN"));
                         action.addEventListener("click", () => updateOrderStatus(order.id, order.status === "CONFIRMED" ? "PREPARING" : "READY"));
                         footer.appendChild(action);
-                        if (!canAct) footer.appendChild(node("div", "text-center text-secondary mt-2", "Đang chờ theo thứ tự FIFO"));
                     }
                     ticket.append(header, body, footer);
                     return ticket;

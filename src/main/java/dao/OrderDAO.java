@@ -95,55 +95,28 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Preserve the dashboard's global FIFO rule across all category filters.
-     * Lock the queue and compare status so concurrent clicks cannot skip a stage.
+     * Cập nhật trạng thái pha chế của Barista (CONFIRMED -> PREPARING -> READY).
+     * Cho phép Barista chủ động bắt đầu làm đơn bất kỳ mà không bị gò bó bởi thứ tự FIFO.
      */
     public boolean updateBaristaOrderStatus(int orderId, String targetStatus)
             throws SQLException, ClassNotFoundException {
-        String expectedStatus;
-        if ("PREPARING".equals(targetStatus)) {
-            expectedStatus = "CONFIRMED";
-        } else if ("READY".equals(targetStatus)) {
-            expectedStatus = "PREPARING";
-        } else {
-            throw new IllegalArgumentException("Unsupported barista status");
-        }
         if (orderId <= 0) {
             throw new IllegalArgumentException("Invalid order ID");
         }
-        String queueSql = "SELECT o.id, o.status FROM orders o WHERE " + BARISTA_TYPES
-                + " AND " + BARISTA_PAID
-                + " AND o.status IN ('CONFIRMED', 'PREPARING') "
-                + "AND EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id) "
-                + "ORDER BY o.created_at, o.id FOR UPDATE";
-        try (Connection conn = getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                try (PreparedStatement ps = conn.prepareStatement(queueSql);
-                     ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next() || rs.getInt("id") != orderId
-                            || !expectedStatus.equals(rs.getString("status"))) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                String updateSql = "UPDATE orders o SET status = ? WHERE o.id = ? AND o.status = ? "
-                        + "AND " + BARISTA_PAID;
-                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-                    ps.setString(1, targetStatus);
-                    ps.setInt(2, orderId);
-                    ps.setString(3, expectedStatus);
-                    if (ps.executeUpdate() != 1) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                conn.commit();
-                return true;
-            } catch (SQLException | RuntimeException e) {
-                conn.rollback();
-                throw e;
-            }
+        String sql;
+        if ("PREPARING".equals(targetStatus)) {
+            sql = "UPDATE orders o SET status = 'PREPARING' WHERE o.id = ? AND o.status = 'CONFIRMED' "
+                    + "AND " + BARISTA_TYPES + " AND " + BARISTA_PAID;
+        } else if ("READY".equals(targetStatus)) {
+            sql = "UPDATE orders o SET status = 'READY' WHERE o.id = ? AND o.status IN ('CONFIRMED', 'PREPARING') "
+                    + "AND " + BARISTA_TYPES + " AND " + BARISTA_PAID;
+        } else {
+            throw new IllegalArgumentException("Unsupported barista status");
+        }
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            return ps.executeUpdate() > 0;
         }
     }
 
@@ -1091,10 +1064,11 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Thu ngân đánh dấu đơn tại quầy / giao hàng đã hoàn tất (khách đã nhận món)
+     * Thu ngân đánh dấu đơn tại quầy / giao hàng đã hoàn tất (khách đã nhận món).
+     * Chỉ cho phép hoàn tất khi Barista đã làm xong (READY) hoặc đơn đang giao (DELIVERING).
      */
     public boolean completeCounterOrder(int orderId) {
-        String sql = "UPDATE orders SET status = 'COMPLETED' WHERE id = ? AND status IN ('CONFIRMED', 'PREPARING', 'READY', 'DELIVERING')";
+        String sql = "UPDATE orders SET status = 'COMPLETED' WHERE id = ? AND status IN ('READY', 'DELIVERING')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderId);
