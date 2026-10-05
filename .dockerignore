@@ -1,4 +1,5 @@
-target/
+target/*
+!target/SWP391_CafeManagementSystem.war
 .git/
 .gitignore
 .idea/
