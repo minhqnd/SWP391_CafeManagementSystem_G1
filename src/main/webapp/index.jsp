@@ -207,6 +207,67 @@
             overflow: hidden;
             box-shadow: 0 20px 40px rgba(144, 11, 26, 0.18);
         }
+
+        /* Sticky Bottom Mini Cart Bar */
+        .sticky-cart-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #ffffff;
+            padding: 0.65rem 1.35rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.75rem;
+            z-index: 1040;
+            min-width: 360px;
+            max-width: 90vw;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sticky-cart-bar:hover {
+            transform: translate(-50%, -2px);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+        }
+        @keyframes slideUp {
+            from {
+                transform: translate(-50%, 40px);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+        .cart-badge-icon {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+        }
+        .badge-count-pill {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background-color: #e11d48;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 999px;
+        }
     </style>
 </head>
 <body>
@@ -309,6 +370,16 @@
                         <jsp:include page="/components/product_card.jsp" />
                     </div>
                 </c:forEach>
+            </div>
+
+            <!-- Nút xem tất cả menu dưới Sản phẩm bán chạy -->
+            <div class="text-center mt-5">
+                <a href="${pageContext.request.contextPath}/menu" 
+                   class="btn-custom-secondary px-4 py-3 d-inline-flex align-items-center gap-2 shadow-sm rounded-pill fw-bold"
+                   style="font-size: 0.95rem; border: 1.5px solid #cbd5e1;">
+                    <span>Xem tất cả menu</span>
+                    <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                </a>
             </div>
         </div>
     </section>
@@ -440,6 +511,26 @@
 
     <!-- Shared Footer Component -->
     <jsp:include page="/components/footer.jsp" />
+
+    <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Bấm Xem món ra popup) -->
+    <div id="stickyMiniCart" class="sticky-cart-bar ${empty sessionScope.cart || sessionScope.cart.totalQuantity == 0 ? 'd-none' : ''}" onclick="openSelectedItemsModal()"
+        style="cursor: pointer;" title="Bấm để xem danh sách món">
+        <div class="d-flex align-items-center gap-3">
+            <div class="cart-badge-icon">
+                <span class="material-symbols-outlined fs-5">shopping_bag</span>
+                <span id="stickyCartBadge" class="badge-count-pill">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span>
+            </div>
+            <div class="fw-bold text-white" style="font-size: 0.95rem;">
+                Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span> món
+            </div>
+        </div>
+        <button type="button"
+            class="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm"
+            onclick="event.stopPropagation(); openSelectedItemsModal()" title="Xem danh sách món đang chọn">
+            <span>Xem món</span>
+            <span class="material-symbols-outlined fs-6">arrow_forward</span>
+        </button>
+    </div>
 
     <!-- Reusable Product Detail & Customization Modal Component -->
     <jsp:include page="/components/product_detail_modal.jsp" />
