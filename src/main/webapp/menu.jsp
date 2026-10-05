@@ -597,6 +597,9 @@
                     </button>
                 </div>
 
+                <!-- Shared Footer Component -->
+                <jsp:include page="/components/footer.jsp" />
+
                 <!-- Product Customization Modal & Cart Toast Component -->
                 <jsp:include page="/components/product_detail_modal.jsp" />
 
