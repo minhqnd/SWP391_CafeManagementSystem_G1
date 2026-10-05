@@ -39,45 +39,45 @@ Cấu trúc thư mục được khởi tạo đồng bộ 100% với sơ đồ k
 SWP391_CafeManagementSystem_G1/
 ├── pom.xml                                   # Quản lý dependencies (Jakarta Servlet 6.0, JSP, JSTL, MySQL)
 ├── database/
-│   └── schema.sql                            # Khởi tạo Database MySQL
+│   └── aura_cafe.sql                         # File SQL duy nhất: Tạo DB, bảng và nạp dữ liệu mẫu
 └── src/
     └── main/
         ├── java/
-        │   └── com/
-        │       └── cafe/
-        │           ├── context/              # [Data Layer] Context
-        │           │   └── DBContext.java    # Kết nối JDBC MySQL
-        │           ├── dao/                  # [Data Layer] DAO
-        │           │   ├── BaseDAO.java
-        │           │   ├── UserDAO.java
-        │           │   ├── ProductDAO.java
-        │           │   └── OrderDAO.java
-        │           ├── model/                # [Model Layer] POJO classes
-        │           │   ├── User.java
-        │           │   ├── Role.java
-        │           │   ├── Product.java
-        │           │   ├── Order.java
-        │           │   ├── OrderDetail.java
-        │           │   └── Payment.java
-        │           ├── service/
-        │           │   └── payment/          # [External Services]
-        │           │       └── PaymentService.java
-        │           └── controller/           # [Application / Business Layer]
-        │               ├── AuthController.java
-        │               ├── CustomerController.java
-        │               ├── StaffController.java
-        │               ├── BaristaController.java
-        │               ├── DeliveryController.java
-        │               └── AdminController.java
-        └── webapp/                           # [Presentation Layer]
-            ├── index.jsp                     # Trang chủ / Welcome
-            ├── WEB-INF/
-            │   ├── web.xml                   # Cấu hình Web Servlet 6.0
-            │   └── views/                    # Chứa các file JSP theo module
-            └── assets/
-                ├── css/                      # Chứa Bootstrap / Custom CSS
-                └── js/                       # Chứa JavaScript
+        │   ├── context/                      # Kết nối JDBC MySQL (DBContext.java)
+        │   ├── dao/                          # Các lớp DAO truy vấn cơ sở dữ liệu
+        │   ├── model/                        # Các lớp POJO Entity
+        │   ├── service/                      # Xử lý logic dịch vụ
+        │   └── controller/                   # Các Servlet điều hướng MVC
+        └── webapp/                           # Giao diện JSP, CSS, JS
 ```
+
+---
+
+## 💾 Hướng dẫn thiết lập Cơ sở dữ liệu (Database Setup)
+
+Toàn bộ cấu trúc bảng, khóa ngoại, ràng buộc và dữ liệu mẫu (12 món menu mới, 6 danh mục, topping/size variants JSON, voucher, quà tặng điểm thưởng, tài khoản phân quyền) đã được hợp nhất vào **duy nhất một file**:
+`database/aura_cafe.sql`
+
+Thành viên mới hoặc khi muốn reset lại toàn bộ DB chỉ cần làm theo 1 trong 2 cách sau:
+
+### Cách 1: Chạy lệnh trực tiếp qua Terminal (Khuyên dùng)
+```bash
+# Thay 'root' và nhập mật khẩu MySQL của bạn khi được nhắc:
+mysql -u root -p < database/aura_cafe.sql
+```
+*(Nếu dùng script run.sh mặc định với user root mật khẩu 1234: `mysql -u root -p1234 < database/aura_cafe.sql`)*
+
+### Cách 2: Chạy qua MySQL Workbench / DBeaver / Navicat / NetBeans
+1. Mở công cụ quản trị MySQL (ví dụ MySQL Workbench hoặc DBeaver).
+2. Mở file `database/aura_cafe.sql` (`File` -> `Open SQL Script...`).
+3. Bấm **Execute** (hình tia sét) để chạy toàn bộ file. Script đã tích hợp sẵn lệnh `CREATE DATABASE IF NOT EXISTS aura_cafe_erp;` và `USE aura_cafe_erp;`.
+
+### ⚠️ Lưu ý quan trọng về kết nối DB:
+Kiểm tra cấu hình trong file `src/main/java/context/DBContext.java`:
+- `PORT`: mặc định `3306`
+- `DB_NAME`: mặc định `aura_cafe_erp`
+- `USER`: tài khoản MySQL của bạn (mặc định `root`)
+- `PASSWORD`: mật khẩu MySQL trên máy của bạn (nếu máy bạn dùng mật khẩu khác `1234`, hãy đổi lại cho khớp).
 
 ---
 
@@ -92,4 +92,6 @@ SWP391_CafeManagementSystem_G1/
    - Kiểm tra **Java Platform**: chọn **JDK 17**.
 4. **Chạy ứng dụng**:
    - Chuột phải vào Project -> **Run** (hoặc bấm phím `F6`).
-   - Tomcat sẽ khởi động và mở trình duyệt tại địa chỉ: `http://localhost:8080/SWP391_CafeManagementSystem` (hoặc context path được cấu hình).
+   - Hoặc chạy nhanh bằng script terminal: `./run.sh`
+   - Tomcat sẽ khởi động và mở ứng dụng tại: `http://localhost:8080/SWP391_CafeManagementSystem/`
+

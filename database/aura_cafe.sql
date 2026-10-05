@@ -13,6 +13,8 @@ USE aura_cafe_erp;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS user_rewards;
+DROP TABLE IF EXISTS reward_items;
 DROP TABLE IF EXISTS customer_reviews;
 DROP TABLE IF EXISTS loyalty_transactions;
 DROP TABLE IF EXISTS inventory_transactions;
@@ -174,6 +176,7 @@ CREATE TABLE products (
 CREATE TABLE vouchers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
+    customer_id INT NULL,
 
     discount_type ENUM(
         'PERCENT',
@@ -192,6 +195,11 @@ CREATE TABLE vouchers (
 
     status ENUM('ACTIVE', 'INACTIVE')
         NOT NULL DEFAULT 'ACTIVE',
+
+    CONSTRAINT fk_voucher_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
 
     CONSTRAINT chk_voucher_discount
         CHECK (
@@ -227,6 +235,33 @@ CREATE TABLE vouchers (
             OR start_date <= valid_until
         )
 ) ENGINE=InnoDB;
+
+-- 5b. REWARD ITEMS & USER REWARDS
+CREATE TABLE reward_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    points_cost INT NOT NULL,
+    discount_value DECIMAL(12,2) NOT NULL DEFAULT 0,
+    min_order_value DECIMAL(12,2) NOT NULL DEFAULT 0,
+    valid_days INT NOT NULL DEFAULT 30,
+    category VARCHAR(50),
+    image_icon VARCHAR(50) DEFAULT 'card_giftcard',
+    stock INT NOT NULL DEFAULT -1,
+    status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE'
+) ENGINE=InnoDB;
+
+CREATE TABLE user_rewards (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    reward_id INT NOT NULL,
+    voucher_id INT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_reward_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_reward_item FOREIGN KEY (reward_id) REFERENCES reward_items(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_reward_voucher FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 
 -- 6. ORDERS
 CREATE TABLE orders (
@@ -675,68 +710,112 @@ VALUES
  'Delivery shift');
 
 -- 3. CATEGORIES
-INSERT INTO categories (id, name, status)
-VALUES
-(1, 'Coffee', 'ACTIVE'),
-(2, 'Tea', 'ACTIVE'),
-(3, 'Milk Tea', 'ACTIVE'),
-(4, 'Cake', 'ACTIVE'),
-(5, 'Juice', 'ACTIVE');
+INSERT INTO categories (id, name, status, icon) VALUES
+(1, 'Cà phê máy', 'ACTIVE', 'coffee_maker'),
+(2, 'Cà phê truyền thống', 'ACTIVE', 'local_cafe'),
+(3, 'Trà trái cây', 'ACTIVE', 'emoji_food_beverage'),
+(4, 'Đá xay & Matcha', 'ACTIVE', 'icecream'),
+(5, 'Bánh ngọt', 'ACTIVE', 'bakery_dining'),
+(6, 'Đóng chai', 'ACTIVE', 'liquor');
 
--- 4. PRODUCTS
-INSERT INTO products
-(id, category_id, name, base_price, variants_config,
- description, image_url, is_available)
-VALUES
-(1, 1, 'Americano', 35000,
- '{"sizes":{"M":0,"L":10000},"toppings":["Extra shot"]}',
- 'Espresso nguyên chất pha loãng, giữ trọn hương vị đậm đà mộc mạc.', 'https://images.unsplash.com/photo-1551030173-122aabc4489c?auto=format&fit=crop&q=80&w=800', TRUE),
+-- 4. PRODUCTS (12 món đặc sản ăn khớp 100% UI Figma/Web)
+INSERT INTO products (id, category_id, name, base_price, description, badge, subtitle, variants_config, image_url, is_available) VALUES
+(1, 2, 'Cà Phê Muối Aura Đặc Biệt', 45000, 
+ 'Fine Robusta ủ phin truyền thống phối kem sữa mằn mặn béo ngậy, cân bằng hậu vị ngọt đầm.', 
+ 'BÁN CHẠY', 'Phin Cổ Điển', 
+ '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Extra kem muối","price":8000},{"name":"Extra shot espresso","price":10000}]}',
+ 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80', 1),
 
-(2, 1, 'Latte', 45000,
- '{"sizes":{"M":0,"L":10000},"toppings":["Extra shot"]}',
- 'Sự cân bằng hoàn hảo giữa Espresso đậm đà và bọt sữa nóng mịn màng.', 'https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&q=80&w=800', TRUE),
+(2, 1, 'Caramel Macchiato Đặc Sản', 55000, 
+ 'Lớp sữa tươi nóng thanh dịu, quyện cùng espresso kép Arabica Cầu Đất đậm đà và vân sốt caramel thơm lừng.', 
+ 'BÁN CHẠY', 'Espresso Base', 
+ '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Sốt caramel thêm","price":5000},{"name":"Kem whipping","price":8000}]}',
+ 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80', 1),
 
-(3, 1, 'Cappuccino', 45000,
- '{"sizes":{"M":0,"L":10000}}',
- 'Phiên bản đậm đà hơn của Latte với lớp bọt sữa dày dặn hấp dẫn.', 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&q=80&w=800', TRUE),
+(3, 6, 'Cold Brew Đóng Chai Aura Reserve', 68000, 
+ 'Chiết xuất lạnh 16 tiếng từ 100% Arabica Bourbon, hương hoa quả nhiệt đới tươi mát, giữ trọn vị nguyên bản.', 
+ 'BÁN CHẠY', 'Ủ Lạnh 16 Tiếng', 
+ '{"sizes":{"Chai 250ml":0,"Chai 500ml":35000},"toppings":[]}',
+ 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80', 1),
 
-(4, 2, 'Peach Tea', 40000,
- '{"sizes":{"M":0,"L":10000},"toppings":["Peach jelly"]}',
- 'Trà đào mát lạnh cùng những miếng đào tươi giòn sần sật xua tan oi bức.', 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=800', TRUE),
+(4, 2, 'Cà Phê Sữa Đá Sài Gòn Nâu', 39000, 
+ 'Hạt Fine Robusta rang nâu bóng mượt, chiết xuất phin chậm kết hợp sữa đặc ngọt êm béo ngậy truyền thống.', 
+ NULL, 'Đậm Vị Phin', 
+ '{"sizes":{"M":0,"L":8000},"toppings":[{"name":"Thạch cà phê","price":6000},{"name":"Extra shot phin","price":8000}]}',
+ 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&auto=format&fit=crop&q=80', 1),
 
-(5, 2, 'Lemon Tea', 35000,
- '{"sizes":{"M":0,"L":8000}}',
- 'Trà chanh truyền thống với hương chanh tươi mát, chua ngọt thanh dịu.', 'https://images.unsplash.com/photo-1596704017254-9eb10a3e8ff6?auto=format&fit=crop&q=80&w=800', TRUE),
+(5, 3, 'Trà Đào Cam Sả Tươi', 45000, 
+ 'Nước cốt trà đen Ceylon thanh dịu kết hợp miếng đào giòn ngọt mọng nước cùng sả tươi ấm nồng.', 
+ 'MÓN MỚI', 'Fresh Brew', 
+ '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Thạch đào giòn","price":8000},{"name":"Hạt chia","price":5000}]}',
+ 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80', 1),
 
-(6, 3, 'Milk Tea', 40000,
- '{"sizes":{"M":0,"L":10000},"toppings":["Pearl","Pudding"]}',
- 'Trà sữa vị lá trà đen tự nhiên, ngọt ngào quyện cùng trân châu dai giòn.', 'https://images.unsplash.com/photo-1558857563-b371032bda98?auto=format&fit=crop&q=80&w=800', TRUE),
+(6, 5, 'Bánh Croissant Bơ Pháp', 35000, 
+ 'Bột ngàn lớp thủ công giòn rụm bên ngoài, mềm xốp ngậy hương bơ Elle & Vire hảo hạng bên trong.', 
+ 'BÁN CHẠY', 'Bơ Elle & Vire', 
+ '{"sizes":{"Tiêu chuẩn":0},"toppings":[{"name":"Mứt dâu tây","price":6000},{"name":"Sốt sôcôla","price":6000}]}',
+ 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80', 1),
 
-(7, 4, 'Cheesecake', 55000,
- NULL,
- 'Bánh phô mai nướng mềm mịn, tan chảy trong miệng với độ béo ngậy khó cưỡng.', 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&q=80&w=800', TRUE),
+(7, 4, 'Matcha Latte Uji Kyoto Đá Xay', 58000, 
+ 'Bột trà xanh Uji trứ danh cố đô Kyoto xay cùng sữa hạt và kem whipping bông xốp béo mịn thượng hạng.', 
+ 'BÁN CHẠY', 'Uji Kyoto Grade', 
+ '{"sizes":{"M":0,"L":12000},"toppings":[{"name":"Kem whipping","price":8000},{"name":"Thạch matcha","price":8000}]}',
+ 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80', 1),
 
-(8, 5, 'Orange Juice', 45000,
- '{"sizes":{"M":0,"L":10000}}',
- 'Nước cam vắt nguyên chất, giàu vitamin C và năng lượng cho ngày mới.', 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&q=80&w=800', TRUE);
+(8, 3, 'Trà Sen Vàng Long Nhãn', 49000, 
+ 'Hạt sen Huế ninh mềm dẻo, nhãn nhục ngọt thanh quyện cùng trà ô long hảo hạng và lớp kem củ năng giòn.', 
+ NULL, 'Trà Đen Ceylon', 
+ '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Hạt sen thêm","price":10000},{"name":"Củ năng giòn","price":8000}]}',
+ 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=600&auto=format&fit=crop&q=80', 1),
+
+(9, 1, 'Americano Đá Rang Đậm', 35000, 
+ 'Espresso kép chiết xuất áp suất cao từ hạt cà phê đặc sản, vị chua thanh thanh tao và hậu ngọt dài lâu.', 
+ NULL, 'Espresso Base', 
+ '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Extra shot espresso","price":10000}]}',
+ 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop&q=80', 1),
+
+(10, 1, 'Latte Nghệ Thuật Hạt Phỉ', 52000, 
+ 'Hòa quyện tinh tế giữa espresso thơm ngát, sữa tươi đánh bọt mịn màng và siro hạt phỉ thơm lừng.', 
+ 'MÓN MỚI', 'Espresso Base', 
+ '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Siro hạt phỉ","price":6000},{"name":"Sữa yến mạch (Oat milk)","price":12000}]}',
+ 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80', 1),
+
+(11, 4, 'Sôcôla Bỉ Đá Xay Hạnh Nhân', 55000, 
+ 'Bột cacao nguyên chất nhập khẩu Bỉ xay nhuyễn cùng sữa đặc, rắc hạnh nhân nướng giòn tan.', 
+ NULL, 'Chocolate Rich', 
+ '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Kem whipping","price":8000},{"name":"Hạnh nhân vụn","price":6000}]}',
+ 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&auto=format&fit=crop&q=80', 1),
+
+(12, 5, 'Bánh Cheesecake Việt Quất', 55000, 
+ 'Cream cheese Philadelphia béo ngậy kết hợp mứt việt quất chua ngọt dịu và đế bánh quy nướng thơm lừng.', 
+ 'BÁN CHẠY', 'New York Style', 
+ '{"sizes":{"1 Phần":0},"toppings":[]}',
+ 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=600&auto=format&fit=crop&q=80', 1);
 
 -- 5. VOUCHERS
 INSERT INTO vouchers
-(id, code, discount_type, discount_value, min_order_value,
+(id, code, customer_id, discount_type, discount_value, min_order_value,
  max_discount, start_date, valid_until,
  usage_limit, used_count, status)
 VALUES
-(1, 'WELCOME10', 'PERCENT', 10, 50000,
+(1, 'WELCOME10', NULL, 'PERCENT', 10, 50000,
  30000, '2026-01-01 00:00:00',
  '2026-12-31 23:59:59', 100, 2, 'ACTIVE'),
 
-(2, 'AURA20000', 'FIXED_AMOUNT', 20000, 100000,
+(2, 'AURA20000', NULL, 'FIXED_AMOUNT', 20000, 100000,
  NULL, '2026-01-01 00:00:00',
  '2026-12-31 23:59:59', 50, 1, 'ACTIVE'),
 
-(3, 'SUMMER15', 'PERCENT', 15, 80000,
+(3, 'SUMMER15', NULL, 'PERCENT', 15, 80000,
  25000, '2026-06-01 00:00:00',
  '2026-10-31 23:59:59', 200, 0, 'ACTIVE');
+
+-- 5.1 REWARD ITEMS (Quà tặng đổi điểm)
+INSERT INTO reward_items (id, name, description, points_cost, discount_value, min_order_value, valid_days, category, image_icon, stock, status) VALUES
+(1, 'Voucher giảm 15.000đ', 'Cho đơn từ 60.000đ • HSD 30 ngày kể từ ngày đổi', 100, 15000, 60000, 30, 'Phổ biến', 'local_activity', 50, 'ACTIVE'),
+(2, 'Voucher giảm 30.000đ', 'Cho đơn từ 120.000đ • HSD 30 ngày kể từ ngày đổi', 180, 30000, 120000, 30, 'Best Match', 'confirmation_number', 30, 'ACTIVE'),
+(3, 'Voucher giảm 50.000đ', 'Cho đơn từ 200.000đ • HSD 45 ngày kể từ ngày đổi', 300, 50000, 200000, 45, 'Hạng Vàng', 'card_giftcard', 20, 'ACTIVE'),
+(4, 'Voucher giảm 100.000đ', 'Cho đơn từ 350.000đ • HSD 60 ngày kể từ ngày đổi', 600, 100000, 350000, 60, 'Hạng Kim Cương', 'workspace_premium', 10, 'ACTIVE');
 
 -- 6. ORDERS
 INSERT INTO orders
