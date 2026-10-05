@@ -306,11 +306,42 @@
                 }
 
                 .ticket-action {
-                    min-height: 39px;
+                    min-height: 40px;
                     border-radius: 10px;
-                    font-size: 11px;
+                    font-size: 12px;
                     font-weight: 800;
-                    letter-spacing: .02em;
+                    letter-spacing: .03em;
+                    transition: all .2s ease;
+                }
+
+                .ticket-action.btn-start-brew {
+                    background: #900b1a;
+                    color: #ffffff;
+                    border: 1px solid #770814;
+                    box-shadow: 0 3px 10px rgba(144, 11, 26, .22);
+                }
+
+                .ticket-action.btn-start-brew:hover {
+                    background: #730915;
+                    border-color: #58060f;
+                    color: #ffffff;
+                    transform: translateY(-1px);
+                    box-shadow: 0 5px 14px rgba(144, 11, 26, .35);
+                }
+
+                .ticket-action.btn-complete-brew {
+                    background: #16a34a;
+                    color: #ffffff;
+                    border: 1px solid #15803d;
+                    box-shadow: 0 3px 10px rgba(22, 163, 74, .25);
+                }
+
+                .ticket-action.btn-complete-brew:hover {
+                    background: #15803d;
+                    border-color: #166534;
+                    color: #ffffff;
+                    transform: translateY(-1px);
+                    box-shadow: 0 5px 14px rgba(22, 163, 74, .38);
                 }
 
                 .empty-board {
@@ -665,12 +696,10 @@
                         board.appendChild(empty);
                         return;
                     }
-                    const firstActionable = currentOrders.find(order => order.status === "PREPARING")
-                        || currentOrders.find(order => order.status === "CONFIRMED");
-                    orders.forEach(order => board.appendChild(createTicket(order, firstActionable && order.id === firstActionable.id)));
+                    orders.forEach(order => board.appendChild(createTicket(order)));
                 }
 
-                function createTicket(order, canAct) {
+                function createTicket(order) {
                     const ageMinutes = getAgeMinutes(order.createdAt);
                     const overdue = order.status !== "READY" && ageMinutes >= 5;
                     const tone = order.status === "CONFIRMED" ? "waiting" : order.status === "PREPARING" ? "preparing" : "ready";
@@ -703,14 +732,18 @@
                         done.append(node("span", "material-symbols-outlined", "task_alt"), node("span", "", "ĐƠN ĐÃ SẴN SÀNG"));
                         footer.appendChild(done);
                     } else {
-                        const action = node("button", "btn btn-aura ticket-action w-100 d-flex align-items-center justify-content-center gap-2");
+                        const isConfirmed = order.status === "CONFIRMED";
+                        const actionBtnClass = isConfirmed ? "btn-start-brew" : "btn-complete-brew";
+                        const action = node("button", "btn " + actionBtnClass + " ticket-action w-100 d-flex align-items-center justify-content-center gap-2");
                         action.type = "button";
-                        action.disabled = !canAct || isUpdating;
-                        action.title = canAct ? "Cập nhật trạng thái đơn" : "Cần xử lý đơn đến trước theo thứ tự";
-                        action.append(node("span", "material-symbols-outlined", order.status === "CONFIRMED" ? "local_cafe" : "check"), node("span", "", order.status === "CONFIRMED" ? "BẮT ĐẦU PHA" : "HOÀN TẤT ĐƠN"));
-                        action.addEventListener("click", () => updateOrderStatus(order.id, order.status === "CONFIRMED" ? "PREPARING" : "READY"));
+                        action.disabled = isUpdating;
+                        action.title = isConfirmed ? "Bắt đầu pha chế đơn này" : "Đánh dấu đã pha xong, chuyển sang Sẵn sàng";
+                        action.append(
+                            node("span", "material-symbols-outlined", isConfirmed ? "local_cafe" : "check_circle"),
+                            node("span", "", isConfirmed ? "BẮT ĐẦU PHA" : "HOÀN TẤT ĐƠN")
+                        );
+                        action.addEventListener("click", () => updateOrderStatus(order.id, isConfirmed ? "PREPARING" : "READY"));
                         footer.appendChild(action);
-                        if (!canAct) footer.appendChild(node("div", "text-center text-secondary mt-2", "Đang chờ theo thứ tự FIFO"));
                     }
                     ticket.append(header, body, footer);
                     return ticket;
@@ -817,7 +850,8 @@
                     showError("Không đọc được dữ liệu đơn hàng ban đầu.");
                 }
                 if (initialError) showError(initialError);
-                refreshTimer = setTimeout(loadOrders, refreshIntervalMs);
+                // Nạp đơn hàng ngay lập tức khi mở trang, không để màn hình trắng chờ 5 giây
+                loadOrders();
             </script>
         </body>
 

@@ -97,6 +97,14 @@ public class BaristaController extends HttpServlet {
                     session.setAttribute("baristaCsrfToken", UUID.randomUUID().toString());
                 }
             }
+            try {
+                request.setAttribute("baristaInitialData",
+                        json(dashboardData(orderDAO.getOrdersForBarista())));
+            } catch (SQLException | ClassNotFoundException | RuntimeException ex) {
+                getServletContext().log("Cannot load initial barista orders", ex);
+                request.setAttribute("baristaInitialError",
+                        "Không tải được đơn hàng từ cơ sở dữ liệu.");
+            }
             request.setAttribute("baristaDashboard", true);
             request.getRequestDispatcher("/barista-dashboard.jsp").forward(request, response);
             return;

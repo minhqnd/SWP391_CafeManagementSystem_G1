@@ -95,55 +95,28 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Preserve the dashboard's global FIFO rule across all category filters.
-     * Lock the queue and compare status so concurrent clicks cannot skip a stage.
+     * Cập nhật trạng thái pha chế của Barista (CONFIRMED -> PREPARING -> READY).
+     * Cho phép Barista chủ động bắt đầu làm đơn bất kỳ mà không bị gò bó bởi thứ tự FIFO.
      */
     public boolean updateBaristaOrderStatus(int orderId, String targetStatus)
             throws SQLException, ClassNotFoundException {
-        String expectedStatus;
-        if ("PREPARING".equals(targetStatus)) {
-            expectedStatus = "CONFIRMED";
-        } else if ("READY".equals(targetStatus)) {
-            expectedStatus = "PREPARING";
-        } else {
-            throw new IllegalArgumentException("Unsupported barista status");
-        }
         if (orderId <= 0) {
             throw new IllegalArgumentException("Invalid order ID");
         }
-        String queueSql = "SELECT o.id, o.status FROM orders o WHERE " + BARISTA_TYPES
-                + " AND " + BARISTA_PAID
-                + " AND o.status IN ('CONFIRMED', 'PREPARING') "
-                + "AND EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id) "
-                + "ORDER BY o.created_at, o.id FOR UPDATE";
-        try (Connection conn = getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                try (PreparedStatement ps = conn.prepareStatement(queueSql);
-                     ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next() || rs.getInt("id") != orderId
-                            || !expectedStatus.equals(rs.getString("status"))) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                String updateSql = "UPDATE orders o SET status = ? WHERE o.id = ? AND o.status = ? "
-                        + "AND " + BARISTA_PAID;
-                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-                    ps.setString(1, targetStatus);
-                    ps.setInt(2, orderId);
-                    ps.setString(3, expectedStatus);
-                    if (ps.executeUpdate() != 1) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                conn.commit();
-                return true;
-            } catch (SQLException | RuntimeException e) {
-                conn.rollback();
-                throw e;
-            }
+        String sql;
+        if ("PREPARING".equals(targetStatus)) {
+            sql = "UPDATE orders o SET status = 'PREPARING' WHERE o.id = ? AND o.status = 'CONFIRMED' "
+                    + "AND " + BARISTA_TYPES + " AND " + BARISTA_PAID;
+        } else if ("READY".equals(targetStatus)) {
+            sql = "UPDATE orders o SET status = 'READY' WHERE o.id = ? AND o.status IN ('CONFIRMED', 'PREPARING') "
+                    + "AND " + BARISTA_TYPES + " AND " + BARISTA_PAID;
+        } else {
+            throw new IllegalArgumentException("Unsupported barista status");
+        }
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            return ps.executeUpdate() > 0;
         }
     }
 
@@ -902,7 +875,7 @@ public class OrderDAO extends BaseDAO {
     public List<Order> getCounterOrdersToday() {
         String sql = CUSTOMER_ORDER_SELECT + 
                      "WHERE DATE(o.created_at) = CURDATE() " +
-                     "  AND (o.cashier_id IS NOT NULL OR o.order_type IN ('DINE_IN', 'TAKEAWAY')) " +
+                     "  AND (o.cashier_id IS NOT NULL OR o.order_type IN ('DINE_IN', 'TAKEAWAY', 'ONLINE')) " +
                      "ORDER BY o.created_at DESC, o.id DESC";
 
         Map<Integer, Order> orders = new LinkedHashMap<>();
@@ -924,10 +897,162 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Hủy đơn tại quầy (chỉ khi đơn chưa hoàn thành)
+     * Hủy đơn hàng bởi Thu ngân với lý do và hoàn trả điểm/voucher
+     * Chỉ cho phép hủy khi đơn ở trạng thái PENDING hoặc CONFIRMED (chưa pha chế).
+     * Trả về null nếu thành công, hoặc chuỗi thông báo lỗi cụ thể.
      */
+    public String cancelCounterOrderWithReason(int orderId) {
+        String querySql = "SELECT o.id, o.status, o.customer_id, o.voucher_id FROM orders o WHERE o.id = ? FOR UPDATE";
+        String cancelSql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ? AND status IN ('PENDING', 'CONFIRMED')";
+        String returnVoucherSql = "UPDATE vouchers SET used_count = GREATEST(0, used_count - 1) WHERE id = ?";
+        
+        String queryRedeemPointsSql = "SELECT points_change FROM loyalty_transactions WHERE order_id = ? AND transaction_type = 'REDEEM' LIMIT 1";
+        String refundPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'REFUND')";
+        String addBackUserPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";
+
+        String queryEarnPointsSql = "SELECT points_change FROM loyalty_transactions WHERE order_id = ? AND transaction_type = 'EARN' LIMIT 1";
+        String adjustEarnedPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'ADJUST')";
+        String deductAwardedUserPointsSql = "UPDATE users SET total_points = GREATEST(0, total_points - ?) WHERE id = ?";
+
+        String cancelPaymentSql = "UPDATE payments SET status = 'FAILED', payment_note = CONCAT(COALESCE(payment_note, ''), ' [Đã hủy đơn bởi Thu ngân]') WHERE order_id = ?";
+
+        Connection conn = null;
+        try {
+            conn = DBContext.getConnection();
+            conn.setAutoCommit(false);
+
+            String currentStatus;
+            Integer customerId;
+            Integer voucherId;
+
+            try (PreparedStatement ps = conn.prepareStatement(querySql)) {
+                ps.setInt(1, orderId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return "Không tìm thấy đơn hàng #" + orderId + ".";
+                    }
+                    currentStatus = rs.getString("status");
+                    customerId = rs.getObject("customer_id", Integer.class);
+                    voucherId = rs.getObject("voucher_id", Integer.class);
+                }
+            }
+
+            if ("CANCELLED".equals(currentStatus)) {
+                conn.rollback();
+                return "Đơn hàng này đã được hủy trước đó.";
+            }
+            if ("COMPLETED".equals(currentStatus)) {
+                conn.rollback();
+                return "Đơn hàng đã hoàn thành, không thể hủy.";
+            }
+            if ("PREPARING".equals(currentStatus) || "READY".equals(currentStatus) || "DELIVERING".equals(currentStatus)) {
+                conn.rollback();
+                return "Đơn hàng đang được Barista pha chế hoặc đang giao, không thể hủy.";
+            }
+            if (!"PENDING".equals(currentStatus) && !"CONFIRMED".equals(currentStatus)) {
+                conn.rollback();
+                return "Trạng thái đơn hàng không hợp lệ để hủy (" + currentStatus + ").";
+            }
+
+            // Thực hiện hủy đơn
+            try (PreparedStatement ps = conn.prepareStatement(cancelSql)) {
+                ps.setInt(1, orderId);
+                if (ps.executeUpdate() == 0) {
+                    conn.rollback();
+                    return "Không thể cập nhật trạng thái hủy đơn.";
+                }
+            }
+
+            // Hoàn lại lượt voucher nếu có
+            if (voucherId != null && voucherId > 0) {
+                try (PreparedStatement ps = conn.prepareStatement(returnVoucherSql)) {
+                    ps.setInt(1, voucherId);
+                    ps.executeUpdate();
+                }
+            }
+
+            // Hoàn lại điểm tích lũy và trừ điểm thưởng nếu có
+            if (customerId != null && customerId > 0) {
+                // 1. Điểm đã dùng (REDEEM - mang giá trị âm) -> Hoàn lại (REFUND - mang giá trị dương)
+                int redeemedPoints = 0;
+                try (PreparedStatement ps = conn.prepareStatement(queryRedeemPointsSql)) {
+                    ps.setInt(1, orderId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            redeemedPoints = Math.abs(rs.getInt("points_change"));
+                        }
+                    }
+                }
+                if (redeemedPoints > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(refundPointsSql)) {
+                        ps.setInt(1, customerId);
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, redeemedPoints);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(addBackUserPointsSql)) {
+                        ps.setInt(1, redeemedPoints);
+                        ps.setInt(2, customerId);
+                        ps.executeUpdate();
+                    }
+                }
+
+                // 2. Điểm thưởng đã tích (EARN - mang giá trị dương) -> Thu hồi lại (ADJUST - mang giá trị âm)
+                int earnedPoints = 0;
+                try (PreparedStatement ps = conn.prepareStatement(queryEarnPointsSql)) {
+                    ps.setInt(1, orderId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            earnedPoints = rs.getInt("points_change");
+                        }
+                    }
+                }
+                if (earnedPoints > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(adjustEarnedPointsSql)) {
+                        ps.setInt(1, customerId);
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, -earnedPoints);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(deductAwardedUserPointsSql)) {
+                        ps.setInt(1, earnedPoints);
+                        ps.setInt(2, customerId);
+                        ps.executeUpdate();
+                    }
+                }
+            }
+
+            // Cập nhật payment
+            try (PreparedStatement ps = conn.prepareStatement(cancelPaymentSql)) {
+                ps.setInt(1, orderId);
+                ps.executeUpdate();
+            }
+
+            conn.commit();
+            return null; // Thành công
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
+            return "Lỗi máy chủ khi hủy đơn: " + e.getMessage();
+        } finally {
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
+
     public boolean cancelCounterOrder(int orderId) {
-        String sql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ? AND status IN ('CONFIRMED', 'PENDING', 'PREPARING', 'READY')";
+        return cancelCounterOrderWithReason(orderId) == null;
+    }
+
+    /**
+     * Thu ngân chuyển đơn Online sang trạng thái đang giao hàng
+     */
+    public boolean deliverCounterOrder(int orderId) {
+        String sql = "UPDATE orders SET status = 'DELIVERING' WHERE id = ? AND status = 'READY'";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderId);
@@ -939,10 +1064,11 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Thu ngân đánh dấu đơn tại quầy đã hoàn tất (khách đã nhận món)
+     * Thu ngân đánh dấu đơn tại quầy / giao hàng đã hoàn tất (khách đã nhận món).
+     * Chỉ cho phép hoàn tất khi Barista đã làm xong (READY) hoặc đơn đang giao (DELIVERING).
      */
     public boolean completeCounterOrder(int orderId) {
-        String sql = "UPDATE orders SET status = 'COMPLETED' WHERE id = ? AND status IN ('CONFIRMED', 'PREPARING', 'READY')";
+        String sql = "UPDATE orders SET status = 'COMPLETED' WHERE id = ? AND status IN ('READY', 'DELIVERING')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderId);

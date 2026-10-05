@@ -20,6 +20,8 @@
                     rel="stylesheet" />
                 <!-- Bootstrap 5 CSS -->
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+                <!-- Shared Product Card & Modal CSS -->
+                <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/product-card.css">
 
                 <style>
                     :root {
@@ -432,7 +434,7 @@
                 </jsp:include>
 
                 <!-- Main Content -->
-                <main class="container-fluid px-4 px-lg-5 py-4">
+                <main class="container-fluid px-4 px-lg-5 py-4 pb-5 mb-5">
 
                     <!-- Top Title & Search Bar -->
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
@@ -551,48 +553,8 @@
                             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="productsGrid">
                                 <c:forEach var="p" items="${products}">
                                     <div class="col">
-                                        <!-- Card: Bấm vào ảnh/tên chuyển sang trang chi tiết của DonVQ, nút + mở modal thêm nhanh -->
-                                        <div class="product-card h-100"
-                                            onclick="window.location.href='${pageContext.request.contextPath}/product-detail?id=${p.id}'">
-                                            <!-- Image Box -->
-                                            <div class="product-img-box">
-                                                <c:if test="${not empty p.badge}">
-                                                    <span
-                                                        class="pill-badge ${p.badge == 'BÁN CHẠY' ? 'pill-badge-hot' : 'pill-badge-new'}">
-                                                        ${p.badge}
-                                                    </span>
-                                                </c:if>
-                                                <img src="${p.imageUrl}" alt="${p.name}" loading="lazy"
-                                                    onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'">
-                                            </div>
-
-                                            <!-- Body -->
-                                            <div class="product-card-body">
-                                                <div class="product-meta-subtitle">
-                                                    ${not empty p.subtitle ? p.subtitle : p.categoryName}
-                                                </div>
-                                                <h2 class="product-name" title="${p.name}">
-                                                    <a href="${pageContext.request.contextPath}/product-detail?id=${p.id}"
-                                                        class="text-decoration-none text-dark"
-                                                        onclick="event.stopPropagation()">
-                                                        ${p.name}
-                                                    </a>
-                                                </h2>
-                                                <p class="product-brief" title="${p.description}">
-                                                    ${not empty p.description ? p.description : 'Đồ uống tinh hoa được tuyển chọn từ vùng nguyên liệu đặc sản.'}
-                                                </p>
-
-                                                <!-- Price & Add Button -->
-                                                <div class="product-card-footer">
-                                                    <span class="product-price">${p.formattedPrice}</span>
-                                                    <button type="button" class="btn-add-circle"
-                                                        title="Tùy chọn & Thêm món"
-                                                        onclick="event.stopPropagation(); openProductDetailModal('${p.id}')">
-                                                        <span class="material-symbols-outlined fs-5">add</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <c:set var="product" value="${p}" scope="request" />
+                                        <jsp:include page="/components/product_card.jsp" />
                                     </div>
                                 </c:forEach>
                             </div>
@@ -616,15 +578,15 @@
                 </main>
 
                 <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Bấm Xem món ra popup) -->
-                <div id="stickyMiniCart" class="sticky-cart-bar d-none" onclick="openSelectedItemsModal()"
+                <div id="stickyMiniCart" class="sticky-cart-bar ${empty sessionScope.cart || sessionScope.cart.totalQuantity == 0 ? 'd-none' : ''}" onclick="openSelectedItemsModal()"
                     style="cursor: pointer;" title="Bấm để xem danh sách món">
                     <div class="d-flex align-items-center gap-3">
                         <div class="cart-badge-icon">
                             <span class="material-symbols-outlined fs-5">shopping_bag</span>
-                            <span id="stickyCartBadge" class="badge-count-pill">0</span>
+                            <span id="stickyCartBadge" class="badge-count-pill">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span>
                         </div>
                         <div class="fw-bold text-white" style="font-size: 0.95rem;">
-                            Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">0</span> món
+                            Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span> món
                         </div>
                     </div>
                     <button type="button"
@@ -635,92 +597,8 @@
                     </button>
                 </div>
 
-                <!-- Product Customization Modal (Mở khi bấm vào đồ uống để đổi size/topping) -->
-                <div class="modal fade" id="productDetailModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                        <div class="modal-content border-0 shadow-lg position-relative"
-                            style="border-radius: 1.5rem; overflow: hidden;">
-                            <!-- Close Button (Always on top with high z-index) -->
-                            <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
-                                style="z-index: 1060; cursor: pointer; padding: 0.75rem;" data-bs-dismiss="modal"
-                                aria-label="Close" onclick="closeProductDetailModal()"></button>
-                            <div class="modal-body p-4 pt-3">
-                                <div class="row g-4 align-items-center">
-                                    <!-- Left: Image -->
-                                    <div class="col-md-5">
-                                        <img id="modalProductImg" src="" alt="Product"
-                                            class="modal-product-img shadow-sm">
-                                    </div>
-
-                                    <!-- Right: Details & Options -->
-                                    <div class="col-md-7 d-flex flex-column">
-                                        <span class="text-uppercase fw-bold text-danger"
-                                            style="font-size: 0.75rem; letter-spacing: 0.5px;"
-                                            id="modalProductCategory">Danh mục</span>
-                                        <h2 class="fs-4 fw-bold mb-1" id="modalProductName">Tên món</h2>
-                                        <p class="text-muted small mb-3" id="modalProductDesc">Mô tả sản phẩm</p>
-
-                                        <div class="d-flex align-items-baseline gap-2 mb-3 pb-2 border-bottom">
-                                            <span class="fs-3 fw-bold text-danger" id="modalProductTotalPrice">0đ</span>
-                                            <span class="text-muted small">/ Giá tiêu chuẩn</span>
-                                        </div>
-
-                                        <!-- Sizes -->
-                                        <div class="mb-3" id="sizeOptionsContainer">
-                                            <label class="form-label fw-bold small text-muted mb-2">CHỌN SIZE (KÍCH
-                                                CỠ):</label>
-                                            <div class="d-flex gap-2 flex-wrap" id="sizeList"></div>
-                                        </div>
-
-                                        <!-- Toppings -->
-                                        <div class="mb-3" id="toppingOptionsContainer">
-                                            <label class="form-label fw-bold small text-muted mb-2">TOPPING
-                                                THÊM:</label>
-                                            <div class="d-flex flex-column gap-2" id="toppingList"></div>
-                                        </div>
-
-                                        <!-- Quantity & Action -->
-                                        <div
-                                            class="mt-3 pt-3 border-top d-flex align-items-center justify-content-between gap-3">
-                                            <div class="d-flex align-items-center gap-2 border rounded-pill px-2 py-1">
-                                                <button type="button" class="qty-control-btn border-0"
-                                                    onclick="adjustModalQty(-1)">-</button>
-                                                <span id="modalProductQty" class="fw-bold px-2"
-                                                    style="min-width: 24px; text-align: center;">1</span>
-                                                <button type="button" class="qty-control-btn border-0"
-                                                    onclick="adjustModalQty(1)">+</button>
-                                            </div>
-
-                                            <button type="button"
-                                                class="btn btn-danger flex-grow-1 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill shadow-sm"
-                                                onclick="confirmAddToCart()">
-                                                <span class="material-symbols-outlined fs-5">add_circle</span>
-                                                <span>Chọn món này &bull; <span id="modalBtnTotalPrice">0đ</span></span>
-                                            </button>
-                                        </div>
-
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Toast Notification -->
-                <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3 z-3">
-                    <div id="cartToast"
-                        class="toast align-items-center text-white bg-dark border-0 shadow-lg rounded-pill" role="alert"
-                        aria-live="assertive" aria-atomic="true">
-                        <div class="d-flex px-3 py-2 align-items-center">
-                            <span class="material-symbols-outlined text-success me-2 fs-5">check_circle</span>
-                            <div class="toast-body p-0 fw-medium small" id="cartToastMessage">
-                                Đã thêm món vào giỏ hàng thành công!
-                            </div>
-                            <button type="button" class="btn-close btn-close-white ms-auto me-1"
-                                data-bs-dismiss="toast"></button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Product Customization Modal & Cart Toast Component -->
+                <jsp:include page="/components/product_detail_modal.jsp" />
 
                 <!-- Include Auth Modal -->
                 <jsp:include page="/components/auth_modal.jsp" />
@@ -729,70 +607,6 @@
                 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
                 <script>
-                    var currentProduct = null;
-                    var selectedSizePrice = 0;
-                    var modalQty = 1;
-                    // Giỏ hàng lưu trong session phía server, trang chỉ giữ tổng số món để hiển thị
-                    var cartCount = Number('${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}');
-
-                    function updateCartBadge() {
-                        // Header badge
-                        var headerBadge = document.getElementById('headerCartBadge');
-                        if (headerBadge) headerBadge.innerText = cartCount;
-
-                        // Sticky Bottom Selection Bar
-                        var stickyCart = document.getElementById('stickyMiniCart');
-                        if (stickyCart) {
-                            if (cartCount > 0) {
-                                stickyCart.classList.remove('d-none');
-                                var countEl = document.getElementById('stickyCartCount');
-                                if (countEl) countEl.innerText = cartCount;
-                                var badgeEl = document.getElementById('stickyCartBadge');
-                                if (badgeEl) badgeEl.innerText = cartCount;
-                            } else {
-                                stickyCart.classList.add('d-none');
-                            }
-                        }
-                    }
-
-                    document.addEventListener('DOMContentLoaded', function () {
-                        updateCartBadge();
-                    });
-
-                    // Gửi món vào giỏ hàng (CartController - /cart/add), giá được tính lại ở server
-                    function addToServerCart(productId, size, toppings, quantity, successMessage) {
-                        var params = new URLSearchParams();
-                        params.append('productId', productId);
-                        params.append('quantity', quantity);
-                        params.append('size', size || '');
-                        toppings.forEach(function (t) { params.append('topping', t); });
-
-                        fetch('${pageContext.request.contextPath}/cart/add', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: params.toString()
-                        })
-                            .then(function (response) { return response.json(); })
-                            .then(function (data) {
-                                if (!data.success) {
-                                    alert(data.error || 'Không thể thêm món vào giỏ hàng.');
-                                    return;
-                                }
-                                cartCount = data.totalItems;
-                                updateCartBadge();
-
-                                var toastMsg = document.getElementById('cartToastMessage');
-                                if (toastMsg) toastMsg.innerText = successMessage;
-                                var toastEl = document.getElementById('cartToast');
-                                if (toastEl && window.bootstrap) {
-                                    bootstrap.Toast.getOrCreateInstance(toastEl).show();
-                                }
-                            })
-                            .catch(function () {
-                                alert('Không thể kết nối máy chủ. Vui lòng thử lại!');
-                            });
-                    }
-
                     // 1-Click Quick Add: Bấm nút + thêm ngay vào giỏ hàng với size mặc định, không popup
                     function quickAddToCart(event, id, name, price, imageUrl, categoryId) {
                         if (event) {
@@ -810,176 +624,6 @@
                             // Đồ uống: mở popup để khách chọn đổi size L, thêm topping
                             openProductDetailModal(id);
                         }
-                    }
-
-                    // Mở Modal tùy biến chi tiết
-                    function openProductDetailModal(productId) {
-                        fetch('${pageContext.request.contextPath}/menu?action=detail&id=' + productId)
-                            .then(function (res) {
-                                if (!res.ok) {
-                                    throw new Error('Mạng hoặc máy chủ phản hồi lỗi: ' + res.status);
-                                }
-                                return res.json();
-                            })
-                            .then(function (data) {
-                                if (data.error) {
-                                    alert(data.error);
-                                    return;
-                                }
-                                currentProduct = data;
-                                modalQty = 1;
-                                selectedSizePrice = 0;
-
-                                var imgEl = document.getElementById('modalProductImg');
-                                if (imgEl) imgEl.src = data.imageUrl || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';
-                                
-                                var nameEl = document.getElementById('modalProductName');
-                                if (nameEl) nameEl.innerText = data.name || '';
-                                
-                                var catEl = document.getElementById('modalProductCategory');
-                                if (catEl) catEl.innerText = data.categoryName || '';
-                                
-                                var descEl = document.getElementById('modalProductDesc');
-                                if (descEl) descEl.innerText = data.description || '';
-                                
-                                var qtyEl = document.getElementById('modalProductQty');
-                                if (qtyEl) qtyEl.innerText = 1;
-
-                                var config = data.variantsConfig || {};
-                                if (typeof config === 'string') {
-                                    try {
-                                        config = JSON.parse(config);
-                                    } catch (e) {
-                                        config = {};
-                                    }
-                                }
-                                var sizes = config.sizes;
-                                if (!sizes || typeof sizes !== 'object' || Object.keys(sizes).length === 0) {
-                                    sizes = { "M": 0, "L": 10000 };
-                                }
-                                var toppings = Array.isArray(config.toppings) ? config.toppings : [];
-
-                                // Sizes với Smart Default (Size đầu tiên tự chọn)
-                                var sizeListHtml = '';
-                                var sizeKeys = Object.keys(sizes);
-                                sizeKeys.forEach(function (sName, index) {
-                                    var extraPrice = sizes[sName] || 0;
-                                    var isFirst = index === 0;
-                                    if (isFirst) selectedSizePrice = extraPrice;
-                                    sizeListHtml += '<div class="option-chip ' + (isFirst ? 'selected' : '') + '" data-size="' + sName.replace(/"/g, '&quot;') + '" onclick="selectSize(this, ' + extraPrice + ')">'
-                                        + sName + (extraPrice > 0 ? ' (+' + extraPrice.toLocaleString('vi-VN') + 'đ)' : '')
-                                        + '</div>';
-                                });
-                                var sizeListEl = document.getElementById('sizeList');
-                                if (sizeListEl) sizeListEl.innerHTML = sizeListHtml;
-
-                                // Toppings
-                                var toppingContainer = document.getElementById('toppingOptionsContainer');
-                                var toppingListEl = document.getElementById('toppingList');
-                                if (toppings.length > 0) {
-                                    if (toppingContainer) toppingContainer.classList.remove('d-none');
-                                    var toppingListHtml = '';
-                                    toppings.forEach(function (t, idx) {
-                                        var tName = typeof t === 'string' ? t : t.name;
-                                        var tPrice = typeof t === 'object' && t.price ? t.price : 8000;
-                                        toppingListHtml += '<div class="form-check d-flex align-items-center justify-content-between p-2 border rounded-3">'
-                                            + '  <div>'
-                                            + '    <input class="form-check-input ms-0 me-2" type="checkbox" id="top_' + idx + '" value="' + tPrice + '" onchange="calculateModalTotal()">'
-                                            + '    <label class="form-check-label small fw-medium" for="top_' + idx + '">' + tName + '</label>'
-                                            + '  </div>'
-                                            + '  <span class="text-danger fw-bold small">+' + tPrice.toLocaleString('vi-VN') + 'đ</span>'
-                                            + '</div>';
-                                    });
-                                    if (toppingListEl) toppingListEl.innerHTML = toppingListHtml;
-                                } else {
-                                    if (toppingContainer) toppingContainer.classList.add('d-none');
-                                    if (toppingListEl) toppingListEl.innerHTML = '';
-                                }
-
-                                calculateModalTotal();
-
-                                var modalEl = document.getElementById('productDetailModal');
-                                if (modalEl) {
-                                    var myModal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                                    myModal.show();
-                                }
-                            })
-                            .catch(function (err) {
-                                console.error('Error loading product:', err);
-                                alert('Không thể tải thông tin món. Vui lòng thử lại!');
-                            });
-                    }
-
-                    // Đóng Modal tùy biến
-                    function closeProductDetailModal() {
-                        var modalEl = document.getElementById('productDetailModal');
-                        if (modalEl) {
-                            var modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
-                            if (modalInstance) {
-                                modalInstance.hide();
-                            }
-                        }
-                    }
-
-                    function selectSize(element, extraPrice) {
-                        var chips = document.querySelectorAll('#sizeList .option-chip');
-                        chips.forEach(function (c) { c.classList.remove('selected'); });
-                        element.classList.add('selected');
-                        selectedSizePrice = extraPrice;
-                        calculateModalTotal();
-                    }
-
-                    function adjustModalQty(delta) {
-                        modalQty = Math.max(1, modalQty + delta);
-                        var qtyEl = document.getElementById('modalProductQty');
-                        if (qtyEl) qtyEl.innerText = modalQty;
-                        calculateModalTotal();
-                    }
-
-                    function calculateModalTotal() {
-                        if (!currentProduct) return;
-                        var checkboxes = document.querySelectorAll('#toppingList input[type="checkbox"]:checked');
-                        var topPrice = 0;
-                        checkboxes.forEach(function (cb) {
-                            topPrice += parseFloat(cb.value) || 0;
-                        });
-                        var base = parseFloat(currentProduct.basePrice) || 0;
-                        var singleItemPrice = base + (selectedSizePrice || 0) + topPrice;
-                        var total = singleItemPrice * modalQty;
-
-                        var formatted = total.toLocaleString('vi-VN') + 'đ';
-                        var totalEl = document.getElementById('modalProductTotalPrice');
-                        if (totalEl) totalEl.innerText = formatted;
-                        var btnPriceEl = document.getElementById('modalBtnTotalPrice');
-                        if (btnPriceEl) btnPriceEl.innerText = formatted;
-                    }
-
-                    function confirmAddToCart() {
-                        if (!currentProduct) return;
-
-                        var activeSize = document.querySelector('#sizeList .option-chip.selected');
-                        var sizeName = activeSize ? activeSize.getAttribute('data-size') : '';
-
-                        var toppingNames = [];
-                        var checkboxes = document.querySelectorAll('#toppingList input[type="checkbox"]:checked');
-                        checkboxes.forEach(function (cb) {
-                            var label = cb.parentElement.querySelector('label');
-                            if (label) toppingNames.push(label.innerText);
-                        });
-
-                        addToServerCart(currentProduct.id, sizeName, toppingNames, modalQty,
-                            'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào giỏ hàng!');
-
-                        var modalEl = document.getElementById('productDetailModal');
-                        if (modalEl) {
-                            var modalInstance = bootstrap.Modal.getInstance(modalEl);
-                            if (modalInstance) modalInstance.hide();
-                        }
-                    }
-
-                    // Xem các món đã chọn tại trang Giỏ hàng
-                    function openSelectedItemsModal() {
-                        window.location.href = '${pageContext.request.contextPath}/cart';
                     }
 
                     var openCartModal = openSelectedItemsModal;

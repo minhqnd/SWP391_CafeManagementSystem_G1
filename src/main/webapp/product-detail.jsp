@@ -505,6 +505,66 @@
             }
         }
 
+        /* Sticky Bottom Mini Cart Bar */
+        .sticky-cart-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #ffffff;
+            padding: 0.65rem 1.35rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.75rem;
+            z-index: 1045;
+            min-width: 360px;
+            max-width: 90vw;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sticky-cart-bar:hover {
+            transform: translate(-50%, -2px);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+        }
+        @media (max-width: 767.98px) {
+            .sticky-cart-bar {
+                bottom: 85px;
+            }
+        }
+        @keyframes slideUp {
+            from { transform: translate(-50%, 40px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .cart-badge-icon {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+        }
+        .badge-count-pill {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background-color: #e11d48;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 999px;
+        }
+
         /* ============== Animations ============== */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
@@ -532,14 +592,20 @@
 
     <div class="container-fluid px-4 px-lg-5">
 
-        <!-- Breadcrumb -->
-        <nav class="detail-breadcrumb animate-in">
-            <a href="${pageContext.request.contextPath}/">Trang chủ</a>
-            <span class="separator material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">chevron_right</span>
-            <a href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
-            <span class="separator material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">chevron_right</span>
-            <span class="current">${product.name}</span>
-        </nav>
+        <!-- Breadcrumb & Back to Menu -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 pb-2 animate-in">
+            <nav class="detail-breadcrumb mb-0">
+                <a href="${pageContext.request.contextPath}/">Trang chủ</a>
+                <span class="separator material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">chevron_right</span>
+                <a href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
+                <span class="separator material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">chevron_right</span>
+                <span class="current">${product.name}</span>
+            </nav>
+            <a href="${pageContext.request.contextPath}/menu" class="btn btn-sm btn-outline-dark rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" style="font-size: 0.825rem;">
+                <span class="material-symbols-outlined fs-6">arrow_back</span>
+                <span>Tất cả thực đơn</span>
+            </a>
+        </div>
 
         <!-- Product Detail Hero -->
         <section class="product-detail-section">
@@ -716,20 +782,76 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3">
-        <div id="cartToast"
-            class="toast align-items-center text-white bg-dark border-0 shadow-lg rounded-pill" role="alert"
-            aria-live="assertive" aria-atomic="true">
-            <div class="d-flex px-3 py-2 align-items-center">
-                <span class="material-symbols-outlined text-success me-2 fs-5">check_circle</span>
-                <div class="toast-body p-0 fw-medium small" id="cartToastMessage">
-                    Đã thêm vào giỏ hàng!
+    <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Bấm Xem món ra popup) -->
+    <div id="stickyMiniCart" class="sticky-cart-bar ${empty sessionScope.cart || sessionScope.cart.totalQuantity == 0 ? 'd-none' : ''}" onclick="openSelectedItemsModal()"
+        style="cursor: pointer;" title="Bấm để xem danh sách món">
+        <div class="d-flex align-items-center gap-3">
+            <div class="cart-badge-icon">
+                <span class="material-symbols-outlined fs-5">shopping_bag</span>
+                <span id="stickyCartBadge" class="badge-count-pill">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span>
+            </div>
+            <div class="fw-bold text-white" style="font-size: 0.95rem;">
+                Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span> món
+            </div>
+        </div>
+        <button type="button"
+            class="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm"
+            onclick="event.stopPropagation(); openSelectedItemsModal()" title="Xem danh sách món đang chọn">
+            <span>Xem món</span>
+            <span class="material-symbols-outlined fs-6">arrow_forward</span>
+        </button>
+    </div>
+
+    <!-- Selected Items Preview Modal (Món đang chọn - Hiện popup trước khi chuyển giỏ hàng) -->
+    <div class="modal fade" id="selectedItemsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 550px;">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
+                <div class="modal-header border-0 pt-4 px-4 pb-2 d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="modal-title fw-bold text-dark mb-0" style="font-size: 1.25rem; letter-spacing: -0.01em;">Món đang chọn</h5>
+                            <span id="selectedModalBadge" class="badge rounded-pill bg-danger-subtle text-danger fw-bold" style="font-size: 0.8rem; padding: 4px 10px;">0 món</span>
+                        </div>
+                        <p class="text-muted small mb-0 mt-1" style="font-size: 0.85rem;">Các món bạn vừa chọn tại Aura Café</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-1 small fw-semibold" style="font-size: 0.85rem;" onclick="clearAllCart()">
+                            Xoá tất cả
+                        </button>
+                        <button type="button" class="btn btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none" 
+                                style="width: 36px; height: 36px; transition: background 0.2s;" data-bs-dismiss="modal" aria-label="Close">
+                            <span class="material-symbols-outlined fs-5">close</span>
+                        </button>
+                    </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white ms-auto me-1" data-bs-dismiss="toast"></button>
+                <div class="modal-body px-4 pb-4 pt-2" style="overflow-x: hidden !important;">
+                    <div id="cartEmptyState" class="text-center py-5 d-none">
+                        <div class="bg-light rounded-circle p-3 d-inline-flex align-items-center justify-content-center text-muted mb-3" style="width: 60px; height: 60px;">
+                            <span class="material-symbols-outlined fs-2">local_cafe</span>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">Chưa có món nào được chọn</h6>
+                        <p class="text-muted small mb-3">Hãy chọn các món yêu thích từ thực đơn nhé.</p>
+                        <a href="${pageContext.request.contextPath}/menu" class="btn btn-sm btn-outline-danger rounded-pill px-4 py-2 fw-semibold">
+                            Xem thực đơn
+                        </a>
+                    </div>
+                    <div id="cartItemList" class="d-flex flex-column gap-3 mb-4" style="max-height: 360px; overflow-y: auto; overflow-x: hidden !important; padding: 2px 2px 2px 0;"></div>
+                    <div id="cartSummary" class="border-top pt-3 d-none">
+                        <a href="${pageContext.request.contextPath}/cart"
+                            class="btn btn-danger w-100 py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none"
+                            style="background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%); font-size: 1rem; box-shadow: 0 6px 20px rgba(139, 21, 40, 0.28) !important;">
+                            <span>Xem giỏ hàng</span>
+                            <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                        </a>
+                        <button type="button" class="btn btn-link text-muted small text-decoration-none w-100 mt-2 py-2 d-block text-center fw-medium" data-bs-dismiss="modal" style="font-size: 0.9rem;">
+                            + Chọn thêm món khác
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
 
     <!-- Include Auth Modal -->
     <jsp:include page="/components/auth_modal.jsp" />
@@ -902,17 +1024,6 @@
         }
 
         function showAddedFeedback() {
-            // Show toast
-            var toastMsg = document.getElementById('cartToastMessage');
-            if (toastMsg) {
-                toastMsg.innerText = 'Đã thêm ' + quantity + 'x ' + productData.name + ' vào giỏ hàng!';
-            }
-            var toastEl = document.getElementById('cartToast');
-            if (toastEl && window.bootstrap) {
-                var toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-                toast.show();
-            }
-
             // Button animation feedback
             var btn = document.getElementById('btnAddToCart');
             if (btn) {
@@ -928,9 +1039,161 @@
             }
         }
 
+        document.addEventListener('DOMContentLoaded', function () {
+            initOptions();
+            updateCartBadge();
+        });
+
         function updateCartBadge() {
             var headerBadge = document.getElementById('headerCartBadge');
-            if (headerBadge) headerBadge.innerText = cartCount;
+            if (headerBadge) {
+                headerBadge.innerText = cartCount;
+                headerBadge.style.transform = 'scale(1.3)';
+                headerBadge.style.transition = 'transform 0.2s';
+                setTimeout(function() { headerBadge.style.transform = 'scale(1)'; }, 200);
+            }
+            var stickyBadge = document.getElementById('stickyCartBadge');
+            if (stickyBadge) {
+                stickyBadge.innerText = cartCount;
+            }
+            var stickyCount = document.getElementById('stickyCartCount');
+            if (stickyCount) {
+                stickyCount.innerText = cartCount;
+            }
+            var stickyBar = document.getElementById('stickyMiniCart');
+            if (stickyBar) {
+                if (cartCount > 0) stickyBar.classList.remove('d-none');
+                else stickyBar.classList.add('d-none');
+            }
+        }
+
+        function openSelectedItemsModal() {
+            fetch('${pageContext.request.contextPath}/components/cart_api.jsp')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    renderSelectedItemsModal(data);
+                    var modalEl = document.getElementById('selectedItemsModal');
+                    if (modalEl && window.bootstrap) {
+                        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                    }
+                })
+                .catch(function(err) {
+                    console.error('Error fetching cart:', err);
+                    window.location.href = '${pageContext.request.contextPath}/cart';
+                });
+        }
+
+        function renderSelectedItemsModal(data) {
+            if (!data) return;
+            cartCount = data.totalQuantity || 0;
+            updateCartBadge();
+
+            var badge = document.getElementById('selectedModalBadge');
+            if (badge) badge.innerText = (data.totalQuantity || 0) + ' món';
+
+            var totalPriceEl = document.getElementById('selectedModalTotalPrice');
+            if (totalPriceEl) totalPriceEl.innerText = (data.totalAmount || 0).toLocaleString('vi-VN') + 'đ';
+
+            var emptyEl = document.getElementById('cartEmptyState');
+            var listEl = document.getElementById('cartItemList');
+            var summaryEl = document.getElementById('cartSummary');
+
+            var items = data.items || [];
+            if (items.length === 0) {
+                if (emptyEl) emptyEl.classList.remove('d-none');
+                if (listEl) listEl.innerHTML = '';
+                if (summaryEl) summaryEl.classList.add('d-none');
+            } else {
+                if (emptyEl) emptyEl.classList.add('d-none');
+                if (summaryEl) summaryEl.classList.remove('d-none');
+                
+                var html = '';
+                items.forEach(function(item) {
+                    var toppingsText = (item.toppings && item.toppings.length > 0) ? item.toppings.join(', ') : '';
+                    var imgUrl = item.imageUrl || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';
+
+                    html += '<div class="d-flex align-items-center justify-content-between p-3 rounded-4 bg-light border gap-3" style="transition: all 0.2s;">'
+                        + '  <div class="d-flex align-items-center gap-3 overflow-hidden flex-grow-1" style="min-width: 0;">'
+                        + '    <img src="' + imgUrl + '" class="rounded-3 object-fit-cover flex-shrink-0" style="width: 58px; height: 58px;" alt="' + item.name + '">'
+                        + '    <div class="overflow-hidden flex-grow-1" style="min-width: 0;">'
+                        + '      <div class="fw-bold text-dark text-truncate" style="font-size: 0.98rem; line-height: 1.3;" title="' + item.name + '">' + item.name + '</div>'
+                        + '      <div class="d-flex align-items-center gap-2 flex-wrap mt-1.5">'
+                        + (item.size ? '        <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.75rem; font-weight: 600; padding: 3px 10px;">' + (item.sizeLabel || ('Size ' + item.size)) + '</span>' : '')
+                        + (toppingsText ? '        <span class="text-muted small text-truncate" style="font-size: 0.8rem; max-width: 200px;">+ ' + toppingsText + '</span>' : '')
+                        + '      </div>'
+                        + '    </div>'
+                        + '  </div>'
+                        + '  <div class="d-flex align-items-center gap-2.5 flex-shrink-0">'
+                        + '    <div class="d-flex align-items-center border rounded-pill bg-white px-2 py-1 shadow-2xs">'
+                        + '      <button type="button" class="btn btn-sm btn-link p-0 text-secondary d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; text-decoration: none; font-size: 1.25rem; font-weight: 700; line-height: 1;" onclick="changeCartItemQty(' + item.lineId + ', -1)">−</button>'
+                        + '      <span class="px-2 fw-bold text-dark" style="min-width: 22px; text-align: center; font-size: 0.95rem;">' + item.quantity + '</span>'
+                        + '      <button type="button" class="btn btn-sm btn-link p-0 text-secondary d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; text-decoration: none; font-size: 1.25rem; font-weight: 700; line-height: 1;" onclick="changeCartItemQty(' + item.lineId + ', 1)">+</button>'
+                        + '    </div>'
+                        + '    <button class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center text-muted border-0" style="width: 36px; height: 36px;" title="Xoá món" onclick="removeCartItem(' + item.lineId + ')">'
+                        + '      <span class="material-symbols-outlined" style="font-size: 20px;">delete_outline</span>'
+                        + '    </button>'
+                        + '  </div>'
+                        + '</div>';
+                });
+                if (listEl) listEl.innerHTML = html;
+            }
+        }
+
+        function changeCartItemQty(lineId, delta) {
+            var action = delta > 0 ? 'increase' : 'decrease';
+            var params = new URLSearchParams();
+            params.append('action', action);
+            params.append('lineId', lineId);
+
+            fetch('${pageContext.request.contextPath}/components/cart_api.jsp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString()
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                renderSelectedItemsModal(data);
+            })
+            .catch(function(err) {
+                console.error('Error changing qty:', err);
+            });
+        }
+
+        function removeCartItem(lineId) {
+            var params = new URLSearchParams();
+            params.append('action', 'remove');
+            params.append('lineId', lineId);
+
+            fetch('${pageContext.request.contextPath}/components/cart_api.jsp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString()
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                renderSelectedItemsModal(data);
+            })
+            .catch(function(err) {
+                console.error('Error removing item:', err);
+            });
+        }
+
+        function clearAllCart() {
+            var params = new URLSearchParams();
+            params.append('action', 'clear');
+
+            fetch('${pageContext.request.contextPath}/components/cart_api.jsp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString()
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                renderSelectedItemsModal(data);
+            })
+            .catch(function(err) {
+                console.error('Error clearing cart:', err);
+            });
         }
     </script>
 
