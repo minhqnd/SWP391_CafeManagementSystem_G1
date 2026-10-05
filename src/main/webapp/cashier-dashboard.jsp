@@ -1252,9 +1252,17 @@
         }
         .badge-status.cancelled .status-dot { background: #f43f5e; }
 
+        .col-actions {
+            width: 180px;
+            min-width: 180px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
         .btn-action-bill {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 4px;
             padding: 5px 10px;
             border-radius: 6px;
@@ -1265,6 +1273,9 @@
             color: var(--slate-700);
             text-decoration: none;
             transition: all 0.15s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+            height: 32px;
         }
 
         .btn-action-bill:hover {
@@ -1276,8 +1287,9 @@
         .btn-action-cancel-order {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 5px 10px;
+            justify-content: center;
+            gap: 3px;
+            padding: 5px 9px;
             border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
@@ -1286,6 +1298,9 @@
             color: #be123c;
             cursor: pointer;
             transition: all 0.15s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+            height: 32px;
         }
 
         .btn-action-cancel-order:hover {
@@ -2074,15 +2089,15 @@
                     <table class="pos-table" id="ordersTable">
                         <thead>
                             <tr>
-                                <th style="width: 170px;">Mã đơn</th>
-                                <th style="width: 100px;">Thời gian</th>
-                                <th style="width: 120px;">Loại đơn</th>
-                                <th style="width: 160px;">Khách hàng</th>
+                                <th style="width: 160px; white-space: nowrap;">Mã đơn</th>
+                                <th style="width: 95px; white-space: nowrap;">Thời gian</th>
+                                <th style="width: 110px; white-space: nowrap;">Loại đơn</th>
+                                <th style="width: 150px; white-space: nowrap;">Khách hàng</th>
                                 <th>Món đã gọi</th>
-                                <th class="text-end" style="width: 130px;">Tổng tiền</th>
-                                <th style="width: 130px;">Hình thức</th>
-                                <th style="width: 150px;">Trạng thái</th>
-                                <th class="text-center" style="width: 150px;">Thao tác</th>
+                                <th class="text-end" style="width: 120px; white-space: nowrap;">Tổng tiền</th>
+                                <th style="width: 110px; white-space: nowrap;">Hình thức</th>
+                                <th style="width: 140px; white-space: nowrap;">Trạng thái</th>
+                                <th class="col-actions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2192,8 +2207,8 @@
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
-                                        <td>
-                                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                        <td class="col-actions">
+                                            <div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">
                                                 <a href="${pageContext.request.contextPath}/bill?orderId=${o.id}" target="_blank" class="btn-action-bill" title="Mở xem và in hóa đơn">
                                                     <span class="material-symbols-outlined" style="font-size: 15px;">receipt_long</span>
                                                     <span>Hóa đơn</span>
