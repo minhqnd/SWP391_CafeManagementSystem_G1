@@ -92,7 +92,7 @@
 
                     <div class="row g-0">
                         <div
-                            class="col-12 col-md-5 modal-auth-left position-relative d-flex flex-column justify-content-between p-4">
+                            class="col-12 col-md-5 modal-auth-left position-relative d-flex flex-column justify-content-center p-4 p-md-5">
                             <div class="position-absolute w-100 h-100 top-0 start-0"
                                 style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAGFUqokLpPQhYrL16Lx1MmWKuiDJT-ODG6DB0BHusP12uZytq7EXIlX8NPaQjkCjGB962XBMQtan6ezZNms1rtoX6miKboAymKvO9ofSFSV355L6uD3GniaPpqO7EkrnrQHFympfYpI2XS2W_2wxEJHvbcy2DOo0Ycop5LZ7iuoWV3pcYpESD0Eo_0xCKo_FdIzK8HVEvMlyK6s2Vnxxnjxl9kVFsG3tT8-M5dD_clWwQiVacYM5ot'); background-size: cover; background-position: center; opacity: 0.3; mix-blend-mode: multiply;">
                             </div>
@@ -100,36 +100,21 @@
                                 style="width: 14rem; height: 14rem; top: -4rem; left: -4rem; background-color: rgba(144, 11, 26, 0.1); filter: blur(40px);">
                             </div>
 
-                            <div class="position-relative z-1">
-                                <div
-                                    class="d-inline-flex align-items-center gap-2 rounded-pill px-3 py-1 shadow-sm glass-badge">
-                                    <span class="pulse-dot"></span>Hệ Thống Vận Hành 2.4
-                                </div>
-                            </div>
-
-                            <div class="position-relative z-1 my-auto py-4">
+                            <div class="position-relative z-1 py-3">
                                 <div class="d-flex align-items-center gap-2 mb-2">
                                     <div class="rounded-3 d-flex align-items-center justify-content-center shadow-sm"
-                                        style="width: 40px; height: 40px; background-color: var(--primary-container); color: white;">
+                                        style="width: 42px; height: 42px; background-color: var(--primary-container); color: white;">
                                         <span class="material-symbols-outlined">local_cafe</span>
                                     </div>
                                     <div>
                                         <h1 class="m-0 fw-bold fs-3 text-dark">Aura <span
                                                 style="color: var(--primary-container);">Café</span></h1>
-                                        <p class="m-0 text-muted" style="font-size: 0.75rem;">Crafting Digital Moments
-                                        </p>
+                                        <p class="m-0 text-muted" style="font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600;">Specialty Coffee</p>
                                     </div>
                                 </div>
-                                <p class="text-muted mt-3 d-none d-md-block" style="font-size: 0.85rem;">
-                                    Nền tảng quản trị đồng bộ đa vai trò: Thu ngân, Pha chế KDS, Shipper và Quản lý
-                                    chuỗi chi nhánh thời gian thực.
+                                <p class="text-muted mt-3 mb-0 d-none d-md-block" style="font-size: 0.875rem; line-height: 1.6;">
+                                    Khám phá không gian cà phê nghệ thuật và hương vị nguyên bản từ những hạt cà phê chọn lọc. Đăng ký thành viên để nhận ưu đãi và tích luỹ điểm thưởng trên mỗi đơn hàng.
                                 </p>
-                            </div>
-
-                            <div class="position-relative z-1 d-flex justify-content-between text-muted"
-                                style="font-size: 0.7rem;">
-                                <span class="text-uppercase fw-semibold">Chi nhánh Sài Gòn • Hà Nội</span>
-                                <span class="fw-medium">v2.4.9-PRO</span>
                             </div>
                         </div>
 
@@ -189,41 +174,40 @@
                                                             <% if (authRedirect !=null) { %>
                                                                 <input type="hidden" name="redirect"
                                                                     value="<%= authRedirect %>">
-                                                                <% } %>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label fw-medium"
-                                                                            style="font-size: 0.85rem;">Số điện thoại /
-                                                                            Email</label>
-                                                                        <input type="text"
-                                                                            class="form-control bg-light border-0 p-2"
-                                                                            name="username"
-                                                                            placeholder="barista.nguyen@auracafe.vn"
-                                                                            required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label fw-medium"
-                                                                            style="font-size: 0.85rem;">Mật khẩu</label>
-                                                                        <input type="password"
-                                                                            class="form-control bg-light border-0 p-2"
-                                                                            name="password" placeholder="••••••••••••"
-                                                                            minlength="6" required>
-                                                                    </div>
-                                                                    <button type="submit"
-                                                                        class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
-                                                                        style="background-color: var(--primary-container); height: 48px;">
-                                                                        Đăng nhập hệ thống <span
-                                                                            class="material-symbols-outlined fs-5">arrow_forward</span>
-                                                                    </button>
+                                                            <% } %>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-medium"
+                                                                    style="font-size: 0.85rem;">Số điện thoại /
+                                                                    Email</label>
+                                                                <input type="text"
+                                                                    class="form-control bg-light border-0 p-2"
+                                                                    name="username"
+                                                                    placeholder="0901234567 hoặc email@domain.com"
+                                                                    required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-medium"
+                                                                    style="font-size: 0.85rem;">Mật khẩu</label>
+                                                                <input type="password"
+                                                                    class="form-control bg-light border-0 p-2"
+                                                                    name="password" placeholder="••••••••••••"
+                                                                    minlength="6" required>
+                                                            </div>
+                                                            <button type="submit"
+                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
+                                                                style="background-color: var(--primary-container); height: 48px;">
+                                                                Đăng nhập <span
+                                                                    class="material-symbols-outlined fs-5">arrow_forward</span>
+                                                            </button>
                                                         </form>
                                                     </div>
 
                                                     <!-- REGISTER -->
-                                                    <div class="tab-pane fade <%= isRegisterTab ? " show active" : "" %>
-                                                        " id="modal-register-pane">
+                                                    <div class="tab-pane fade <%= isRegisterTab ? " show active" : "" %>" id="modal-register-pane">
                                                         <div class="mb-3">
                                                             <h2 class="fs-4 fw-semibold mb-1">Tạo tài khoản Aura</h2>
                                                             <p class="text-muted" style="font-size: 0.85rem;">Đăng ký
-                                                                tài khoản nội bộ chi nhánh hoặc đối tác</p>
+                                                                thành viên để nhận ưu đãi và tích điểm</p>
                                                         </div>
                                                         <form action="${pageContext.request.contextPath}/register"
                                                             method="POST">
