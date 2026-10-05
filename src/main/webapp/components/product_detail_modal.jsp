@@ -178,7 +178,7 @@
     });
 
     function openSelectedItemsModal() {
-        fetch('${pageContext.request.contextPath}/cart/api')
+        fetch('${pageContext.request.contextPath}/components/cart_api.jsp')
             .then(function(res) { return res.json(); })
             .then(function(data) {
                 renderSelectedItemsModal(data);
@@ -258,7 +258,7 @@
         params.append('lineId', lineId);
         params.append('format', 'json');
 
-        fetch('${pageContext.request.contextPath}/cart/api', {
+        fetch('${pageContext.request.contextPath}/components/cart_api.jsp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params.toString()
@@ -278,7 +278,7 @@
         params.append('lineId', lineId);
         params.append('format', 'json');
 
-        fetch('${pageContext.request.contextPath}/cart/api', {
+        fetch('${pageContext.request.contextPath}/components/cart_api.jsp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params.toString()
@@ -297,7 +297,7 @@
         params.append('action', 'clear');
         params.append('format', 'json');
 
-        fetch('${pageContext.request.contextPath}/cart/api', {
+        fetch('${pageContext.request.contextPath}/components/cart_api.jsp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params.toString()
