@@ -11,12 +11,14 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: aura_cafe_erp
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "3306:3306"
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
       --skip-name-resolve
+      --default-time-zone=+07:00
       --innodb-buffer-pool-size=64M
       --max-connections=30
       --performance-schema=OFF
@@ -43,7 +45,8 @@ services:
       DB_NAME: aura_cafe_erp
       DB_USER: root
       DB_PASSWORD: 1234
-      JAVA_OPTS: "-Xms128m -Xmx256m"
+      TZ: Asia/Ho_Chi_Minh
+      JAVA_OPTS: "-Xms128m -Xmx256m -Duser.timezone=Asia/Ho_Chi_Minh"
     ports:
       - "80:8080"
       - "8080:8080"
