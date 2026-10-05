@@ -45,26 +45,24 @@
         .blur-blob-1 { position: absolute; right: -5rem; top: -6rem; width: 24rem; height: 24rem; border-radius: 50%; background-color: rgba(144, 11, 26, 0.1); filter: blur(3rem); pointer-events: none; }
         .blur-blob-2 { position: absolute; left: 25%; bottom: -4rem; width: 20rem; height: 20rem; border-radius: 50%; background-color: rgba(149, 129, 90, 0.1); filter: blur(3rem); pointer-events: none; }
         
-        .pulse-dot { width: 8px; height: 8px; background-color: var(--primary-container); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(178, 41, 46, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(178, 41, 46, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(178, 41, 46, 0); } }
+        .hero-title { font-size: 3.25rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.025em; color: #0f172a; }
+        @media (max-width: 768px) { .hero-title { font-size: 2.25rem; } }
         
-        .hero-title { font-size: 3.5rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; color: #1a1c1e; }
-        @media (max-width: 768px) { .hero-title { font-size: 2.5rem; } }
+        .btn-custom-primary { background-color: var(--primary); color: white; border-radius: 0.75rem; font-weight: 600; padding: 0.85rem 1.75rem; transition: all 0.2s ease; border: none; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 4px 14px rgba(144, 11, 26, 0.2); }
+        .btn-custom-primary:hover { opacity: 0.95; color: white; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(144, 11, 26, 0.28); }
+        .btn-custom-secondary { background-color: #ffffff; color: #1e293b; border-radius: 0.75rem; font-weight: 600; padding: 0.85rem 1.75rem; transition: all 0.2s ease; border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        .btn-custom-secondary:hover { background-color: #f8fafc; color: #0f172a; border-color: #cbd5e1; transform: translateY(-1px); }
         
-        .btn-custom-primary { background-color: var(--primary); color: white; border-radius: 0.5rem; font-weight: 600; padding: 0.75rem 1.5rem; transition: opacity 0.2s; border: none; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
-        .btn-custom-primary:hover { opacity: 0.9; color: white; }
-        .btn-custom-secondary { background-color: var(--surface-container-lowest); color: #1a1c1e; border-radius: 0.5rem; font-weight: 600; padding: 0.75rem 1.5rem; transition: background-color 0.2s; border: 1px solid #e0e0e0; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
-        .btn-custom-secondary:hover { background-color: var(--surface-container); color: #1a1c1e; }
-        
-        .stats-box { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); border-radius: 1rem; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
-        .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .stats-box { background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 1rem; padding: 1.25rem 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        .stat-value { font-size: 1.35rem; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.25rem; }
+        .stat-label { font-size: 0.8rem; color: #64748b; font-weight: 500; }
         
         .hero-img-container { position: relative; height: 440px; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 1rem 3rem rgba(0,0,0,0.1); }
         .hero-img-bg { background-size: cover; background-position: center; width: 100%; height: 100%; transition: transform 0.7s; }
         .hero-img-container:hover .hero-img-bg { transform: scale(1.05); }
-        .hero-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; color: white; }
+        .hero-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 65%); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; color: white; }
         
-        .voucher-floating { position: absolute; bottom: -1.5rem; left: -1.5rem; background: white; padding: 1rem; border-radius: 1rem; box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1); border: 1px solid var(--surface-container-high); display: flex; align-items: center; gap: 1rem; z-index: 2; max-width: 300px; }
+        .voucher-floating { position: absolute; bottom: -1.25rem; left: -1.25rem; background: #ffffff; padding: 0.85rem 1.25rem; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; gap: 0.85rem; z-index: 2; }
         
         /* Category Section */
         .category-section { background-color: var(--surface-container-low); padding: 5rem 0; }
@@ -237,51 +235,43 @@
         <div class="container position-relative z-1">
             <div class="row g-5 align-items-center">
                 <div class="col-lg-7">
-                    <div class="d-inline-flex align-items-center gap-2 bg-white px-3 py-1 rounded-pill shadow-sm mb-4">
-                        <span class="pulse-dot"></span>
-                        <span class="text-primary-custom fw-bold" style="font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;">Aura Privilege Club</span>
-                    </div>
-                    
                     <div class="mb-4">
-                        <span class="text-secondary-custom fw-bold text-uppercase d-block mb-2" style="letter-spacing: 2px; font-size: 0.875rem;">Chào mừng bạn đến với</span>
-                        <h1 class="hero-title">
+                        <span class="text-secondary-custom fw-bold text-uppercase d-block mb-2" style="letter-spacing: 2px; font-size: 0.8rem;">Chào mừng bạn đến với</span>
+                        <h1 class="hero-title mb-3">
                             Hương vị chuẩn mực.<br/>
                             <span class="text-primary-custom">Đặc quyền hội viên.</span>
                         </h1>
+                        <p class="text-muted mb-0" style="font-size: 1.05rem; line-height: 1.6; max-width: 520px;">
+                            Khám phá không gian cà phê thủ công chọn lọc từ những nông trại cao nguyên danh tiếng, cùng đặc quyền tích luỹ điểm thưởng và ưu đãi hấp dẫn dành riêng cho thành viên mới.
+                        </p>
                     </div>
-                    
-                    <p class="hero-subtitle mb-4">
-                        Khám phá không gian cà phê thủ công chọn lọc từ những nông trại cao nguyên danh tiếng cùng quà tặng chào mừng trị giá tới 150.000đ dành riêng cho thành viên mới.
-                    </p>
                     
                     <div class="d-flex flex-wrap gap-3 mb-5">
                         <a href="${pageContext.request.contextPath}/menu" class="btn-custom-primary">
-                            Khám phá toàn bộ Menu <span class="material-symbols-outlined fs-5">east</span>
+                            Khám phá Menu
                         </a>
                         <% if(session.getAttribute("user") == null) { %>
                             <button class="btn-custom-secondary" data-bs-toggle="modal" data-bs-target="#authModal">
-                                <span class="material-symbols-outlined text-primary-custom fs-5">workspace_premium</span>
-                                Kích hoạt thẻ thành viên
+                                Đăng ký thành viên
                             </button>
                         <% } else { %>
                             <a href="${pageContext.request.contextPath}/profile" class="btn-custom-secondary">
-                                <span class="material-symbols-outlined text-primary-custom fs-5">workspace_premium</span>
                                 Thẻ thành viên của bạn
                             </a>
                         <% } %>
                     </div>
                     
-                    <div class="stats-box row g-3 text-center text-md-start">
-                        <div class="col-4">
+                    <div class="stats-box row g-0 text-center text-md-start">
+                        <div class="col-4 pe-3">
                             <div class="stat-value">100%</div>
                             <div class="stat-label">Hạt Arabica Cầu Đất</div>
                         </div>
-                        <div class="col-4">
-                            <div class="stat-value">4.9/5</div>
+                        <div class="col-4 px-3 border-start">
+                            <div class="stat-value">4.9 / 5</div>
                             <div class="stat-label">Đánh giá trải nghiệm</div>
                         </div>
-                        <div class="col-4">
-                            <div class="stat-value">15 Phút</div>
+                        <div class="col-4 ps-3 border-start">
+                            <div class="stat-value">15 phút</div>
                             <div class="stat-label">Giao tận nơi giữ nhiệt</div>
                         </div>
                     </div>
@@ -291,22 +281,17 @@
                     <div class="hero-img-container">
                         <div class="hero-img-bg" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBw-dbJgXjvCR5nkOrwZ8VgbS5GY2OEyRxEbOPz5Icbwto9r4_yy3ThjTmDPVYgkVS0qvw9zgWOIgZyovscgGXFfWYGZIWnz4J-kEojbOR_3UIVRm6Pc2K3JfHrvidn2O5NIY6kYDmJT7_FHzfZXsvm5SPBgxa8HNtPCnWXgdeqGGBi8jSUbqQkSy9_zS1iUSwY3th8A9HlEIBbs8WrZi_JfRhmcTX_OGMjA0Fi-G89MqKh9nlG6OfL');"></div>
                         <div class="hero-img-overlay">
-                            <span class="text-uppercase fw-bold mb-1" style="color: #ffb4a9; font-size: 0.75rem; letter-spacing: 1px;">Món Signature Aura</span>
+                            <span class="text-uppercase fw-bold mb-1" style="color: #ffb4a9; font-size: 0.75rem; letter-spacing: 1.5px;">Món Signature Aura</span>
                             <h2 class="fw-bold text-white fs-3 mb-2">Cà Phê Muối Aura</h2>
-                            <p class="text-white-50 mb-3" style="font-size: 0.875rem;">Lớp kem béo mặn đặc chế hòa quyện cà phê phin nguyên bản từ cao nguyên Lâm Đồng.</p>
-                            <a href="#" class="btn btn-sm bg-primary-custom d-inline-flex align-items-center gap-1 align-self-start fw-semibold py-2 px-3 shadow">
-                                Tùy chỉnh món <span class="material-symbols-outlined fs-6">arrow_forward</span>
-                            </a>
+                            <p class="text-white-50 mb-0" style="font-size: 0.875rem; line-height: 1.5;">Lớp kem béo mặn đặc chế hòa quyện cà phê phin nguyên bản từ cao nguyên Lâm Đồng.</p>
                         </div>
                     </div>
                     
                     <div class="voucher-floating d-none d-sm-flex">
-                        <div class="rounded-3 bg-primary-custom d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                            <span class="material-symbols-outlined">card_membership</span>
-                        </div>
+                        <div class="badge rounded-pill bg-primary-custom px-2.5 py-1 text-white fw-bold" style="font-size: 0.725rem;">50K</div>
                         <div>
-                            <div class="text-primary-custom fw-bold text-uppercase" style="font-size: 0.75rem;">Voucher Welcome 50K</div>
-                            <div class="text-dark" style="font-size: 0.875rem;">Áp dụng cho đơn hàng đầu tiên</div>
+                            <div class="text-dark fw-bold" style="font-size: 0.825rem;">Voucher chào mừng</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">Áp dụng cho đơn hàng đầu tiên</div>
                         </div>
                     </div>
                 </div>
@@ -319,9 +304,8 @@
         <div class="container py-4">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
                 <div>
-                    <div class="d-flex align-items-center gap-1 text-primary-custom fw-bold mb-2">
-                        <span class="material-symbols-outlined fs-5">local_fire_department</span>
-                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Ưa chuộng nhất</span>
+                    <div class="text-primary-custom fw-bold mb-1">
+                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1.5px;">Ưa chuộng nhất</span>
                     </div>
                     <h2 class="fw-bold text-dark fs-2 mb-2">Sản phẩm bán chạy trong tuần</h2>
                     <p class="text-secondary-custom mb-0">Những công thức hương vị được yêu thích và đặt nhiều nhất bởi tín đồ sành cà phê.</p>
@@ -353,9 +337,8 @@
         <div class="container">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
                 <div>
-                    <div class="d-flex align-items-center gap-1 text-primary-custom fw-bold mb-2">
-                        <span class="material-symbols-outlined fs-5">category</span>
-                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Khám phá thực đơn</span>
+                    <div class="text-primary-custom fw-bold mb-2">
+                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1.5px;">Khám phá thực đơn</span>
                     </div>
                     <h2 class="fw-bold text-dark fs-2 mb-2">Danh mục đồ uống & Món ngon</h2>
                     <p class="text-secondary-custom mb-0">Lựa chọn hương vị tinh tế theo từng nhóm món yêu thích pha chế thủ công tại Aura Café.</p>
@@ -431,8 +414,7 @@
     <!-- Loyalty Matrix Section -->
     <section class="loyalty-section container">
         <div class="mb-5 text-center">
-            <div class="d-inline-flex align-items-center gap-1 text-primary-custom fw-bold mb-2">
-                <span class="material-symbols-outlined fs-5">stars</span>
+            <div class="text-primary-custom fw-bold mb-2">
                 <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1.5px;">Aura Privilege Club</span>
             </div>
             <h2 class="fw-bold text-dark fs-2 mb-2">Đặc quyền hội viên Aura</h2>
@@ -578,12 +560,10 @@
         <div class="mt-4 pt-3 text-center">
             <% if(session.getAttribute("user") == null) { %>
                 <button class="btn btn-outline-dark rounded-pill px-4 py-2.5 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal">
-                    <span class="material-symbols-outlined text-primary-custom fs-5">workspace_premium</span>
                     <span>Đăng ký thành viên nhận 50.000đ chào mừng</span>
                 </button>
             <% } else { %>
                 <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-outline-dark rounded-pill px-4 py-2.5 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm">
-                    <span class="material-symbols-outlined text-primary-custom fs-5">workspace_premium</span>
                     <span>Xem thẻ thành viên & điểm thưởng của bạn</span>
                 </a>
             <% } %>
@@ -600,7 +580,7 @@
             </div>
             <div class="flex-shrink-0 mt-3 mt-md-0">
                 <a href="${pageContext.request.contextPath}/menu" class="btn btn-light btn-lg fw-bold d-inline-flex align-items-center gap-2 px-4 py-3 shadow" style="color: var(--primary);">
-                    Khám phá toàn bộ Menu <span class="material-symbols-outlined fs-5">restaurant_menu</span>
+                    Khám phá toàn bộ Menu
                 </a>
             </div>
         </div>
