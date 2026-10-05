@@ -140,69 +140,58 @@
             border-top: 1px solid #f1f5f9;
         }
         
-        /* Loyalty Section */
-        .loyalty-section {
+        /* Store Section */
+        .store-section {
             padding: 4.5rem 0;
         }
-        .tier-card {
+        .store-card {
             background: #ffffff;
-            border-radius: 1.25rem;
-            padding: 1.75rem;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            border: 1px solid var(--surface-container-high, #e2e8f0);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            transition: box-shadow 0.3s ease;
+        }
+        .store-card:hover {
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+        .store-img-container {
             position: relative;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
-            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            height: 100%;
+            min-height: 400px;
+            overflow: hidden;
         }
-        .tier-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+        .store-img {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            object-fit: cover;
+            transition: transform 0.6s ease;
         }
-        .tier-vip-highlight {
-            border: 1.5px solid rgba(144, 11, 26, 0.35);
-            background: linear-gradient(180deg, #ffffff 0%, #fffbfa 100%);
+        .store-card:hover .store-img {
+            transform: scale(1.03);
         }
-        .tier-icon-box {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .tier-benefit-list {
-            list-style: none;
-            padding-left: 0;
-            margin: 1.25rem 0;
-            flex-grow: 1;
-        }
-        .tier-benefit-list li {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.5rem;
-            font-size: 0.825rem;
-            color: #475569;
-            margin-bottom: 0.65rem;
-            line-height: 1.5;
-        }
-        .tier-link {
+        .btn-store-explore {
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
-            font-size: 0.825rem;
-            font-weight: 600;
-            color: #64748b;
-            text-decoration: none;
-            transition: color 0.2s, transform 0.2s;
-            margin-top: auto;
-            padding-top: 1rem;
-            border-top: 1px solid #f1f5f9;
-        }
-        .tier-link:hover {
+            justify-content: center;
+            padding: 0.85rem 2.25rem;
+            border-radius: 50rem;
+            border: 1.5px solid var(--primary);
             color: var(--primary);
-            transform: translateX(2px);
+            background: transparent;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+        .btn-store-explore:hover {
+            background-color: var(--primary);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(144, 11, 26, 0.2);
         }
         
         /* CTA Section */
@@ -403,162 +392,33 @@
         </div>
     </section>
 
-    <!-- Loyalty Matrix Section -->
-    <section class="loyalty-section container">
-        <div class="mb-5 text-center">
-            <div class="text-primary-custom fw-bold mb-2">
-                <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1.5px;">Aura Privilege Club</span>
-            </div>
-            <h2 class="fw-bold text-dark fs-2 mb-2">Đặc quyền hội viên Aura</h2>
-            <p class="text-secondary-custom mb-0 mx-auto" style="max-width: 620px;">
-                Mỗi 10.000đ chi tiêu tương đương 1 Điểm Aura (A-Point). Tích lũy để nâng hạng tự động và tận hưởng ưu đãi đặc quyền dài lâu.
-            </p>
-        </div>
-
-        <div class="row g-4 align-items-stretch">
-            <!-- Member -->
-            <div class="col-lg-3 col-md-6">
-                <div class="tier-card">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="tier-icon-box" style="background-color: #f1f5f9; color: #64748b;">
-                            <span class="material-symbols-outlined fs-4">account_circle</span>
-                        </div>
-                        <span class="badge rounded-pill px-2.5 py-1 text-secondary border bg-light" style="font-size: 0.7rem; font-weight: 600;">Khởi đầu</span>
+    <!-- Store Near You Section -->
+    <section class="store-section">
+        <div class="container">
+            <div class="store-card row g-0 align-items-center">
+                <div class="col-lg-6 p-4 p-md-5 text-center text-lg-start d-flex flex-column justify-content-center">
+                    <div class="text-primary-custom fw-bold mb-2">
+                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 2px;">Không gian & Chi nhánh</span>
                     </div>
-                    <h3 class="fs-5 fw-bold text-dark mb-1">Thành viên</h3>
-                    <span class="text-secondary small fw-medium">Tích lũy 0 - 299 Điểm</span>
-                    
-                    <ul class="tier-benefit-list">
-                        <li>
-                            <span class="material-symbols-outlined text-success fs-6 mt-0.5">check_circle</span>
-                            <span>Tích luỹ <strong>5%</strong> trên mọi hóa đơn</span>
-                        </li>
-                        <li>
-                            <span class="material-symbols-outlined text-success fs-6 mt-0.5">check_circle</span>
-                            <span>Tặng E-Voucher chào mừng <strong>20.000đ</strong></span>
-                        </li>
-                    </ul>
-                    
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="tier-link">
-                        <span>Chi tiết quyền lợi</span>
-                        <span class="material-symbols-outlined fs-6">arrow_forward</span>
-                    </a>
+                    <h2 class="display-6 fw-bold text-dark mb-3" style="line-height: 1.25;">
+                        Cửa Hàng<br/>
+                        <span class="text-primary-custom">Aura Gần Bạn</span>
+                    </h2>
+                    <p class="text-secondary-custom mb-4" style="font-size: 1.05rem; line-height: 1.6; max-width: 460px;">
+                        Bạn ở đâu, có Aura ở đó! Khám phá không gian cà phê ấm cúng và thưởng thức những ly cà phê chuẩn vị gần bạn nhất.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                        <a href="${pageContext.request.contextPath}/menu" class="btn-store-explore">
+                            Khám phá ngay
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="store-img-container">
+                        <img src="https://www.highlandscoffee.com.vn/vnt_upload/home/1_1.jpg" alt="Cửa hàng Aura gần bạn" class="store-img" loading="lazy" />
+                    </div>
                 </div>
             </div>
-            
-            <!-- Gold -->
-            <div class="col-lg-3 col-md-6">
-                <div class="tier-card">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="tier-icon-box" style="background-color: #fef3c7; color: #b45309;">
-                            <span class="material-symbols-outlined fs-4">stars</span>
-                        </div>
-                        <span class="badge rounded-pill px-2.5 py-1" style="background-color: #fef3c7; color: #b45309; border: 1px solid rgba(180, 83, 9, 0.2); font-size: 0.7rem; font-weight: 600;">Phổ biến</span>
-                    </div>
-                    <h3 class="fs-5 fw-bold text-dark mb-1">Vàng (Gold)</h3>
-                    <span class="text-secondary small fw-medium">Tích lũy 300 - 799 Điểm</span>
-                    
-                    <ul class="tier-benefit-list">
-                        <li>
-                            <span class="material-symbols-outlined text-success fs-6 mt-0.5">check_circle</span>
-                            <span>Tích luỹ <strong>10%</strong> giá trị đơn hàng</span>
-                        </li>
-                        <li>
-                            <span class="material-symbols-outlined text-success fs-6 mt-0.5">check_circle</span>
-                            <span>Tặng <strong>01 bánh ngọt</strong> dịp sinh nhật</span>
-                        </li>
-                        <li>
-                            <span class="material-symbols-outlined text-success fs-6 mt-0.5">check_circle</span>
-                            <span>Miễn phí <strong>Upsize size L</strong> thứ 3</span>
-                        </li>
-                    </ul>
-                    
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="tier-link">
-                        <span>Chi tiết quyền lợi</span>
-                        <span class="material-symbols-outlined fs-6">arrow_forward</span>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Diamond -->
-            <div class="col-lg-3 col-md-6">
-                <div class="tier-card">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="tier-icon-box" style="background-color: #e0f2fe; color: #0284c7;">
-                            <span class="material-symbols-outlined fs-4">diamond</span>
-                        </div>
-                        <span class="badge rounded-pill px-2.5 py-1" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid rgba(2, 132, 199, 0.2); font-size: 0.7rem; font-weight: 600;">Cao cấp</span>
-                    </div>
-                    <h3 class="fs-5 fw-bold text-dark mb-1">Kim Cương</h3>
-                    <span class="text-secondary small fw-medium">Tích lũy 800 - 1.499 Điểm</span>
-                    
-                    <ul class="tier-benefit-list">
-                        <li>
-                            <span class="material-symbols-outlined text-success fs-6 mt-0.5">check_circle</span>
-                            <span>Tích luỹ <strong>12%</strong> toàn bộ đơn hàng</span>
-                        </li>
-                        <li>
-                            <span class="material-symbols-outlined text-success fs-6 mt-0.5">check_circle</span>
-                            <span>Miễn phí giao hàng đơn từ <strong>50.000đ</strong></span>
-                        </li>
-                        <li>
-                            <span class="material-symbols-outlined text-success fs-6 mt-0.5">check_circle</span>
-                            <span>Kênh hỗ trợ ưu tiên riêng biệt 24/7</span>
-                        </li>
-                    </ul>
-                    
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="tier-link">
-                        <span>Chi tiết quyền lợi</span>
-                        <span class="material-symbols-outlined fs-6">arrow_forward</span>
-                    </a>
-                </div>
-            </div>
-
-            <!-- VIP -->
-            <div class="col-lg-3 col-md-6">
-                <div class="tier-card tier-vip-highlight">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="tier-icon-box" style="background-color: #fdf2f4; color: #900b1a;">
-                            <span class="material-symbols-outlined fs-4">verified</span>
-                        </div>
-                        <span class="badge rounded-pill px-2.5 py-1 text-white" style="background-color: #900b1a; font-size: 0.7rem; font-weight: 600;">Tối thượng</span>
-                    </div>
-                    <h3 class="fs-5 fw-bold text-dark mb-1">Hạng VIP</h3>
-                    <span class="text-primary-custom small fw-semibold">Tích lũy từ 1.500 Điểm</span>
-                    
-                    <ul class="tier-benefit-list">
-                        <li>
-                            <span class="material-symbols-outlined text-danger fs-6 mt-0.5">check_circle</span>
-                            <span>Tích luỹ <strong>15% trọn đời</strong></span>
-                        </li>
-                        <li>
-                            <span class="material-symbols-outlined text-danger fs-6 mt-0.5">check_circle</span>
-                            <span>Vé mời <strong>Workshop nếm thử cà phê</strong></span>
-                        </li>
-                        <li>
-                            <span class="material-symbols-outlined text-danger fs-6 mt-0.5">check_circle</span>
-                            <span>Set quà tri ân VIP cao cấp cuối năm</span>
-                        </li>
-                    </ul>
-                    
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="tier-link text-primary-custom">
-                        <span>Đặc quyền VIP</span>
-                        <span class="material-symbols-outlined fs-6">arrow_forward</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-4 pt-3 text-center">
-            <% if(session.getAttribute("user") == null) { %>
-                <button class="btn btn-outline-dark rounded-pill px-4 py-2.5 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal">
-                    <span>Đăng ký thành viên nhận 50.000đ chào mừng</span>
-                </button>
-            <% } else { %>
-                <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-outline-dark rounded-pill px-4 py-2.5 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm">
-                    <span>Xem thẻ thành viên & điểm thưởng của bạn</span>
-                </a>
-            <% } %>
         </div>
     </section>
 
