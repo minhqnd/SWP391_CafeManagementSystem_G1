@@ -856,20 +856,6 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3">
-        <div id="cartToast"
-            class="toast align-items-center text-white bg-dark border-0 shadow-lg rounded-pill" role="alert"
-            aria-live="assertive" aria-atomic="true">
-            <div class="d-flex px-3 py-2 align-items-center">
-                <span class="material-symbols-outlined text-success me-2 fs-5">check_circle</span>
-                <div class="toast-body p-0 fw-medium small" id="cartToastMessage">
-                    Đã thêm vào giỏ hàng!
-                </div>
-                <button type="button" class="btn-close btn-close-white ms-auto me-1" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    </div>
 
     <!-- Include Auth Modal -->
     <jsp:include page="/components/auth_modal.jsp" />
@@ -1042,17 +1028,6 @@
         }
 
         function showAddedFeedback() {
-            // Show toast
-            var toastMsg = document.getElementById('cartToastMessage');
-            if (toastMsg) {
-                toastMsg.innerText = 'Đã thêm ' + quantity + 'x ' + productData.name + ' vào giỏ hàng!';
-            }
-            var toastEl = document.getElementById('cartToast');
-            if (toastEl && window.bootstrap) {
-                var toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-                toast.show();
-            }
-
             // Button animation feedback
             var btn = document.getElementById('btnAddToCart');
             if (btn) {
