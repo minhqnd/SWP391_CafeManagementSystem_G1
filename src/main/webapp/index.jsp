@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ page import="dao.ProductDAO" %>
 <%@ page import="model.Product" %>
 <%@ page import="java.util.List" %>
@@ -15,6 +16,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Shared Product Card & Modal CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/product-card.css">
     
     <style>
         :root {
@@ -60,19 +63,6 @@
         .hero-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; color: white; }
         
         .voucher-floating { position: absolute; bottom: -1.5rem; left: -1.5rem; background: white; padding: 1rem; border-radius: 1rem; box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1); border: 1px solid var(--surface-container-high); display: flex; align-items: center; gap: 1rem; z-index: 2; max-width: 300px; }
-        
-        /* Product Cards */
-        .product-card { background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid var(--surface-container-high); height: 100%; display: flex; flex-direction: column; }
-        .product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
-        .product-img-box { height: 220px; position: relative; overflow: hidden; }
-        .product-img { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform 0.5s; }
-        .product-card:hover .product-img { transform: scale(1.05); }
-        
-        .badge-tag { position: absolute; top: 12px; left: 12px; padding: 4px 8px; border-radius: 6px; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; z-index: 2; color: white; }
-        .price-tag { position: absolute; bottom: 12px; right: 12px; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.9); backdrop-filter: blur(4px); font-weight: 600; font-size: 0.875rem; z-index: 2; color: #1a1c1e; }
-        
-        .btn-add { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--surface-container-high); color: #1a1c1e; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .btn-add:hover { background: var(--primary); color: white; }
         
         /* Seasonal Section */
         .seasonal-section { background-color: var(--surface-container-low); padding: 5rem 0; }
@@ -193,76 +183,24 @@
                     <h2 class="fw-bold text-dark fs-2 mb-2">Sản phẩm bán chạy trong tuần</h2>
                     <p class="text-secondary-custom mb-0">Những công thức hương vị được yêu thích và đặt nhiều nhất bởi tín đồ sành cà phê.</p>
                 </div>
-                <a href="#" class="text-primary-custom fw-semibold text-decoration-none d-flex align-items-center gap-1">
+                <a href="${pageContext.request.contextPath}/menu" class="text-primary-custom fw-semibold text-decoration-none d-flex align-items-center gap-1">
                     Xem tất cả danh mục <span class="material-symbols-outlined fs-5">chevron_right</span>
                 </a>
             </div>
             
-            <div class="row g-4">
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
                 <%
                     ProductDAO productDAO = new ProductDAO();
                     List<Product> productsList = productDAO.getAllProducts();
+                    request.setAttribute("bestSellerProducts", productsList);
                     DecimalFormat formatter = new DecimalFormat("###,###,###");
-                    for (Product p : productsList) { 
-                        String priceStr = formatter.format(p.getBasePrice()).replace(",", ".") + "đ";
-                        String desc = "Cà phê đặc sản thơm ngon, đậm đà.";
-                        String imgUrl = p.getImageUrl() != null && !p.getImageUrl().isEmpty() ? p.getImageUrl() : "https://lh3.googleusercontent.com/aida-public/AB6AXuDZIHvaJT4mQKloRO3wsOdLK_H-3jVQ6dlX5-V0MNiGe9EovAzUhlDHw4iFDJtfJeJfdvT9P6mdfbUGDTw_S4MpFvJT_JgLtBh308WQKUWEf29pPjIWTcUameeU4l5ufqziY_8QwroRkxCAhBlf0pUKdbFwLrrTYOeVTgCO0N8ZxuIqKFXyVkSDgIrDu18Gy9OJ42tGAayDee90kqkZgUbnSxICfokYqruhylqZ3Kbea0iuhuFL904x";
-                        
-                        switch(p.getId()) {
-                            case 1: 
-                                desc = "Espresso nguyên chất pha loãng, giữ trọn hương vị đậm đà mộc mạc."; 
-                                imgUrl = "https://images.unsplash.com/photo-1551030173-122aabc4489c?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 2: 
-                                desc = "Sự cân bằng hoàn hảo giữa Espresso đậm đà và bọt sữa nóng mịn màng."; 
-                                imgUrl = "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 3: 
-                                desc = "Phiên bản đậm đà hơn của Latte với lớp bọt sữa dày dặn hấp dẫn."; 
-                                imgUrl = "https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 4: 
-                                desc = "Trà đào mát lạnh cùng những miếng đào tươi giòn sần sật xua tan oi bức."; 
-                                imgUrl = "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 5: 
-                                desc = "Trà chanh truyền thống với hương chanh tươi mát, chua ngọt thanh dịu."; 
-                                imgUrl = "https://images.unsplash.com/photo-1596704017254-9eb10a3e8ff6?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 6: 
-                                desc = "Trà sữa vị lá trà đen tự nhiên, ngọt ngào quyện cùng trân châu dai giòn."; 
-                                imgUrl = "https://images.unsplash.com/photo-1558857563-b371032bda98?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 7: 
-                                desc = "Bánh phô mai nướng mềm mịn, tan chảy trong miệng với độ béo ngậy khó cưỡng."; 
-                                imgUrl = "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 8: 
-                                desc = "Nước cam vắt nguyên chất, giàu vitamin C và năng lượng cho ngày mới."; 
-                                imgUrl = "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&q=80&w=800";
-                                break;
-                        }
                 %>
-                <!-- Card -->
-                <div class="col-sm-6 col-lg-3">
-                    <div class="product-card">
-                        <div class="product-img-box">
-                            <div class="product-img" style="background-image: url('<%= imgUrl %>');"></div>
-                            <div class="price-tag"><%= priceStr %></div>
-                        </div>
-                        <div class="card-body-custom">
-                            <div>
-                                <h3 class="product-title"><%= p.getName() %></h3>
-                                <p class="product-desc text-secondary-custom" style="font-size: 0.85rem; margin-top: 0.5rem;"><%= desc %></p>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-primary-custom fw-medium" style="font-size: 0.75rem;"></span>
-                                <button class="btn-add" data-product-id="<%= p.getId() %>"><span class="material-symbols-outlined fs-5">add</span></button>
-                            </div>
-                        </div>
+                <c:forEach var="p" items="${bestSellerProducts}">
+                    <div class="col">
+                        <c:set var="product" value="${p}" scope="request" />
+                        <jsp:include page="/components/product_card.jsp" />
                     </div>
-                </div>
-                <% } %>
+                </c:forEach>
             </div>
         </div>
     </section>
@@ -458,6 +396,9 @@
         </div>
     </div>
 
+    <!-- Reusable Product Detail & Customization Modal Component -->
+    <jsp:include page="/components/product_detail_modal.jsp" />
+
     <!-- Nhúng Component Auth Modal -->
     <% if(session.getAttribute("user") == null) { %>
         <jsp:include page="components/auth_modal.jsp" />
@@ -466,7 +407,7 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Script Add To Cart -->
+    <!-- Script Check Login URL Param -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Check for login query parameter
@@ -477,55 +418,6 @@
                 // Remove parameter from URL without refreshing
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
-
-            const addButtons = document.querySelectorAll('.btn-add');
-            addButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-product-id');
-                    if (productId) {
-                        fetch('${pageContext.request.contextPath}/cart/add', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: 'productId=' + productId + '&quantity=1'
-                        })
-                        .then(response => {
-                            if (response.status === 401) {
-                                const authModal = new bootstrap.Modal(document.getElementById('authModal'));
-                                authModal.show();
-                                throw new Error('Unauthorized');
-                            }
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.success) {
-                                // Jump cart number animation and update
-                                const badge = document.getElementById('headerCartBadge');
-                                if (badge) {
-                                    badge.textContent = data.totalItems;
-                                    
-                                    // Simple pop animation
-                                    badge.style.transform = 'scale(1.5)';
-                                    badge.style.transition = 'transform 0.2s';
-                                    setTimeout(() => {
-                                        badge.style.transform = 'scale(1)';
-                                    }, 200);
-                                }
-                            }
-                        })
-                        .catch(error => {
-                            if (error.message !== 'Unauthorized') {
-                                console.error('Error:', error);
-                                alert('Đã xảy ra lỗi khi thêm vào giỏ hàng.');
-                            }
-                        });
-                    }
-                });
-            });
         });
     </script>
 </body>

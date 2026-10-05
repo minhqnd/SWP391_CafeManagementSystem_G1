@@ -1,0 +1,317 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+
+<!-- ========================================================
+     SHARED PRODUCT CUSTOMIZATION MODAL & CART TOAST
+     ======================================================== -->
+
+<!-- Product Customization Modal -->
+<div class="modal fade" id="productDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg position-relative"
+            style="border-radius: 1.5rem; overflow: hidden;">
+            <!-- Close Button -->
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
+                style="z-index: 1060; cursor: pointer; padding: 0.75rem;" data-bs-dismiss="modal"
+                aria-label="Close" onclick="closeProductDetailModal()"></button>
+            <div class="modal-body p-4 pt-3">
+                <div class="row g-4 align-items-center">
+                    <!-- Left: Image -->
+                    <div class="col-md-5">
+                        <img id="modalProductImg" src="" alt="Product"
+                            class="modal-product-img shadow-sm">
+                    </div>
+
+                    <!-- Right: Details & Options -->
+                    <div class="col-md-7 d-flex flex-column">
+                        <span class="text-uppercase fw-bold text-danger"
+                            style="font-size: 0.75rem; letter-spacing: 0.5px;"
+                            id="modalProductCategory">Danh mục</span>
+                        <h2 class="fs-4 fw-bold mb-1" id="modalProductName">Tên món</h2>
+                        <p class="text-muted small mb-3" id="modalProductDesc">Mô tả sản phẩm</p>
+
+                        <div class="d-flex align-items-baseline gap-2 mb-3 pb-2 border-bottom">
+                            <span class="fs-3 fw-bold text-danger" id="modalProductTotalPrice">0đ</span>
+                            <span class="text-muted small">/ Giá tiêu chuẩn</span>
+                        </div>
+
+                        <!-- Sizes -->
+                        <div class="mb-3" id="sizeOptionsContainer">
+                            <label class="form-label fw-bold small text-muted mb-2">CHỌN SIZE (KÍCH CỠ):</label>
+                            <div class="d-flex gap-2 flex-wrap" id="sizeList"></div>
+                        </div>
+
+                        <!-- Toppings -->
+                        <div class="mb-3" id="toppingOptionsContainer">
+                            <label class="form-label fw-bold small text-muted mb-2">TOPPING THÊM:</label>
+                            <div class="d-flex flex-column gap-2" id="toppingList"></div>
+                        </div>
+
+                        <!-- Quantity & Action -->
+                        <div class="mt-3 pt-3 border-top d-flex align-items-center justify-content-between gap-3">
+                            <div class="d-flex align-items-center gap-2 border rounded-pill px-2 py-1">
+                                <button type="button" class="qty-control-btn border-0"
+                                    onclick="adjustModalQty(-1)">-</button>
+                                <span id="modalProductQty" class="fw-bold px-2"
+                                    style="min-width: 24px; text-align: center;">1</span>
+                                <button type="button" class="qty-control-btn border-0"
+                                    onclick="adjustModalQty(1)">+</button>
+                            </div>
+
+                            <button type="button"
+                                class="btn btn-danger flex-grow-1 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill shadow-sm"
+                                style="background-color: #900b1a; border-color: #900b1a;"
+                                onclick="confirmAddToCart()">
+                                <span class="material-symbols-outlined fs-5">add_circle</span>
+                                <span>Chọn món này &bull; <span id="modalBtnTotalPrice">0đ</span></span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3 z-3">
+    <div id="cartToast"
+        class="toast align-items-center text-white bg-dark border-0 shadow-lg rounded-pill" role="alert"
+        aria-live="assertive" aria-atomic="true">
+        <div class="d-flex px-3 py-2 align-items-center">
+            <span class="material-symbols-outlined text-success me-2 fs-5">check_circle</span>
+            <div class="toast-body p-0 fw-medium small" id="cartToastMessage">
+                Đã thêm món vào giỏ hàng thành công!
+            </div>
+            <button type="button" class="btn-close btn-close-white ms-auto me-1"
+                data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    var currentProduct = null;
+    var selectedSizePrice = 0;
+    var modalQty = 1;
+    var cartCount = Number('${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}');
+
+    function updateCartBadge() {
+        var headerBadge = document.getElementById('headerCartBadge');
+        if (headerBadge) {
+            headerBadge.innerText = cartCount;
+            headerBadge.style.transform = 'scale(1.3)';
+            headerBadge.style.transition = 'transform 0.2s';
+            setTimeout(function() { headerBadge.style.transform = 'scale(1)'; }, 200);
+        }
+        var stickyBadge = document.getElementById('stickyCartBadge');
+        if (stickyBadge) {
+            stickyBadge.innerText = cartCount;
+            var stickyBar = document.getElementById('stickyMiniCart');
+            if (stickyBar) {
+                if (cartCount > 0) stickyBar.classList.remove('d-none');
+                else stickyBar.classList.add('d-none');
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        updateCartBadge();
+    });
+
+    function addToServerCart(productId, size, toppings, quantity, successMessage) {
+        var params = new URLSearchParams();
+        params.append('productId', productId);
+        params.append('quantity', quantity);
+        params.append('size', size || '');
+        toppings.forEach(function (t) { params.append('topping', t); });
+
+        fetch('${pageContext.request.contextPath}/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (!data.success) {
+                    alert(data.error || 'Không thể thêm món vào giỏ hàng.');
+                    return;
+                }
+                cartCount = data.totalItems;
+                updateCartBadge();
+
+                var toastMsg = document.getElementById('cartToastMessage');
+                if (toastMsg) toastMsg.innerText = successMessage;
+                var toastEl = document.getElementById('cartToast');
+                if (toastEl && window.bootstrap) {
+                    bootstrap.Toast.getOrCreateInstance(toastEl).show();
+                }
+            })
+            .catch(function () {
+                alert('Không thể kết nối máy chủ. Vui lòng thử lại!');
+            });
+    }
+
+    function openProductDetailModal(productId) {
+        fetch('${pageContext.request.contextPath}/menu?action=detail&id=' + productId)
+            .then(function (res) {
+                if (!res.ok) {
+                    throw new Error('Mạng hoặc máy chủ phản hồi lỗi: ' + res.status);
+                }
+                return res.json();
+            })
+            .then(function (data) {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                currentProduct = data;
+                modalQty = 1;
+                selectedSizePrice = 0;
+
+                var imgEl = document.getElementById('modalProductImg');
+                if (imgEl) imgEl.src = data.imageUrl || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';
+                
+                var nameEl = document.getElementById('modalProductName');
+                if (nameEl) nameEl.innerText = data.name || '';
+                
+                var catEl = document.getElementById('modalProductCategory');
+                if (catEl) catEl.innerText = data.categoryName || '';
+                
+                var descEl = document.getElementById('modalProductDesc');
+                if (descEl) descEl.innerText = data.description || '';
+                
+                var qtyEl = document.getElementById('modalProductQty');
+                if (qtyEl) qtyEl.innerText = 1;
+
+                var config = data.variantsConfig || {};
+                if (typeof config === 'string') {
+                    try {
+                        config = JSON.parse(config);
+                    } catch (e) {
+                        config = {};
+                    }
+                }
+                var sizes = config.sizes;
+                if (!sizes || typeof sizes !== 'object' || Object.keys(sizes).length === 0) {
+                    sizes = { "M": 0, "L": 10000 };
+                }
+                var toppings = Array.isArray(config.toppings) ? config.toppings : [];
+
+                // Sizes
+                var sizeListHtml = '';
+                var sizeKeys = Object.keys(sizes);
+                sizeKeys.forEach(function (sName, index) {
+                    var extraPrice = sizes[sName] || 0;
+                    var isFirst = index === 0;
+                    if (isFirst) selectedSizePrice = extraPrice;
+                    sizeListHtml += '<div class="option-chip ' + (isFirst ? 'selected' : '') + '" data-size="' + sName.replace(/"/g, '&quot;') + '" onclick="selectSize(this, ' + extraPrice + ')">'
+                        + sName + (extraPrice > 0 ? ' (+' + extraPrice.toLocaleString('vi-VN') + 'đ)' : '')
+                        + '</div>';
+                });
+                var sizeListEl = document.getElementById('sizeList');
+                if (sizeListEl) sizeListEl.innerHTML = sizeListHtml;
+
+                // Toppings
+                var toppingContainer = document.getElementById('toppingOptionsContainer');
+                var toppingListEl = document.getElementById('toppingList');
+                if (toppings.length > 0) {
+                    if (toppingContainer) toppingContainer.classList.remove('d-none');
+                    var toppingListHtml = '';
+                    toppings.forEach(function (t, idx) {
+                        var tName = typeof t === 'string' ? t : t.name;
+                        var tPrice = typeof t === 'object' && t.price ? t.price : 8000;
+                        toppingListHtml += '<div class="form-check d-flex align-items-center justify-content-between p-2 border rounded-3">'
+                            + '  <div>'
+                            + '    <input class="form-check-input ms-0 me-2" type="checkbox" id="top_' + idx + '" value="' + tPrice + '" onchange="calculateModalTotal()">'
+                            + '    <label class="form-check-label small fw-medium" for="top_' + idx + '">' + tName + '</label>'
+                            + '  </div>'
+                            + '  <span class="text-danger fw-bold small">+' + tPrice.toLocaleString('vi-VN') + 'đ</span>'
+                            + '</div>';
+                    });
+                    if (toppingListEl) toppingListEl.innerHTML = toppingListHtml;
+                } else {
+                    if (toppingContainer) toppingContainer.classList.add('d-none');
+                    if (toppingListEl) toppingListEl.innerHTML = '';
+                }
+
+                calculateModalTotal();
+
+                var modalEl = document.getElementById('productDetailModal');
+                if (modalEl && window.bootstrap) {
+                    var myModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    myModal.show();
+                }
+            })
+            .catch(function (err) {
+                console.error('Error loading product:', err);
+                alert('Không thể tải thông tin món. Vui lòng thử lại!');
+            });
+    }
+
+    function closeProductDetailModal() {
+        var modalEl = document.getElementById('productDetailModal');
+        if (modalEl && window.bootstrap) {
+            var modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        }
+    }
+
+    function selectSize(element, extraPrice) {
+        var chips = document.querySelectorAll('#sizeList .option-chip');
+        chips.forEach(function (c) { c.classList.remove('selected'); });
+        element.classList.add('selected');
+        selectedSizePrice = extraPrice;
+        calculateModalTotal();
+    }
+
+    function adjustModalQty(delta) {
+        modalQty = Math.max(1, modalQty + delta);
+        var qtyEl = document.getElementById('modalProductQty');
+        if (qtyEl) qtyEl.innerText = modalQty;
+        calculateModalTotal();
+    }
+
+    function calculateModalTotal() {
+        if (!currentProduct) return;
+        var checkboxes = document.querySelectorAll('#toppingList input[type="checkbox"]:checked');
+        var topPrice = 0;
+        checkboxes.forEach(function (cb) {
+            topPrice += parseFloat(cb.value) || 0;
+        });
+        var base = parseFloat(currentProduct.basePrice) || 0;
+        var singleItemPrice = base + (selectedSizePrice || 0) + topPrice;
+        var total = singleItemPrice * modalQty;
+
+        var formatted = total.toLocaleString('vi-VN') + 'đ';
+        var totalEl = document.getElementById('modalProductTotalPrice');
+        if (totalEl) totalEl.innerText = formatted;
+        var btnPriceEl = document.getElementById('modalBtnTotalPrice');
+        if (btnPriceEl) btnPriceEl.innerText = formatted;
+    }
+
+    function confirmAddToCart() {
+        if (!currentProduct) return;
+
+        var activeSize = document.querySelector('#sizeList .option-chip.selected');
+        var sizeName = activeSize ? activeSize.getAttribute('data-size') : '';
+
+        var toppingNames = [];
+        var checkboxes = document.querySelectorAll('#toppingList input[type="checkbox"]:checked');
+        checkboxes.forEach(function (cb) {
+            var label = cb.parentElement.querySelector('label');
+            if (label) toppingNames.push(label.innerText);
+        });
+
+        addToServerCart(currentProduct.id, sizeName, toppingNames, modalQty,
+            'Đã thêm ' + modalQty + 'x ' + currentProduct.name + ' vào giỏ hàng!');
+
+        var modalEl = document.getElementById('productDetailModal');
+        if (modalEl && window.bootstrap) {
+            var modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+        }
+    }
+</script>
