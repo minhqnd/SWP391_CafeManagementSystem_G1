@@ -434,7 +434,7 @@
                 </jsp:include>
 
                 <!-- Main Content -->
-                <main class="container-fluid px-4 px-lg-5 py-4">
+                <main class="container-fluid px-4 px-lg-5 py-4 pb-5 mb-5">
 
                     <!-- Top Title & Search Bar -->
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
@@ -596,9 +596,6 @@
                         <span class="material-symbols-outlined fs-6">arrow_forward</span>
                     </button>
                 </div>
-
-                <!-- Shared Footer Component -->
-                <jsp:include page="/components/footer.jsp" />
 
                 <!-- Product Customization Modal & Cart Toast Component -->
                 <jsp:include page="/components/product_detail_modal.jsp" />
