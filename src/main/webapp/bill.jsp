@@ -164,9 +164,7 @@
                 </div>
                 <div class="flex flex-col">
                     <span class="text-on-surface-variant text-xs">Thời gian tạo:</span>
-                    <span class="font-tabular-data font-medium text-on-surface">
-                        <fmt:formatDate value="${order.createdAt}" pattern="dd/MM/yyyy HH:mm" />
-                    </span>
+                    <span class="font-tabular-data font-medium text-on-surface">${order.createdTimeText} ${order.createdDateText}</span>
                 </div>
                 <div class="flex flex-col">
                     <span class="text-on-surface-variant text-xs">Khách hàng:</span>
@@ -231,9 +229,11 @@
                                     ${item.productName}
                                 </span>
                             </div>
-                            <span class="font-body-sm text-body-sm text-on-surface-variant ml-8 mt-0.5">
-                                ${item.customization}
-                            </span>
+                            <c:if test="${not empty item.optionsText}">
+                                <span class="font-body-sm text-body-sm text-on-surface-variant ml-8 mt-0.5">
+                                    ${item.optionsText}
+                                </span>
+                            </c:if>
                         </div>
                         <div class="flex gap-12 text-right items-center">
                             <span class="font-tabular-data text-body-sm text-on-surface-variant w-16">
