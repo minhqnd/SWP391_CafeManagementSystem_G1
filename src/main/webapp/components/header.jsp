@@ -155,26 +155,6 @@
                        href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
                 </li>
                 <li class="nav-item">
-                    <c:choose>
-                        <c:when test="${not empty sessionScope.user}">
-                            <a class="nav-link aura-nav-link ${param.activePage == 'orders' ? 'active-nav' : ''}" href="${pageContext.request.contextPath}/orders">Đơn hàng của tôi</a>
-                        </c:when>
-                        <c:otherwise>
-                            <a class="nav-link aura-nav-link" href="#" data-bs-toggle="modal" data-bs-target="#authModal">Đơn hàng của tôi</a>
-                        </c:otherwise>
-                    </c:choose>
-                </li>
-                <li class="nav-item">
-                    <c:choose>
-                        <c:when test="${not empty sessionScope.user}">
-                            <a class="nav-link aura-nav-link ${param.activePage == 'profile' ? 'active-nav' : 'text-muted'}" href="${pageContext.request.contextPath}/profile">Hồ sơ & Điểm tích luỹ</a>
-                        </c:when>
-                        <c:otherwise>
-                            <a class="nav-link aura-nav-link text-muted" href="#" data-bs-toggle="modal" data-bs-target="#authModal">Hồ sơ & Điểm tích luỹ</a>
-                        </c:otherwise>
-                    </c:choose>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link aura-nav-link ${param.activePage == 'feedback' ? 'active-nav' : ''}" 
                        href="${pageContext.request.contextPath}/feedback">Phản ánh & Khiếu nại</a>
                 </li>
