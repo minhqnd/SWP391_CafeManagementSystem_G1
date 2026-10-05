@@ -1,8 +1,257 @@
 package dao;
 
+import context.DBContext;
+import model.Product;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * ProductDAO - Tương tác dữ liệu sản phẩm / thực đơn
  */
 public class ProductDAO extends BaseDAO {
-    // TODO: Viết các hàm CRUD sản phẩm
+
+    private boolean hasColumn(ResultSet rs, String columnName) throws Exception {
+        java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+        int columns = rsmd.getColumnCount();
+        for (int x = 1; x <= columns; x++) {
+            if (columnName.equalsIgnoreCase(rsmd.getColumnName(x)) || 
+                columnName.equalsIgnoreCase(rsmd.getColumnLabel(x))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Product mapResultSetToProduct(ResultSet rs) throws Exception {
+        String desc = hasColumn(rs, "description") ? rs.getString("description") : null;
+        String badge = hasColumn(rs, "badge") ? rs.getString("badge") : null;
+        String subtitle = hasColumn(rs, "subtitle") ? rs.getString("subtitle") : null;
+        
+        return new Product(
+                rs.getInt("id"),
+                rs.getInt("category_id"),
+                hasColumn(rs, "category_name") ? rs.getString("category_name") : null,
+                rs.getString("name"),
+                rs.getDouble("base_price"),
+                desc,
+                badge,
+                subtitle,
+                rs.getString("variants_config"),
+                rs.getString("image_url"),
+                rs.getBoolean("is_available")
+        );
+    }
+
+    /**
+     * Dùng cho trang chủ (Homepage) lấy tối đa 8 sản phẩm
+     */
+    public List<Product> getAllProducts() {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.name AS category_name " +
+                     "FROM products p " +
+                     "LEFT JOIN categories c ON p.category_id = c.id " +
+                     "WHERE p.is_available = 1 " +
+                     "LIMIT 8";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultSetToProduct(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Lấy toàn bộ sản phẩm khả dụng cho trang Menu
+     */
+    public List<Product> getAllAvailableProducts() {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.name AS category_name " +
+                     "FROM products p " +
+                     "JOIN categories c ON p.category_id = c.id " +
+                     "WHERE p.is_available = 1 " +
+                     "ORDER BY p.id ASC";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultSetToProduct(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Product> getProductsByCategory(int categoryId) {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.name AS category_name " +
+                     "FROM products p " +
+                     "JOIN categories c ON p.category_id = c.id " +
+                     "WHERE p.is_available = 1 AND p.category_id = ? " +
+                     "ORDER BY p.id ASC";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, categoryId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Product> searchProducts(String keyword) {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.name AS category_name " +
+                     "FROM products p " +
+                     "JOIN categories c ON p.category_id = c.id " +
+                     "WHERE p.is_available = 1 " +
+                     "  AND (p.name LIKE ? OR c.name LIKE ? OR p.description LIKE ? OR p.subtitle LIKE ?) " +
+                     "ORDER BY p.id ASC";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            String term = "%" + keyword.trim() + "%";
+            ps.setString(1, term);
+            ps.setString(2, term);
+            ps.setString(3, term);
+            ps.setString(4, term);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Product> filterProducts(Integer categoryId, String keyword) {
+        List<Product> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT p.*, c.name AS category_name " +
+                "FROM products p " +
+                "JOIN categories c ON p.category_id = c.id " +
+                "WHERE p.is_available = 1 "
+        );
+        List<Object> params = new ArrayList<>();
+
+        if (categoryId != null && categoryId > 0) {
+            sql.append(" AND p.category_id = ? ");
+            params.add(categoryId);
+        }
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (p.name LIKE ? OR c.name LIKE ? OR p.description LIKE ? OR p.subtitle LIKE ?) ");
+            String term = "%" + keyword.trim() + "%";
+            params.add(term);
+            params.add(term);
+            params.add(term);
+            params.add(term);
+        }
+
+        sql.append(" ORDER BY p.id ASC");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public Product getProductById(int id) {
+        String sql = "SELECT p.*, c.name AS category_name " +
+                     "FROM products p " +
+                     "JOIN categories c ON p.category_id = c.id " +
+                     "WHERE p.id = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToProduct(rs);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public int getTotalAvailableCount() {
+        String sql = "SELECT COUNT(*) FROM products WHERE is_available = 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Lấy danh sách sản phẩm liên quan (cùng danh mục), loại trừ sản phẩm hiện tại
+     */
+    public List<Product> getRelatedProducts(int categoryId, int excludeProductId, int limit) {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.name AS category_name " +
+                     "FROM products p " +
+                     "JOIN categories c ON p.category_id = c.id " +
+                     "WHERE p.is_available = 1 AND p.category_id = ? AND p.id != ? " +
+                     "ORDER BY RAND() " +
+                     "LIMIT ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, categoryId);
+            ps.setInt(2, excludeProductId);
+            ps.setInt(3, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }
