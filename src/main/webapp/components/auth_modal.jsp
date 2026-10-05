@@ -153,11 +153,6 @@
                                                             data-bs-toggle="pill"
                                                             data-bs-target="#modal-register-pane">Đăng ký</button>
                                                     </li>
-                                                    <li class="nav-item">
-                                                        <button class="nav-link <%= isForgotTab ? " active" : "" %>"
-                                                            data-bs-toggle="pill"
-                                                            data-bs-target="#modal-forgot-pane">Quên mật khẩu</button>
-                                                    </li>
                                                 </ul>
 
                                                 <div class="tab-content">
@@ -185,7 +180,7 @@
                                                                     placeholder="0901234567 hoặc email@domain.com"
                                                                     required>
                                                             </div>
-                                                            <div class="mb-3">
+                                                            <div class="mb-2">
                                                                 <label class="form-label fw-medium"
                                                                     style="font-size: 0.85rem;">Mật khẩu</label>
                                                                 <input type="password"
@@ -193,8 +188,15 @@
                                                                     name="password" placeholder="••••••••••••"
                                                                     minlength="6" required>
                                                             </div>
+                                                            <div class="d-flex justify-content-end mb-3">
+                                                                <a href="javascript:void(0)" onclick="openForgotPane()"
+                                                                    class="text-decoration-none text-muted"
+                                                                    style="font-size: 0.825rem;">
+                                                                    Quên mật khẩu?
+                                                                </a>
+                                                            </div>
                                                             <button type="submit"
-                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
+                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-2"
                                                                 style="background-color: var(--primary-container); height: 48px;">
                                                                 Đăng nhập <span
                                                                     class="material-symbols-outlined fs-5">arrow_forward</span>
@@ -291,12 +293,7 @@
                                                                 <span class="material-symbols-outlined text-info"
                                                                     style="font-size: 1.25rem;">info</span>
                                                                 <div>
-                                                                    <strong>Lưu ý:</strong> Đối với tài khoản đăng ký
-                                                                    bằng <strong>Số điện thoại</strong> hoặc tài khoản
-                                                                    <strong>Quản trị (Admin)</strong>, vui lòng liên hệ
-                                                                    bộ phận CSKH qua Hotline <strong>1900 6868</strong>
-                                                                    hoặc trực tiếp tại chi nhánh để được hỗ trợ cấp lại
-                                                                    mật khẩu.
+                                                                    <strong>Lưu ý:</strong> Vui lòng nhập địa chỉ Email hoặc Số điện thoại đã liên kết với tài khoản Aura để nhận mật khẩu mới.
                                                                 </div>
                                                             </div>
 
@@ -306,6 +303,15 @@
                                                                 Gửi mật khẩu mới <span
                                                                     class="material-symbols-outlined fs-5">send</span>
                                                             </button>
+
+                                                            <div class="text-center mt-3">
+                                                                <a href="javascript:void(0)" onclick="openLoginPane()"
+                                                                    class="text-decoration-none fw-semibold d-inline-flex align-items-center gap-1"
+                                                                    style="font-size: 0.85rem; color: var(--primary-container);">
+                                                                    <span class="material-symbols-outlined fs-6">arrow_back</span>
+                                                                    <span>Quay lại đăng nhập</span>
+                                                                </a>
+                                                            </div>
                                                         </form>
                                                     </div>
                                                 </div>
@@ -317,6 +323,27 @@
         </div>
 
         <script>
+            function openLoginPane() {
+                var loginBtn = document.querySelector('button[data-bs-target="#modal-login-pane"]');
+                if (loginBtn) {
+                    var tab = bootstrap.Tab.getOrCreateInstance(loginBtn);
+                    tab.show();
+                }
+            }
+
+            function openForgotPane() {
+                document.querySelectorAll('#modalAuthTab .nav-link').forEach(function(btn) {
+                    btn.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-content .tab-pane').forEach(function(pane) {
+                    pane.classList.remove('show', 'active');
+                });
+                var forgotPane = document.getElementById('modal-forgot-pane');
+                if (forgotPane) {
+                    forgotPane.classList.add('show', 'active');
+                }
+            }
+
             // Tự động bật Modal nếu có lỗi, thành công, hoặc có param tab trên URL
             document.addEventListener("DOMContentLoaded", function () {
                 var hasErrorOrSuccess = <%= (displayError != null || displaySuccess != null || request.getParameter("tab") != null) %>;
@@ -326,6 +353,9 @@
                     });
                     myModal.show();
                 }
+                <% if (isForgotTab) { %>
+                    openForgotPane();
+                <% } %>
             });
             // Validate mật khẩu khớp nhau khi đăng ký
             const regPassword = document.getElementById("reg-password");
