@@ -419,7 +419,7 @@
                                 <c:choose>
                                     <c:when test="${not empty userOrders}">
                                         <c:forEach items="${userOrders}" var="uo">
-                                            <option value="${uo[1]}">Đơn hàng #${uo[1]} (${uo[2]} - <fmt:formatNumber value="${uo[3]}" pattern="#,###" />đ)</option>
+                                            <option value="${uo[1]}" ${param.orderCode == uo[1] ? 'selected' : ''}>Đơn hàng #${uo[1]} (${uo[2]} - <fmt:formatNumber value="${uo[3]}" pattern="#,###" />đ)</option>
                                         </c:forEach>
                                     </c:when>
                                     <c:otherwise>

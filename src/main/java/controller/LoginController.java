@@ -39,19 +39,7 @@ public class LoginController extends HttpServlet {
             return;
         }
 
-        // Xử lý thông báo chuyển từ Register (Flash attributes)
-        if (session.getAttribute("successMsg") != null) {
-            request.setAttribute("success", session.getAttribute("successMsg"));
-            session.removeAttribute("successMsg");
-        }
-        if (session.getAttribute("errorMsg") != null) {
-            request.setAttribute("error", session.getAttribute("errorMsg"));
-            session.removeAttribute("errorMsg");
-        }
-        
         String tab = request.getParameter("tab");
-        request.setAttribute("activeTab", tab != null ? tab : "login");
-
         // Nếu truy cập trực tiếp /login thì điều hướng về trang chủ kèm bật popup đăng nhập
         response.sendRedirect(request.getContextPath() + "/?tab=" + (tab != null ? tab : "login"));
     }
@@ -60,9 +48,17 @@ public class LoginController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        // Nhận dữ liệu từ form (login.jsp)
+        request.setCharacterEncoding("UTF-8");
+
+        // Nhận dữ liệu từ form (login modal / login.jsp)
         String userIdentifier = request.getParameter("username");
+        if (userIdentifier != null) {
+            userIdentifier = userIdentifier.trim();
+        }
         String pass = request.getParameter("password");
+        if (pass != null) {
+            pass = pass.trim();
+        }
         // Trang cần quay lại sau khi đăng nhập (VD: /checkout), chỉ nhận đường dẫn nội bộ
         String redirect = request.getParameter("redirect");
         boolean hasRedirect = RedirectUtil.isSafeLocalPath(redirect);
@@ -96,14 +92,14 @@ public class LoginController extends HttpServlet {
         String position = user.getPosition();
         
         if ("ADMIN".equalsIgnoreCase(role)) {
-            response.sendRedirect("admin-dashboard.jsp");
+            response.sendRedirect(request.getContextPath() + "/admin-dashboard.jsp");
         } else if ("STAFF".equalsIgnoreCase(role)) {
             if ("CASHIER".equalsIgnoreCase(position)) {
-                response.sendRedirect("cashier-dashboard.jsp");
+                response.sendRedirect(request.getContextPath() + "/cashier");
             } else if ("BARISTA".equalsIgnoreCase(position)) {
                 response.sendRedirect(request.getContextPath() + "/barista");
             } else if ("SHIPPER".equalsIgnoreCase(position)) {
-                response.sendRedirect("delivery-dashboard.jsp");
+                response.sendRedirect(request.getContextPath() + "/delivery-dashboard.jsp");
             } else {
                 response.sendRedirect(request.getContextPath() + "/"); // Fallback for other staff
             }

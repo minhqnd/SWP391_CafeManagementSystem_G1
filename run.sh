@@ -20,6 +20,9 @@ if [ -n "$OLD_PID" ]; then
     sleep 1
 fi
 
+# Clean previous Cargo configuration directory to prevent ContainerException on restart
+rm -rf target/cargo/configurations
+
 echo "=========================================================="
 echo " Starting SWP391 Cafe Management System (Tomcat 10.1)..."
 echo " Access URL: http://localhost:8080/SWP391_CafeManagementSystem/"

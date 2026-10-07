@@ -3,6 +3,7 @@ package controller;
 import dao.VoucherDAO;
 import model.Cart;
 import model.CartItem;
+import model.User;
 import model.Voucher;
 import service.CartService;
 
@@ -25,7 +26,7 @@ import java.util.List;
  * POST /cart      : Tăng/giảm số lượng, chọn món, xoá món, áp dụng voucher
  * POST /cart/add  : Thêm món từ trang Menu / Chi tiết món / Trang chủ (trả về JSON)
  */
-@WebServlet(name = "CartController", urlPatterns = {"/cart", "/cart/add"})
+@WebServlet(name = "CartController", urlPatterns = {"/cart", "/cart/add", "/cart/api"})
 public class CartController extends HttpServlet {
 
     private final CartService cartService = new CartService();
@@ -37,10 +38,16 @@ public class CartController extends HttpServlet {
 
         HttpSession session = request.getSession();
         Cart cart = getCart(session);
+        Integer customerId = getCustomerId(session);
+
+        if ("/cart/api".equals(request.getServletPath()) || "json".equals(request.getParameter("action"))) {
+            writeCartJsonResponse(response, cart);
+            return;
+        }
 
         // Cập nhật giá & trạng thái món theo Database, kiểm tra voucher còn hiệu lực
         String voucherCode = cart.getVoucher() != null ? cart.getVoucher().getCode() : null;
-        if (!cartService.refreshCart(cart)) {
+        if (!cartService.refreshCart(cart, customerId)) {
             session.setAttribute("cartError", "Mã " + voucherCode + " đã hết hạn hoặc hết lượt sử dụng.");
         }
 
@@ -48,7 +55,7 @@ public class CartController extends HttpServlet {
         moveFlashMessage(session, request, "cartError");
 
         request.setAttribute("cart", cart);
-        request.setAttribute("vouchers", voucherDAO.getUsableVouchers());
+        request.setAttribute("vouchers", voucherDAO.getUsableVouchers(customerId));
         request.getRequestDispatcher("/cart.jsp").forward(request, response);
     }
 
@@ -71,13 +78,20 @@ public class CartController extends HttpServlet {
         if ("increase".equals(action)) {
             cart.changeQuantity(lineId, 1);
         } else if ("decrease".equals(action)) {
-            cart.changeQuantity(lineId, -1);
+            CartItem item = cart.findItem(lineId);
+            if (item != null && item.getQuantity() <= 1) {
+                cart.removeItem(lineId);
+            } else {
+                cart.changeQuantity(lineId, -1);
+            }
         } else if ("toggle".equals(action)) {
             cart.toggleSelected(lineId);
         } else if ("selectAll".equals(action)) {
             cart.setAllSelected(!cart.isAllSelected());
         } else if ("remove".equals(action)) {
             cart.removeItem(lineId);
+        } else if ("clear".equals(action)) {
+            cart.getItems().clear();
         } else if ("removeSelected".equals(action)) {
             cart.removeSelectedItems();
         } else if ("applyVoucher".equals(action)) {
@@ -86,8 +100,59 @@ public class CartController extends HttpServlet {
             cart.setVoucher(null);
         }
 
+        if ("/cart/api".equals(request.getServletPath()) || "json".equals(request.getParameter("format"))) {
+            writeCartJsonResponse(response, cart);
+            return;
+        }
+
         // PRG: quay lại trang giỏ hàng để tránh gửi lại form khi F5
         response.sendRedirect(request.getContextPath() + "/cart");
+    }
+
+    private void writeCartJsonResponse(HttpServletResponse response, Cart cart) throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        StringBuilder json = new StringBuilder();
+        json.append("{");
+        json.append("\"success\":true,");
+        json.append("\"totalQuantity\":").append(cart.getTotalQuantity()).append(",");
+        double totalAmount = 0;
+        for (CartItem it : cart.getItems()) {
+            totalAmount += it.getSubtotal();
+        }
+        json.append("\"totalAmount\":").append((long) totalAmount).append(",");
+        json.append("\"items\":[");
+        List<CartItem> items = cart.getItems();
+        for (int i = 0; i < items.size(); i++) {
+            CartItem it = items.get(i);
+            if (i > 0) json.append(",");
+            json.append("{");
+            json.append("\"lineId\":").append(it.getLineId()).append(",");
+            json.append("\"productId\":").append(it.getProductId()).append(",");
+            json.append("\"name\":").append(escapeJson(it.getProductName())).append(",");
+            json.append("\"imageUrl\":").append(escapeJson(it.getImageUrl() != null ? it.getImageUrl() : "")).append(",");
+            json.append("\"size\":").append(escapeJson(it.getSize() != null ? it.getSize() : "")).append(",");
+            json.append("\"sizeLabel\":").append(escapeJson(it.getSizeLabel())).append(",");
+            json.append("\"unitPrice\":").append((long) it.getUnitPrice()).append(",");
+            json.append("\"quantity\":").append(it.getQuantity()).append(",");
+            json.append("\"subtotal\":").append((long) it.getSubtotal()).append(",");
+            json.append("\"toppings\":[");
+            List<String> tops = it.getToppings();
+            for (int j = 0; j < tops.size(); j++) {
+                if (j > 0) json.append(",");
+                json.append(escapeJson(tops.get(j)));
+            }
+            json.append("]");
+            json.append("}");
+        }
+        json.append("]");
+        json.append("}");
+        response.getWriter().write(json.toString());
+    }
+
+    private String escapeJson(String s) {
+        if (s == null) return "\"\"";
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
     }
 
     private void handleAddToCart(HttpServletRequest request, HttpServletResponse response)
@@ -130,13 +195,14 @@ public class CartController extends HttpServlet {
         }
 
         String voucherCode = code.trim().toUpperCase();
-        Voucher voucher = voucherDAO.getUsableVoucherByCode(voucherCode);
+        Integer customerId = getCustomerId(session);
+        Voucher voucher = voucherDAO.getUsableVoucherByCode(voucherCode, customerId);
         if (voucher == null) {
             session.setAttribute("cartError", "Mã " + voucherCode + " không tồn tại hoặc đã hết hạn.");
             return;
         }
 
-        cartService.refreshCart(cart);
+        cartService.refreshCart(cart, customerId);
         if (!voucher.isEligible(cart.getSelectedSubtotal())) {
             session.setAttribute("cartError", "Mã " + voucher.getCode() + " áp dụng cho đơn từ "
                     + formatMoney(voucher.getMinOrderValue()) + ". Hãy chọn thêm món nhé!");
@@ -156,7 +222,14 @@ public class CartController extends HttpServlet {
         return cart;
     }
 
-    private void moveFlashMessage(HttpSession session, HttpServletRequest request, String key) {
+    /** Khách đang đăng nhập (null nếu chưa) - dùng để lấy voucher đổi điểm của riêng khách */
+    static Integer getCustomerId(HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        return user != null ? user.getId() : null;
+    }
+
+    /** Chuyển thông báo 1 lần (flash) từ session sang request sau khi redirect */
+    static void moveFlashMessage(HttpSession session, HttpServletRequest request, String key) {
         Object message = session.getAttribute(key);
         if (message != null) {
             request.setAttribute(key, message);

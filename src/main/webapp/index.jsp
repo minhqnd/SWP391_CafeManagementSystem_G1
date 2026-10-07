@@ -1,6 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ page import="dao.ProductDAO" %>
+<%@ page import="dao.CategoryDAO" %>
 <%@ page import="model.Product" %>
+<%@ page import="model.Category" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.text.DecimalFormat" %>
 <!DOCTYPE html>
@@ -15,6 +18,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Shared Product Card & Modal CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/product-card.css">
     
     <style>
         :root {
@@ -40,54 +45,229 @@
         .blur-blob-1 { position: absolute; right: -5rem; top: -6rem; width: 24rem; height: 24rem; border-radius: 50%; background-color: rgba(144, 11, 26, 0.1); filter: blur(3rem); pointer-events: none; }
         .blur-blob-2 { position: absolute; left: 25%; bottom: -4rem; width: 20rem; height: 20rem; border-radius: 50%; background-color: rgba(149, 129, 90, 0.1); filter: blur(3rem); pointer-events: none; }
         
-        .pulse-dot { width: 8px; height: 8px; background-color: var(--primary-container); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(178, 41, 46, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(178, 41, 46, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(178, 41, 46, 0); } }
+        .hero-title { font-size: 3.25rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.025em; color: #0f172a; }
+        @media (max-width: 768px) { .hero-title { font-size: 2.25rem; } }
         
-        .hero-title { font-size: 3.5rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; color: #1a1c1e; }
-        @media (max-width: 768px) { .hero-title { font-size: 2.5rem; } }
+        .btn-custom-primary { background-color: var(--primary); color: white; border-radius: 0.75rem; font-weight: 600; padding: 0.85rem 1.75rem; transition: all 0.2s ease; border: none; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 4px 14px rgba(144, 11, 26, 0.2); }
+        .btn-custom-primary:hover { opacity: 0.95; color: white; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(144, 11, 26, 0.28); }
+        .btn-custom-secondary { background-color: #ffffff; color: #1e293b; border-radius: 0.75rem; font-weight: 600; padding: 0.85rem 1.75rem; transition: all 0.2s ease; border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        .btn-custom-secondary:hover { background-color: #f8fafc; color: #0f172a; border-color: #cbd5e1; transform: translateY(-1px); }
         
-        .btn-custom-primary { background-color: var(--primary); color: white; border-radius: 0.5rem; font-weight: 600; padding: 0.75rem 1.5rem; transition: opacity 0.2s; border: none; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
-        .btn-custom-primary:hover { opacity: 0.9; color: white; }
-        .btn-custom-secondary { background-color: var(--surface-container-lowest); color: #1a1c1e; border-radius: 0.5rem; font-weight: 600; padding: 0.75rem 1.5rem; transition: background-color 0.2s; border: 1px solid #e0e0e0; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
-        .btn-custom-secondary:hover { background-color: var(--surface-container); color: #1a1c1e; }
-        
-        .stats-box { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); border-radius: 1rem; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
-        .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .stats-box { background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 1rem; padding: 1.25rem 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        .stat-value { font-size: 1.35rem; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.25rem; }
+        .stat-label { font-size: 0.8rem; color: #64748b; font-weight: 500; }
         
         .hero-img-container { position: relative; height: 440px; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 1rem 3rem rgba(0,0,0,0.1); }
         .hero-img-bg { background-size: cover; background-position: center; width: 100%; height: 100%; transition: transform 0.7s; }
         .hero-img-container:hover .hero-img-bg { transform: scale(1.05); }
-        .hero-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; color: white; }
+        .hero-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 65%); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; color: white; }
         
-        .voucher-floating { position: absolute; bottom: -1.5rem; left: -1.5rem; background: white; padding: 1rem; border-radius: 1rem; box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1); border: 1px solid var(--surface-container-high); display: flex; align-items: center; gap: 1rem; z-index: 2; max-width: 300px; }
         
-        /* Product Cards */
-        .product-card { background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid var(--surface-container-high); height: 100%; display: flex; flex-direction: column; }
-        .product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
-        .product-img-box { height: 220px; position: relative; overflow: hidden; }
-        .product-img { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform 0.5s; }
-        .product-card:hover .product-img { transform: scale(1.05); }
+        /* Category Section */
+        .category-section { background-color: var(--surface-container-low); padding: 5rem 0; }
+        .cat-card {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            border: 1px solid var(--surface-container-high);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        .cat-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 32px rgba(144, 11, 26, 0.1);
+            border-color: rgba(144, 11, 26, 0.35);
+        }
+        .cat-img-box {
+            height: 170px;
+            position: relative;
+            overflow: hidden;
+            background-color: #f1f5f9;
+        }
+        .cat-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cat-card:hover .cat-img {
+            transform: scale(1.08);
+        }
+        .cat-icon-badge {
+            position: absolute;
+            bottom: 12px;
+            left: 14px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            color: var(--primary);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .cat-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+        .cat-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1a1c1e;
+            margin-bottom: 0.25rem;
+            transition: color 0.2s;
+        }
+        .cat-card:hover .cat-title {
+            color: var(--primary);
+        }
+        .cat-meta {
+            font-size: 0.85rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f1f5f9;
+        }
         
-        .badge-tag { position: absolute; top: 12px; left: 12px; padding: 4px 8px; border-radius: 6px; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; z-index: 2; color: white; }
-        .price-tag { position: absolute; bottom: 12px; right: 12px; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.9); backdrop-filter: blur(4px); font-weight: 600; font-size: 0.875rem; z-index: 2; color: #1a1c1e; }
-        
-        .btn-add { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--surface-container-high); color: #1a1c1e; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .btn-add:hover { background: var(--primary); color: white; }
-        
-        /* Seasonal Section */
-        .seasonal-section { background-color: var(--surface-container-low); padding: 5rem 0; }
-        .seasonal-card { background: white; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; height: 100%; border: 1px solid var(--surface-container-high); }
-        .seasonal-img { height: 250px; background-size: cover; background-position: center; transition: transform 0.5s; }
-        .seasonal-card:hover .seasonal-img { transform: scale(1.05); }
-        
-        /* Loyalty Section */
-        .tier-card { border-radius: 1.5rem; padding: 2rem; display: flex; flex-direction: column; height: 100%; position: relative; overflow: hidden; }
-        .tier-silver { background: white; border: 1px solid var(--surface-container-high); box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .tier-gold { background: linear-gradient(180deg, #ffffff 0%, #fffbf2 100%); border: 2px solid rgba(149, 129, 90, 0.3); box-shadow: 0 10px 30px rgba(149, 129, 90, 0.1); }
-        .tier-diamond { background-color: #121c2a; color: white; box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+        /* Store Section */
+        .store-section {
+            padding: 4.5rem 0;
+        }
+        .store-card {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            border: 1px solid var(--surface-container-high, #e2e8f0);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            transition: box-shadow 0.3s ease;
+        }
+        .store-card:hover {
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+        .store-img-container {
+            position: relative;
+            height: 100%;
+            min-height: 400px;
+            overflow: hidden;
+        }
+        .store-img {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+        .store-card:hover .store-img {
+            transform: scale(1.03);
+        }
+        .btn-store-explore {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.85rem 2.25rem;
+            border-radius: 50rem;
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+            background: transparent;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+        .btn-store-explore:hover {
+            background-color: var(--primary);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(144, 11, 26, 0.2);
+        }
         
         /* CTA Section */
-        .cta-box { background-color: var(--primary); color: white; border-radius: 2rem; padding: 4rem; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(144, 11, 26, 0.2); margin-bottom: 5rem; }
+        .cta-section {
+            margin-bottom: 5rem;
+        }
+        .cta-box {
+            background: linear-gradient(135deg, #900b1a 0%, #6e0814 100%);
+            color: white;
+            border-radius: 1.75rem;
+            padding: 3.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(144, 11, 26, 0.18);
+        }
+
+        /* Sticky Bottom Mini Cart Bar */
+        .sticky-cart-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #ffffff;
+            padding: 0.65rem 1.35rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.75rem;
+            z-index: 1040;
+            min-width: 360px;
+            max-width: 90vw;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sticky-cart-bar:hover {
+            transform: translate(-50%, -2px);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+        }
+        @keyframes slideUp {
+            from {
+                transform: translate(-50%, 40px);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+        .cart-badge-icon {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+        }
+        .badge-count-pill {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background-color: #e11d48;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 999px;
+        }
     </style>
 </head>
 <body>
@@ -104,51 +284,43 @@
         <div class="container position-relative z-1">
             <div class="row g-5 align-items-center">
                 <div class="col-lg-7">
-                    <div class="d-inline-flex align-items-center gap-2 bg-white px-3 py-1 rounded-pill shadow-sm mb-4">
-                        <span class="pulse-dot"></span>
-                        <span class="text-primary-custom fw-bold" style="font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;">Aura Privilege Club</span>
-                    </div>
-                    
                     <div class="mb-4">
-                        <span class="text-secondary-custom fw-bold text-uppercase d-block mb-2" style="letter-spacing: 2px; font-size: 0.875rem;">Chào mừng bạn đến với</span>
-                        <h1 class="hero-title">
+                        <span class="text-secondary-custom fw-bold text-uppercase d-block mb-2" style="letter-spacing: 2px; font-size: 0.8rem;">Chào mừng bạn đến với</span>
+                        <h1 class="hero-title mb-3">
                             Hương vị chuẩn mực.<br/>
                             <span class="text-primary-custom">Đặc quyền hội viên.</span>
                         </h1>
+                        <p class="text-muted mb-0" style="font-size: 1.05rem; line-height: 1.6; max-width: 520px;">
+                            Khám phá không gian cà phê thủ công chọn lọc từ những nông trại cao nguyên danh tiếng, cùng đặc quyền tích luỹ điểm thưởng và ưu đãi hấp dẫn dành riêng cho thành viên mới.
+                        </p>
                     </div>
-                    
-                    <p class="hero-subtitle mb-4">
-                        Khám phá không gian cà phê thủ công chọn lọc từ những nông trại cao nguyên danh tiếng cùng quà tặng chào mừng trị giá tới 150.000đ dành riêng cho thành viên mới.
-                    </p>
                     
                     <div class="d-flex flex-wrap gap-3 mb-5">
                         <a href="${pageContext.request.contextPath}/menu" class="btn-custom-primary">
-                            Khám phá toàn bộ Menu <span class="material-symbols-outlined fs-5">east</span>
+                            Khám phá Menu
                         </a>
                         <% if(session.getAttribute("user") == null) { %>
                             <button class="btn-custom-secondary" data-bs-toggle="modal" data-bs-target="#authModal">
-                                <span class="material-symbols-outlined text-primary-custom fs-5">workspace_premium</span>
-                                Kích hoạt thẻ thành viên
+                                Đăng ký thành viên
                             </button>
                         <% } else { %>
                             <a href="${pageContext.request.contextPath}/profile" class="btn-custom-secondary">
-                                <span class="material-symbols-outlined text-primary-custom fs-5">workspace_premium</span>
                                 Thẻ thành viên của bạn
                             </a>
                         <% } %>
                     </div>
                     
-                    <div class="stats-box row g-3 text-center text-md-start">
-                        <div class="col-4">
+                    <div class="stats-box row g-0 text-center text-md-start">
+                        <div class="col-4 pe-3">
                             <div class="stat-value">100%</div>
                             <div class="stat-label">Hạt Arabica Cầu Đất</div>
                         </div>
-                        <div class="col-4">
-                            <div class="stat-value">4.9/5</div>
+                        <div class="col-4 px-3 border-start">
+                            <div class="stat-value">4.9 / 5</div>
                             <div class="stat-label">Đánh giá trải nghiệm</div>
                         </div>
-                        <div class="col-4">
-                            <div class="stat-value">15 Phút</div>
+                        <div class="col-4 ps-3 border-start">
+                            <div class="stat-value">15 phút</div>
                             <div class="stat-label">Giao tận nơi giữ nhiệt</div>
                         </div>
                     </div>
@@ -158,24 +330,12 @@
                     <div class="hero-img-container">
                         <div class="hero-img-bg" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBw-dbJgXjvCR5nkOrwZ8VgbS5GY2OEyRxEbOPz5Icbwto9r4_yy3ThjTmDPVYgkVS0qvw9zgWOIgZyovscgGXFfWYGZIWnz4J-kEojbOR_3UIVRm6Pc2K3JfHrvidn2O5NIY6kYDmJT7_FHzfZXsvm5SPBgxa8HNtPCnWXgdeqGGBi8jSUbqQkSy9_zS1iUSwY3th8A9HlEIBbs8WrZi_JfRhmcTX_OGMjA0Fi-G89MqKh9nlG6OfL');"></div>
                         <div class="hero-img-overlay">
-                            <span class="text-uppercase fw-bold mb-1" style="color: #ffb4a9; font-size: 0.75rem; letter-spacing: 1px;">Món Signature Aura</span>
+                            <span class="text-uppercase fw-bold mb-1" style="color: #ffb4a9; font-size: 0.75rem; letter-spacing: 1.5px;">Món Signature Aura</span>
                             <h2 class="fw-bold text-white fs-3 mb-2">Cà Phê Muối Aura</h2>
-                            <p class="text-white-50 mb-3" style="font-size: 0.875rem;">Lớp kem béo mặn đặc chế hòa quyện cà phê phin nguyên bản từ cao nguyên Lâm Đồng.</p>
-                            <a href="#" class="btn btn-sm bg-primary-custom d-inline-flex align-items-center gap-1 align-self-start fw-semibold py-2 px-3 shadow">
-                                Tùy chỉnh món <span class="material-symbols-outlined fs-6">arrow_forward</span>
-                            </a>
+                            <p class="text-white-50 mb-0" style="font-size: 0.875rem; line-height: 1.5;">Lớp kem béo mặn đặc chế hòa quyện cà phê phin nguyên bản từ cao nguyên Lâm Đồng.</p>
                         </div>
                     </div>
                     
-                    <div class="voucher-floating d-none d-sm-flex">
-                        <div class="rounded-3 bg-primary-custom d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                            <span class="material-symbols-outlined">card_membership</span>
-                        </div>
-                        <div>
-                            <div class="text-primary-custom fw-bold text-uppercase" style="font-size: 0.75rem;">Voucher Welcome 50K</div>
-                            <div class="text-dark" style="font-size: 0.875rem;">Áp dụng cho đơn hàng đầu tiên</div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -186,237 +346,148 @@
         <div class="container py-4">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
                 <div>
-                    <div class="d-flex align-items-center gap-1 text-primary-custom fw-bold mb-2">
-                        <span class="material-symbols-outlined fs-5">local_fire_department</span>
-                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Ưa chuộng nhất</span>
+                    <div class="text-primary-custom fw-bold mb-1">
+                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1.5px;">Ưa chuộng nhất</span>
                     </div>
                     <h2 class="fw-bold text-dark fs-2 mb-2">Sản phẩm bán chạy trong tuần</h2>
                     <p class="text-secondary-custom mb-0">Những công thức hương vị được yêu thích và đặt nhiều nhất bởi tín đồ sành cà phê.</p>
                 </div>
-                <a href="#" class="text-primary-custom fw-semibold text-decoration-none d-flex align-items-center gap-1">
+                <a href="${pageContext.request.contextPath}/menu" class="text-primary-custom fw-semibold text-decoration-none d-flex align-items-center gap-1">
                     Xem tất cả danh mục <span class="material-symbols-outlined fs-5">chevron_right</span>
                 </a>
             </div>
             
-            <div class="row g-4">
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
                 <%
                     ProductDAO productDAO = new ProductDAO();
                     List<Product> productsList = productDAO.getAllProducts();
+                    request.setAttribute("bestSellerProducts", productsList);
                     DecimalFormat formatter = new DecimalFormat("###,###,###");
-                    for (Product p : productsList) { 
-                        String priceStr = formatter.format(p.getBasePrice()).replace(",", ".") + "đ";
-                        String desc = "Cà phê đặc sản thơm ngon, đậm đà.";
-                        String imgUrl = p.getImageUrl() != null && !p.getImageUrl().isEmpty() ? p.getImageUrl() : "https://lh3.googleusercontent.com/aida-public/AB6AXuDZIHvaJT4mQKloRO3wsOdLK_H-3jVQ6dlX5-V0MNiGe9EovAzUhlDHw4iFDJtfJeJfdvT9P6mdfbUGDTw_S4MpFvJT_JgLtBh308WQKUWEf29pPjIWTcUameeU4l5ufqziY_8QwroRkxCAhBlf0pUKdbFwLrrTYOeVTgCO0N8ZxuIqKFXyVkSDgIrDu18Gy9OJ42tGAayDee90kqkZgUbnSxICfokYqruhylqZ3Kbea0iuhuFL904x";
-                        
-                        switch(p.getId()) {
-                            case 1: 
-                                desc = "Espresso nguyên chất pha loãng, giữ trọn hương vị đậm đà mộc mạc."; 
-                                imgUrl = "https://images.unsplash.com/photo-1551030173-122aabc4489c?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 2: 
-                                desc = "Sự cân bằng hoàn hảo giữa Espresso đậm đà và bọt sữa nóng mịn màng."; 
-                                imgUrl = "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 3: 
-                                desc = "Phiên bản đậm đà hơn của Latte với lớp bọt sữa dày dặn hấp dẫn."; 
-                                imgUrl = "https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 4: 
-                                desc = "Trà đào mát lạnh cùng những miếng đào tươi giòn sần sật xua tan oi bức."; 
-                                imgUrl = "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 5: 
-                                desc = "Trà chanh truyền thống với hương chanh tươi mát, chua ngọt thanh dịu."; 
-                                imgUrl = "https://images.unsplash.com/photo-1596704017254-9eb10a3e8ff6?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 6: 
-                                desc = "Trà sữa vị lá trà đen tự nhiên, ngọt ngào quyện cùng trân châu dai giòn."; 
-                                imgUrl = "https://images.unsplash.com/photo-1558857563-b371032bda98?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 7: 
-                                desc = "Bánh phô mai nướng mềm mịn, tan chảy trong miệng với độ béo ngậy khó cưỡng."; 
-                                imgUrl = "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&q=80&w=800";
-                                break;
-                            case 8: 
-                                desc = "Nước cam vắt nguyên chất, giàu vitamin C và năng lượng cho ngày mới."; 
-                                imgUrl = "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&q=80&w=800";
-                                break;
-                        }
                 %>
-                <!-- Card -->
-                <div class="col-sm-6 col-lg-3">
-                    <div class="product-card">
-                        <div class="product-img-box">
-                            <div class="product-img" style="background-image: url('<%= imgUrl %>');"></div>
-                            <div class="price-tag"><%= priceStr %></div>
-                        </div>
-                        <div class="card-body-custom">
-                            <div>
-                                <h3 class="product-title"><%= p.getName() %></h3>
-                                <p class="product-desc text-secondary-custom" style="font-size: 0.85rem; margin-top: 0.5rem;"><%= desc %></p>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-primary-custom fw-medium" style="font-size: 0.75rem;"></span>
-                                <button class="btn-add" data-product-id="<%= p.getId() %>"><span class="material-symbols-outlined fs-5">add</span></button>
-                            </div>
-                        </div>
+                <c:forEach var="p" items="${bestSellerProducts}">
+                    <div class="col">
+                        <c:set var="product" value="${p}" scope="request" />
+                        <jsp:include page="/components/product_card.jsp" />
                     </div>
-                </div>
-                <% } %>
+                </c:forEach>
+            </div>
+
+            <!-- Nút xem tất cả menu dưới Sản phẩm bán chạy -->
+            <div class="text-center mt-5">
+                <a href="${pageContext.request.contextPath}/menu" 
+                   class="btn-custom-secondary px-4 py-3 d-inline-flex align-items-center gap-2 shadow-sm rounded-pill fw-bold"
+                   style="font-size: 0.95rem; border: 1.5px solid #cbd5e1;">
+                    <span>Xem tất cả menu</span>
+                    <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                </a>
             </div>
         </div>
     </section>
 
-    <!-- Seasonal Releases Section -->
-    <section class="seasonal-section">
+    <!-- Menu Categories Section -->
+    <section class="category-section">
         <div class="container">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
                 <div>
-                    <span class="text-primary-custom fw-bold text-uppercase d-block mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">Aura Seasonal Releases</span>
-                    <h2 class="fw-bold text-dark fs-2 mb-2">Bộ sưu tập món mới - Mùa Thảo Mộc & Hạt</h2>
-                    <p class="text-secondary-custom mb-0">Sự thăng hoa của các loại hạt rang mộc và thảo dược tự nhiên được tuyển lựa đặc biệt cho mùa này.</p>
+                    <div class="text-primary-custom fw-bold mb-2">
+                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 1.5px;">Khám phá thực đơn</span>
+                    </div>
+                    <h2 class="fw-bold text-dark fs-2 mb-2">Danh mục đồ uống & Món ngon</h2>
+                    <p class="text-secondary-custom mb-0">Lựa chọn hương vị tinh tế theo từng nhóm món yêu thích pha chế thủ công tại Aura Café.</p>
                 </div>
-                <div class="d-flex gap-2">
-                    <span class="badge bg-white text-secondary-custom border">Phiên bản giới hạn</span>
-                    <span class="badge bg-white text-secondary-custom border">Ra mắt tháng này</span>
-                </div>
+                <a href="${pageContext.request.contextPath}/menu" class="text-primary-custom fw-semibold text-decoration-none d-flex align-items-center gap-1">
+                    Xem tất cả menu <span class="material-symbols-outlined fs-5">chevron_right</span>
+                </a>
             </div>
             
-            <div class="row g-4">
-                <% 
-                    int maxSeasonal = 3;
-                    int countSeasonal = 0;
-                    for (int i = 3; i < productsList.size() && countSeasonal < maxSeasonal; i++) {
-                        Product p = productsList.get(i);
-                        String priceStr = formatter.format(p.getBasePrice()).replace(",", ".") + "đ";
-                        String desc = "Đồ uống đặc biệt theo mùa.";
-                        String imgUrl = p.getImageUrl() != null && !p.getImageUrl().isEmpty() ? p.getImageUrl() : "https://lh3.googleusercontent.com/aida-public/AB6AXuAcgRPc8BItsw3RcB_6EvOwKbblAJajE3GUnNQJzOqbV8wu_PNvyvs1Om33aV8PewUezJRcqBzMb-2WdFoD0_VkUZgNj07Jme5IP6Mc31_Si0ZlI7cwIlZLx17Gp2rVR49Rd9YwRNSQgPewzdmOqd1F4dkobPBHSXXpRULTAM8u0cxM1waClivynY60mAjv0ni79mgw7xTpUaF8stgm0Rrp4aQ_ClW65FsN3fI0pBTWd3KfpF-XMGQR";
-                        String badge = "New Arrival";
-                        
-                        switch(p.getId()) {
-                            case 4: 
-                                desc = "Trà đào mát lạnh cùng những miếng đào tươi giòn sần sật xua tan oi bức."; 
-                                imgUrl = "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&q=80&w=800";
-                                badge = "Signature Craft";
-                                break;
-                            case 5: 
-                                desc = "Trà chanh truyền thống với hương chanh tươi mát, chua ngọt thanh dịu."; 
-                                imgUrl = "https://images.unsplash.com/photo-1596704017254-9eb10a3e8ff6?auto=format&fit=crop&q=80&w=800";
-                                badge = "Summer Vibes";
-                                break;
-                            case 6: 
-                                desc = "Trà sữa vị lá trà đen tự nhiên, ngọt ngào quyện cùng trân châu dai giòn."; 
-                                imgUrl = "https://images.unsplash.com/photo-1558857563-b371032bda98?auto=format&fit=crop&q=80&w=800";
-                                badge = "Best Choice";
-                                break;
-                        }
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+                <%
+                    CategoryDAO categoryDAO = new CategoryDAO();
+                    List<Category> landingCategories = categoryDAO.getAllActiveCategoriesWithCount();
+                    request.setAttribute("landingCategories", landingCategories);
                 %>
-                <div class="col-md-4">
-                    <div class="seasonal-card">
-                        <div class="position-relative overflow-hidden">
-                            <div class="seasonal-img" style="background-image: url('<%= imgUrl %>');"></div>
-                            <div class="position-absolute top-0 start-0 m-3 bg-white px-2 py-1 rounded text-primary-custom fw-bold shadow-sm" style="font-size: 0.75rem;"><%= badge %></div>
-                        </div>
-                        <div class="p-4 d-flex flex-column flex-1 justify-content-between">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-baseline mb-2">
-                                    <h3 class="fs-5 fw-bold mb-0"><%= p.getName() %></h3>
-                                    <span class="text-primary-custom fw-bold"><%= priceStr %></span>
+                <c:forEach var="cat" items="${landingCategories}">
+                    <c:set var="catImg" value="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80" />
+                    <c:set var="catDesc" value="Hương vị trọn vẹn được tuyển chọn kỹ lưỡng." />
+                    <c:choose>
+                        <c:when test="${cat.id == 1}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Espresso, Caramel Macchiato đậm đà chuẩn gu hiện đại." />
+                        </c:when>
+                        <c:when test="${cat.id == 2}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Cà phê muối, sữa đá Sài Gòn ủ phin nguyên bản ngọt êm." />
+                        </c:when>
+                        <c:when test="${cat.id == 3}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Trà đào cam sả, hoa quả nhiệt đới tươi mát thanh nhiệt." />
+                        </c:when>
+                        <c:when test="${cat.id == 4}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Matcha Uji thơm bùi, đá xay mát lạnh đánh tan ngày hè." />
+                        </c:when>
+                        <c:when test="${cat.id == 5}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Bánh Croissant nướng bơ Pháp, cheesecake mềm béo hấp dẫn." />
+                        </c:when>
+                        <c:when test="${cat.id == 6}">
+                            <c:set var="catImg" value="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80" />
+                            <c:set var="catDesc" value="Cold brew ủ lạnh 16h đóng chai tiện lợi mang đi bất cứ đâu." />
+                        </c:when>
+                    </c:choose>
+
+                    <div class="col">
+                        <a href="${pageContext.request.contextPath}/menu?category=${cat.id}" class="cat-card">
+                            <div class="cat-img-box">
+                                <img src="${catImg}" alt="${cat.name}" class="cat-img" loading="lazy" />
+                                <div class="cat-icon-badge">
+                                    <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon : 'local_cafe'}</span>
                                 </div>
-                                <p class="text-secondary-custom" style="font-size: 0.875rem;"><%= desc %></p>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="text-secondary-custom" style="font-size: 0.75rem;">Phục vụ: Nóng / Lạnh</span>
-                                <a href="${pageContext.request.contextPath}/menu" class="text-primary-custom fw-semibold text-decoration-none" style="font-size: 0.875rem;">Chi tiết</a>
+                            <div class="cat-body">
+                                <div>
+                                    <h3 class="cat-title">${cat.name}</h3>
+                                    <p class="text-secondary-custom mb-0 small" style="line-height: 1.5;">${catDesc}</p>
+                                </div>
+                                <div class="cat-meta">
+                                    <span class="fw-semibold text-primary-custom">${cat.productCount} món có sẵn</span>
+                                    <span class="d-inline-flex align-items-center text-primary-custom fw-semibold small">
+                                        Xem ngay <span class="material-symbols-outlined fs-6 ms-1">arrow_forward</span>
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
-                </div>
-                <% 
-                        countSeasonal++;
-                    } 
-                %>
+                </c:forEach>
             </div>
         </div>
     </section>
 
-    <!-- Loyalty Matrix Section -->
-    <section class="loyalty-section container">
-        <div class="mb-5 text-center text-md-start">
-            <span class="text-primary-custom fw-bold text-uppercase d-block mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">Aura Loyalty Matrix</span>
-            <h2 class="fw-bold text-dark fs-2 mb-2">Ưu đãi điểm thưởng tích luỹ Member</h2>
-            <p class="text-secondary-custom mb-0">Mỗi 10.000đ chi tiêu tương đương 1 Điểm Aura (A-Point). Nâng cấp hạng để nhận gấp bội đặc quyền.</p>
-        </div>
-
-        <div class="row g-4 align-items-stretch">
-            <!-- Silver -->
-            <div class="col-lg-4">
-                <div class="tier-card tier-silver">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="rounded-3 bg-light d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                            <span class="material-symbols-outlined text-secondary">military_tech</span>
-                        </div>
-                        <span class="badge bg-light text-secondary border text-uppercase">Khởi đầu</span>
+    <!-- Store Near You Section -->
+    <section class="store-section">
+        <div class="container">
+            <div class="store-card row g-0 align-items-center">
+                <div class="col-lg-6 p-4 p-md-5 text-center text-lg-start d-flex flex-column justify-content-center">
+                    <div class="text-primary-custom fw-bold mb-2">
+                        <span class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 2px;">Không gian & Chi nhánh</span>
                     </div>
-                    <h3 class="fs-3 fw-bold mb-1">Silver Member</h3>
-                    <p class="text-secondary-custom mb-3" style="font-size: 0.875rem;">Tích lũy từ 0 - 299 Điểm</p>
-                    <div class="progress mb-4" style="height: 6px;">
-                        <div class="progress-bar bg-secondary" role="progressbar" style="width: 33%"></div>
+                    <h2 class="display-6 fw-bold text-dark mb-3" style="line-height: 1.25;">
+                        Cửa Hàng<br/>
+                        <span class="text-primary-custom">Aura Gần Bạn</span>
+                    </h2>
+                    <p class="text-secondary-custom mb-4" style="font-size: 1.05rem; line-height: 1.6; max-width: 460px;">
+                        Bạn ở đâu, có Aura ở đó! Khám phá không gian cà phê ấm cúng và thưởng thức những ly cà phê chuẩn vị gần bạn nhất.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                        <a href="${pageContext.request.contextPath}/menu" class="btn-store-explore">
+                            Khám phá ngay
+                        </a>
                     </div>
-                    <ul class="list-unstyled flex-grow-1 text-secondary-custom" style="font-size: 0.875rem; line-height: 1.8;">
-                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Tích luỹ <strong>1 Điểm</strong> cho mỗi 10.000đ</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Tặng 01 E-Voucher 20% tháng sinh nhật</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Đổi voucher món ăn kèm chỉ từ 50 Điểm</li>
-                    </ul>
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-light w-100 fw-semibold mt-4">Xem chi tiết hạng Silver</a>
                 </div>
-            </div>
-            
-            <!-- Gold -->
-            <div class="col-lg-4">
-                <div class="tier-card tier-gold">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center text-white" style="width: 48px; height: 48px; background-color: #95815a;">
-                            <span class="material-symbols-outlined">workspace_premium</span>
-                        </div>
-                        <span class="badge text-white text-uppercase" style="background-color: #95815a;">Phổ biến nhất</span>
+                <div class="col-lg-6">
+                    <div class="store-img-container">
+                        <img src="https://www.highlandscoffee.com.vn/vnt_upload/home/1_1.jpg" alt="Cửa hàng Aura gần bạn" class="store-img" loading="lazy" />
                     </div>
-                    <h3 class="fs-3 fw-bold mb-1" style="color: #6b5c3f;">Gold Member</h3>
-                    <p class="text-secondary-custom mb-3" style="font-size: 0.875rem;">Tích lũy từ 300 - 799 Điểm</p>
-                    <div class="progress mb-4" style="height: 6px;">
-                        <div class="progress-bar" role="progressbar" style="width: 66%; background-color: #95815a;"></div>
-                    </div>
-                    <ul class="list-unstyled flex-grow-1 text-secondary-custom" style="font-size: 0.875rem; line-height: 1.8;">
-                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Tích luỹ nhân hệ số <strong>x1.5 Điểm</strong></li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Tặng 01 Ly đồ uống miễn phí tháng sinh nhật</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Miễn phí nâng cấp Size 2 lần/tháng</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">check_circle</span> Ưu tiên pha chế giờ cao điểm tại quầy</li>
-                    </ul>
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn w-100 fw-semibold text-white mt-4" style="background-color: #95815a;">Đặc quyền Gold Member</a>
-                </div>
-            </div>
-            
-            <!-- Diamond -->
-            <div class="col-lg-4">
-                <div class="tier-card tier-diamond">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="rounded-3 bg-primary-custom d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                            <span class="material-symbols-outlined">diamond</span>
-                        </div>
-                        <span class="badge text-white text-uppercase" style="background-color: #b2292e;">VIP Tối thượng</span>
-                    </div>
-                    <h3 class="fs-3 fw-bold mb-1">Diamond Member</h3>
-                    <p class="text-white-50 mb-3" style="font-size: 0.875rem;">Tích lũy từ 800 Điểm trở lên</p>
-                    <div class="progress mb-4" style="height: 6px; background-color: rgba(255,255,255,0.2);">
-                        <div class="progress-bar bg-primary-custom" role="progressbar" style="width: 100%;"></div>
-                    </div>
-                    <ul class="list-unstyled flex-grow-1 text-white-50" style="font-size: 0.875rem; line-height: 1.8;">
-                        <li class="d-flex gap-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> <span class="text-white">Tích luỹ nhân hệ số <strong>x2.0 Điểm</strong> toàn diện</span></li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> Combo Sinh nhật: Bánh ngọt + Đồ uống</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> Miễn phí giao hàng không giới hạn khoảng cách</li>
-                        <li class="d-flex gap-2 mt-2"><span class="material-symbols-outlined text-primary-custom" style="font-size: 1.25rem;">verified</span> Lời mời tham dự Workshop Cà phê thử nếm</li>
-                    </ul>
-                    <a href="${pageContext.request.contextPath}/profile#privileges" class="btn btn-light w-100 fw-semibold mt-4 text-dark">Gia nhập Diamond Club</a>
                 </div>
             </div>
         </div>
@@ -426,17 +497,43 @@
     <div class="container cta-section">
         <div class="cta-box d-flex flex-column flex-md-row align-items-center justify-content-between gap-4">
             <div class="max-w-2xl text-center text-md-start">
-                <span class="text-uppercase fw-bold mb-2 d-block" style="color: #ffb4a9; font-size: 0.875rem; letter-spacing: 2px;">Trải nghiệm không giới hạn</span>
-                <h2 class="display-5 fw-bold mb-3">Bạn đã sẵn sàng thưởng thức ly cà phê hoàn hảo hôm nay?</h2>
-                <p class="mb-0" style="color: #ffb4a9; font-size: 1.125rem;">Hơn 45 thức uống được cân chỉnh hoàn hảo từ đội ngũ Barista tâm huyết đang sẵn sàng phục vụ tại chi nhánh hoặc giao nóng hổi tận nơi.</p>
+                <span class="text-uppercase fw-bold mb-2 d-block" style="color: #ffb4a9; font-size: 0.8rem; letter-spacing: 2px;">Trải nghiệm không giới hạn</span>
+                <h2 class="display-6 fw-bold mb-3">Bạn đã sẵn sàng thưởng thức ly cà phê hoàn hảo hôm nay?</h2>
+                <p class="mb-0 text-white-50" style="font-size: 1rem; line-height: 1.6;">Hơn 45 thức uống được cân chỉnh hoàn hảo từ đội ngũ Barista tâm huyết đang sẵn sàng phục vụ tại chi nhánh hoặc giao nóng hổi tận nơi.</p>
             </div>
-            <div class="flex-shrink-0 mt-4 mt-md-0">
-                <a href="${pageContext.request.contextPath}/menu" class="btn btn-light btn-lg fw-bold d-inline-flex align-items-center gap-2 px-4 py-3" style="color: var(--primary);">
-                    Khám phá toàn bộ Menu <span class="material-symbols-outlined">restaurant_menu</span>
+            <div class="flex-shrink-0 mt-3 mt-md-0">
+                <a href="${pageContext.request.contextPath}/menu" class="btn btn-light btn-lg fw-bold d-inline-flex align-items-center gap-2 px-4 py-3 shadow" style="color: var(--primary);">
+                    Khám phá toàn bộ Menu
                 </a>
             </div>
         </div>
     </div>
+
+    <!-- Shared Footer Component -->
+    <jsp:include page="/components/footer.jsp" />
+
+    <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Bấm Xem món ra popup) -->
+    <div id="stickyMiniCart" class="sticky-cart-bar ${empty sessionScope.cart || sessionScope.cart.totalQuantity == 0 ? 'd-none' : ''}" onclick="openSelectedItemsModal()"
+        style="cursor: pointer;" title="Bấm để xem danh sách món">
+        <div class="d-flex align-items-center gap-3">
+            <div class="cart-badge-icon">
+                <span class="material-symbols-outlined fs-5">shopping_bag</span>
+                <span id="stickyCartBadge" class="badge-count-pill">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span>
+            </div>
+            <div class="fw-bold text-white" style="font-size: 0.95rem;">
+                Đang chọn <span id="stickyCartCount" class="text-danger fw-bold">${empty sessionScope.cart ? 0 : sessionScope.cart.totalQuantity}</span> món
+            </div>
+        </div>
+        <button type="button"
+            class="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm"
+            onclick="event.stopPropagation(); openSelectedItemsModal()" title="Xem danh sách món đang chọn">
+            <span>Xem món</span>
+            <span class="material-symbols-outlined fs-6">arrow_forward</span>
+        </button>
+    </div>
+
+    <!-- Reusable Product Detail & Customization Modal Component -->
+    <jsp:include page="/components/product_detail_modal.jsp" />
 
     <!-- Nhúng Component Auth Modal -->
     <% if(session.getAttribute("user") == null) { %>
@@ -446,7 +543,7 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Script Add To Cart -->
+    <!-- Script Check Login URL Param -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Check for login query parameter
@@ -457,55 +554,6 @@
                 // Remove parameter from URL without refreshing
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
-
-            const addButtons = document.querySelectorAll('.btn-add');
-            addButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-product-id');
-                    if (productId) {
-                        fetch('${pageContext.request.contextPath}/cart/add', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: 'productId=' + productId + '&quantity=1'
-                        })
-                        .then(response => {
-                            if (response.status === 401) {
-                                const authModal = new bootstrap.Modal(document.getElementById('authModal'));
-                                authModal.show();
-                                throw new Error('Unauthorized');
-                            }
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.success) {
-                                // Jump cart number animation and update
-                                const badge = document.getElementById('headerCartBadge');
-                                if (badge) {
-                                    badge.textContent = data.totalItems;
-                                    
-                                    // Simple pop animation
-                                    badge.style.transform = 'scale(1.5)';
-                                    badge.style.transition = 'transform 0.2s';
-                                    setTimeout(() => {
-                                        badge.style.transform = 'scale(1)';
-                                    }, 200);
-                                }
-                            }
-                        })
-                        .catch(error => {
-                            if (error.message !== 'Unauthorized') {
-                                console.error('Error:', error);
-                                alert('Đã xảy ra lỗi khi thêm vào giỏ hàng.');
-                            }
-                        });
-                    }
-                });
-            });
         });
     </script>
 </body>

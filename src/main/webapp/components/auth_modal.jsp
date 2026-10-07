@@ -1,10 +1,19 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-    <% /* Xy ly activeTab tu session/request */ String activeTab=request.getParameter("tab"); if (activeTab==null) {
-        activeTab=(String) request.getAttribute("activeTab"); } if (activeTab==null) { activeTab="login" ; } boolean
-        isLoginTab="login" .equals(activeTab); boolean isRegisterTab="register" .equals(activeTab); boolean
-        isForgotTab="forgot" .equals(activeTab);
-        /* Trang cần quay lại sau khi đăng nhập / đăng ký (VD: /checkout), do Controller đặt sẵn */
-        String authRedirect=(String) request.getAttribute("authRedirect"); %>
+<%
+    /* Xử lý activeTab từ session hoặc request */
+    String activeTab = request.getParameter("tab");
+    if (activeTab == null) {
+        activeTab = (String) request.getAttribute("activeTab");
+    }
+    if (activeTab == null) {
+        activeTab = "login";
+    }
+    boolean isRegisterTab = "register".equals(activeTab);
+    boolean isForgotTab = "forgot".equals(activeTab);
+    boolean isLoginTab = !isRegisterTab; // Quên mật khẩu cũng hiển thị dưới tab Đăng nhập
+    /* Trang cần quay lại sau khi đăng nhập / đăng ký (VD: /checkout) */
+    String authRedirect = (String) request.getAttribute("authRedirect");
+%>
         <style>
             :root {
                 --surface-container-lowest: #ffffff;
@@ -93,7 +102,7 @@
 
                     <div class="row g-0">
                         <div
-                            class="col-12 col-md-5 modal-auth-left position-relative d-flex flex-column justify-content-between p-4">
+                            class="col-12 col-md-5 modal-auth-left position-relative d-flex flex-column justify-content-center p-4 p-md-5">
                             <div class="position-absolute w-100 h-100 top-0 start-0"
                                 style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAGFUqokLpPQhYrL16Lx1MmWKuiDJT-ODG6DB0BHusP12uZytq7EXIlX8NPaQjkCjGB962XBMQtan6ezZNms1rtoX6miKboAymKvO9ofSFSV355L6uD3GniaPpqO7EkrnrQHFympfYpI2XS2W_2wxEJHvbcy2DOo0Ycop5LZ7iuoWV3pcYpESD0Eo_0xCKo_FdIzK8HVEvMlyK6s2Vnxxnjxl9kVFsG3tT8-M5dD_clWwQiVacYM5ot'); background-size: cover; background-position: center; opacity: 0.3; mix-blend-mode: multiply;">
                             </div>
@@ -101,36 +110,21 @@
                                 style="width: 14rem; height: 14rem; top: -4rem; left: -4rem; background-color: rgba(144, 11, 26, 0.1); filter: blur(40px);">
                             </div>
 
-                            <div class="position-relative z-1">
-                                <div
-                                    class="d-inline-flex align-items-center gap-2 rounded-pill px-3 py-1 shadow-sm glass-badge">
-                                    <span class="pulse-dot"></span>Hệ Thống Vận Hành 2.4
-                                </div>
-                            </div>
-
-                            <div class="position-relative z-1 my-auto py-4">
+                            <div class="position-relative z-1 py-3">
                                 <div class="d-flex align-items-center gap-2 mb-2">
                                     <div class="rounded-3 d-flex align-items-center justify-content-center shadow-sm"
-                                        style="width: 40px; height: 40px; background-color: var(--primary-container); color: white;">
+                                        style="width: 42px; height: 42px; background-color: var(--primary-container); color: white;">
                                         <span class="material-symbols-outlined">local_cafe</span>
                                     </div>
                                     <div>
                                         <h1 class="m-0 fw-bold fs-3 text-dark">Aura <span
                                                 style="color: var(--primary-container);">Café</span></h1>
-                                        <p class="m-0 text-muted" style="font-size: 0.75rem;">Crafting Digital Moments
-                                        </p>
+                                        <p class="m-0 text-muted" style="font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600;">Specialty Coffee</p>
                                     </div>
                                 </div>
-                                <p class="text-muted mt-3 d-none d-md-block" style="font-size: 0.85rem;">
-                                    Nền tảng quản trị đồng bộ đa vai trò: Thu ngân, Pha chế KDS, Shipper và Quản lý
-                                    chuỗi chi nhánh thời gian thực.
+                                <p class="text-muted mt-3 mb-0 d-none d-md-block" style="font-size: 0.875rem; line-height: 1.6;">
+                                    Khám phá không gian cà phê nghệ thuật và hương vị nguyên bản từ những hạt cà phê chọn lọc. Đăng ký thành viên để nhận ưu đãi và tích luỹ điểm thưởng trên mỗi đơn hàng.
                                 </p>
-                            </div>
-
-                            <div class="position-relative z-1 d-flex justify-content-between text-muted"
-                                style="font-size: 0.7rem;">
-                                <span class="text-uppercase fw-semibold">Chi nhánh Sài Gòn • Hà Nội</span>
-                                <span class="fw-medium">v2.4.9-PRO</span>
                             </div>
                         </div>
 
@@ -162,150 +156,166 @@
                                                     <li class="nav-item">
                                                         <button class="nav-link <%= isLoginTab ? " active" : "" %>"
                                                             data-bs-toggle="pill"
-                                                            data-bs-target="#modal-login-pane">Đăng nhập</button>
+                                                            data-bs-target="#modal-login-pane"
+                                                            id="tab-btn-login"
+                                                            onclick="showLoginSubView()">Đăng nhập</button>
                                                     </li>
                                                     <li class="nav-item">
                                                         <button class="nav-link <%= isRegisterTab ? " active" : "" %>"
                                                             data-bs-toggle="pill"
-                                                            data-bs-target="#modal-register-pane">Đăng ký</button>
-                                                    </li>
-                                                    <li class="nav-item">
-                                                        <button class="nav-link <%= isForgotTab ? " active" : "" %>"
-                                                            data-bs-toggle="pill"
-                                                            data-bs-target="#modal-forgot-pane">Quên mật khẩu</button>
+                                                            data-bs-target="#modal-register-pane"
+                                                            id="tab-btn-register">Đăng ký</button>
                                                     </li>
                                                 </ul>
 
                                                 <div class="tab-content">
-                                                    <!-- LOGIN -->
+                                                    <!-- LOGIN & FORGOT PANE -->
                                                     <div class="tab-pane fade <%= isLoginTab ? " show active" : "" %>"
                                                         id="modal-login-pane">
-                                                        <div class="mb-3">
-                                                            <h2 class="fs-4 fw-semibold mb-1">Chào mừng trở lại</h2>
-                                                            <p class="text-muted" style="font-size: 0.85rem;">Vui lòng
-                                                                nhập định danh tài khoản</p>
+
+                                                        <!-- SUBVIEW 1: ĐĂNG NHẬP -->
+                                                        <div id="subview-login" style="<%= isForgotTab ? "display: none;" : "" %>">
+                                                            <div class="mb-3">
+                                                                <h2 class="fs-4 fw-semibold mb-1">Chào mừng trở lại</h2>
+                                                                <p class="text-muted" style="font-size: 0.85rem;">Vui lòng nhập định danh tài khoản</p>
+                                                            </div>
+                                                            <form action="${pageContext.request.contextPath}/login" method="POST">
+                                                                <% if (authRedirect !=null) { %>
+                                                                    <input type="hidden" name="redirect" value="<%= authRedirect %>">
+                                                                <% } %>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-medium" style="font-size: 0.85rem;">Số điện thoại / Email</label>
+                                                                    <input type="text"
+                                                                        class="form-control bg-light border-0 p-2"
+                                                                        name="username"
+                                                                        placeholder="0901234567 hoặc email@domain.com"
+                                                                        required>
+                                                                </div>
+                                                                <div class="mb-2">
+                                                                    <label class="form-label fw-medium" style="font-size: 0.85rem;">Mật khẩu</label>
+                                                                    <input type="password"
+                                                                        class="form-control bg-light border-0 p-2"
+                                                                        name="password" placeholder="••••••••••••"
+                                                                        minlength="6" required>
+                                                                </div>
+                                                                <div class="d-flex justify-content-end mb-3">
+                                                                    <a href="javascript:void(0)" onclick="showForgotSubView()"
+                                                                        class="text-decoration-none text-muted"
+                                                                        style="font-size: 0.825rem;">
+                                                                        Quên mật khẩu?
+                                                                    </a>
+                                                                </div>
+                                                                <button type="submit"
+                                                                    class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-2"
+                                                                    style="background-color: var(--primary-container); height: 48px;">
+                                                                    Đăng nhập <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                                                                </button>
+                                                            </form>
                                                         </div>
-                                                        <form action="${pageContext.request.contextPath}/login"
-                                                            method="POST">
-                                                            <% if (authRedirect != null) { %>
-                                                                <input type="hidden" name="redirect" value="<%= authRedirect %>">
-                                                            <% } %>
+
+                                                        <!-- SUBVIEW 2: QUÊN MẬT KHẨU -->
+                                                        <div id="subview-forgot" style="<%= isForgotTab ? "" : "display: none;" %>">
                                                             <div class="mb-3">
-                                                                <label class="form-label fw-medium"
-                                                                    style="font-size: 0.85rem;">Số điện thoại /
-                                                                    Email</label>
-                                                                <input type="text"
-                                                                    class="form-control bg-light border-0 p-2"
-                                                                    name="username"
-                                                                    placeholder="barista.nguyen@auracafe.vn" required>
+                                                                <h2 class="fs-4 fw-semibold mb-1">Khôi phục quyền truy cập</h2>
+                                                                <p class="text-muted" style="font-size: 0.85rem;">Hệ thống sẽ cấp lại mật khẩu ngẫu nhiên qua Email của bạn</p>
                                                             </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-medium"
-                                                                    style="font-size: 0.85rem;">Mật khẩu</label>
-                                                                <input type="password"
-                                                                    class="form-control bg-light border-0 p-2"
-                                                                    name="password" placeholder="••••••••••••" required>
-                                                            </div>
-                                                            <button type="submit"
-                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
-                                                                style="background-color: var(--primary-container); height: 48px;">
-                                                                Đăng nhập hệ thống <span
-                                                                    class="material-symbols-outlined fs-5">arrow_forward</span>
-                                                            </button>
-                                                        </form>
+                                                            <form action="${pageContext.request.contextPath}/forgot-password" method="POST">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-medium" style="font-size: 0.85rem;">Email đã liên kết</label>
+                                                                    <input type="email" name="email"
+                                                                        class="form-control bg-light border-0 p-2"
+                                                                        placeholder="name@auracafe.vn" required>
+                                                                </div>
+
+                                                                <div class="alert alert-info d-flex gap-2 p-3 mt-3" style="font-size: 0.8rem; line-height: 1.5;">
+                                                                    <span class="material-symbols-outlined text-info" style="font-size: 1.25rem;">info</span>
+                                                                    <div>
+                                                                        <strong>Lưu ý:</strong> Vui lòng nhập địa chỉ Email hoặc Số điện thoại đã liên kết với tài khoản Aura để nhận mật khẩu mới.
+                                                                    </div>
+                                                                </div>
+
+                                                                <button type="submit"
+                                                                    class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
+                                                                    style="background-color: var(--primary-container); height: 48px;">
+                                                                    Gửi mật khẩu mới <span class="material-symbols-outlined fs-5">send</span>
+                                                                </button>
+
+                                                                <div class="text-center mt-3">
+                                                                    <a href="javascript:void(0)" onclick="showLoginSubView()"
+                                                                        class="text-decoration-none fw-semibold d-inline-flex align-items-center gap-1"
+                                                                        style="font-size: 0.85rem; color: var(--primary-container);">
+                                                                        <span class="material-symbols-outlined fs-6">arrow_back</span>
+                                                                        <span>Quay lại đăng nhập</span>
+                                                                    </a>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+
                                                     </div>
 
                                                     <!-- REGISTER -->
-                                                    <div class="tab-pane fade <%= isRegisterTab ? " show active" : "" %>
-                                                        " id="modal-register-pane">
+                                                    <div class="tab-pane fade <%= isRegisterTab ? " show active" : "" %>" id="modal-register-pane">
                                                         <div class="mb-3">
                                                             <h2 class="fs-4 fw-semibold mb-1">Tạo tài khoản Aura</h2>
                                                             <p class="text-muted" style="font-size: 0.85rem;">Đăng ký
-                                                                tài khoản nội bộ chi nhánh hoặc đối tác</p>
+                                                                thành viên để nhận ưu đãi và tích điểm</p>
                                                         </div>
                                                         <form action="${pageContext.request.contextPath}/register"
                                                             method="POST">
-                                                            <% if (authRedirect != null) { %>
-                                                                <input type="hidden" name="redirect" value="<%= authRedirect %>">
-                                                            <% } %>
-                                                            <div class="row g-2 mb-3">
-                                                                <div class="col-12">
-                                                                    <label class="form-label fw-medium"
-                                                                        style="font-size: 0.85rem;">Họ tên</label>
-                                                                    <input type="text"
-                                                                        class="form-control bg-light border-0 p-2"
-                                                                        name="fullname" placeholder="Nguyễn Văn A"
-                                                                        required>
-                                                                </div>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-medium"
-                                                                    style="font-size: 0.85rem;">SĐT / Email</label>
-                                                                <input type="text"
-                                                                    class="form-control bg-light border-0 p-2"
-                                                                    name="username" placeholder="SĐT hoặc Email"
-                                                                    required>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-medium"
-                                                                    style="font-size: 0.85rem;">Mật khẩu</label>
-                                                                <input type="password"
-                                                                    class="form-control bg-light border-0 p-2"
-                                                                    name="password" placeholder="Tối thiểu 8 ký tự"
-                                                                    required>
-                                                            </div>
-                                                            <button type="submit"
-                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
-                                                                style="background-color: var(--primary-container); height: 48px;">
-                                                                Tạo tài khoản mới <span
-                                                                    class="material-symbols-outlined fs-5">how_to_reg</span>
-                                                            </button>
+                                                            <% if (authRedirect !=null) { %>
+                                                                <input type="hidden" name="redirect"
+                                                                    value="<%= authRedirect %>">
+                                                                <% } %>
+                                                                    <div class="row g-2 mb-3">
+                                                                        <div class="col-12">
+                                                                            <label class="form-label fw-medium"
+                                                                                style="font-size: 0.85rem;">Họ
+                                                                                tên</label>
+                                                                            <input type="text"
+                                                                                class="form-control bg-light border-0 p-2"
+                                                                                name="fullname"
+                                                                                placeholder="Nguyễn Văn A" required>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">SĐT /
+                                                                            Email</label>
+                                                                        <input type="text"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="username" placeholder="SĐT hoặc Email"
+                                                                            pattern="^(\d{10,11}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$"
+                                                                            title="Vui lòng nhập số điện thoại hợp lệ (10-11 số) hoặc Email"
+                                                                            required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">Mật khẩu</label>
+                                                                        <input type="password" id="reg-password"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="password"
+                                                                            placeholder="Tối thiểu 6 ký tự"
+                                                                            minlength="6" required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">Xác nhận mật
+                                                                            khẩu</label>
+                                                                        <input type="password" id="reg-confirm-password"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="confirm_password"
+                                                                            placeholder="Nhập lại mật khẩu"
+                                                                            minlength="6" required>
+                                                                    </div>
+                                                                    <button type="submit"
+                                                                        class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
+                                                                        style="background-color: var(--primary-container); height: 48px;">
+                                                                        Tạo tài khoản mới <span
+                                                                            class="material-symbols-outlined fs-5">how_to_reg</span>
+                                                                    </button>
                                                         </form>
                                                     </div>
 
-                                                    <!-- FORGOT PWD -->
-                                                    <div class="tab-pane fade <%= isForgotTab ? " show active" : "" %>"
-                                                        id="modal-forgot-pane">
-                                                        <div class="mb-3">
-                                                            <h2 class="fs-4 fw-semibold mb-1">Khôi phục quyền truy cập
-                                                            </h2>
-                                                            <p class="text-muted" style="font-size: 0.85rem;">Hệ thống
-                                                                sẽ cấp lại mật khẩu ngẫu nhiên qua Email của bạn</p>
-                                                        </div>
-                                                        <form
-                                                            action="${pageContext.request.contextPath}/forgot-password"
-                                                            method="POST">
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-medium"
-                                                                    style="font-size: 0.85rem;">Email đã liên
-                                                                    kết</label>
-                                                                <input type="email" name="email"
-                                                                    class="form-control bg-light border-0 p-2"
-                                                                    placeholder="name@auracafe.vn" required>
-                                                            </div>
-
-                                                            <div class="alert alert-info d-flex gap-2 p-3 mt-3"
-                                                                style="font-size: 0.8rem; line-height: 1.5;">
-                                                                <span class="material-symbols-outlined text-info"
-                                                                    style="font-size: 1.25rem;">info</span>
-                                                                <div>
-                                                                    <strong>Lưu ý:</strong> Đối với tài khoản đăng ký
-                                                                    bằng <strong>Số điện thoại</strong> hoặc tài khoản
-                                                                    <strong>Quản trị (Admin)</strong>, vui lòng liên hệ
-                                                                    bộ phận CSKH qua Hotline <strong>1900 6868</strong>
-                                                                    hoặc trực tiếp tại chi nhánh để được hỗ trợ cấp lại
-                                                                    mật khẩu.
-                                                                </div>
-                                                            </div>
-
-                                                            <button type="submit"
-                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
-                                                                style="background-color: var(--primary-container); height: 48px;">
-                                                                Gửi mật khẩu mới <span
-                                                                    class="material-symbols-outlined fs-5">send</span>
-                                                            </button>
-                                                        </form>
-                                                    </div>
                                                 </div>
                         </div>
                     </div>
@@ -315,6 +325,20 @@
         </div>
 
         <script>
+            function showLoginSubView() {
+                var loginView = document.getElementById('subview-login');
+                var forgotView = document.getElementById('subview-forgot');
+                if (loginView) loginView.style.display = 'block';
+                if (forgotView) forgotView.style.display = 'none';
+            }
+
+            function showForgotSubView() {
+                var loginView = document.getElementById('subview-login');
+                var forgotView = document.getElementById('subview-forgot');
+                if (loginView) loginView.style.display = 'none';
+                if (forgotView) forgotView.style.display = 'block';
+            }
+
             // Tự động bật Modal nếu có lỗi, thành công, hoặc có param tab trên URL
             document.addEventListener("DOMContentLoaded", function () {
                 var hasErrorOrSuccess = <%= (displayError != null || displaySuccess != null || request.getParameter("tab") != null) %>;
@@ -325,4 +349,19 @@
                     myModal.show();
                 }
             });
+
+            // Validate mật khẩu khớp nhau khi đăng ký
+            const regPassword = document.getElementById("reg-password");
+            const regConfirm = document.getElementById("reg-confirm-password");
+            if (regPassword && regConfirm) {
+                function validatePassword() {
+                    if (regPassword.value != regConfirm.value) {
+                        regConfirm.setCustomValidity("Mật khẩu xác nhận không khớp");
+                    } else {
+                        regConfirm.setCustomValidity('');
+                    }
+                }
+                regPassword.addEventListener("change", validatePassword);
+                regConfirm.addEventListener("keyup", validatePassword);
+            }
         </script>

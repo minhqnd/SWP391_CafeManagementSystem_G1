@@ -38,6 +38,59 @@
         background-color: #900b1a;
         border-radius: 2px;
     }
+
+    /* User Profile Dropdown Styling */
+    .user-dropdown-menu {
+        min-width: 250px;
+        padding: 0.5rem;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.12);
+        animation: userDropFade 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        margin-top: 0.65rem !important;
+    }
+    @keyframes userDropFade {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .user-dropdown-header {
+        padding: 0.75rem 0.85rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        margin-bottom: 0.4rem;
+        border: 1px solid #f1f5f9;
+    }
+    .user-item-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.55rem 0.85rem;
+        border-radius: 8px;
+        font-size: 0.86rem;
+        font-weight: 500;
+        color: #334155;
+        transition: all 0.15s ease;
+        text-decoration: none;
+    }
+    .user-item-btn:hover {
+        background: #f1f5f9;
+        color: #900b1a;
+    }
+    .user-item-btn.logout-btn:hover {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+    .user-item-btn .item-icon {
+        font-size: 19px;
+        color: #64748b;
+        transition: color 0.15s ease;
+    }
+    .user-item-btn:hover .item-icon {
+        color: #900b1a;
+    }
+    .user-item-btn.logout-btn:hover .item-icon {
+        color: #dc2626;
+    }
 </style>
 
 <nav class="navbar navbar-expand-lg aura-navbar py-3">
@@ -102,19 +155,6 @@
                        href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link aura-nav-link text-muted" href="#" onclick="alert('Tính năng Đơn hàng của tôi đang được phát triển!')">Đơn hàng của tôi</a>
-                </li>
-                <li class="nav-item">
-                    <c:choose>
-                        <c:when test="${not empty sessionScope.user}">
-                            <a class="nav-link aura-nav-link ${param.activePage == 'profile' ? 'active-nav' : 'text-muted'}" href="${pageContext.request.contextPath}/profile">Hồ sơ & Điểm tích luỹ</a>
-                        </c:when>
-                        <c:otherwise>
-                            <a class="nav-link aura-nav-link text-muted" href="#" data-bs-toggle="modal" data-bs-target="#authModal">Hồ sơ & Điểm tích luỹ</a>
-                        </c:otherwise>
-                    </c:choose>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link aura-nav-link ${param.activePage == 'feedback' ? 'active-nav' : ''}" 
                        href="${pageContext.request.contextPath}/feedback">Phản ánh & Khiếu nại</a>
                 </li>
@@ -148,19 +188,74 @@
                                     <span class="text-danger fw-bold" style="font-size: 0.7rem;">${sessionScope.user.role}</span>
                                 </div>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                                <li class="px-3 py-2 border-bottom">
-                                    <div class="fw-bold">${sessionScope.user.fullName}</div>
-                                    <div class="small text-muted">${sessionScope.user.phone}</div>
+                            <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu">
+                                <!-- Header Info -->
+                                <li class="user-dropdown-header">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="fw-bold text-dark text-truncate" style="max-width: 150px; font-size: 0.92rem;">${sessionScope.user.fullName}</span>
+                                        <c:choose>
+                                            <c:when test="${not empty sessionScope.user.tierName}">
+                                                <span class="badge bg-danger-subtle text-danger" style="font-size: 0.68rem; font-weight: 700;">${sessionScope.user.tierName}</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">${sessionScope.user.role}</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between text-muted" style="font-size: 0.78rem;">
+                                        <span>${not empty sessionScope.user.phone ? sessionScope.user.phone : sessionScope.user.email}</span>
+                                        <c:if test="${sessionScope.user.totalPoints > 0}">
+                                            <span class="text-warning-emphasis fw-bold">• ${sessionScope.user.totalPoints} điểm</span>
+                                        </c:if>
+                                    </div>
                                 </li>
+
+                                <!-- Đơn hàng của tôi -->
                                 <li>
-                                    <a class="dropdown-item fw-medium py-2" href="${pageContext.request.contextPath}/profile">
-                                        <span class="material-symbols-outlined align-middle fs-6 me-1">person</span> Hồ sơ của tôi
+                                    <a class="user-item-btn" href="${pageContext.request.contextPath}/orders">
+                                        <span class="material-symbols-outlined item-icon">receipt_long</span>
+                                        <span class="flex-grow-1">Đơn hàng của tôi</span>
+                                        <span class="material-symbols-outlined" style="font-size: 16px; color: #94a3b8;">chevron_right</span>
                                     </a>
                                 </li>
+
+                                <!-- Hồ sơ & Điểm tích luỹ -->
                                 <li>
-                                    <a class="dropdown-item fw-medium py-2 text-danger" href="${pageContext.request.contextPath}/login?action=logout">
-                                        <span class="material-symbols-outlined align-middle fs-6 me-1">logout</span> Đăng xuất
+                                    <a class="user-item-btn" href="${pageContext.request.contextPath}/profile">
+                                        <span class="material-symbols-outlined item-icon">account_circle</span>
+                                        <span class="flex-grow-1">Hồ sơ & Điểm tích luỹ</span>
+                                        <span class="material-symbols-outlined" style="font-size: 16px; color: #94a3b8;">chevron_right</span>
+                                    </a>
+                                </li>
+
+                                <!-- Phím tắt nhanh cho Staff / Barista / Cashier / Admin -->
+                                <c:if test="${sessionScope.user.role eq 'ADMIN' || sessionScope.user.role eq 'STAFF'}">
+                                    <li><hr class="dropdown-divider my-1 border-light-subtle"></li>
+                                    <c:if test="${sessionScope.user.position eq 'Cashier' || sessionScope.user.role eq 'ADMIN'}">
+                                        <li>
+                                            <a class="user-item-btn" href="${pageContext.request.contextPath}/cashier">
+                                                <span class="material-symbols-outlined item-icon">point_of_sale</span>
+                                                <span class="flex-grow-1">Màn hình Thu ngân POS</span>
+                                            </a>
+                                        </li>
+                                    </c:if>
+                                    <c:if test="${sessionScope.user.position eq 'Barista' || sessionScope.user.role eq 'ADMIN'}">
+                                        <li>
+                                            <a class="user-item-btn" href="${pageContext.request.contextPath}/barista">
+                                                <span class="material-symbols-outlined item-icon">coffee_maker</span>
+                                                <span class="flex-grow-1">Màn hình Pha chế KDS</span>
+                                            </a>
+                                        </li>
+                                    </c:if>
+                                </c:if>
+
+                                <li><hr class="dropdown-divider my-1 border-light-subtle"></li>
+
+                                <!-- Đăng xuất -->
+                                <li>
+                                    <a class="user-item-btn logout-btn" href="${pageContext.request.contextPath}/login?action=logout">
+                                        <span class="material-symbols-outlined item-icon" style="color: #dc2626;">logout</span>
+                                        <span class="text-danger fw-semibold">Đăng xuất</span>
                                     </a>
                                 </li>
                             </ul>
@@ -177,20 +272,3 @@
         </div>
     </div>
 </nav>
-
-<c:if test="${param.showCart != 'false' && param.navbarMode != 'barista'}">
-<script>
-    // Đồng bộ số lượng giỏ hàng trên tất cả các trang
-    (function syncHeaderCart() {
-        try {
-            var cartData = JSON.parse(localStorage.getItem('aura_cart') || '[]');
-            var count = 0;
-            for (var i = 0; i < cartData.length; i++) {
-                count += (cartData[i].quantity || 1);
-            }
-            var badge = document.getElementById('headerCartBadge');
-            if (badge) badge.innerText = count;
-        } catch (e) {}
-    })();
-</script>
-</c:if>
