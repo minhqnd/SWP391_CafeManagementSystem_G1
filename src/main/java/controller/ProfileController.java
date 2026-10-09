@@ -88,7 +88,13 @@ public class ProfileController extends HttpServlet {
         if ("update".equals(action)) {
             String fullName = request.getParameter("fullName");
             String phone = request.getParameter("phone");
+            if (phone == null) {
+                phone = user.getPhone(); // Giữ nguyên sđt cũ do đã ẩn field này
+            }
             String email = request.getParameter("email");
+            if (email == null) {
+                email = user.getEmail(); // Giữ nguyên email
+            }
             String birthday = request.getParameter("birthday");
             String address = request.getParameter("address");
             

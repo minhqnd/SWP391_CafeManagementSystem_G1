@@ -23,22 +23,17 @@ public class RegisterController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         
         String fullName = request.getParameter("fullname");
-        String usernameInput = request.getParameter("username");
+        String email = request.getParameter("email");
+        if (email == null || email.trim().isEmpty()) {
+            email = request.getParameter("username");
+        }
         String password = request.getParameter("password");
         
         // Mặc định tất cả user đăng ký mới từ web đều là Khách hàng
         String dbRole = "CUSTOMER";
         String dbPosition = null;
         
-        String email = null;
-        String phone = null;
-        
-        if (usernameInput != null && usernameInput.contains("@")) {
-            email = usernameInput;
-            phone = String.valueOf(System.currentTimeMillis()); // Generate a placeholder phone since DB requires it to be UNIQUE
-        } else {
-            phone = usernameInput;
-        }
+        String phone = String.valueOf(System.currentTimeMillis()); // Generate a placeholder phone since DB requires it to be UNIQUE
 
         // Create new User object
         User newUser = new User();
@@ -48,6 +43,15 @@ public class RegisterController extends HttpServlet {
         newUser.setRole(dbRole);
         newUser.setPosition(dbPosition);
         
+        // Kiểm tra email đã tồn tại chưa
+        if (userDAO.checkEmailExists(email)) {
+            request.getSession().setAttribute("errorMsg", "Email đã tồn tại trong hệ thống.");
+            String redirect = request.getParameter("redirect");
+            String backPath = RedirectUtil.isSafeLocalPath(redirect) ? redirect : "/";
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
+            return;
+        }
+
         boolean isSuccess = userDAO.register(newUser, password);
 
         // Đăng ký từ trang Checkout -> quay lại đúng trang đó để đăng nhập và đặt hàng tiếp
@@ -58,7 +62,7 @@ public class RegisterController extends HttpServlet {
             request.getSession().setAttribute("successMsg", "Đăng ký thành công! Vui lòng đăng nhập.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=login");
         } else {
-            request.getSession().setAttribute("errorMsg", "Đăng ký thất bại. Email hoặc Số điện thoại có thể đã tồn tại.");
+            request.getSession().setAttribute("errorMsg", "Lỗi hệ thống khi đăng ký. Vui lòng thử lại sau.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
         }
     }
