@@ -13,11 +13,11 @@ public class CategoryDAO extends BaseDAO {
 
     public List<Category> getAllActiveCategoriesWithCount() {
         List<Category> list = new ArrayList<>();
-        String sql = "SELECT c.id, c.name, c.status, c.icon, COUNT(p.id) AS product_count " +
+        String sql = "SELECT c.id, c.name, c.status, c.icon, c.description, c.image_url, COUNT(p.id) AS product_count " +
                      "FROM categories c " +
                      "LEFT JOIN products p ON c.id = p.category_id AND p.is_available = 1 " +
                      "WHERE c.status = 'ACTIVE' " +
-                     "GROUP BY c.id, c.name, c.status, c.icon " +
+                     "GROUP BY c.id, c.name, c.status, c.icon, c.description, c.image_url " +
                      "ORDER BY c.id ASC";
 
         try (Connection conn = DBContext.getConnection();
@@ -30,6 +30,8 @@ public class CategoryDAO extends BaseDAO {
                         rs.getString("name"),
                         rs.getString("status"),
                         rs.getString("icon"),
+                        rs.getString("description"),
+                        rs.getString("image_url"),
                         rs.getInt("product_count")
                 );
                 list.add(cat);
@@ -41,7 +43,7 @@ public class CategoryDAO extends BaseDAO {
     }
 
     public Category getCategoryById(int id) {
-        String sql = "SELECT id, name, status, icon FROM categories WHERE id = ?";
+        String sql = "SELECT id, name, status, icon, description, image_url FROM categories WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -53,6 +55,8 @@ public class CategoryDAO extends BaseDAO {
                             rs.getString("name"),
                             rs.getString("status"),
                             rs.getString("icon"),
+                            rs.getString("description"),
+                            rs.getString("image_url"),
                             0
                     );
                 }

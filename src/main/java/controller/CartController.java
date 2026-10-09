@@ -1,10 +1,9 @@
 package controller;
 
-import dao.VoucherDAO;
+import dao.UserDAO;
 import model.Cart;
 import model.CartItem;
 import model.User;
-import model.Voucher;
 import service.CartService;
 
 import jakarta.servlet.ServletException;
@@ -30,7 +29,7 @@ import java.util.List;
 public class CartController extends HttpServlet {
 
     private final CartService cartService = new CartService();
-    private final VoucherDAO voucherDAO = new VoucherDAO();
+    private final UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -45,17 +44,17 @@ public class CartController extends HttpServlet {
             return;
         }
 
-        // Cập nhật giá & trạng thái món theo Database, kiểm tra voucher còn hiệu lực
-        String voucherCode = cart.getVoucher() != null ? cart.getVoucher().getCode() : null;
-        if (!cartService.refreshCart(cart, customerId)) {
-            session.setAttribute("cartError", "Mã " + voucherCode + " đã hết hạn hoặc hết lượt sử dụng.");
-        }
+        // Cập nhật giá & trạng thái món theo Database
+        cartService.refreshCart(cart, customerId);
 
         moveFlashMessage(session, request, "cartMessage");
         moveFlashMessage(session, request, "cartError");
 
         request.setAttribute("cart", cart);
-        request.setAttribute("vouchers", voucherDAO.getUsableVouchers(customerId));
+        
+        if (customerId != null) {
+            request.setAttribute("totalPoints", userDAO.getTotalPoints(customerId));
+        }
         request.getRequestDispatcher("/cart.jsp").forward(request, response);
     }
 
@@ -94,10 +93,10 @@ public class CartController extends HttpServlet {
             cart.getItems().clear();
         } else if ("removeSelected".equals(action)) {
             cart.removeSelectedItems();
-        } else if ("applyVoucher".equals(action)) {
-            applyVoucher(session, cart, request.getParameter("voucherCode"));
-        } else if ("removeVoucher".equals(action)) {
-            cart.setVoucher(null);
+        } else if ("applyPoints".equals(action)) {
+            applyPoints(session, cart, request.getParameter("pointsToUse"));
+        } else if ("removePoints".equals(action)) {
+            cart.setPointsUsed(0);
         }
 
         if ("/cart/api".equals(request.getServletPath()) || "json".equals(request.getParameter("format"))) {
@@ -188,29 +187,41 @@ public class CartController extends HttpServlet {
         response.getWriter().write("{\"success\":true,\"totalItems\":" + cart.getTotalQuantity() + "}");
     }
 
-    private void applyVoucher(HttpSession session, Cart cart, String code) {
-        if (code == null || code.trim().isEmpty()) {
-            session.setAttribute("cartError", "Vui lòng nhập mã khuyến mãi.");
+    private void applyPoints(HttpSession session, Cart cart, String pointsStr) {
+        if (pointsStr == null || pointsStr.trim().isEmpty()) {
+            session.setAttribute("cartError", "Vui lòng nhập số điểm muốn đổi.");
             return;
         }
 
-        String voucherCode = code.trim().toUpperCase();
         Integer customerId = getCustomerId(session);
-        Voucher voucher = voucherDAO.getUsableVoucherByCode(voucherCode, customerId);
-        if (voucher == null) {
-            session.setAttribute("cartError", "Mã " + voucherCode + " không tồn tại hoặc đã hết hạn.");
+        if (customerId == null) {
+            session.setAttribute("cartError", "Bạn cần đăng nhập để đổi điểm thưởng.");
             return;
         }
 
-        cartService.refreshCart(cart, customerId);
-        if (!voucher.isEligible(cart.getSelectedSubtotal())) {
-            session.setAttribute("cartError", "Mã " + voucher.getCode() + " áp dụng cho đơn từ "
-                    + formatMoney(voucher.getMinOrderValue()) + ". Hãy chọn thêm món nhé!");
+        int pointsToUse = parseInt(pointsStr, 0);
+        if (pointsToUse <= 0) {
+            session.setAttribute("cartError", "Số điểm quy đổi phải lớn hơn 0.");
             return;
         }
 
-        cart.setVoucher(voucher);
-        session.setAttribute("cartMessage", "Đã áp dụng mã " + voucher.getCode() + ".");
+        int availablePoints = userDAO.getTotalPoints(customerId);
+        if (pointsToUse > availablePoints) {
+            session.setAttribute("cartError", "Bạn chỉ có " + availablePoints + " điểm.");
+            return;
+        }
+
+        double maxDiscount = cart.getSelectedSubtotal();
+        double discountAmount = pointsToUse * Cart.DISCOUNT_PER_POINT;
+
+        if (discountAmount > maxDiscount) {
+            int maxPoints = (int) Math.ceil(maxDiscount / Cart.DISCOUNT_PER_POINT);
+            session.setAttribute("cartError", "Đơn hàng này chỉ cần tối đa " + maxPoints + " điểm.");
+            return;
+        }
+
+        cart.setPointsUsed(pointsToUse);
+        session.setAttribute("cartMessage", "Đã áp dụng " + pointsToUse + " điểm.");
     }
 
     static Cart getCart(HttpSession session) {

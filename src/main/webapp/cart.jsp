@@ -207,79 +207,36 @@
                                 </c:choose>
                             </div>
                         </div>
-
-                        <!-- Voucher -->
-                        <div class="aura-card p-3 mb-3">
-                            <div class="section-title">
-                                <span class="material-symbols-outlined text-aura">confirmation_number</span>
-                                Mã khuyến mãi / Voucher Aura
-                            </div>
-                            <form method="post" action="${ctx}/cart" class="d-flex gap-2 mb-3">
-                                <input type="hidden" name="action" value="applyVoucher">
-                                <input type="text" name="voucherCode" class="form-control aura-input text-uppercase fw-semibold"
-                                       placeholder="Nhập mã khuyến mãi" maxlength="50"
-                                       value="${fn:escapeXml(cart.voucher.code)}">
-                                <button type="submit" class="btn btn-aura px-3 text-nowrap">Áp dụng</button>
-                            </form>
-
-                            <div class="small-label">Ưu đãi khả dụng</div>
-                            <c:forEach var="v" items="${vouchers}">
-                                <c:set var="isActive" value="${cart.voucher != null && cart.voucher.id == v.id}" />
-                                <c:set var="isEligible" value="${v.isEligible(cart.selectedSubtotal)}" />
-                                <div class="voucher-option ${isActive ? 'active' : ''} ${isEligible || isActive ? '' : 'muted'}">
-                                    <span class="material-symbols-outlined voucher-icon">${v.personal ? 'redeem' : (v.percent ? 'percent' : 'sell')}</span>
-                                    <div class="flex-grow-1" style="min-width: 0;">
-                                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                                            <span class="fw-bold"><c:out value="${v.code}" /></span>
-                                            <c:if test="${v.personal}"><span class="badge-personal">Đổi từ điểm</span></c:if>
-                                            <c:if test="${isActive}"><span class="badge-using">Đang dùng</span></c:if>
-                                        </div>
-                                        <div class="text-muted" style="font-size: 0.75rem;">
-                                            <c:choose>
-                                                <c:when test="${v.percent}">
-                                                    Giảm <fmt:formatNumber value="${v.discountValue}" pattern="#,##0" />%<c:if test="${v.maxDiscount != null}"> (tối đa <fmt:formatNumber value="${v.maxDiscount}" pattern="#,##0" />đ)</c:if>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    Giảm <fmt:formatNumber value="${v.discountValue}" pattern="#,##0" />đ
-                                                </c:otherwise>
-                                            </c:choose>
-                                            cho đơn từ <fmt:formatNumber value="${v.minOrderValue}" pattern="#,##0" />đ<c:if test="${v.personal}"> • HSD ${v.validUntilText}</c:if>
-                                        </div>
-                                        <%-- Số tiền mã này giảm được cho các món đang chọn --%>
-                                        <div class="voucher-saving">
-                                            <c:choose>
-                                                <c:when test="${isEligible}">
-                                                    Giảm <b><fmt:formatNumber value="${v.calculateDiscount(cart.selectedSubtotal)}" pattern="#,##0" />đ</b> cho giỏ hàng này
-                                                </c:when>
-                                                <c:otherwise>
-                                                    Chọn thêm <fmt:formatNumber value="${v.minOrderValue - cart.selectedSubtotal}" pattern="#,##0" />đ để dùng mã
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </div>
-                                    </div>
-                                    <form method="post" action="${ctx}/cart" class="m-0">
-                                        <c:choose>
-                                            <c:when test="${isActive}">
-                                                <input type="hidden" name="action" value="removeVoucher">
-                                                <button type="submit" class="btn-link-aura">Gỡ</button>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <input type="hidden" name="action" value="applyVoucher">
-                                                <input type="hidden" name="voucherCode" value="${fn:escapeXml(v.code)}">
-                                                <button type="submit" class="btn-link-aura" ${isEligible ? '' : 'disabled'}>Chọn</button>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </form>
+                        <!-- Điểm thưởng -->
+                        <c:if test="${not empty user}">
+                            <div class="aura-card p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                    <span class="d-flex align-items-center gap-2 fw-semibold text-aura">
+                                        <span class="material-symbols-outlined fs-5" style="color: var(--aura-gold);">stars</span>
+                                        Đổi điểm thưởng
+                                    </span>
+                                    <span class="small text-muted">Bạn có: <b>${totalPoints} điểm</b></span>
                                 </div>
-                            </c:forEach>
-                            <c:if test="${empty vouchers}">
-                                <div class="text-muted small">Hiện chưa có ưu đãi nào khả dụng.</div>
-                            </c:if>
-                            <div class="text-muted mt-2" style="font-size: 0.75rem;">
-                                Điểm Aura không trừ trực tiếp vào giá, hãy
-                                <a href="${ctx}/profile" class="text-aura fw-semibold">đổi điểm lấy voucher</a> rồi chọn mã tại đây.
+                                <c:choose>
+                                    <c:when test="${cart.pointsUsed > 0}">
+                                        <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded border border-aura border-opacity-25">
+                                            <span class="small fw-semibold text-aura">Đang dùng ${cart.pointsUsed} điểm</span>
+                                            <form method="post" action="${ctx}/cart" class="m-0">
+                                                <input type="hidden" name="action" value="removePoints">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2"><i class="fas fa-times"></i> Hủy</button>
+                                            </form>
+                                        </div>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <form method="post" action="${ctx}/cart" class="d-flex gap-2">
+                                            <input type="hidden" name="action" value="applyPoints">
+                                            <input type="number" name="pointsToUse" class="form-control form-control-sm" placeholder="Nhập số điểm" min="1" max="${totalPoints}" required>
+                                            <button type="submit" class="btn btn-sm btn-aura text-nowrap px-3">Đổi điểm</button>
+                                        </form>
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
-                        </div>
+                        </c:if>
 
                         <!-- Tóm tắt đơn hàng -->
                         <div class="aura-card p-3 p-md-4">
@@ -288,18 +245,7 @@
                                 <span class="label">Tổng tiền hàng (${fn:length(cart.selectedItems)} món)</span>
                                 <span class="fw-semibold"><fmt:formatNumber value="${cart.selectedSubtotal}" pattern="#,##0" />đ</span>
                             </div>
-                            <c:if test="${cart.voucher != null}">
-                                <div class="summary-row">
-                                    <span class="label">Giảm giá voucher (<c:out value="${cart.voucher.code}" />)</span>
-                                    <span class="fw-semibold text-aura">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</span>
-                                </div>
-                                <c:if test="${!cart.voucherEligible}">
-                                    <div class="alert alert-warning py-1 px-2 small mb-2">
-                                        Chọn thêm <fmt:formatNumber value="${cart.voucher.minOrderValue - cart.selectedSubtotal}" pattern="#,##0" />đ
-                                        để dùng mã <c:out value="${cart.voucher.code}" />.
-                                    </div>
-                                </c:if>
-                            </c:if>
+
                             <div class="summary-row">
                                 <span class="label d-flex align-items-center gap-1">
                                     <span class="material-symbols-outlined" style="font-size: 18px; color: var(--aura-gold);">stars</span>
@@ -320,7 +266,7 @@
                             <c:if test="${cart.discount > 0}">
                                 <div class="saving-note mb-3">
                                     <span class="material-symbols-outlined fs-6">savings</span>
-                                    Voucher <c:out value="${cart.voucher.code}" /> giúp bạn tiết kiệm
+                                    Đổi ${cart.pointsUsed} điểm giúp bạn tiết kiệm
                                     <b><fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</b>
                                 </div>
                             </c:if>

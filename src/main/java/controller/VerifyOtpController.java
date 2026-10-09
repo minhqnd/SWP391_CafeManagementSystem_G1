@@ -1,7 +1,6 @@
 package controller;
 
-import dao.UserDAO;
-import model.User;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -13,7 +12,6 @@ import java.io.IOException;
 @WebServlet(name = "VerifyOtpController", urlPatterns = {"/verify-otp"})
 public class VerifyOtpController extends HttpServlet {
 
-    private final UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
