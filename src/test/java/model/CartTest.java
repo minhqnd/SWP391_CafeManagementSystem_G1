@@ -93,28 +93,16 @@ public class CartTest {
     }
 
     @Test
-    @DisplayName("Voucher phần trăm có giới hạn mức giảm tối đa")
-    void testPercentVoucherWithCap() {
+    @DisplayName("Sử dụng điểm thưởng")
+    void testPointsUsage() {
         cart.addItem(item(1, "M", 100000, 3));
-        cart.setVoucher(new Voucher(1, "WELCOME10", Voucher.TYPE_PERCENT, 10, 50000, 25000.0));
+        cart.setPointsUsed(50); // 50 points * 500 = 25000 discount
 
         assertEquals(300000, cart.getSelectedSubtotal());
         assertEquals(25000, cart.getDiscount());
         assertEquals(275000, cart.getTotal());
         assertEquals(27, cart.getRewardPoints());
     }
-
-    @Test
-    @DisplayName("Voucher chưa đạt giá trị tối thiểu thì không được giảm")
-    void testVoucherBelowMinimumOrder() {
-        cart.addItem(item(1, "M", 45000, 1));
-        cart.setVoucher(new Voucher(2, "AURA20000", Voucher.TYPE_FIXED_AMOUNT, 20000, 100000, null));
-
-        assertFalse(cart.isVoucherEligible());
-        assertEquals(0, cart.getDiscount());
-        assertEquals(45000, cart.getTotal());
-    }
-
     @Test
     @DisplayName("Phí giao hàng: miễn phí từ 150.000đ hoặc khi lấy tại quầy")
     void testDeliveryFee() {

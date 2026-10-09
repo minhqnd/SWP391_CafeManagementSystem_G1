@@ -67,7 +67,6 @@ public class OrderDAO extends BaseDAO {
                     order.setOrderCode(rs.getString("order_code"));
                     order.setCustomerId(rs.getObject("customer_id", Integer.class));
                     order.setCashierId(rs.getObject("cashier_id", Integer.class));
-                    order.setVoucherId(rs.getObject("voucher_id", Integer.class));
                     order.setShipperId(rs.getObject("shipper_id", Integer.class));
                     order.setOrderType(rs.getString("order_type"));
                     order.setStatus(rs.getString("status"));
@@ -268,58 +267,41 @@ public class OrderDAO extends BaseDAO {
      * Tạo đơn hàng từ các món đã chọn ở Checkout (orders + order_items + trừ lượt voucher)
      * trong cùng một transaction. Trả về id đơn hàng mới, hoặc -1 nếu thất bại.
      */
-    public int placeOrder(Order order, List<CartItem> items) {
-        // Voucher phải còn hạn, còn lượt và là mã công khai hoặc voucher đổi điểm của chính khách đặt
-        String useVoucherSql = "UPDATE vouchers SET used_count = used_count + 1 " +
-                               "WHERE id = ? AND status = 'ACTIVE' " +
-                               "AND (start_date IS NULL OR start_date <= NOW()) " +
-                               "AND (valid_until IS NULL OR valid_until >= NOW()) " +
-                               "AND (usage_limit IS NULL OR used_count < usage_limit) " +
-                               "AND (customer_id IS NULL OR customer_id = ?)";
-        String insertOrderSql = "INSERT INTO orders (order_code, customer_id, voucher_id, order_type, status, " +
+    public int placeOrder(Order order, List<CartItem> items, int pointsUsed) {
+
+        String insertOrderSql = "INSERT INTO orders (order_code, customer_id, order_type, status, " +
                                 "total_amount, discount_amount, delivery_fee, final_amount, " +
                                 "recipient_name, recipient_phone, delivery_address, order_note) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, unit_price, " +
                                "customization, quantity, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                               
+        String redeemPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'REDEEM')";
+        String deductUserPointsSql = "UPDATE users SET total_points = total_points - ? WHERE id = ?";
+        
+        String earnPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'EARN')";
+        String addUserPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";
 
         Connection conn = null;
         try {
             conn = DBContext.getConnection();
             conn.setAutoCommit(false);
 
-            // 1. Trừ lượt sử dụng voucher (thất bại nếu voucher vừa hết lượt)
-            if (order.getVoucherId() != null) {
-                try (PreparedStatement ps = conn.prepareStatement(useVoucherSql)) {
-                    ps.setInt(1, order.getVoucherId());
-                    ps.setInt(2, order.getCustomerId());
-                    if (ps.executeUpdate() == 0) {
-                        conn.rollback();
-                        return -1;
-                    }
-                }
-            }
-
             // 2. Tạo đơn hàng
             int orderId;
             try (PreparedStatement ps = conn.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, order.getOrderCode());
                 ps.setInt(2, order.getCustomerId());
-                if (order.getVoucherId() != null) {
-                    ps.setInt(3, order.getVoucherId());
-                } else {
-                    ps.setNull(3, Types.INTEGER);
-                }
-                ps.setString(4, order.getOrderType());
-                ps.setString(5, order.getStatus());
-                ps.setDouble(6, order.getTotalAmount());
-                ps.setDouble(7, order.getDiscountAmount());
-                ps.setDouble(8, order.getDeliveryFee());
-                ps.setDouble(9, order.getFinalAmount());
-                ps.setString(10, order.getRecipientName());
-                ps.setString(11, order.getRecipientPhone());
-                ps.setString(12, order.getDeliveryAddress());
-                ps.setString(13, order.getOrderNote());
+                ps.setString(3, order.getOrderType());
+                ps.setString(4, order.getStatus());
+                ps.setDouble(5, order.getTotalAmount());
+                ps.setDouble(6, order.getDiscountAmount());
+                ps.setDouble(7, order.getDeliveryFee());
+                ps.setDouble(8, order.getFinalAmount());
+                ps.setString(9, order.getRecipientName());
+                ps.setString(10, order.getRecipientPhone());
+                ps.setString(11, order.getDeliveryAddress());
+                ps.setString(12, order.getOrderNote());
                 ps.executeUpdate();
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -344,6 +326,37 @@ public class OrderDAO extends BaseDAO {
                     ps.addBatch();
                 }
                 ps.executeBatch();
+            }
+
+            if (order.getCustomerId() != null && order.getCustomerId() > 0) {
+                if (pointsUsed > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(redeemPointsSql)) {
+                        ps.setInt(1, order.getCustomerId());
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, -pointsUsed);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(deductUserPointsSql)) {
+                        ps.setInt(1, pointsUsed);
+                        ps.setInt(2, order.getCustomerId());
+                        ps.executeUpdate();
+                    }
+                }
+
+                int earnedPoints = (int) Math.floor((order.getTotalAmount() - order.getDiscountAmount()) / Cart.MONEY_PER_POINT);
+                if (earnedPoints > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(earnPointsSql)) {
+                        ps.setInt(1, order.getCustomerId());
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, earnedPoints);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(addUserPointsSql)) {
+                        ps.setInt(1, earnedPoints);
+                        ps.setInt(2, order.getCustomerId());
+                        ps.executeUpdate();
+                    }
+                }
             }
 
             conn.commit();
@@ -371,9 +384,8 @@ public class OrderDAO extends BaseDAO {
 
     // Kèm mã voucher và lần thanh toán thành công gần nhất (nếu có)
     private static final String CUSTOMER_ORDER_SELECT =
-            "SELECT o.*, v.code AS voucher_code, pay.payment_method, pay.paid_at " +
+            "SELECT o.*, pay.payment_method, pay.paid_at " +
             "FROM orders o " +
-            "LEFT JOIN vouchers v ON v.id = o.voucher_id " +
             "LEFT JOIN payments pay ON pay.id = (SELECT MAX(p2.id) FROM payments p2 " +
             "                                    WHERE p2.order_id = o.id AND p2.status = 'SUCCESS') ";
 
@@ -527,8 +539,7 @@ public class OrderDAO extends BaseDAO {
         String cancelSql = "UPDATE orders SET status = 'CANCELLED' " +
                            "WHERE id = ? AND customer_id = ? AND status = 'PENDING' " +
                            "AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.order_id = orders.id AND p.status = 'SUCCESS')";
-        String returnVoucherSql = "UPDATE vouchers v JOIN orders o ON o.voucher_id = v.id " +
-                                  "SET v.used_count = v.used_count - 1 WHERE o.id = ? AND v.used_count > 0";
+
 
         Connection conn = null;
         try {
@@ -542,10 +553,6 @@ public class OrderDAO extends BaseDAO {
                     conn.rollback();
                     return false;
                 }
-            }
-            try (PreparedStatement ps = conn.prepareStatement(returnVoucherSql)) {
-                ps.setInt(1, orderId);
-                ps.executeUpdate();
             }
 
             conn.commit();
@@ -603,7 +610,6 @@ public class OrderDAO extends BaseDAO {
         order.setId(rs.getInt("id"));
         order.setOrderCode(rs.getString("order_code"));
         order.setCustomerId(rs.getObject("customer_id", Integer.class));
-        order.setVoucherId(rs.getObject("voucher_id", Integer.class));
         order.setOrderType(rs.getString("order_type"));
         order.setStatus(rs.getString("status"));
         order.setTotalAmount(rs.getDouble("total_amount"));
@@ -616,7 +622,6 @@ public class OrderDAO extends BaseDAO {
         order.setTableNumber(rs.getString("table_number"));
         order.setOrderNote(rs.getString("order_note"));
         order.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
-        order.setVoucherCode(rs.getString("voucher_code"));
         order.setPaymentMethod(rs.getString("payment_method"));
         order.setPaidAt(rs.getObject("paid_at", LocalDateTime.class));
         return order;
@@ -742,10 +747,10 @@ public class OrderDAO extends BaseDAO {
      */
     public int createCounterOrder(Order order, List<OrderDetail> items, String paymentMethod,
                                   int pointsUsed, String paymentNote) {
-        String insertOrderSql = "INSERT INTO orders (order_code, customer_id, cashier_id, voucher_id, " +
+        String insertOrderSql = "INSERT INTO orders (order_code, customer_id, cashier_id, " +
                 "order_type, status, total_amount, discount_amount, delivery_fee, final_amount, " +
                 "recipient_name, recipient_phone, table_number, order_note, created_at) " +
-                "VALUES (?, ?, ?, ?, ?, 'CONFIRMED', ?, ?, 0, ?, ?, ?, ?, ?, NOW())";
+                "VALUES (?, ?, ?, ?, 'CONFIRMED', ?, ?, 0, ?, ?, ?, ?, ?, NOW())";
 
         String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, " +
                 "unit_price, quantity, subtotal, customization) " +
@@ -772,15 +777,14 @@ public class OrderDAO extends BaseDAO {
                 ps.setString(1, order.getOrderCode());
                 ps.setObject(2, order.getCustomerId(), Types.INTEGER);
                 ps.setObject(3, order.getCashierId(), Types.INTEGER);
-                ps.setObject(4, order.getVoucherId(), Types.INTEGER);
-                ps.setString(5, order.getOrderType());
-                ps.setDouble(6, order.getTotalAmount());
-                ps.setDouble(7, order.getDiscountAmount());
-                ps.setDouble(8, order.getFinalAmount());
-                ps.setString(9, order.getRecipientName());
-                ps.setString(10, order.getRecipientPhone());
-                ps.setString(11, order.getTableNumber());
-                ps.setString(12, order.getOrderNote());
+                ps.setString(4, order.getOrderType());
+                ps.setDouble(5, order.getTotalAmount());
+                ps.setDouble(6, order.getDiscountAmount());
+                ps.setDouble(7, order.getFinalAmount());
+                ps.setString(8, order.getRecipientName());
+                ps.setString(9, order.getRecipientPhone());
+                ps.setString(10, order.getTableNumber());
+                ps.setString(11, order.getOrderNote());
                 ps.executeUpdate();
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -902,9 +906,8 @@ public class OrderDAO extends BaseDAO {
      * Trả về null nếu thành công, hoặc chuỗi thông báo lỗi cụ thể.
      */
     public String cancelCounterOrderWithReason(int orderId) {
-        String querySql = "SELECT o.id, o.status, o.customer_id, o.voucher_id FROM orders o WHERE o.id = ? FOR UPDATE";
+        String querySql = "SELECT o.id, o.status, o.customer_id FROM orders o WHERE o.id = ? FOR UPDATE";
         String cancelSql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ? AND status IN ('PENDING', 'CONFIRMED')";
-        String returnVoucherSql = "UPDATE vouchers SET used_count = GREATEST(0, used_count - 1) WHERE id = ?";
         
         String queryRedeemPointsSql = "SELECT points_change FROM loyalty_transactions WHERE order_id = ? AND transaction_type = 'REDEEM' LIMIT 1";
         String refundPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'REFUND')";
@@ -923,8 +926,6 @@ public class OrderDAO extends BaseDAO {
 
             String currentStatus;
             Integer customerId;
-            Integer voucherId;
-
             try (PreparedStatement ps = conn.prepareStatement(querySql)) {
                 ps.setInt(1, orderId);
                 try (ResultSet rs = ps.executeQuery()) {
@@ -934,7 +935,6 @@ public class OrderDAO extends BaseDAO {
                     }
                     currentStatus = rs.getString("status");
                     customerId = rs.getObject("customer_id", Integer.class);
-                    voucherId = rs.getObject("voucher_id", Integer.class);
                 }
             }
 
@@ -961,14 +961,6 @@ public class OrderDAO extends BaseDAO {
                 if (ps.executeUpdate() == 0) {
                     conn.rollback();
                     return "Không thể cập nhật trạng thái hủy đơn.";
-                }
-            }
-
-            // Hoàn lại lượt voucher nếu có
-            if (voucherId != null && voucherId > 0) {
-                try (PreparedStatement ps = conn.prepareStatement(returnVoucherSql)) {
-                    ps.setInt(1, voucherId);
-                    ps.executeUpdate();
                 }
             }
 

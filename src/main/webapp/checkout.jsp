@@ -248,13 +248,10 @@
                                 <c:otherwise><span class="fw-semibold"><fmt:formatNumber value="${deliveryFee}" pattern="#,##0" />đ</span></c:otherwise>
                             </c:choose>
                         </div>
-                        <c:if test="${cart.voucherEligible}">
-                            <div class="summary-row">
-                                <span class="label d-flex align-items-center gap-1">
-                                    <span class="material-symbols-outlined" style="font-size: 17px;">sell</span>
-                                    Voucher giảm giá (<c:out value="${cart.voucher.code}" />)
-                                </span>
-                                <span class="fw-semibold text-aura">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</span>
+                        <c:if test="${cart.discount > 0}">
+                            <div class="summary-row text-success">
+                                <span class="label">Sử dụng ${cart.pointsUsed} điểm:</span>
+                                <span class="fw-semibold">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</span>
                             </div>
                         </c:if>
 

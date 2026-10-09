@@ -65,11 +65,6 @@ public class CartService {
             }
         }
 
-        if (cart.getVoucher() != null) {
-            Voucher voucher = voucherDAO.getUsableVoucherByCode(cart.getVoucher().getCode(), customerId);
-            cart.setVoucher(voucher);
-            return voucher != null;
-        }
         return true;
     }
 

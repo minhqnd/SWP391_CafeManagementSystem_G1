@@ -1,7 +1,6 @@
-
 -- =====================================================
--- AURA CAFE ERP - COMPLETE DATABASE
--- TOTAL: 16 TABLES
+-- AURA CAFE ERP - DATABASE SCRIPT
+-- TOTAL: 15 TABLES
 -- MySQL 8.0.16+
 -- =====================================================
 
@@ -13,8 +12,7 @@ USE aura_cafe_erp;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS user_rewards;
-DROP TABLE IF EXISTS reward_items;
+
 DROP TABLE IF EXISTS customer_reviews;
 DROP TABLE IF EXISTS loyalty_transactions;
 DROP TABLE IF EXISTS inventory_transactions;
@@ -26,7 +24,7 @@ DROP TABLE IF EXISTS suppliers;
 DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS vouchers;
+
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS work_schedules;
@@ -67,13 +65,7 @@ CREATE TABLE users (
     base_salary DECIMAL(12,2) NOT NULL DEFAULT 0,
     hire_date DATE NULL,
 
-    -- Customer membership information
-    tier_name ENUM(
-        'BRONZE',
-        'SILVER',
-        'GOLD',
-        'DIAMOND'
-    ) NOT NULL DEFAULT 'BRONZE',
+
 
     total_points INT NOT NULL DEFAULT 0,
 
@@ -141,6 +133,8 @@ CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     icon VARCHAR(50) NULL,
+    description TEXT,
+    image_url VARCHAR(500),
     status ENUM('ACTIVE', 'INACTIVE')
         NOT NULL DEFAULT 'ACTIVE'
 ) ENGINE=InnoDB;
@@ -172,105 +166,14 @@ CREATE TABLE products (
     INDEX idx_products_category (category_id)
 ) ENGINE=InnoDB;
 
--- 5. VOUCHERS
-CREATE TABLE vouchers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    customer_id INT NULL,
 
-    discount_type ENUM(
-        'PERCENT',
-        'FIXED_AMOUNT'
-    ) NOT NULL,
-
-    discount_value DECIMAL(12,2) NOT NULL,
-    min_order_value DECIMAL(12,2) NOT NULL DEFAULT 0,
-    max_discount DECIMAL(12,2) NULL,
-
-    start_date DATETIME NULL,
-    valid_until DATETIME NULL,
-
-    usage_limit INT NULL,
-    used_count INT NOT NULL DEFAULT 0,
-
-    status ENUM('ACTIVE', 'INACTIVE')
-        NOT NULL DEFAULT 'ACTIVE',
-
-    CONSTRAINT fk_voucher_customer
-        FOREIGN KEY (customer_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT chk_voucher_discount
-        CHECK (
-            discount_value > 0
-            AND (
-                discount_type <> 'PERCENT'
-                OR discount_value <= 100
-            )
-        ),
-
-    CONSTRAINT chk_voucher_min_order
-        CHECK (min_order_value >= 0),
-
-    CONSTRAINT chk_voucher_max_discount
-        CHECK (
-            max_discount IS NULL
-            OR max_discount >= 0
-        ),
-
-    CONSTRAINT chk_voucher_usage
-        CHECK (
-            used_count >= 0
-            AND (
-                usage_limit IS NULL
-                OR usage_limit >= used_count
-            )
-        ),
-
-    CONSTRAINT chk_voucher_dates
-        CHECK (
-            start_date IS NULL
-            OR valid_until IS NULL
-            OR start_date <= valid_until
-        )
-) ENGINE=InnoDB;
-
--- 5b. REWARD ITEMS & USER REWARDS
-CREATE TABLE reward_items (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    points_cost INT NOT NULL,
-    discount_value DECIMAL(12,2) NOT NULL DEFAULT 0,
-    min_order_value DECIMAL(12,2) NOT NULL DEFAULT 0,
-    valid_days INT NOT NULL DEFAULT 30,
-    category VARCHAR(50),
-    image_icon VARCHAR(50) DEFAULT 'card_giftcard',
-    stock INT NOT NULL DEFAULT -1,
-    status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE'
-) ENGINE=InnoDB;
-
-CREATE TABLE user_rewards (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    customer_id INT NOT NULL,
-    reward_id INT NOT NULL,
-    voucher_id INT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_user_reward_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_reward_item FOREIGN KEY (reward_id) REFERENCES reward_items(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_reward_voucher FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
-
-
--- 6. ORDERS
+-- 5. ORDERS
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_code VARCHAR(20) NOT NULL UNIQUE,
 
     customer_id INT NULL,
     cashier_id INT NULL,
-    voucher_id INT NULL,
 
     order_type ENUM(
         'DINE_IN',
@@ -322,10 +225,6 @@ CREATE TABLE orders (
         REFERENCES users(id)
         ON DELETE SET NULL,
 
-    CONSTRAINT fk_order_voucher
-        FOREIGN KEY (voucher_id)
-        REFERENCES vouchers(id)
-        ON DELETE SET NULL,
 
     CONSTRAINT chk_order_amounts
         CHECK (
@@ -340,7 +239,7 @@ CREATE TABLE orders (
     INDEX idx_orders_created_at (created_at)
 ) ENGINE=InnoDB;
 
--- 7. ORDER ITEMS
+-- 6. ORDER ITEMS
 CREATE TABLE order_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -382,7 +281,7 @@ CREATE TABLE order_items (
 -- GROUP C: ACCOUNTING AND CUSTOMER CARE (3 TABLES)
 -- =====================================================
 
--- 8. PAYMENTS
+-- 7. PAYMENTS
 CREATE TABLE payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -417,7 +316,7 @@ CREATE TABLE payments (
     INDEX idx_payments_order (order_id)
 ) ENGINE=InnoDB;
 
--- 9. LOYALTY TRANSACTIONS
+-- 8. LOYALTY TRANSACTIONS
 CREATE TABLE loyalty_transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
@@ -452,7 +351,7 @@ CREATE TABLE loyalty_transactions (
     INDEX idx_loyalty_customer (customer_id)
 ) ENGINE=InnoDB;
 
--- 10. CUSTOMER REVIEWS
+-- 9. CUSTOMER REVIEWS
 CREATE TABLE customer_reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
@@ -501,7 +400,7 @@ CREATE TABLE customer_reviews (
 -- GROUP D: INVENTORY AND BOM (6 TABLES)
 -- =====================================================
 
--- 11. SUPPLIERS
+-- 10. SUPPLIERS
 CREATE TABLE suppliers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
@@ -512,7 +411,7 @@ CREATE TABLE suppliers (
         NOT NULL DEFAULT 'ACTIVE'
 ) ENGINE=InnoDB;
 
--- 12. INGREDIENTS
+-- 11. INGREDIENTS
 CREATE TABLE ingredients (
     id INT AUTO_INCREMENT PRIMARY KEY,
     supplier_id INT NULL,
@@ -536,7 +435,7 @@ CREATE TABLE ingredients (
     INDEX idx_ingredients_supplier (supplier_id)
 ) ENGINE=InnoDB;
 
--- 13. PRODUCT INGREDIENTS
+-- 12. PRODUCT INGREDIENTS
 CREATE TABLE product_ingredients (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
@@ -562,7 +461,7 @@ CREATE TABLE product_ingredients (
         CHECK (quantity_required > 0)
 ) ENGINE=InnoDB;
 
--- 14. PURCHASE ORDERS
+-- 13. PURCHASE ORDERS
 CREATE TABLE purchase_orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     supplier_id INT NOT NULL,
@@ -593,7 +492,7 @@ CREATE TABLE purchase_orders (
     INDEX idx_po_supplier (supplier_id)
 ) ENGINE=InnoDB;
 
--- 15. PURCHASE ORDER ITEMS
+-- 14. PURCHASE ORDER ITEMS
 CREATE TABLE purchase_order_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     po_id INT NOT NULL,
@@ -620,7 +519,7 @@ CREATE TABLE purchase_order_items (
     INDEX idx_poi_order (po_id)
 ) ENGINE=InnoDB;
 
--- 16. INVENTORY TRANSACTIONS
+-- 15. INVENTORY TRANSACTIONS
 CREATE TABLE inventory_transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ingredient_id INT NOT NULL,
@@ -658,38 +557,38 @@ CREATE TABLE inventory_transactions (
 
 -- =====================================================
 -- END OF SCRIPT
--- TOTAL: 16 TABLES
+-- TOTAL: 15 TABLES
 -- =====================================================
 USE aura_cafe_erp;
 
 -- 1. USERS
 INSERT INTO users
 (id, full_name, phone, email, password_hash, role, status,
- position, base_salary, hire_date, tier_name, total_points)
+ position, base_salary, hire_date, total_points)
 VALUES
 (1, 'Aura Admin', '0900000001', 'admin@auracafe.vn',
  'demo_hash', 'ADMIN', 'ACTIVE', 'MANAGER', 15000000,
- '2025-01-01', 'BRONZE', 0),
+ '2025-01-01', 0),
 
 (2, 'Nguyen Van An', '0900000002', 'an@auracafe.vn',
  'demo_hash', 'STAFF', 'ACTIVE', 'BARISTA', 8000000,
- '2025-02-01', 'BRONZE', 0),
+ '2025-02-01', 0),
 
 (3, 'Tran Thi Binh', '0900000003', 'binh@auracafe.vn',
  'demo_hash', 'STAFF', 'ACTIVE', 'CASHIER', 8500000,
- '2025-02-01', 'BRONZE', 0),
+ '2025-02-01', 0),
 
 (4, 'Le Minh Anh', '0900000004', 'anh@gmail.com',
  'demo_hash', 'CUSTOMER', 'ACTIVE', NULL, 0,
- NULL, 'SILVER', 120),
+ NULL, 120),
 
 (5, 'Pham Quang Huy', '0900000005', 'huy@gmail.com',
  'demo_hash', 'CUSTOMER', 'ACTIVE', NULL, 0,
- NULL, 'BRONZE', 50),
+ NULL, 50),
 
 (6, 'Hoang Van Nam', '0900000006', 'nam@auracafe.vn',
  'demo_hash', 'STAFF', 'ACTIVE', 'SHIPPER', 7500000,
- '2025-03-01', 'BRONZE', 0);
+ '2025-03-01', 0);
 
 -- 2. WORK SCHEDULES
 INSERT INTO work_schedules
@@ -710,15 +609,15 @@ VALUES
  'Delivery shift');
 
 -- 3. CATEGORIES
-INSERT INTO categories (id, name, status, icon) VALUES
-(1, 'Cà phê máy', 'ACTIVE', 'coffee_maker'),
-(2, 'Cà phê truyền thống', 'ACTIVE', 'local_cafe'),
-(3, 'Trà trái cây', 'ACTIVE', 'emoji_food_beverage'),
-(4, 'Đá xay & Matcha', 'ACTIVE', 'icecream'),
-(5, 'Bánh ngọt', 'ACTIVE', 'bakery_dining'),
-(6, 'Đóng chai', 'ACTIVE', 'liquor');
+INSERT INTO categories (id, name, status, icon, description, image_url) VALUES
+(1, 'Cà phê máy', 'ACTIVE', 'coffee_maker', 'Espresso, Caramel Macchiato đậm đà chuẩn gu hiện đại.', 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80'),
+(2, 'Cà phê truyền thống', 'ACTIVE', 'local_cafe', 'Cà phê muối, sữa đá Sài Gòn ủ phin nguyên bản ngọt êm.', 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'),
+(3, 'Trà trái cây', 'ACTIVE', 'emoji_food_beverage', 'Trà đào cam sả, hoa quả nhiệt đới tươi mát thanh nhiệt.', 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80'),
+(4, 'Đá xay & Matcha', 'ACTIVE', 'icecream', 'Matcha Uji thơm bùi, đá xay mát lạnh đánh tan ngày hè.', 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80'),
+(5, 'Bánh ngọt', 'ACTIVE', 'bakery_dining', 'Bánh Croissant nướng bơ Pháp, cheesecake mềm béo hấp dẫn.', 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80'),
+(6, 'Đóng chai', 'ACTIVE', 'liquor', 'Cold brew ủ lạnh 16h đóng chai tiện lợi mang đi bất cứ đâu.', 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80');
 
--- 4. PRODUCTS (12 món đặc sản ăn khớp 100% UI Figma/Web)
+-- 4. PRODUCTS (12 menu items)
 INSERT INTO products (id, category_id, name, base_price, description, badge, subtitle, variants_config, image_url, is_available) VALUES
 (1, 2, 'Cà Phê Muối Aura Đặc Biệt', 45000, 
  'Fine Robusta ủ phin truyền thống phối kem sữa mằn mặn béo ngậy, cân bằng hậu vị ngọt đầm.', 
@@ -792,98 +691,74 @@ INSERT INTO products (id, category_id, name, base_price, description, badge, sub
  '{"sizes":{"1 Phần":0},"toppings":[]}',
  'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=600&auto=format&fit=crop&q=80', 1);
 
--- 5. VOUCHERS
-INSERT INTO vouchers
-(id, code, customer_id, discount_type, discount_value, min_order_value,
- max_discount, start_date, valid_until,
- usage_limit, used_count, status)
-VALUES
-(1, 'WELCOME10', NULL, 'PERCENT', 10, 50000,
- 30000, '2026-01-01 00:00:00',
- '2026-12-31 23:59:59', 100, 2, 'ACTIVE'),
 
-(2, 'AURA20000', NULL, 'FIXED_AMOUNT', 20000, 100000,
- NULL, '2026-01-01 00:00:00',
- '2026-12-31 23:59:59', 50, 1, 'ACTIVE'),
-
-(3, 'SUMMER15', NULL, 'PERCENT', 15, 80000,
- 25000, '2026-06-01 00:00:00',
- '2026-10-31 23:59:59', 200, 0, 'ACTIVE');
-
--- 5.1 REWARD ITEMS (Quà tặng đổi điểm)
-INSERT INTO reward_items (id, name, description, points_cost, discount_value, min_order_value, valid_days, category, image_icon, stock, status) VALUES
-(1, 'Voucher giảm 15.000đ', 'Cho đơn từ 60.000đ • HSD 30 ngày kể từ ngày đổi', 100, 15000, 60000, 30, 'Phổ biến', 'local_activity', 50, 'ACTIVE'),
-(2, 'Voucher giảm 30.000đ', 'Cho đơn từ 120.000đ • HSD 30 ngày kể từ ngày đổi', 180, 30000, 120000, 30, 'Best Match', 'confirmation_number', 30, 'ACTIVE'),
-(3, 'Voucher giảm 50.000đ', 'Cho đơn từ 200.000đ • HSD 45 ngày kể từ ngày đổi', 300, 50000, 200000, 45, 'Hạng Vàng', 'card_giftcard', 20, 'ACTIVE'),
-(4, 'Voucher giảm 100.000đ', 'Cho đơn từ 350.000đ • HSD 60 ngày kể từ ngày đổi', 600, 100000, 350000, 60, 'Hạng Kim Cương', 'workspace_premium', 10, 'ACTIVE');
-
--- 6. ORDERS
+-- 5. ORDERS
 INSERT INTO orders
-(id, order_code, customer_id, cashier_id, voucher_id,
+(id, order_code, customer_id, cashier_id,
  order_type, status, total_amount, discount_amount,
  delivery_fee, final_amount, recipient_name,
  recipient_phone, delivery_address, shipper_id,
  table_number, order_note, created_at)
 VALUES
-(1, 'AURA-001', 4, 3, 1,
- 'DINE_IN', 'COMPLETED', 80000, 8000,
- 0, 72000, NULL, NULL, NULL, NULL,
+(1, 'AURA-001', 4, 3,
+ 'DINE_IN', 'COMPLETED', 90000, 9000,
+ 0, 81000, NULL, NULL, NULL, NULL,
  'T01', 'Less ice', '2026-10-03 09:00:00'),
 
-(2, 'AURA-002', 5, 3, NULL,
- 'ONLINE', 'DELIVERING', 85000, 0,
- 15000, 100000, 'Pham Quang Huy',
+(2, 'AURA-002', 5, 3,
+ 'ONLINE', 'DELIVERING', 100000, 0,
+ 15000, 115000, 'Pham Quang Huy',
  '0900000005', 'Cau Giay, Hanoi', 6,
  NULL, 'Call before delivery', '2026-10-03 10:00:00'),
 
-(3, 'AURA-003', 4, 3, 2,
- 'TAKEAWAY', 'CONFIRMED', 120000, 20000,
- 0, 100000, NULL, NULL, NULL, NULL,
+(3, 'AURA-003', 4, 3,
+ 'TAKEAWAY', 'CONFIRMED', 130000, 20000,
+ 0, 110000, NULL, NULL, NULL, NULL,
  NULL, 'No sugar', '2026-10-03 11:00:00'),
 
-(4, 'AURA-004', NULL, 3, NULL,
- 'DINE_IN', 'PREPARING', 90000, 0,
- 0, 90000, NULL, NULL, NULL, NULL,
+(4, 'AURA-004', NULL, 3,
+ 'DINE_IN', 'PREPARING', 70000, 0,
+ 0, 70000, NULL, NULL, NULL, NULL,
  'T02', NULL, '2026-10-03 12:00:00');
 
--- 7. ORDER ITEMS
+-- 6. ORDER ITEMS
 INSERT INTO order_items
 (order_id, product_id, product_name_at_time,
  unit_price, customization, quantity, subtotal)
 VALUES
-(1, 1, 'Americano', 40000,
- '{"size":"L"}', 2, 80000),
+(1, 1, 'Cà Phê Muối Aura Đặc Biệt', 45000,
+ '{"size":"M"}', 2, 90000),
 
-(2, 4, 'Peach Tea', 40000,
- '{"size":"M"}', 1, 40000),
+(2, 5, 'Trà Đào Cam Sả Tươi', 45000,
+ '{"size":"M"}', 1, 45000),
 
-(2, 7, 'Cheesecake', 45000,
- NULL, 1, 45000),
+(2, 12, 'Bánh Cheesecake Việt Quất', 55000,
+ NULL, 1, 55000),
 
-(3, 2, 'Latte', 60000,
- '{"size":"L"}', 2, 120000),
+(3, 2, 'Caramel Macchiato Đặc Sản', 65000,
+ '{"size":"L"}', 2, 130000),
 
-(4, 6, 'Milk Tea', 45000,
- '{"size":"M","toppings":["Pearl"]}', 2, 90000);
+(4, 6, 'Bánh Croissant Bơ Pháp', 35000,
+ '{"size":"Tiêu chuẩn"}', 2, 70000);
 
--- 8. PAYMENTS
+-- 7. PAYMENTS
 INSERT INTO payments
 (order_id, payment_method, transaction_code,
  amount, status, paid_at, payment_note)
 VALUES
-(1, 'CASH', NULL, 72000,
+(1, 'CASH', NULL, 81000,
  'SUCCESS', '2026-10-03 09:05:00', 'Paid at counter'),
 
-(2, 'MOMO', 'MOMO-DEMO-002', 100000,
+(2, 'MOMO', 'MOMO-DEMO-002', 115000,
  'SUCCESS', '2026-10-03 10:05:00', 'Online payment'),
 
-(3, 'VNPAY', 'VNPAY-DEMO-003', 100000,
+(3, 'VNPAY', 'VNPAY-DEMO-003', 110000,
  'SUCCESS', '2026-10-03 11:05:00', 'Paid by VNPAY'),
 
-(4, 'CASH', NULL, 90000,
- 'PENDING', NULL, 'Waiting for payment');
+(4, 'CASH', NULL, 70000,
+ 'SUCCESS', '2026-10-03 12:05:00', 'Paid at counter');
 
--- 9. LOYALTY TRANSACTIONS
+-- 8. LOYALTY TRANSACTIONS
 INSERT INTO loyalty_transactions
 (customer_id, order_id, points_change, transaction_type)
 VALUES
@@ -891,7 +766,7 @@ VALUES
 (5, 2, 100, 'EARN'),
 (4, 3, -20, 'REDEEM');
 
--- 10. CUSTOMER REVIEWS
+-- 9. CUSTOMER REVIEWS
 INSERT INTO customer_reviews
 (customer_id, order_id, issue_type, rating,
  content, status, admin_response)
@@ -908,7 +783,7 @@ VALUES
  'Good taste, but a little too sweet',
  'PENDING', NULL);
 
--- 11. SUPPLIERS
+-- 10. SUPPLIERS
 INSERT INTO suppliers
 (id, name, phone, address, status)
 VALUES
@@ -921,7 +796,7 @@ VALUES
 (3, 'Bakery Ingredient Supply', '0911000003',
  'Ba Dinh, Hanoi', 'ACTIVE');
 
--- 12. INGREDIENTS
+-- 11. INGREDIENTS
 INSERT INTO ingredients
 (id, supplier_id, name, unit,
  current_stock, min_stock_level)
@@ -935,26 +810,26 @@ VALUES
 (7, 2, 'Orange', 'piece', 100, 20),
 (8, 2, 'Lemon', 'piece', 80, 15);
 
--- 13. PRODUCT INGREDIENTS
+-- 12. PRODUCT INGREDIENTS
 INSERT INTO product_ingredients
 (product_id, ingredient_id, quantity_required)
 VALUES
 (1, 1, 18),
 (2, 1, 18),
 (2, 2, 180),
-(3, 1, 18),
-(3, 2, 120),
-(4, 3, 30),
-(4, 4, 10),
+(3, 1, 30),
+(4, 1, 18),
+(4, 2, 100),
+(5, 3, 30),
 (5, 4, 10),
-(5, 8, 1),
-(6, 4, 10),
-(6, 2, 100),
-(6, 5, 30),
-(7, 6, 1),
-(8, 7, 3);
+(5, 7, 1),
+(8, 4, 10),
+(9, 1, 18),
+(10, 1, 18),
+(10, 2, 150),
+(12, 6, 1);
 
--- 14. PURCHASE ORDERS
+-- 13. PURCHASE ORDERS
 INSERT INTO purchase_orders
 (id, supplier_id, creator_id, total_cost,
  status, created_at)
@@ -963,7 +838,7 @@ VALUES
 (2, 2, 1, 1500000, 'ORDERED', '2026-10-02 09:00:00'),
 (3, 3, 1, 800000, 'DRAFT', '2026-10-03 08:00:00');
 
--- 15. PURCHASE ORDER ITEMS
+-- 14. PURCHASE ORDER ITEMS
 INSERT INTO purchase_order_items
 (po_id, ingredient_id, quantity, unit_price)
 VALUES
@@ -972,7 +847,7 @@ VALUES
 (2, 3, 5000, 120),
 (3, 6, 20, 40000);
 
--- 16. INVENTORY TRANSACTIONS
+-- 15. INVENTORY TRANSACTIONS
 INSERT INTO inventory_transactions
 (ingredient_id, transaction_type, quantity,
  reference_type, reference_id, created_at)
@@ -992,7 +867,6 @@ SELECT 'users' AS table_name, COUNT(*) AS total FROM users
 UNION ALL SELECT 'work_schedules', COUNT(*) FROM work_schedules
 UNION ALL SELECT 'categories', COUNT(*) FROM categories
 UNION ALL SELECT 'products', COUNT(*) FROM products
-UNION ALL SELECT 'vouchers', COUNT(*) FROM vouchers
 UNION ALL SELECT 'orders', COUNT(*) FROM orders
 UNION ALL SELECT 'order_items', COUNT(*) FROM order_items
 UNION ALL SELECT 'payments', COUNT(*) FROM payments
