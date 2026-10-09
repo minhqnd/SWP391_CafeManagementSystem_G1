@@ -290,9 +290,6 @@
                             Hương vị chuẩn mực.<br/>
                             <span class="text-primary-custom">Đặc quyền hội viên.</span>
                         </h1>
-                        <p class="text-muted mb-0" style="font-size: 1.05rem; line-height: 1.6; max-width: 520px;">
-                            Khám phá không gian cà phê thủ công chọn lọc từ những nông trại cao nguyên danh tiếng, cùng đặc quyền tích luỹ điểm thưởng và ưu đãi hấp dẫn dành riêng cho thành viên mới.
-                        </p>
                     </div>
                     
                     <div class="d-flex flex-wrap gap-3 mb-5">
