@@ -637,7 +637,8 @@
                                         <div>
                                             <h3 class="fs-4 fw-bold mb-2 text-warning d-flex align-items-center gap-2">
                                                 <span class="material-symbols-outlined">auto_awesome</span> Aura Loyalty
-                                                Matrix</h3>
+                                                Matrix
+                                            </h3>
                                             <p class="mb-2 fw-semibold fs-6">Ưu đãi điểm thưởng tích luỹ Member</p>
                                             <p class="mb-0 text-white-50 small" style="line-height: 1.6;">Mỗi 10.000đ
                                                 chi tiêu tương đương 1 Điểm Aura (A-Point).<br>Nâng cấp hạng để nhận gấp
@@ -823,11 +824,13 @@
                                                 <li class="d-flex align-items-start gap-2"><span
                                                         class="material-symbols-outlined text-success fs-5">check_circle</span>
                                                     <span class="small text-muted">Tích luỹ 5% trên mỗi hóa đơn thanh
-                                                        toán</span></li>
+                                                        toán</span>
+                                                </li>
                                                 <li class="d-flex align-items-start gap-2"><span
                                                         class="material-symbols-outlined text-success fs-5">check_circle</span>
                                                     <span class="small text-muted">Tặng E-voucher 20.000đ mừng gia
-                                                        nhập</span></li>
+                                                        nhập</span>
+                                                </li>
                                             </ul>
                                         </div>
                                     </div>
@@ -857,15 +860,18 @@
                                                     <li class="d-flex align-items-start gap-2"><span
                                                             class="material-symbols-outlined text-warning fs-5">check_circle</span>
                                                         <span class="small fw-medium">Tích luỹ 10% trên mỗi đơn
-                                                            hàng</span></li>
+                                                            hàng</span>
+                                                    </li>
                                                     <li class="d-flex align-items-start gap-2"><span
                                                             class="material-symbols-outlined text-warning fs-5">check_circle</span>
                                                         <span class="small fw-medium">Tặng 01 bánh ngọt miễn phí tháng
-                                                            sinh nhật</span></li>
+                                                            sinh nhật</span>
+                                                    </li>
                                                     <li class="d-flex align-items-start gap-2"><span
                                                             class="material-symbols-outlined text-warning fs-5">check_circle</span>
                                                         <span class="small fw-medium">Miễn phí Upsize thứ 3 hàng
-                                                            tuần</span></li>
+                                                            tuần</span>
+                                                    </li>
                                                 </ul>
                                         </div>
                                     </div>
@@ -933,7 +939,8 @@
                                             <ul class="list-unstyled mb-0 d-flex flex-column gap-3">
                                                 <li class="d-flex align-items-start gap-2"><span
                                                         class="material-symbols-outlined fs-5 text-dark">check_circle</span>
-                                                    <span class="small fw-medium">Tích luỹ 15% trọn đời</span></li>
+                                                    <span class="small fw-medium">Tích luỹ 15% trọn đời</span>
+                                                </li>
                                                 <li class="d-flex align-items-start gap-2"><span
                                                         class="material-symbols-outlined fs-5 text-dark">check_circle</span>
                                                     <span class="small fw-medium">Mời tham dự workshop thử cà phê</span>
@@ -941,7 +948,8 @@
                                                 <li class="d-flex align-items-start gap-2"><span
                                                         class="material-symbols-outlined fs-5 text-dark">check_circle</span>
                                                     <span class="small fw-medium">Tặng set quà tặng cao cấp cuối
-                                                        năm</span></li>
+                                                        năm</span>
+                                                </li>
                                             </ul>
                                         </div>
                                     </div>
