@@ -16,9 +16,11 @@ public class Cart implements Serializable {
     public static final double MONEY_PER_POINT = 10000;
     public static final int MAX_QUANTITY = 99;
 
+    public static final double DISCOUNT_PER_POINT = 500;
+
     private final List<CartItem> items = new ArrayList<>();
     private int nextLineId = 1;
-    private Voucher voucher;
+    private int pointsUsed = 0;
 
     public List<CartItem> getItems() {
         return items;
@@ -130,21 +132,16 @@ public class Cart implements Serializable {
         return total;
     }
 
-    public Voucher getVoucher() {
-        return voucher;
+    public int getPointsUsed() {
+        return pointsUsed;
     }
 
-    public void setVoucher(Voucher voucher) {
-        this.voucher = voucher;
-    }
-
-    /** Voucher đang gắn có dùng được với các món đang chọn không */
-    public boolean isVoucherEligible() {
-        return voucher != null && voucher.isEligible(getSelectedSubtotal());
+    public void setPointsUsed(int pointsUsed) {
+        this.pointsUsed = pointsUsed;
     }
 
     public double getDiscount() {
-        return voucher != null ? voucher.calculateDiscount(getSelectedSubtotal()) : 0;
+        return pointsUsed * DISCOUNT_PER_POINT;
     }
 
     /** Tổng tiền hàng sau giảm giá (chưa gồm phí giao hàng) */

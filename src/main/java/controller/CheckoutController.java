@@ -67,8 +67,7 @@ public class CheckoutController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
         Cart cart = CartController.getCart(session);
-        String voucherCode = cart.getVoucher() != null ? cart.getVoucher().getCode() : null;
-        boolean voucherStillValid = cartService.refreshCart(cart, CartController.getCustomerId(session));
+        cartService.refreshCart(cart, CartController.getCustomerId(session));
 
         if (cart.getSelectedItems().isEmpty()) {
             session.setAttribute("cartError", "Vui lòng chọn ít nhất một món để đặt hàng.");
@@ -94,12 +93,7 @@ public class CheckoutController extends HttpServlet {
             return;
         }
 
-        if (!voucherStillValid) {
-            request.setAttribute("checkoutError", "Mã " + voucherCode
-                    + " vừa hết hạn hoặc hết lượt sử dụng. Tổng tiền đã được cập nhật lại, vui lòng kiểm tra trước khi xác nhận.");
-            showCheckout(request, response, cart, method);
-            return;
-        }
+
 
         boolean homeDelivery = METHOD_DELIVERY.equals(method);
         String recipientName = trim(request.getParameter("recipientName"));
@@ -134,7 +128,6 @@ public class CheckoutController extends HttpServlet {
         Order order = new Order();
         order.setOrderCode("AURA" + LocalDateTime.now(SHOP_ZONE).format(DateTimeFormatter.ofPattern("yyMMddHHmmssSSS")));
         order.setCustomerId(user.getId());
-        order.setVoucherId(cart.isVoucherEligible() ? cart.getVoucher().getId() : null);
         order.setOrderType(homeDelivery ? "ONLINE" : "TAKEAWAY");
         order.setStatus("PENDING");
         order.setTotalAmount(cart.getSelectedSubtotal());
@@ -146,7 +139,7 @@ public class CheckoutController extends HttpServlet {
         order.setDeliveryAddress(homeDelivery ? deliveryAddress : null);
         order.setOrderNote(buildOrderNote(homeDelivery, scheduled ? scheduledTime : null, orderNote));
 
-        int orderId = orderDAO.placeOrder(order, items);
+        int orderId = orderDAO.placeOrder(order, items, cart.getPointsUsed());
         if (orderId <= 0) {
             request.setAttribute("checkoutError", "Không thể tạo đơn hàng lúc này. Vui lòng thử lại sau ít phút.");
             showCheckout(request, response, cart, method);
@@ -155,7 +148,7 @@ public class CheckoutController extends HttpServlet {
 
         // Đặt hàng thành công: bỏ các món đã đặt khỏi giỏ và chuyển sang bước Thanh toán
         cart.getItems().removeAll(items);
-        cart.setVoucher(null);
+        cart.setPointsUsed(0);
         response.sendRedirect(request.getContextPath() + "/payment?orderId=" + orderId);
     }
 
