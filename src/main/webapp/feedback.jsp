@@ -236,6 +236,12 @@
             transform: scale(0.99);
         }
 
+        .btn-submit-feedback:disabled,
+        .form-select-custom:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         /* Ticket Cards */
         .ticket-item {
             padding: 1.15rem;
@@ -415,7 +421,7 @@
                             <label class="form-label-custom" for="orderCodeSelect">
                                 Đơn hàng liên quan (order_id)
                             </label>
-                            <select class="form-select-custom" id="orderCodeSelect" name="orderCode" required>
+                            <select class="form-select-custom" id="orderCodeSelect" name="orderCode" required ${empty userOrders ? 'disabled' : ''}>
                                 <c:choose>
                                     <c:when test="${not empty userOrders}">
                                         <c:forEach items="${userOrders}" var="uo">
@@ -423,11 +429,13 @@
                                         </c:forEach>
                                     </c:when>
                                     <c:otherwise>
-                                        <option value="AURA-001">Đơn hàng #AURA-001 (COMPLETED - 72.000đ)</option>
-                                        <option value="AURA-003">Đơn hàng #AURA-003 (CONFIRMED - 100.000đ)</option>
+                                        <option value="">Không còn đơn hàng chưa phản hồi</option>
                                     </c:otherwise>
                                 </c:choose>
                             </select>
+                            <c:if test="${empty userOrders}">
+                                <p class="small text-muted mt-2 mb-0">Mỗi đơn hàng chỉ được gửi phản hồi một lần.</p>
+                            </c:if>
                         </div>
 
                         <!-- 3. Số sao đánh giá (rating) - Chỉ hiển thị khi issue_type = 'RATING' tuân theo CHECK constraint DB -->
@@ -456,7 +464,7 @@
 
                         <!-- Nút gửi -->
                         <div class="pt-2">
-                            <button type="submit" class="btn-submit-feedback" id="submitBtn">
+                            <button type="submit" class="btn-submit-feedback" id="submitBtn" ${empty userOrders ? 'disabled' : ''}>
                                 <span class="material-symbols-outlined" style="font-size: 1.2rem;">send</span>
                                 <span id="submitBtnText">Gửi khiếu nại</span>
                             </button>
@@ -725,72 +733,28 @@
                 },
                 body: params
             })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                submitBtn.disabled = false;
-                submitText.innerText = originalText;
-
-                if (data.success) {
-                    showToast(data.message || 'Đã gửi thành công!');
-                    document.getElementById('contentInput').value = '';
-
-                    var orderCode = data.orderCode || document.getElementById('orderCodeSelect').value;
-                    var issueType = data.issueType || document.getElementById('selectedIssueType').value;
-                    var ticketCode = data.ticketCode || '#CR-NEW';
-                    var submittedContent = data.content || content;
-
-                    var badgeHtml = issueType === 'RATING' 
-                        ? '<span class="badge-issue-rating">ĐÁNH GIÁ (RATING)</span>' 
-                        : '<span class="badge-issue-complaint">KHIẾU NẠI (COMPLAINT)</span>';
-
-                    var starsHtml = '';
-                    if (issueType === 'RATING' && data.rating > 0) {
-                        starsHtml = '<div class="stars-mini mb-2">';
-                        for (var i = 1; i <= data.rating; i++) {
-                            starsHtml += '<span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: \\\'FILL\\\' 1;">star</span>';
-                        }
-                        starsHtml += '<span class="ms-1 small text-muted fw-semibold" style="font-size: 0.725rem;">(' + data.rating + '/5 sao)</span></div>';
+            .then(function(res) {
+                return res.json().then(function(data) {
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.message || 'Không thể lưu phản hồi.');
                     }
-
-                    var newCardHtml = 
-                        '<div class="ticket-item">' +
-                            '<div class="d-flex align-items-start justify-content-between gap-2 mb-2">' +
-                                '<div>' +
-                                    '<div class="d-flex align-items-center gap-2 flex-wrap">' +
-                                        badgeHtml +
-                                        '<span class="font-monospace fw-bold small text-dark">' + ticketCode + '</span>' +
-                                        (orderCode ? '<span class="text-muted small">#' + orderCode + '</span>' : '') +
-                                    '</div>' +
-                                '</div>' +
-                                '<div>' +
-                                    '<span class="status-badge-pending">' +
-                                        '<span class="material-symbols-outlined" style="font-size: 13px;">schedule</span>' +
-                                        'Đang chờ xử lý' +
-                                    '</span>' +
-                                '</div>' +
-                            '</div>' +
-                            starsHtml +
-                            '<p class="text-secondary small mb-2" style="font-size: 0.825rem; line-height: 1.5; white-space: pre-line;">' + submittedContent + '</p>' +
-                            '<div class="d-flex align-items-center justify-content-between pt-2 mt-2 border-top text-muted" style="font-size: 0.72rem;">' +
-                                '<span>Thời gian: Vừa xong - Hôm nay</span>' +
-                                '<span class="text-secondary">Bạn</span>' +
-                            '</div>' +
-                        '</div>';
-
-                    var container = document.getElementById('ticketsListContainer');
-                    container.insertAdjacentHTML('afterbegin', newCardHtml);
-                    var countEl = document.getElementById('ticketCount');
-                    if (countEl) countEl.innerText = parseInt(countEl.innerText || 0) + 1;
-                } else {
-                    showToast(data.message || 'Có lỗi xảy ra, vui lòng thử lại.');
-                }
+                    return data;
+                });
+            })
+            .then(function(data) {
+                // Tải lại từ server để dropdown và lịch sử luôn phản ánh dữ liệu trong DB.
+                window.location.assign(data.redirectUrl || '${pageContext.request.contextPath}/feedback?success=1');
             })
             .catch(function(err) {
                 submitBtn.disabled = false;
                 submitText.innerText = originalText;
-                showToast('Đã gửi thành công!');
+                showToast(err.message || 'Có lỗi kết nối, vui lòng thử lại!');
             });
         });
+
+        <c:if test="${param.success == '1'}">
+        showToast('Đã lưu phản hồi. Đơn hàng đã được loại khỏi danh sách!');
+        </c:if>
     </script>
 </body>
 

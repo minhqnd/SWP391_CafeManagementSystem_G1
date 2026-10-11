@@ -34,10 +34,6 @@ public class FeedbackController extends HttpServlet {
         List<Feedback> feedbacks;
         if (user != null) {
             feedbacks = feedbackDAO.getFeedbacksByCustomerId(user.getId());
-            if (feedbacks.isEmpty()) {
-                // Hiển thị các phản ánh mẫu đã có trong DB
-                feedbacks = feedbackDAO.getAllFeedbacks(10);
-            }
             List<String[]> userOrders = feedbackDAO.getRecentOrdersForCustomer(user.getId());
             request.setAttribute("userOrders", userOrders);
         } else {
@@ -60,6 +56,12 @@ public class FeedbackController extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
+
+        if (user == null) {
+            sendError(request, response, ajax, HttpServletResponse.SC_UNAUTHORIZED,
+                    "Vui lòng đăng nhập trước khi gửi phản hồi!");
+            return;
+        }
 
         String orderCode = request.getParameter("orderCode");
         String issueTypeParam = request.getParameter("issueType");
@@ -96,16 +98,15 @@ public class FeedbackController extends HttpServlet {
         }
 
         // Xác định customer_id (yêu cầu NOT NULL bởi FK fk_review_customer trong aura_cafe.sql)
-        int customerId;
-        if (user != null) {
-            customerId = user.getId();
-        } else {
-            // Mặc định tài khoản khách hàng mẫu trong DB
-            customerId = 4;
-        }
+        int customerId = user.getId();
 
         // Xác định order_id (yêu cầu NOT NULL bởi FK fk_review_order trong aura_cafe.sql)
         int orderId = feedbackDAO.findOrderId(orderCode, customerId);
+        if (orderId <= 0) {
+            sendError(request, response, ajax, HttpServletResponse.SC_CONFLICT,
+                    "Đơn hàng không hợp lệ hoặc đã được bạn phản hồi trước đó.");
+            return;
+        }
 
         Feedback fb = new Feedback();
         fb.setCustomerId(customerId);
@@ -120,9 +121,10 @@ public class FeedbackController extends HttpServlet {
 
         if (ajax) {
             response.setContentType("application/json;charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
             if (saved) {
-                String safeContent = fb.getContent().replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
-                response.getWriter().write("{\"success\":true,\"ticketCode\":\"" + fb.getTicketCode() + "\",\"orderCode\":\"" + (orderCode != null ? orderCode : "") + "\",\"issueType\":\"" + fb.getIssueType() + "\",\"rating\":" + fb.getRating() + ",\"content\":\"" + safeContent + "\",\"message\":\"Đã gửi thành công! Phiếu " + fb.getTicketCode() + " đã được ghi nhận vào hệ thống.\"}");
+                response.getWriter().write("{\"success\":true,\"redirectUrl\":\""
+                        + request.getContextPath() + "/feedback?success=1\"}");
             } else {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.getWriter().write("{\"success\":false,\"message\":\"Có lỗi xảy ra khi lưu vào cơ sở dữ liệu. Vui lòng thử lại!\"}");
@@ -130,6 +132,25 @@ public class FeedbackController extends HttpServlet {
             return;
         }
 
-        response.sendRedirect(request.getContextPath() + "/feedback?success=1");
+        if (saved) {
+            response.sendRedirect(request.getContextPath() + "/feedback?success=1");
+        } else {
+            request.setAttribute("errorMessage", "Có lỗi xảy ra khi lưu vào cơ sở dữ liệu. Vui lòng thử lại!");
+            doGet(request, response);
+        }
+    }
+
+    private void sendError(HttpServletRequest request, HttpServletResponse response, boolean ajax,
+                           int status, String message) throws ServletException, IOException {
+        if (ajax) {
+            response.setStatus(status);
+            response.setContentType("application/json;charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"success\":false,\"message\":\"" + message + "\"}");
+            return;
+        }
+
+        request.setAttribute("errorMessage", message);
+        doGet(request, response);
     }
 }
