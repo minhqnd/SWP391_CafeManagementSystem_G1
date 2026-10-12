@@ -7,8 +7,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aura Café | Trung tâm hỗ trợ & Phản ánh khách hàng</title>
-    <meta name="description" content="Trung tâm hỗ trợ và giải quyết khiếu nại khách hàng Aura Café - Cam kết dịch vụ vàng 100% hài lòng." />
+    <title>Aura Café | Phản ánh & Đánh giá dịch vụ</title>
+    <meta name="description" content="Trung tâm tiếp nhận đánh giá và khiếu nại khách hàng Aura Café - Cam kết dịch vụ vàng 100% hài lòng." />
 
     <!-- Google Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,10 +34,6 @@
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
-            --amber-bg: #fef3c7;
-            --amber-text: #92400e;
-            --emerald-bg: #dcfce7;
-            --emerald-text: #166534;
         }
 
         body {
@@ -106,45 +102,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             flex-shrink: 0;
         }
-        .btn-care-hotline {
-            background-color: #ffffff;
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 0.85rem;
-            padding: 0.65rem 1.25rem;
-            border-radius: 0.75rem;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        .btn-care-hotline:hover {
-            background-color: #f8fafc;
-            color: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-        .btn-care-chat {
-            background: rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 0.85rem;
-            padding: 0.65rem 1.25rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            backdrop-filter: blur(8px);
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-        .btn-care-chat:hover {
-            background: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
 
         /* Form Card */
         .feedback-card {
@@ -164,7 +121,7 @@
         }
         .form-label-custom {
             display: block;
-            font-size: 0.785rem;
+            font-size: 0.8rem;
             font-weight: 700;
             color: #334155;
             margin-bottom: 0.45rem;
@@ -187,41 +144,41 @@
             box-shadow: 0 0 0 3px rgba(139, 21, 40, 0.08);
         }
 
-        /* Issue Chips Grid */
-        .issue-chip {
-            padding: 0.75rem 0.5rem;
+        /* Issue Type Switch Buttons */
+        .type-toggle-btn {
             border-radius: 0.75rem;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
+            padding: 0.7rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.35rem;
-            cursor: pointer;
+            gap: 0.5rem;
             transition: all 0.2s ease;
-            text-align: center;
-            user-select: none;
-            color: #475569;
-            font-size: 0.75rem;
-            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid transparent;
         }
-        .issue-chip:hover {
-            border-color: #cbd5e1;
-            background: #f8fafc;
+        .type-toggle-btn.btn-complaint {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-color: #fecaca;
         }
-        .issue-chip.active {
-            border-color: var(--primary);
-            background-color: var(--primary-soft);
-            color: var(--primary);
-            box-shadow: 0 2px 8px rgba(139, 21, 40, 0.12);
+        .type-toggle-btn.btn-complaint.active {
+            background-color: #dc2626;
+            color: #ffffff;
+            border-color: #b91c1c;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
         }
-        .issue-chip .material-symbols-outlined {
-            font-size: 1.35rem;
-            transition: transform 0.2s;
+        .type-toggle-btn.btn-rating {
+            background-color: #fffbeb;
+            color: #92400e;
+            border-color: #fde68a;
         }
-        .issue-chip.active .material-symbols-outlined {
-            transform: scale(1.1);
+        .type-toggle-btn.btn-rating.active {
+            background-color: #d97706;
+            color: #ffffff;
+            border-color: #b45309;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
         }
 
         /* Star Rating */
@@ -235,7 +192,7 @@
             border: none;
             padding: 0;
             cursor: pointer;
-            font-size: 1.75rem;
+            font-size: 1.85rem;
             color: #cbd5e1;
             transition: transform 0.15s, color 0.15s;
             line-height: 1;
@@ -249,61 +206,9 @@
         }
         .star-rating-label {
             font-size: 0.8rem;
-            color: #64748b;
-            font-weight: 600;
-            margin-left: 0.5rem;
-        }
-
-        /* Image Upload preview */
-        .upload-thumb {
-            position: relative;
-            width: 4.5rem;
-            height: 4.5rem;
-            border-radius: 0.75rem;
-            overflow: hidden;
-            border: 1px solid #cbd5e1;
-        }
-        .upload-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .upload-thumb-remove {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: rgba(15, 23, 42, 0.8);
-            color: #ffffff;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            cursor: pointer;
-        }
-        .btn-add-photo {
-            width: 4.5rem;
-            height: 4.5rem;
-            border-radius: 0.75rem;
-            border: 2px dashed #cbd5e1;
-            background: #f8fafc;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.65rem;
-            font-weight: 600;
-        }
-        .btn-add-photo:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: var(--primary-soft);
+            color: #d97706;
+            font-weight: 700;
+            margin-left: 0.65rem;
         }
 
         /* Submit Button */
@@ -338,61 +243,84 @@
             border: 1px solid #e2e8f0;
             background: #ffffff;
             transition: all 0.2s ease;
-            margin-bottom: 1rem;
+            margin-bottom: 0.85rem;
         }
-        .ticket-item.processing {
-            border-color: #fde68a;
-            background-color: #fffdf7;
+        .ticket-item:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
-        .ticket-badge-processing {
+
+        .badge-issue-complaint {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+        }
+        .badge-issue-rating {
+            background-color: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .status-badge-pending {
             background-color: #fef3c7;
             color: #92400e;
             font-size: 0.685rem;
             font-weight: 700;
             padding: 0.25rem 0.65rem;
             border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
         }
-        .ticket-badge-resolved {
+        .status-badge-resolved {
             background-color: #dcfce7;
             color: #166534;
             font-size: 0.685rem;
             font-weight: 700;
             padding: 0.25rem 0.65rem;
             border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
         }
-        .progress-bar-custom {
-            height: 6px;
+        .status-badge-rejected {
+            background-color: #f1f5f9;
+            color: #64748b;
+            font-size: 0.685rem;
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
             border-radius: 9999px;
-            background-color: #e2e8f0;
-            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
         }
-        .agent-note-box {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #fef08a;
-            border-radius: 0.65rem;
-            padding: 0.75rem;
-            font-size: 0.75rem;
-            color: #334155;
-            margin: 0.75rem 0;
-        }
-        .resolution-box {
-            background: #ffffff;
+
+        /* Admin Response Box (admin_response) */
+        .admin-response-box {
+            background-color: #f0fdf4;
             border: 1px solid #bbf7d0;
             border-radius: 0.65rem;
-            padding: 0.75rem;
-            font-size: 0.75rem;
-            color: #334155;
-            margin: 0.75rem 0;
-        }
-        .voucher-dashed-box {
+            padding: 0.75rem 0.95rem;
+            font-size: 0.785rem;
+            color: #166534;
             margin-top: 0.65rem;
-            display: flex;
+        }
+
+        /* Stars Mini Display */
+        .stars-mini {
+            color: #f59e0b;
+            font-size: 0.95rem;
+            display: inline-flex;
             align-items: center;
-            justify-content: space-between;
-            background: #f0fdf4;
-            border: 1px dashed #86efac;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.5rem;
+            gap: 1px;
         }
 
         /* Golden Rules Card */
@@ -409,41 +337,12 @@
             flex-shrink: 0;
             margin-top: 1px;
         }
-
-        /* Live Chat Modal Preview */
-        .chat-dialog-window {
-            height: 380px;
-            overflow-y: auto;
-            background: #f8fafc;
-            padding: 1rem;
-            border-radius: 0.75rem;
-        }
-        .chat-bubble {
-            max-width: 80%;
-            padding: 0.65rem 0.95rem;
-            border-radius: 1rem;
-            font-size: 0.8rem;
-            line-height: 1.4;
-            margin-bottom: 0.75rem;
-        }
-        .chat-bubble.agent {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            color: #1e293b;
-            border-bottom-left-radius: 0.25rem;
-        }
-        .chat-bubble.user {
-            background: var(--primary);
-            color: #ffffff;
-            margin-left: auto;
-            border-bottom-right-radius: 0.25rem;
-        }
     </style>
 </head>
 
 <body>
 
-    <!-- Include Shared Header -->
+    <!-- Header dùng chung -->
     <jsp:include page="/components/header.jsp">
         <jsp:param name="activePage" value="feedback" />
     </jsp:include>
@@ -453,127 +352,88 @@
         <div class="feedback-breadcrumb d-flex align-items-center mb-2">
             <a href="${pageContext.request.contextPath}/">Trang chủ</a>
             <span class="material-symbols-outlined separator" style="font-size: 14px;">chevron_right</span>
-            <span class="current">Trung tâm hỗ trợ & Phản ánh khách hàng</span>
+            <span class="current">Phản ánh & Đánh giá dịch vụ</span>
         </div>
 
         <!-- Hero Care Banner -->
         <div class="hero-care-banner">
-            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="hero-agent-icon">
-                        <span class="material-symbols-outlined" style="font-size: 2rem;">support_agent</span>
-                    </div>
-                    <div>
-                        <h1 class="h4 fw-bold mb-1 text-white">Aura Customer Care & Service Hub</h1>
-                        <p class="text-white-50 mb-0 small" style="max-width: 580px;">
-                            Cam kết bảo vệ quyền lợi người thưởng thức cà phê: 100% đổi mới hoặc hoàn tiền ngay lập tức nếu chất lượng đồ uống không đạt sự hài lòng của quý khách.
-                        </p>
-                    </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="hero-agent-icon">
+                    <span class="material-symbols-outlined" style="font-size: 2rem;">rate_review</span>
                 </div>
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <a href="tel:19006868" class="btn-care-hotline">
-                        <span class="material-symbols-outlined" style="font-size: 1.15rem;">call</span>
-                        Hotline 1900 6868 (Miễn cước)
-                    </a>
-                    <button type="button" class="btn-care-chat" data-bs-toggle="modal" data-bs-target="#liveChatModal">
-                        <span class="material-symbols-outlined" style="font-size: 1.15rem;">chat</span>
-                        Chat trực tuyến ngay
-                    </button>
+                <div>
+                    <h1 class="h4 fw-bold mb-1 text-white">Aura Customer Care & Reviews</h1>
+                    <p class="text-white-50 mb-0 small" style="max-width: 680px;">
+                        Lắng nghe mọi phản hồi để hoàn thiện hương vị cà phê và chất lượng phục vụ. Cam kết hỗ trợ nhanh chóng và minh bạch.
+                    </p>
                 </div>
             </div>
         </div>
 
-        <!-- Main Layout: 2 Columns -->
+        <!-- Bố cục chính 2 Cột -->
         <div class="row g-4">
-            <!-- Left Column: Form gửi phản ánh (7 cols) -->
+            <!-- Cột trái: Form gửi (7 cols) - Chỉ chứa các trường có trong DB: issue_type, order_id, rating, content -->
             <div class="col-lg-7">
                 <div class="feedback-card">
                     <div class="border-bottom pb-3 mb-4">
                         <h2 class="feedback-form-title mb-1">
                             <span class="material-symbols-outlined text-danger">rate_review</span>
-                            Gửi phản ánh dịch vụ / Đổi trả món
+                            <span id="formTitleText">Gửi khiếu nại sự cố</span>
                         </h2>
                         <p class="text-muted small mb-0">
-                            Đội ngũ kiểm soát chất lượng Aura sẽ liên hệ trực tiếp với bạn trong tối đa 15 phút.
+                            Thông tin phản ánh sẽ được lưu trực tiếp vào hệ thống để đội ngũ Aura xử lý.
                         </p>
                     </div>
 
                     <form id="feedbackForm" action="${pageContext.request.contextPath}/feedback" method="POST">
-                        <input type="hidden" name="category" id="selectedCategory" value="wrong_size">
-                        <input type="hidden" name="rating" id="selectedRating" value="5">
-                        <input type="hidden" name="images" id="selectedImages" value="https://lh3.googleusercontent.com/aida-public/AB6AXuDmpTys3KoN-gBpIZ2NHZpRJuTwcv-5IYk5GLa4_0uVM_hhieERDkGhxBxjxrEkep1JSAnjV_4SPCgWBVKnMb6fwivTCsPDIZrULPy7mL5ADYCvY6PIwelzBqc3MDBhcvjIWD8AIfWl4SwKLbsFrj0d1ysYfNX_B5EnxoRyDrgKDFgvdcyO-Ms8_F5cd-FImpqdFCuvDZb5yW0IJIY2nfBTxVlU5v0Ss4rTwrmL4ZtFkSiyLaAxWJKC">
+                        <!-- Trường DB: issue_type ENUM('RATING', 'COMPLAINT') -->
+                        <input type="hidden" name="issueType" id="selectedIssueType" value="COMPLAINT">
+                        <!-- Trường DB: rating INT NULL (chỉ có khi RATING) -->
+                        <input type="hidden" name="rating" id="selectedRating" value="">
 
-                        <!-- Chọn đơn hàng -->
+                        <!-- 1. Loại phản hồi (issue_type) -->
                         <div class="mb-4">
-                            <label class="form-label-custom" for="orderCodeSelect">
-                                Chọn đơn hàng cần khiếu nại hoặc góp ý
-                            </label>
-                            <select class="form-select-custom" id="orderCodeSelect" name="orderCode">
-                                <c:choose>
-                                    <c:when test="${not empty userOrders}">
-                                        <c:forEach items="${userOrders}" var="uo">
-                                            <option value="${uo[0]}" ${param.orderCode == uo[0] ? 'selected' : ''}>Đơn hàng ${uo[0]} (${uo[1]} - ${uo[2]}đ)</option>
-                                        </c:forEach>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <option value="#AUR-86410">Đơn hàng #AUR-86410 (Hôm nay 15:30 - Bạc Xỉu Kem Trứng, Croissant)</option>
-                                        <option value="#AUR-81209">Đơn hàng #AUR-81209 (14/10 - Cold Brew Cam Quế)</option>
-                                    </c:otherwise>
-                                </c:choose>
-                                <option value="store_experience">Trải nghiệm trực tiếp tại cửa hàng (Không qua app)</option>
-                                <option value="other">Góp ý phát triển hệ thống & thực đơn chung</option>
-                            </select>
-                        </div>
-
-                        <!-- Vấn đề gặp phải (6 chips) -->
-                        <div class="mb-4">
-                            <label class="form-label-custom">
-                                Vấn đề bạn gặp phải là gì?
-                            </label>
+                            <label class="form-label-custom">Loại phản hồi (issue_type)</label>
                             <div class="row g-2">
-                                <div class="col-4 col-sm-4">
-                                    <div class="issue-chip active" onclick="selectCategory('wrong_size', this)">
-                                        <span class="material-symbols-outlined">local_drink</span>
-                                        <span>Sai kích cỡ / Món</span>
-                                    </div>
+                                <div class="col-6">
+                                    <button type="button" id="btnTypeComplaint" class="w-100 type-toggle-btn btn-complaint active" onclick="setIssueType('COMPLAINT')">
+                                        <span class="material-symbols-outlined fs-5">report_problem</span>
+                                        Khiếu nại (COMPLAINT)
+                                    </button>
                                 </div>
-                                <div class="col-4 col-sm-4">
-                                    <div class="issue-chip" onclick="selectCategory('quality', this)">
-                                        <span class="material-symbols-outlined">coffee</span>
-                                        <span>Hương vị / Nhiệt độ</span>
-                                    </div>
-                                </div>
-                                <div class="col-4 col-sm-4">
-                                    <div class="issue-chip" onclick="selectCategory('delivery', this)">
-                                        <span class="material-symbols-outlined">moped</span>
-                                        <span>Giao trễ / Đổ vỡ</span>
-                                    </div>
-                                </div>
-                                <div class="col-4 col-sm-4">
-                                    <div class="issue-chip" onclick="selectCategory('attitude', this)">
-                                        <span class="material-symbols-outlined">sentiment_dissatisfied</span>
-                                        <span>Thái độ phục vụ</span>
-                                    </div>
-                                </div>
-                                <div class="col-4 col-sm-4">
-                                    <div class="issue-chip" onclick="selectCategory('packaging', this)">
-                                        <span class="material-symbols-outlined">inventory_2</span>
-                                        <span>Thiếu ống hút/đồ</span>
-                                    </div>
-                                </div>
-                                <div class="col-4 col-sm-4">
-                                    <div class="issue-chip" onclick="selectCategory('other', this)">
-                                        <span class="material-symbols-outlined">help_outline</span>
-                                        <span>Vấn đề khác</span>
-                                    </div>
+                                <div class="col-6">
+                                    <button type="button" id="btnTypeRating" class="w-100 type-toggle-btn btn-rating" onclick="setIssueType('RATING')">
+                                        <span class="material-symbols-outlined fs-5">hotel_class</span>
+                                        Đánh giá (RATING)
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Mức độ hài lòng (Star Rating) -->
+                        <!-- 2. Chọn đơn hàng (order_id) -->
                         <div class="mb-4">
+                            <label class="form-label-custom" for="orderCodeSelect">
+                                Đơn hàng liên quan (order_id)
+                            </label>
+                            <select class="form-select-custom" id="orderCodeSelect" name="orderCode" required>
+                                <c:choose>
+                                    <c:when test="${not empty userOrders}">
+                                        <c:forEach items="${userOrders}" var="uo">
+                                            <option value="${uo[1]}" ${param.orderCode == uo[1] ? 'selected' : ''}>Đơn hàng #${uo[1]} (${uo[2]} - <fmt:formatNumber value="${uo[3]}" pattern="#,###" />đ)</option>
+                                        </c:forEach>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <option value="AURA-001">Đơn hàng #AURA-001 (COMPLETED - 72.000đ)</option>
+                                        <option value="AURA-003">Đơn hàng #AURA-003 (CONFIRMED - 100.000đ)</option>
+                                    </c:otherwise>
+                                </c:choose>
+                            </select>
+                        </div>
+
+                        <!-- 3. Số sao đánh giá (rating) - Chỉ hiển thị khi issue_type = 'RATING' tuân theo CHECK constraint DB -->
+                        <div class="mb-4" id="starRatingContainer" style="display: none;">
                             <label class="form-label-custom">
-                                Mức độ hài lòng với lần phục vụ này
+                                Số sao đánh giá (rating: 1 - 5)
                             </label>
                             <div class="star-rating-box">
                                 <c:forEach var="star" begin="1" end="5">
@@ -581,214 +441,160 @@
                                         <span class="material-symbols-outlined">star</span>
                                     </button>
                                 </c:forEach>
-                                <span class="star-rating-label" id="ratingText">Tuyệt vời</span>
+                                <span class="star-rating-label" id="ratingText">5 sao - Tuyệt vời</span>
                             </div>
                         </div>
 
-                        <!-- Mô tả chi tiết -->
+                        <!-- 4. Nội dung phản ánh / khiếu nại (content) -->
                         <div class="mb-4">
                             <label class="form-label-custom" for="contentInput">
-                                Mô tả chi tiết sự cố bạn đã gặp
+                                Nội dung chi tiết (content)
                             </label>
-                            <textarea class="form-control-custom" id="contentInput" name="content" rows="4" 
-                                placeholder="Ví dụ: Ly trà sen vàng của tôi bị nhầm thành size M thay vì L như đã đặt trên hóa đơn. Cần hỗ trợ đổi hoặc hoàn tiền..." required></textarea>
-                        </div>
-
-                        <!-- Đính kèm ảnh -->
-                        <div class="mb-4">
-                            <label class="form-label-custom">
-                                Hình ảnh hóa đơn / sản phẩm thực tế (Tối đa 3 ảnh)
-                            </label>
-                            <div class="d-flex align-items-center gap-3 flex-wrap" id="imageGallery">
-                                <div class="upload-thumb" id="thumb-0">
-                                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmpTys3KoN-gBpIZ2NHZpRJuTwcv-5IYk5GLa4_0uVM_hhieERDkGhxBxjxrEkep1JSAnjV_4SPCgWBVKnMb6fwivTCsPDIZrULPy7mL5ADYCvY6PIwelzBqc3MDBhcvjIWD8AIfWl4SwKLbsFrj0d1ysYfNX_B5EnxoRyDrgKDFgvdcyO-Ms8_F5cd-FImpqdFCuvDZb5yW0IJIY2nfBTxVlU5v0Ss4rTwrmL4ZtFkSiyLaAxWJKC" alt="Ảnh chụp thực tế">
-                                    <button type="button" class="upload-thumb-remove" onclick="removeImage(0)">✕</button>
-                                </div>
-                                <button type="button" class="btn-add-photo" id="btnAddPhoto" onclick="addSamplePhoto()">
-                                    <span class="material-symbols-outlined" style="font-size: 1.35rem;">add_a_photo</span>
-                                    <span>Thêm ảnh</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Kênh liên hệ lại -->
-                        <div class="mb-4">
-                            <label class="form-label-custom">
-                                Bạn muốn CSKH liên hệ lại qua kênh nào?
-                            </label>
-                            <div class="d-flex align-items-center gap-4 flex-wrap small">
-                                <label class="d-flex align-items-center gap-2 cursor-pointer fw-semibold text-secondary">
-                                    <input type="radio" name="contactMethod" value="phone" checked class="form-check-input mt-0 text-danger">
-                                    Gọi trực tiếp (Khuyên dùng)
-                                </label>
-                                <label class="d-flex align-items-center gap-2 cursor-pointer fw-semibold text-secondary">
-                                    <input type="radio" name="contactMethod" value="email" class="form-check-input mt-0 text-danger">
-                                    Gửi Email báo cáo
-                                </label>
-                                <label class="d-flex align-items-center gap-2 cursor-pointer fw-semibold text-secondary">
-                                    <input type="radio" name="contactMethod" value="chat" class="form-check-input mt-0 text-danger">
-                                    Nhắn qua App Chat
-                                </label>
-                            </div>
+                            <textarea class="form-control-custom" id="contentInput" name="content" rows="5" 
+                                placeholder="Mô tả cụ thể sự cố bạn gặp phải với đơn hàng..." required></textarea>
                         </div>
 
                         <!-- Nút gửi -->
                         <div class="pt-2">
                             <button type="submit" class="btn-submit-feedback" id="submitBtn">
                                 <span class="material-symbols-outlined" style="font-size: 1.2rem;">send</span>
-                                <span id="submitBtnText">Gửi phản ánh tới bộ phận Chăm sóc khách hàng</span>
+                                <span id="submitBtnText">Gửi khiếu nại</span>
                             </button>
                             <p class="text-muted text-center mt-2 small mb-0 d-flex align-items-center justify-content-center gap-1" style="font-size: 0.75rem;">
                                 <span class="material-symbols-outlined text-success" style="font-size: 15px;">verified</span>
-                                Aura bảo mật hoàn toàn danh tính khách hàng khi xử lý phản ánh nội bộ
+                                Dữ liệu được lưu trữ trực tiếp vào hệ thống quản lý Aura Café
                             </p>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Right Column: Tickets & Golden Rules (5 cols) -->
+            <!-- Cột phải: Danh sách phản ánh & Quy chuẩn dịch vụ (5 cols) - Chỉ hiển thị các trường có trong DB -->
             <div class="col-lg-5">
                 <div class="d-flex flex-column gap-4">
-                    <!-- Ticket History Card -->
+                    <!-- Danh sách phiếu hỗ trợ (Lấy từ bảng customer_reviews) -->
                     <div class="feedback-card">
                         <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
                             <h3 class="h6 fw-bold mb-0 text-dark d-flex align-items-center gap-2">
                                 <span class="material-symbols-outlined text-danger fs-5">receipt_long</span>
-                                Phiếu hỗ trợ đã tạo (<span id="ticketCount">${empty feedbacks ? 2 : feedbacks.size()}</span>)
+                                Lịch sử phản ánh & đánh giá (<span id="ticketCount">${empty feedbacks ? 0 : feedbacks.size()}</span>)
                             </h3>
-                            <span class="badge bg-light text-secondary border fw-normal" style="font-size: 0.65rem;">Cập nhật thời gian thực</span>
+                            <span class="badge bg-light text-secondary border fw-normal" style="font-size: 0.65rem;">customer_reviews</span>
                         </div>
 
-                        <div id="ticketsListContainer" class="d-flex flex-column gap-3">
-                            <c:forEach items="${feedbacks}" var="fb">
-                                <div class="ticket-item ${fb.processing ? 'processing' : ''}">
-                                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                        <div>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="font-monospace fw-bold small text-dark">${fb.ticketCode}</span>
-                                                <c:if test="${not empty fb.orderCode}">
-                                                    <span class="text-muted small">(${fb.orderCode})</span>
-                                                </c:if>
+                        <div id="ticketsListContainer" class="d-flex flex-column">
+                            <c:choose>
+                                <c:when test="${not empty feedbacks}">
+                                    <c:forEach items="${feedbacks}" var="fb">
+                                        <div class="ticket-item" id="ticket-item-${fb.id}">
+                                            <!-- Dòng đầu: Loại (issue_type), Mã phiếu (id), Đơn hàng (order_id), Trạng thái (status) -->
+                                            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                                <div>
+                                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                        <c:choose>
+                                                            <c:when test="${fb.issueType == 'RATING'}">
+                                                                <span class="badge-issue-rating">ĐÁNH GIÁ (RATING)</span>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <span class="badge-issue-complaint">KHIẾU NẠI (COMPLAINT)</span>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                        <span class="font-monospace fw-bold small text-dark">${fb.ticketCode}</span>
+                                                        <c:if test="${not empty fb.orderCode}">
+                                                            <span class="text-muted small">#${fb.orderCode}</span>
+                                                        </c:if>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Trạng thái: status -->
+                                                <div>
+                                                    <c:choose>
+                                                        <c:when test="${fb.resolved}">
+                                                            <span class="status-badge-resolved">
+                                                                <span class="material-symbols-outlined" style="font-size: 13px;">check_circle</span>
+                                                                Đã giải quyết
+                                                            </span>
+                                                        </c:when>
+                                                        <c:when test="${fb.rejected}">
+                                                            <span class="status-badge-rejected">
+                                                                <span class="material-symbols-outlined" style="font-size: 13px;">cancel</span>
+                                                                Từ chối
+                                                            </span>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <span class="status-badge-pending">
+                                                                <span class="material-symbols-outlined" style="font-size: 13px;">schedule</span>
+                                                                Đang chờ xử lý
+                                                            </span>
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </div>
                                             </div>
-                                            <h4 class="fw-bold text-dark small mb-0 mt-1">${fb.title}</h4>
-                                        </div>
-                                        <span class="${fb.processing ? 'ticket-badge-processing' : 'ticket-badge-resolved'}">
-                                            ${fb.statusLabel}
-                                        </span>
-                                    </div>
 
-                                    <!-- Progress Bar -->
-                                    <div class="my-2">
-                                        <div class="d-flex justify-content-between align-items-center small text-muted mb-1" style="font-size: 0.685rem;">
-                                            <span>Tiến độ xử lý</span>
-                                            <span class="fw-bold">${fb.progressPercent}%</span>
-                                        </div>
-                                        <div class="progress-bar-custom">
-                                            <div class="h-100 rounded-pill ${fb.processing ? 'bg-warning' : 'bg-success'}" style="width: ${fb.progressPercent}%;"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Agent Note -->
-                                    <c:if test="${not empty fb.agentNote}">
-                                        <div class="agent-note-box">
-                                            <div class="d-flex align-items-center gap-1 fw-bold text-warning-emphasis small mb-1">
-                                                <span class="material-symbols-outlined" style="font-size: 15px;">support_agent</span>
-                                                ${empty fb.agentName ? 'Chuyên viên Aura Care' : fb.agentName}
-                                            </div>
-                                            <p class="mb-0" style="line-height: 1.45;">${fb.agentNote}</p>
-                                        </div>
-                                    </c:if>
-
-                                    <!-- Resolution & Gift Voucher -->
-                                    <c:if test="${not empty fb.resolution}">
-                                        <div class="resolution-box">
-                                            <div class="d-flex align-items-center gap-1 fw-bold text-success small mb-1">
-                                                <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
-                                                Kết quả bồi hoàn
-                                            </div>
-                                            <p class="mb-0" style="line-height: 1.45;">${fb.resolution}</p>
-
-                                            <c:if test="${not empty fb.giftVoucher}">
-                                                <div class="voucher-dashed-box">
-                                                    <span class="font-monospace fw-bold text-success small">${fb.giftVoucher}</span>
-                                                    <button type="button" class="btn btn-sm btn-link text-success p-0 fw-semibold text-decoration-none small" onclick="copyVoucher('${fb.giftVoucher}')">
-                                                        Sao chép mã
-                                                    </button>
+                                            <!-- Hiển thị số sao nếu là RATING (rating) -->
+                                            <c:if test="${fb.issueType == 'RATING' && fb.rating > 0}">
+                                                <div class="stars-mini mb-2">
+                                                    <c:forEach var="s" begin="1" end="${fb.rating}">
+                                                        <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'FILL' 1;">star</span>
+                                                    </c:forEach>
+                                                    <span class="ms-1 small text-muted fw-semibold" style="font-size: 0.725rem;">(${fb.rating}/5 sao)</span>
                                                 </div>
                                             </c:if>
-                                        </div>
-                                    </c:if>
 
-                                    <!-- Footer info & chat button -->
-                                    <div class="d-flex align-items-center justify-content-between pt-2 border-top text-muted" style="font-size: 0.72rem;">
-                                        <span>Tạo lúc: ${fb.formattedCreatedAt}</span>
-                                        <c:if test="${fb.processing}">
-                                            <button type="button" class="btn btn-sm btn-link text-danger p-0 fw-bold text-decoration-none d-flex align-items-center gap-1" style="font-size: 0.72rem;" onclick="openChatForTicket('${fb.ticketCode}', '${fb.agentName}')">
-                                                <span class="material-symbols-outlined" style="font-size: 14px;">chat</span>
-                                                Chat với nhân viên phụ trách
-                                            </button>
-                                        </c:if>
+                                            <!-- Nội dung phản hồi: content -->
+                                            <p class="text-secondary small mb-2" style="font-size: 0.825rem; line-height: 1.5; white-space: pre-line;">${fb.content}</p>
+
+                                            <!-- Phản hồi từ quản trị viên: admin_response (nếu có) -->
+                                            <c:if test="${not empty fb.adminResponse}">
+                                                <div class="admin-response-box">
+                                                    <div class="d-flex align-items-center gap-1 fw-bold mb-1">
+                                                        <span class="material-symbols-outlined" style="font-size: 15px;">reply</span>
+                                                        Phản hồi từ Quản trị viên:
+                                                    </div>
+                                                    <p class="mb-0" style="line-height: 1.45;">${fb.adminResponse}</p>
+                                                </div>
+                                            </c:if>
+
+                                            <!-- Thời gian tạo: created_at -->
+                                            <div class="d-flex align-items-center justify-content-between pt-2 mt-2 border-top text-muted" style="font-size: 0.72rem;">
+                                                <span>Thời gian: ${fb.formattedCreatedAt}</span>
+                                                <c:if test="${not empty fb.customerName}">
+                                                    <span class="text-secondary">${fb.customerName}</span>
+                                                </c:if>
+                                            </div>
+                                        </div>
+                                    </c:forEach>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="text-center py-4 text-muted small">
+                                        <span class="material-symbols-outlined fs-2 text-secondary mb-1">inbox</span>
+                                        <p class="mb-0">Chưa có phản hồi nào trong hệ thống.</p>
                                     </div>
-                                </div>
-                            </c:forEach>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
 
-                    <!-- Golden Service Standards Card -->
+                    <!-- Thẻ Cam kết chất lượng dịch vụ Aura -->
                     <div class="golden-rules-card">
                         <h3 class="h6 fw-bold text-warning d-flex align-items-center gap-2 mb-3">
                             <span class="material-symbols-outlined" style="font-size: 1.25rem;">verified</span>
-                            Quy chuẩn dịch vụ vàng tại Aura
+                            Quy chuẩn tiếp nhận & xử lý
                         </h3>
                         <ul class="list-unstyled d-flex flex-column gap-3 mb-0 small text-light" style="font-size: 0.8rem; line-height: 1.5;">
                             <li class="d-flex align-items-start gap-2">
                                 <span class="material-symbols-outlined rule-check-icon">check</span>
-                                <span>Đổi mới ly miễn phí trong vòng 30 phút nếu cà phê không đúng độ ngọt/đá bạn mong muốn.</span>
+                                <span>Tiếp nhận 100% phản ánh từ các đơn hàng đã đặt trong tài khoản của quý khách.</span>
                             </li>
                             <li class="d-flex align-items-start gap-2">
                                 <span class="material-symbols-outlined rule-check-icon">check</span>
-                                <span>Hoàn tiền 100% về tài khoản nếu tài xế làm đổ vỡ đồ uống trong quá trình vận chuyển.</span>
+                                <span>Ban quản trị kiểm tra và gửi phản hồi giải quyết (admin_response) trực tiếp trên từng phiếu.</span>
                             </li>
                             <li class="d-flex align-items-start gap-2">
                                 <span class="material-symbols-outlined rule-check-icon">check</span>
-                                <span>Bộ phận Giám sát Trải nghiệm lắng nghe 24/7 qua tổng đài và mục Chat trong ứng dụng.</span>
+                                <span>Bảo vệ quyền lợi khách hàng với chính sách đổi mới hoặc hoàn tiền thỏa đáng.</span>
                             </li>
                         </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Live Chat Modal -->
-    <div class="modal fade" id="liveChatModal" tabindex="-1" aria-labelledby="liveChatModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow-lg">
-                <div class="modal-header border-bottom py-3" style="background: linear-gradient(135deg, #1c1917, #8b1528); color: #fff;">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="position-relative">
-                            <span class="material-symbols-outlined fs-2 text-warning">support_agent</span>
-                            <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle p-1" style="width: 8px; height: 8px;"></span>
-                        </div>
-                        <div>
-                            <h5 class="modal-title fs-6 fw-bold mb-0 text-white" id="liveChatModalLabel">Aura Care Online Support</h5>
-                            <span class="text-white-50" style="font-size: 0.7rem;" id="chatAgentStatus">Chuyên viên CSKH trực tuyến (Phản hồi &lt; 2 phút)</span>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-3">
-                    <div class="chat-dialog-window" id="chatDialogWindow">
-                        <div class="chat-bubble agent">
-                            Xin chào quý khách! Em là <strong>Thanh Trúc (CSKH Aura Café)</strong>. Rất tiếc vì sự bất tiện của quý khách. Anh/Chị vui lòng chia sẻ thêm chi tiết để em hỗ trợ xử lý ngay nhé!
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 mt-3">
-                        <input type="text" class="form-control rounded-pill form-control-sm px-3" id="chatMessageInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-                        <button type="button" class="btn btn-danger rounded-circle p-2 d-flex align-items-center justify-content-center" onclick="sendChatMessage()" style="width: 38px; height: 38px;">
-                            <span class="material-symbols-outlined fs-6">send</span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -801,7 +607,7 @@
             <div class="d-flex px-3 py-2 align-items-center">
                 <span class="material-symbols-outlined text-success me-2 fs-5">check_circle</span>
                 <div class="toast-body p-0 fw-medium small" id="feedbackToastMessage">
-                    Đã gửi phản ánh thành công!
+                    Đã gửi thành công!
                 </div>
                 <button type="button" class="btn-close btn-close-white ms-auto me-1" data-bs-dismiss="toast"></button>
             </div>
@@ -816,25 +622,41 @@
 
     <script>
         var currentRating = 5;
-        var uploadedImages = [
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuDmpTys3KoN-gBpIZ2NHZpRJuTwcv-5IYk5GLa4_0uVM_hhieERDkGhxBxjxrEkep1JSAnjV_4SPCgWBVKnMb6fwivTCsPDIZrULPy7mL5ADYCvY6PIwelzBqc3MDBhcvjIWD8AIfWl4SwKLbsFrj0d1ysYfNX_B5EnxoRyDrgKDFgvdcyO-Ms8_F5cd-FImpqdFCuvDZb5yW0IJIY2nfBTxVlU5v0Ss4rTwrmL4ZtFkSiyLaAxWJKC'
-        ];
-
         var ratingLabels = {
-            1: 'Rất không hài lòng',
-            2: 'Không hài lòng',
-            3: 'Tạm ổn / Cần cải thiện',
-            4: 'Hài lòng',
-            5: 'Tuyệt vời'
+            1: '1 sao - Rất không hài lòng',
+            2: '2 sao - Không hài lòng',
+            3: '3 sao - Bình thường / Cần cải thiện',
+            4: '4 sao - Hài lòng',
+            5: '5 sao - Tuyệt vời'
         };
 
-        // Select Category Chip
-        function selectCategory(cat, element) {
-            document.querySelectorAll('.issue-chip').forEach(function(el) {
-                el.classList.remove('active');
-            });
-            element.classList.add('active');
-            document.getElementById('selectedCategory').value = cat;
+        // Chuyển đổi issue_type: COMPLAINT vs RATING
+        function setIssueType(type) {
+            document.getElementById('selectedIssueType').value = type;
+            var btnC = document.getElementById('btnTypeComplaint');
+            var btnR = document.getElementById('btnTypeRating');
+            var starBox = document.getElementById('starRatingContainer');
+            var formTitle = document.getElementById('formTitleText');
+            var submitText = document.getElementById('submitBtnText');
+            var contentInput = document.getElementById('contentInput');
+
+            if (type === 'RATING') {
+                btnR.classList.add('active');
+                btnC.classList.remove('active');
+                starBox.style.display = 'block';
+                formTitle.innerText = 'Gửi đánh giá dịch vụ';
+                submitText.innerText = 'Gửi đánh giá';
+                contentInput.placeholder = 'Chia sẻ cảm nhận của bạn về hương vị đồ uống, thời gian giao hàng...';
+                setRating(5);
+            } else {
+                btnC.classList.add('active');
+                btnR.classList.remove('active');
+                starBox.style.display = 'none';
+                formTitle.innerText = 'Gửi khiếu nại sự cố';
+                submitText.innerText = 'Gửi khiếu nại';
+                contentInput.placeholder = 'Mô tả cụ thể sự cố bạn gặp phải với đơn hàng...';
+                document.getElementById('selectedRating').value = '';
+            }
         }
 
         // Star Rating Logic
@@ -842,17 +664,17 @@
             currentRating = val;
             document.getElementById('selectedRating').value = val;
             renderStars(val);
-            document.getElementById('ratingText').innerText = ratingLabels[val] || '';
+            document.getElementById('ratingText').innerText = ratingLabels[val] || (val + ' sao');
         }
 
         function previewRating(val) {
             renderStars(val);
-            document.getElementById('ratingText').innerText = ratingLabels[val] || '';
+            document.getElementById('ratingText').innerText = ratingLabels[val] || (val + ' sao');
         }
 
         function resetRatingPreview() {
             renderStars(currentRating);
-            document.getElementById('ratingText').innerText = ratingLabels[currentRating] || '';
+            document.getElementById('ratingText').innerText = ratingLabels[currentRating] || (currentRating + ' sao');
         }
 
         function renderStars(val) {
@@ -865,82 +687,6 @@
                     btn.classList.remove('filled');
                 }
             });
-        }
-
-        // Image Gallery Logic
-        function addSamplePhoto() {
-            if (uploadedImages.length >= 3) {
-                showToast('Bạn chỉ có thể đính kèm tối đa 3 ảnh chụp!');
-                return;
-            }
-            var samplePhotos = [
-                'https://lh3.googleusercontent.com/aida-public/AB6AXuDJHroFW59KvZSMljfx2ZVFphPRqlYmSzipJaP9GwUbKsgpGD4CAY1CpIvajYcXOPnsJ0JXWaSYckUhxaJR2g_m-c-l_VBU9B-kmX_xt3D13xXHT-Zf1XHX0qCYZ06yXDUbZfjTkkHHF-k2dd2cr4mIMz3x0vh7dWLxtOGBYkRpBqf0xWxTEOKj-vA0aFWtYVXQNvF3sHGBvMLNwUVWoR93SI0fXYB_QAeQlK3XWn5ECI7NcirOZqJG',
-                'https://lh3.googleusercontent.com/aida-public/AB6AXuBl58P6csTTx1lP0t2GVZTE1GO07mPOd5Q5J8X-oT4qdcxC8KQAnpHzwNVw_11SN-SErSOhnz_KRsUbktcC6PeIrnztSnWvXqN5sYeKVFTh06N0TstTbEUUmPxYAp4jYR6_PI3_0tRz8di4bydxIugVxkiEryUxI_eXLIyt7FwqWBINmWfJoOR2H5WLfQ3jEb4GzkmsMRsTYmykYbk-OhmDBYMLvEvuDGuuLfqT4rYDsamMQM31Ef18'
-            ];
-            var nextPhoto = samplePhotos[uploadedImages.length % samplePhotos.length];
-            uploadedImages.push(nextPhoto);
-            updateImagesUI();
-            showToast('Đã đính kèm ảnh minh họa sự cố đơn hàng.');
-        }
-
-        function removeImage(index) {
-            uploadedImages.splice(index, 1);
-            updateImagesUI();
-        }
-
-        function updateImagesUI() {
-            document.getElementById('selectedImages').value = uploadedImages.join(';');
-            var gallery = document.getElementById('imageGallery');
-            var html = '';
-            uploadedImages.forEach(function(imgUrl, idx) {
-                html += '<div class="upload-thumb">' +
-                            '<img src="' + imgUrl + '" alt="Upload ' + (idx + 1) + '">' +
-                            '<button type="button" class="upload-thumb-remove" onclick="removeImage(' + idx + ')">✕</button>' +
-                        '</div>';
-            });
-            if (uploadedImages.length < 3) {
-                html += '<button type="button" class="btn-add-photo" id="btnAddPhoto" onclick="addSamplePhoto()">' +
-                            '<span class="material-symbols-outlined" style="font-size: 1.35rem;">add_a_photo</span>' +
-                            '<span>Thêm ảnh</span>' +
-                        '</button>';
-            }
-            gallery.innerHTML = html;
-        }
-
-        // Copy Voucher Code
-        function copyVoucher(code) {
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(code);
-            }
-            showToast('Đã sao chép mã voucher ' + code + ' vào bộ nhớ tạm!');
-        }
-
-        // Open chat for specific ticket
-        function openChatForTicket(ticketCode, agentName) {
-            var chatModal = new bootstrap.Modal(document.getElementById('liveChatModal'));
-            document.getElementById('liveChatModalLabel').innerText = 'Hỗ trợ phiếu ' + ticketCode;
-            document.getElementById('chatAgentStatus').innerText = 'Đang kết nối tới ' + (agentName || 'Chuyên viên CSKH');
-            var windowEl = document.getElementById('chatDialogWindow');
-            windowEl.innerHTML += '<div class="chat-bubble agent">Em chào quý khách, em là ' + (agentName || 'Chuyên viên CSKH') + ' phụ trách phiếu <strong>' + ticketCode + '</strong>. Em có thể giải đáp thêm thông tin gì cho mình ạ?</div>';
-            windowEl.scrollTop = windowEl.scrollHeight;
-            chatModal.show();
-        }
-
-        // Live chat send
-        function sendChatMessage() {
-            var input = document.getElementById('chatMessageInput');
-            var text = input.value.trim();
-            if (!text) return;
-
-            var windowEl = document.getElementById('chatDialogWindow');
-            windowEl.innerHTML += '<div class="chat-bubble user">' + text + '</div>';
-            input.value = '';
-            windowEl.scrollTop = windowEl.scrollHeight;
-
-            setTimeout(function() {
-                windowEl.innerHTML += '<div class="chat-bubble agent">Dạ em đã ghi nhận thông tin từ quý khách và đang trực tiếp xử lý với bộ phận cửa hàng ạ!</div>';
-                windowEl.scrollTop = windowEl.scrollHeight;
-            }, 800);
         }
 
         // Toast Trigger
@@ -956,14 +702,15 @@
             e.preventDefault();
             var content = document.getElementById('contentInput').value.trim();
             if (!content) {
-                showToast('Vui lòng nhập nội dung góp ý hoặc phản ánh của bạn!');
+                showToast('Vui lòng nhập nội dung chi tiết!');
                 return;
             }
 
             var submitBtn = document.getElementById('submitBtn');
             var submitText = document.getElementById('submitBtnText');
+            var originalText = submitText.innerText;
             submitBtn.disabled = true;
-            submitText.innerText = 'Đang gửi phản ánh...';
+            submitText.innerText = 'Đang gửi...';
 
             var formData = new FormData(this);
             formData.append('ajax', '1');
@@ -981,63 +728,57 @@
             .then(function(res) { return res.json(); })
             .then(function(data) {
                 submitBtn.disabled = false;
-                submitText.innerText = 'Gửi phản ánh tới bộ phận Chăm sóc khách hàng';
+                submitText.innerText = originalText;
 
                 if (data.success) {
-                    showToast('Đã gửi phản ánh thành công! Chuyên viên CSKH Aura sẽ phản hồi trong 15 phút.');
+                    showToast(data.message || 'Đã gửi thành công!');
                     document.getElementById('contentInput').value = '';
 
-                    // Add new ticket card to the top of list
-                    var orderCode = document.getElementById('orderCodeSelect').value;
-                    var catSelect = document.getElementById('selectedCategory').value;
-                    var catTitles = {
-                        'wrong_size': 'Sai kích thước hoặc tùy chọn ly',
-                        'quality': 'Chất lượng hương vị chưa đạt chuẩn',
-                        'delivery': 'Giao hàng chậm / Khâu vận chuyển',
-                        'attitude': 'Thái độ phục vụ của nhân viên',
-                        'packaging': 'Thiếu ống hút và khăn giấy phụ kiện',
-                        'other': 'Ý kiến đóng góp dịch vụ'
-                    };
-                    var newTitle = catTitles[catSelect] || 'Ý kiến phản ánh dịch vụ';
-                    var newTicketHtml = 
-                        '<div class="ticket-item processing">' +
+                    var orderCode = data.orderCode || document.getElementById('orderCodeSelect').value;
+                    var issueType = data.issueType || document.getElementById('selectedIssueType').value;
+                    var ticketCode = data.ticketCode || '#CR-NEW';
+                    var submittedContent = data.content || content;
+
+                    var badgeHtml = issueType === 'RATING' 
+                        ? '<span class="badge-issue-rating">ĐÁNH GIÁ (RATING)</span>' 
+                        : '<span class="badge-issue-complaint">KHIẾU NẠI (COMPLAINT)</span>';
+
+                    var starsHtml = '';
+                    if (issueType === 'RATING' && data.rating > 0) {
+                        starsHtml = '<div class="stars-mini mb-2">';
+                        for (var i = 1; i <= data.rating; i++) {
+                            starsHtml += '<span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: \\\'FILL\\\' 1;">star</span>';
+                        }
+                        starsHtml += '<span class="ms-1 small text-muted fw-semibold" style="font-size: 0.725rem;">(' + data.rating + '/5 sao)</span></div>';
+                    }
+
+                    var newCardHtml = 
+                        '<div class="ticket-item">' +
                             '<div class="d-flex align-items-start justify-content-between gap-2 mb-2">' +
                                 '<div>' +
-                                    '<div class="d-flex align-items-center gap-2">' +
-                                        '<span class="font-monospace fw-bold small text-dark">' + data.ticketCode + '</span>' +
-                                        '<span class="text-muted small">(' + orderCode + ')</span>' +
+                                    '<div class="d-flex align-items-center gap-2 flex-wrap">' +
+                                        badgeHtml +
+                                        '<span class="font-monospace fw-bold small text-dark">' + ticketCode + '</span>' +
+                                        (orderCode ? '<span class="text-muted small">#' + orderCode + '</span>' : '') +
                                     '</div>' +
-                                    '<h4 class="fw-bold text-dark small mb-0 mt-1">' + newTitle + '</h4>' +
                                 '</div>' +
-                                '<span class="ticket-badge-processing">Đã tiếp nhận</span>' +
-                            '</div>' +
-                            '<div class="my-2">' +
-                                '<div class="d-flex justify-content-between align-items-center small text-muted mb-1" style="font-size: 0.685rem;">' +
-                                    '<span>Tiến độ xử lý</span>' +
-                                    '<span class="fw-bold">25%</span>' +
-                                '</div>' +
-                                '<div class="progress-bar-custom">' +
-                                    '<div class="h-100 rounded-pill bg-warning" style="width: 25%;"></div>' +
+                                '<div>' +
+                                    '<span class="status-badge-pending">' +
+                                        '<span class="material-symbols-outlined" style="font-size: 13px;">schedule</span>' +
+                                        'Đang chờ xử lý' +
+                                    '</span>' +
                                 '</div>' +
                             '</div>' +
-                            '<div class="agent-note-box">' +
-                                '<div class="d-flex align-items-center gap-1 fw-bold text-warning-emphasis small mb-1">' +
-                                    '<span class="material-symbols-outlined" style="font-size: 15px;">support_agent</span>' +
-                                    'Thanh Trúc (Trưởng ca CSKH)' +
-                                '</div>' +
-                                '<p class="mb-0" style="line-height: 1.45;">Bộ phận CSKH Aura đã tiếp nhận và đang liên hệ cửa hàng chi nhánh để giải quyết ngay cho bạn.</p>' +
-                            '</div>' +
-                            '<div class="d-flex align-items-center justify-content-between pt-2 border-top text-muted" style="font-size: 0.72rem;">' +
-                                '<span>Tạo lúc: Vừa xong - Hôm nay</span>' +
-                                '<button type="button" class="btn btn-sm btn-link text-danger p-0 fw-bold text-decoration-none d-flex align-items-center gap-1" style="font-size: 0.72rem;" onclick="openChatForTicket(\'' + data.ticketCode + '\', \'Thanh Trúc (Trưởng ca CSKH)\')">' +
-                                    '<span class="material-symbols-outlined" style="font-size: 14px;">chat</span>' +
-                                    'Chat với nhân viên phụ trách' +
-                                '</button>' +
+                            starsHtml +
+                            '<p class="text-secondary small mb-2" style="font-size: 0.825rem; line-height: 1.5; white-space: pre-line;">' + submittedContent + '</p>' +
+                            '<div class="d-flex align-items-center justify-content-between pt-2 mt-2 border-top text-muted" style="font-size: 0.72rem;">' +
+                                '<span>Thời gian: Vừa xong - Hôm nay</span>' +
+                                '<span class="text-secondary">Bạn</span>' +
                             '</div>' +
                         '</div>';
 
                     var container = document.getElementById('ticketsListContainer');
-                    container.insertAdjacentHTML('afterbegin', newTicketHtml);
+                    container.insertAdjacentHTML('afterbegin', newCardHtml);
                     var countEl = document.getElementById('ticketCount');
                     if (countEl) countEl.innerText = parseInt(countEl.innerText || 0) + 1;
                 } else {
@@ -1046,8 +787,8 @@
             })
             .catch(function(err) {
                 submitBtn.disabled = false;
-                submitText.innerText = 'Gửi phản ánh tới bộ phận Chăm sóc khách hàng';
-                showToast('Đã gửi phản ánh thành công! Chuyên viên CSKH Aura sẽ phản hồi trong 15 phút.');
+                submitText.innerText = originalText;
+                showToast('Đã gửi thành công!');
             });
         });
     </script>

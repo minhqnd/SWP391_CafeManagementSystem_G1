@@ -10,11 +10,16 @@ import java.sql.SQLException;
  */
 public class DBContext {
 
-    private static final String HOST = "localhost";
-    private static final String PORT = "3306";
-    private static final String DB_NAME = "aura_cafe_erp";
-    private static final String USER = "root";
-    private static final String PASSWORD = "1234";
+    private static String getEnv(String key, String defaultValue) {
+        String val = System.getenv(key);
+        return (val != null && !val.trim().isEmpty()) ? val.trim() : defaultValue;
+    }
+
+    private static final String HOST = getEnv("DB_HOST", "localhost");
+    private static final String PORT = getEnv("DB_PORT", "3306");
+    private static final String DB_NAME = getEnv("DB_NAME", "aura_cafe_erp");
+    private static final String USER = getEnv("DB_USER", "root");
+    private static final String PASSWORD = getEnv("DB_PASSWORD", "1234");
 
     private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DB_NAME
             + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";

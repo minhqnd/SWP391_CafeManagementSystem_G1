@@ -354,11 +354,28 @@
             <% } %>
 
             <%
-                String activeTab = (String) request.getAttribute("activeTab");
+                String activeTab = request.getParameter("tab");
+                if (activeTab == null) {
+                    activeTab = (String) request.getAttribute("activeTab");
+                }
                 if (activeTab == null) activeTab = "login";
+                
+                boolean isOtpTab = "otp".equals(activeTab);
+                boolean isResetTab = "reset_password".equals(activeTab);
+                
+                /* Tính thời gian đếm ngược gửi lại OTP */
+                Long lastOtpSentTime = (Long) session.getAttribute("lastOtpSentTime");
+                long otpRemainingTime = 0;
+                if (lastOtpSentTime != null) {
+                    long elapsed = System.currentTimeMillis() - lastOtpSentTime;
+                    if (elapsed < 60000) {
+                        otpRemainingTime = (60000 - elapsed) / 1000;
+                    }
+                }
             %>
 
             <!-- Interactive Tab Selector -->
+            <% if (!isOtpTab && !isResetTab) { %>
             <ul class="nav nav-pills-custom nav-justified" id="authTab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link <%= "login".equals(activeTab) ? "active" : "" %>" id="login-tab" data-bs-toggle="pill" data-bs-target="#login-pane" type="button" role="tab">Đăng nhập</button>
@@ -370,6 +387,7 @@
                     <button class="nav-link <%= "forgot".equals(activeTab) ? "active" : "" %>" id="forgot-tab" data-bs-toggle="pill" data-bs-target="#forgot-pane" type="button" role="tab">Quên mật khẩu</button>
                 </li>
             </ul>
+            <% } %>
             
             <div class="tab-content" id="authTabContent">
                 <!-- TAB 1: LOGIN FORM -->
@@ -381,12 +399,12 @@
                     
                     <form action="${pageContext.request.contextPath}/login" method="POST">
                         <div class="mb-3">
-                            <label class="form-label">Tên đăng nhập / Số điện thoại</label>
+                            <label class="form-label">Email đăng nhập</label>
                             <div class="input-group">
                                 <span class="input-group-text">
                                     <span class="material-symbols-outlined fs-5">account_circle</span>
                                 </span>
-                                <input type="text" class="form-control" name="username" placeholder="barista.nguyen hoặc 0908123456" required autocomplete="username">
+                                <input type="email" class="form-control" name="username" placeholder="Ví dụ: nguyen@example.com" required autocomplete="username">
                             </div>
                         </div>
                         
@@ -458,12 +476,12 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Tên đăng nhập</label>
+                            <label class="form-label">Email</label>
                             <div class="input-group">
                                 <span class="input-group-text">
                                     <span class="material-symbols-outlined fs-5">alternate_email</span>
                                 </span>
-                                <input type="text" class="form-control" name="username" placeholder="Ví dụ: barista.nguyen" required>
+                                <input type="email" class="form-control" name="email" placeholder="Ví dụ: nguyen@example.com" required>
                             </div>
                         </div>
                         
@@ -499,6 +517,87 @@
                         </div>
                     </form>
                 </div>
+                
+                <!-- TAB 4: OTP VERIFICATION -->
+                <div class="tab-pane fade <%= isOtpTab ? "show active" : "" %>" id="otp-pane" role="tabpanel" tabindex="0">
+                    <div class="mb-3">
+                        <h2 class="fs-4 fw-semibold mb-1">Xác thực Email</h2>
+                        <p class="text-secondary-custom fs-6 mb-0" style="font-size: 0.75rem !important;">Nhập mã OTP đã được gửi đến email của bạn</p>
+                    </div>
+                    
+                    <form action="${pageContext.request.contextPath}/verify-otp" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Mã xác thực (OTP)</label>
+                            <input type="text" class="form-control text-center fw-bold fs-4" name="otp" placeholder="------" maxlength="6" autocomplete="off" required>
+                        </div>
+                        
+                        <div class="p-3 mb-4 rounded d-flex align-items-start gap-2" style="background-color: var(--surface-container-low); font-size: 0.75rem; color: var(--secondary);">
+                            <span class="material-symbols-outlined text-primary-custom fs-5">info</span>
+                            <span>Vui lòng kiểm tra hòm thư đến (hoặc thư rác) để lấy mã xác thực gồm 6 chữ số.</span>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary-custom w-100 mb-2">
+                            <span>Xác nhận OTP</span>
+                            <span class="material-symbols-outlined">check_circle</span>
+                        </button>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <a href="${pageContext.request.contextPath}/login.jsp?tab=forgot" class="text-secondary-custom text-decoration-none d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                <span class="material-symbols-outlined fs-6">arrow_back</span>
+                                <span>Quay lại</span>
+                            </a>
+                            <div>
+                                <span id="login-resend-timer" style="font-size: 0.75rem; color: var(--secondary); <%= otpRemainingTime > 0 ? "" : "display: none;" %>">
+                                    Gửi lại sau <strong id="login-countdown-sec"><%= otpRemainingTime %></strong>s
+                                </span>
+                                <a href="${pageContext.request.contextPath}/resend-otp" id="login-resend-btn" class="text-decoration-none fw-semibold text-primary-custom" style="font-size: 0.75rem; <%= otpRemainingTime > 0 ? "display: none;" : "" %>">
+                                    Gửi lại mã OTP
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- TAB 5: RESET PASSWORD FORM -->
+                <div class="tab-pane fade <%= isResetTab ? "show active" : "" %>" id="reset-pane" role="tabpanel" tabindex="0">
+                    <div class="mb-3">
+                        <h2 class="fs-4 fw-semibold mb-1">Thiết lập mật khẩu mới</h2>
+                        <p class="text-secondary-custom fs-6 mb-0" style="font-size: 0.75rem !important;">Vui lòng tạo mật khẩu mới cho tài khoản của bạn</p>
+                    </div>
+                    
+                    <form action="${pageContext.request.contextPath}/reset-password" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Mật khẩu mới</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <span class="material-symbols-outlined fs-5">lock</span>
+                                </span>
+                                <input type="password" id="reset-pwd" class="form-control border-end-0" name="password" placeholder="Tối thiểu 6 ký tự" minlength="6" required>
+                                <button class="input-group-text bg-surface-container-low border-start-0" type="button" onclick="togglePasswordVisibility('reset-pwd', 'reset-pwd-icon')">
+                                    <span class="material-symbols-outlined fs-5" id="reset-pwd-icon">visibility</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Xác nhận mật khẩu</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <span class="material-symbols-outlined fs-5">lock_reset</span>
+                                </span>
+                                <input type="password" id="reset-confirm-pwd" class="form-control border-end-0" name="confirm_password" placeholder="Nhập lại mật khẩu mới" minlength="6" required>
+                                <button class="input-group-text bg-surface-container-low border-start-0" type="button" onclick="togglePasswordVisibility('reset-confirm-pwd', 'reset-confirm-pwd-icon')">
+                                    <span class="material-symbols-outlined fs-5" id="reset-confirm-pwd-icon">visibility</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary-custom w-100 mb-2">
+                            <span>Cập nhật mật khẩu</span>
+                            <span class="material-symbols-outlined">save</span>
+                        </button>
+                    </form>
+                </div>
 
                 <!-- TAB 3: FORGOT PASSWORD FORM -->
                 <div class="tab-pane fade <%= "forgot".equals(activeTab) ? "show active" : "" %>" id="forgot-pane" role="tabpanel" tabindex="0">
@@ -509,12 +608,12 @@
                     
                     <form onsubmit="event.preventDefault(); alert('Tính năng đang phát triển');">
                         <div class="mb-3">
-                            <label class="form-label">Tên đăng nhập / Số điện thoại</label>
+                            <label class="form-label">Email</label>
                             <div class="input-group">
                                 <span class="input-group-text">
                                     <span class="material-symbols-outlined fs-5">mail</span>
                                 </span>
-                                <input type="text" class="form-control" placeholder="Nhập tài khoản của bạn" required>
+                                <input type="email" class="form-control" placeholder="Nhập email của bạn" required>
                             </div>
                         </div>
                         
@@ -567,6 +666,41 @@
             icon.textContent = 'visibility';
         }
     }
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        const resetPassword = document.getElementById("reset-pwd");
+        const resetConfirm = document.getElementById("reset-confirm-pwd");
+        if (resetPassword && resetConfirm) {
+            function validateResetPassword() {
+                if (resetPassword.value != resetConfirm.value) {
+                    resetConfirm.setCustomValidity("Mật khẩu xác nhận không khớp");
+                } else {
+                    resetConfirm.setCustomValidity('');
+                }
+            }
+            resetPassword.addEventListener("change", validateResetPassword);
+            resetConfirm.addEventListener("keyup", validateResetPassword);
+        }
+        
+        // Xử lý bộ đếm ngược gửi lại OTP
+        let loginRemaining = <%= otpRemainingTime %>;
+        if (loginRemaining > 0) {
+            const countdownSpan = document.getElementById("login-countdown-sec");
+            const timerWrapper = document.getElementById("login-resend-timer");
+            const resendBtn = document.getElementById("login-resend-btn");
+            
+            const interval = setInterval(() => {
+                loginRemaining--;
+                if (loginRemaining <= 0) {
+                    clearInterval(interval);
+                    if (timerWrapper) timerWrapper.style.display = "none";
+                    if (resendBtn) resendBtn.style.display = "inline";
+                } else {
+                    if (countdownSpan) countdownSpan.innerText = loginRemaining;
+                }
+            }, 1000);
+        }
+    });
 </script>
 </body>
 </html>

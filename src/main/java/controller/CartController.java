@@ -24,8 +24,9 @@ import java.util.List;
  * GET  /cart      : Xem giỏ hàng
  * POST /cart      : Tăng/giảm số lượng, chọn món, xoá món, dùng điểm Aura (theo mốc điểm)
  * POST /cart/add  : Thêm món từ trang Menu / Chi tiết món / Trang chủ (trả về JSON)
+ * GET/POST /cart/api : Như /cart nhưng trả về JSON (popup giỏ hàng)
  */
-@WebServlet(name = "CartController", urlPatterns = {"/cart", "/cart/add"})
+@WebServlet(name = "CartController", urlPatterns = {"/cart", "/cart/add", "/cart/api"})
 public class CartController extends HttpServlet {
 
     private final CartService cartService = new CartService();
@@ -36,6 +37,11 @@ public class CartController extends HttpServlet {
 
         HttpSession session = request.getSession();
         Cart cart = getCart(session);
+
+        if ("/cart/api".equals(request.getServletPath()) || "json".equals(request.getParameter("action"))) {
+            writeCartJsonResponse(response, cart);
+            return;
+        }
 
         // Cập nhật giá & trạng thái món, cấu hình freeship / mốc điểm và số điểm hiện có theo Database
         if (!cartService.refreshCart(cart, getCustomerId(session))) {
@@ -70,21 +76,79 @@ public class CartController extends HttpServlet {
         if ("increase".equals(action)) {
             cart.changeQuantity(lineId, 1);
         } else if ("decrease".equals(action)) {
-            cart.changeQuantity(lineId, -1);
+            CartItem item = cart.findItem(lineId);
+            if (item != null && item.getQuantity() <= 1) {
+                cart.removeItem(lineId);
+            } else {
+                cart.changeQuantity(lineId, -1);
+            }
         } else if ("toggle".equals(action)) {
             cart.toggleSelected(lineId);
         } else if ("selectAll".equals(action)) {
             cart.setAllSelected(!cart.isAllSelected());
         } else if ("remove".equals(action)) {
             cart.removeItem(lineId);
+        } else if ("clear".equals(action)) {
+            cart.getItems().clear();
         } else if ("removeSelected".equals(action)) {
             cart.removeSelectedItems();
         } else if ("usePoints".equals(action)) {
             usePoints(session, cart, parseInt(request.getParameter("points"), -1));
         }
 
+        if ("/cart/api".equals(request.getServletPath()) || "json".equals(request.getParameter("format"))) {
+            writeCartJsonResponse(response, cart);
+            return;
+        }
+
         // PRG: quay lại trang giỏ hàng để tránh gửi lại form khi F5
         response.sendRedirect(request.getContextPath() + "/cart");
+    }
+
+    private void writeCartJsonResponse(HttpServletResponse response, Cart cart) throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        StringBuilder json = new StringBuilder();
+        json.append("{");
+        json.append("\"success\":true,");
+        json.append("\"totalQuantity\":").append(cart.getTotalQuantity()).append(",");
+        double totalAmount = 0;
+        for (CartItem it : cart.getItems()) {
+            totalAmount += it.getSubtotal();
+        }
+        json.append("\"totalAmount\":").append((long) totalAmount).append(",");
+        json.append("\"items\":[");
+        List<CartItem> items = cart.getItems();
+        for (int i = 0; i < items.size(); i++) {
+            CartItem it = items.get(i);
+            if (i > 0) json.append(",");
+            json.append("{");
+            json.append("\"lineId\":").append(it.getLineId()).append(",");
+            json.append("\"productId\":").append(it.getProductId()).append(",");
+            json.append("\"name\":").append(escapeJson(it.getProductName())).append(",");
+            json.append("\"imageUrl\":").append(escapeJson(it.getImageUrl() != null ? it.getImageUrl() : "")).append(",");
+            json.append("\"size\":").append(escapeJson(it.getSize() != null ? it.getSize() : "")).append(",");
+            json.append("\"sizeLabel\":").append(escapeJson(it.getSizeLabel())).append(",");
+            json.append("\"unitPrice\":").append((long) it.getUnitPrice()).append(",");
+            json.append("\"quantity\":").append(it.getQuantity()).append(",");
+            json.append("\"subtotal\":").append((long) it.getSubtotal()).append(",");
+            json.append("\"toppings\":[");
+            List<String> tops = it.getToppings();
+            for (int j = 0; j < tops.size(); j++) {
+                if (j > 0) json.append(",");
+                json.append(escapeJson(tops.get(j)));
+            }
+            json.append("]");
+            json.append("}");
+        }
+        json.append("]");
+        json.append("}");
+        response.getWriter().write(json.toString());
+    }
+
+    private String escapeJson(String s) {
+        if (s == null) return "\"\"";
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
     }
 
     private void handleAddToCart(HttpServletRequest request, HttpServletResponse response)

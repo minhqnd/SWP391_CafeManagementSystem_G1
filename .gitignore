@@ -33,3 +33,4 @@ target/
 Thumbs.db
 *.log
 /cafe_system-main
+nb-configuration.xml

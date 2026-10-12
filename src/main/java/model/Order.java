@@ -1,6 +1,8 @@
 package model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -27,6 +29,8 @@ public class Order implements Serializable {
     private String tableNumber;
     private String orderNote;
     private LocalDateTime createdAt;
+
+    private List<OrderDetail> items = new ArrayList<>();
 
     public Order() {
     }
@@ -102,6 +106,19 @@ public class Order implements Serializable {
     public double getFinalAmount() { return finalAmount; }
     public void setFinalAmount(double finalAmount) { this.finalAmount = finalAmount; }
 
+    // BigDecimal compatibility helpers
+    public BigDecimal getTotalAmountBigDecimal() { return BigDecimal.valueOf(totalAmount); }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount != null ? totalAmount.doubleValue() : 0.0; }
+
+    public BigDecimal getDiscountAmountBigDecimal() { return BigDecimal.valueOf(discountAmount); }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount != null ? discountAmount.doubleValue() : 0.0; }
+
+    public BigDecimal getDeliveryFeeBigDecimal() { return BigDecimal.valueOf(deliveryFee); }
+    public void setDeliveryFee(BigDecimal deliveryFee) { this.deliveryFee = deliveryFee != null ? deliveryFee.doubleValue() : 0.0; }
+
+    public BigDecimal getFinalAmountBigDecimal() { return BigDecimal.valueOf(finalAmount); }
+    public void setFinalAmount(BigDecimal finalAmount) { this.finalAmount = finalAmount != null ? finalAmount.doubleValue() : 0.0; }
+
     public String getRecipientName() { return recipientName; }
     public void setRecipientName(String recipientName) { this.recipientName = recipientName; }
 
@@ -123,13 +140,11 @@ public class Order implements Serializable {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    private List<OrderDetail> items = new ArrayList<>();
-
     public List<OrderDetail> getItems() { return items; }
     public void setItems(List<OrderDetail> items) { this.items = items != null ? items : new ArrayList<>(); }
 
     public int getItemCount() {
-        return items.stream().mapToInt(OrderDetail::getQuantity).sum();
+        return items != null ? items.stream().mapToInt(OrderDetail::getQuantity).sum() : 0;
     }
 
     // ===== Thông tin cho khách xem (màn Thanh toán, Đơn hàng của tôi) =====
@@ -154,6 +169,31 @@ public class Order implements Serializable {
     public boolean isPending() { return "PENDING".equals(status); }
     public boolean isCompleted() { return "COMPLETED".equals(status); }
     public boolean isCancelled() { return "CANCELLED".equals(status); }
+    public boolean isPaid() {
+        return "CONFIRMED".equals(status) || "PREPARING".equals(status)
+                || "READY".equals(status) || "DELIVERING".equals(status) || "COMPLETED".equals(status);
+    }
+
+    public String getFormattedTotalAmount() {
+        return new DecimalFormat("###,###,###").format(totalAmount).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedDeliveryFee() {
+        return new DecimalFormat("###,###,###").format(deliveryFee).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedDiscountAmount() {
+        return new DecimalFormat("###,###,###").format(discountAmount).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedVatAmount() {
+        double vat = (totalAmount - discountAmount) * 0.08;
+        return new DecimalFormat("###,###,###").format(vat).replace(",", ".") + " đ";
+    }
+
+    public String getFormattedFinalAmount() {
+        return new DecimalFormat("###,###,###").format(finalAmount).replace(",", ".") + " đ";
+    }
 
     /** Đã thanh toán và đang được pha chế / giao */
     public boolean isInProgress() {

@@ -19,14 +19,14 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * PaymentController - Bước 3: Thanh toán chuyển khoản VietQR (phương thức duy nhất)
- * GET  /payment?orderId= : Mã QR + thông tin chuyển khoản + hóa đơn điện tử của đơn đang chờ thanh toán
- * POST /payment          : Khách xác nhận đã chuyển khoản -> ghi nhận thanh toán, cộng điểm, sang "Đơn hàng của tôi"
+ * PaymentController - Bước 3: Thanh toán chuyển khoản VietQR
+ * GET  /payment?orderId= : Mã QR + thông tin chuyển khoản của đơn đang chờ thanh toán
+ * POST /payment          : Khách xác nhận đã chuyển khoản -> ghi nhận thanh toán, cộng điểm, chuyển sang Hóa đơn điện tử (Bill)
  */
 @WebServlet(name = "PaymentController", urlPatterns = {"/payment"})
 public class PaymentController extends HttpServlet {
 
-    // Tài khoản nhận tiền của quán (thay bằng tài khoản thật khi triển khai)
+    // Tài khoản nhận tiền của quán (chuẩn VietQR)
     public static final String BANK_ID = "VCB";   // mã ngân hàng theo chuẩn VietQR
     public static final String BANK_NAME = "Vietcombank";
     public static final String ACCOUNT_NO = "9888823456";
@@ -55,9 +55,8 @@ public class PaymentController extends HttpServlet {
             return;
         }
         if (!order.isPending()) {
-            session.setAttribute("ordersMessage", "Đơn #" + order.getOrderCode() + " đang ở trạng thái \""
-                    + order.getStatusLabel() + "\", không cần thanh toán nữa.");
-            response.sendRedirect(request.getContextPath() + "/orders");
+            // Đơn đã thanh toán -> chuyển sang màn hình Hóa đơn điện tử
+            response.sendRedirect(request.getContextPath() + "/bill?orderId=" + order.getId());
             return;
         }
 
@@ -95,7 +94,7 @@ public class PaymentController extends HttpServlet {
         if (earnedPoints == PaymentDAO.FAILED) {
             // Đơn có thể vừa được thanh toán / hủy ở tab khác
             if (!order.isPending()) {
-                response.sendRedirect(request.getContextPath() + "/orders");
+                response.sendRedirect(request.getContextPath() + "/bill?orderId=" + orderId);
             } else {
                 session.setAttribute("paymentError", "Chưa ghi nhận được thanh toán, vui lòng thử lại sau ít phút.");
                 response.sendRedirect(request.getContextPath() + "/payment?orderId=" + orderId);
@@ -107,7 +106,8 @@ public class PaymentController extends HttpServlet {
         user.setTotalPoints(userDAO.getTotalPoints(user.getId()));
         session.setAttribute("ordersMessage", "Thanh toán thành công đơn #" + order.getOrderCode()
                 + (earnedPoints > 0 ? ". Bạn được cộng " + earnedPoints + " điểm Aura." : "."));
-        response.sendRedirect(request.getContextPath() + "/orders");
+        // Chuyển hướng sang màn hình Hóa đơn điện tử (Bill Screen)
+        response.sendRedirect(request.getContextPath() + "/bill?orderId=" + orderId);
     }
 
     /**

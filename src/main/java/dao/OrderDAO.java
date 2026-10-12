@@ -1,6 +1,7 @@
 package dao;
 
 import context.DBContext;
+import model.Cart;
 import model.CartItem;
 import model.Order;
 
@@ -9,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -65,14 +67,13 @@ public class OrderDAO extends BaseDAO {
                     order.setOrderCode(rs.getString("order_code"));
                     order.setCustomerId(rs.getObject("customer_id", Integer.class));
                     order.setCashierId(rs.getObject("cashier_id", Integer.class));
-                    order.setVoucherId(rs.getObject("voucher_id", Integer.class));
                     order.setShipperId(rs.getObject("shipper_id", Integer.class));
                     order.setOrderType(rs.getString("order_type"));
                     order.setStatus(rs.getString("status"));
-                    order.setTotalAmount(rs.getDouble("total_amount"));
-                    order.setDiscountAmount(rs.getDouble("discount_amount"));
-                    order.setDeliveryFee(rs.getDouble("delivery_fee"));
-                    order.setFinalAmount(rs.getDouble("final_amount"));
+                    order.setTotalAmount(rs.getBigDecimal("total_amount"));
+                    order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
+                    order.setDeliveryFee(rs.getBigDecimal("delivery_fee"));
+                    order.setFinalAmount(rs.getBigDecimal("final_amount"));
                     order.setRecipientName(rs.getString("recipient_name"));
                     order.setRecipientPhone(rs.getString("recipient_phone"));
                     order.setDeliveryAddress(rs.getString("delivery_address"));
@@ -83,9 +84,9 @@ public class OrderDAO extends BaseDAO {
                 }
                 order.getItems().add(new OrderDetail(
                         rs.getInt("item_id"), id, rs.getInt("product_id"),
-                        rs.getString("product_name_at_time"), rs.getDouble("unit_price"),
+                        rs.getString("product_name_at_time"), rs.getBigDecimal("unit_price"),
                         rs.getString("customization"), rs.getInt("quantity"),
-                        rs.getDouble("subtotal"), rs.getInt("category_id"),
+                        rs.getBigDecimal("subtotal"), rs.getInt("category_id"),
                         rs.getString("category_name")));
             }
         }
@@ -93,55 +94,28 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Preserve the dashboard's global FIFO rule across all category filters.
-     * Lock the queue and compare status so concurrent clicks cannot skip a stage.
+     * Cập nhật trạng thái pha chế của Barista (CONFIRMED -> PREPARING -> READY).
+     * Cho phép Barista chủ động bắt đầu làm đơn bất kỳ mà không bị gò bó bởi thứ tự FIFO.
      */
     public boolean updateBaristaOrderStatus(int orderId, String targetStatus)
             throws SQLException, ClassNotFoundException {
-        String expectedStatus;
-        if ("PREPARING".equals(targetStatus)) {
-            expectedStatus = "CONFIRMED";
-        } else if ("READY".equals(targetStatus)) {
-            expectedStatus = "PREPARING";
-        } else {
-            throw new IllegalArgumentException("Unsupported barista status");
-        }
         if (orderId <= 0) {
             throw new IllegalArgumentException("Invalid order ID");
         }
-        String queueSql = "SELECT o.id, o.status FROM orders o WHERE " + BARISTA_TYPES
-                + " AND " + BARISTA_PAID
-                + " AND o.status IN ('CONFIRMED', 'PREPARING') "
-                + "AND EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id) "
-                + "ORDER BY o.created_at, o.id FOR UPDATE";
-        try (Connection conn = getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                try (PreparedStatement ps = conn.prepareStatement(queueSql);
-                     ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next() || rs.getInt("id") != orderId
-                            || !expectedStatus.equals(rs.getString("status"))) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                String updateSql = "UPDATE orders o SET status = ? WHERE o.id = ? AND o.status = ? "
-                        + "AND " + BARISTA_PAID;
-                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-                    ps.setString(1, targetStatus);
-                    ps.setInt(2, orderId);
-                    ps.setString(3, expectedStatus);
-                    if (ps.executeUpdate() != 1) {
-                        conn.rollback();
-                        return false;
-                    }
-                }
-                conn.commit();
-                return true;
-            } catch (SQLException | RuntimeException e) {
-                conn.rollback();
-                throw e;
-            }
+        String sql;
+        if ("PREPARING".equals(targetStatus)) {
+            sql = "UPDATE orders o SET status = 'PREPARING' WHERE o.id = ? AND o.status = 'CONFIRMED' "
+                    + "AND " + BARISTA_TYPES + " AND " + BARISTA_PAID;
+        } else if ("READY".equals(targetStatus)) {
+            sql = "UPDATE orders o SET status = 'READY' WHERE o.id = ? AND o.status IN ('CONFIRMED', 'PREPARING') "
+                    + "AND " + BARISTA_TYPES + " AND " + BARISTA_PAID;
+        } else {
+            throw new IllegalArgumentException("Unsupported barista status");
+        }
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            return ps.executeUpdate() > 0;
         }
     }
 
@@ -407,6 +381,61 @@ public class OrderDAO extends BaseDAO {
             "                                    WHERE p2.order_id = o.id AND p2.status = 'SUCCESS') ";
 
     /**
+     * Lấy 1 đơn kèm các món theo orderId (cho màn Bill, Payment)
+     */
+    public Order getOrderById(int orderId) {
+        String sql = CUSTOMER_ORDER_SELECT + "WHERE o.id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            Map<Integer, Order> orders = new LinkedHashMap<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
+                }
+            }
+            loadOrderItems(conn, orders);
+            return orders.get(orderId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Lấy danh sách OrderDetail của 1 đơn hàng
+     */
+    public List<OrderDetail> getOrderDetails(int orderId) {
+        Order order = getOrderById(orderId);
+        return order != null ? order.getItems() : new ArrayList<>();
+    }
+
+    /**
+     * Lấy các đơn hàng gần nhất
+     */
+    public List<Order> getRecentOrders(int limit) {
+        String sql = CUSTOMER_ORDER_SELECT + "ORDER BY o.created_at DESC, o.id DESC LIMIT ?";
+        List<Order> list = new ArrayList<>();
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
+                    list.add(order);
+                }
+            }
+            loadOrderItems(conn, orders);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
      * Lấy 1 đơn kèm các món, chỉ khi đơn thuộc về khách này (null nếu không có)
      */
     public Order getCustomerOrder(int orderId, int customerId) {
@@ -600,7 +629,6 @@ public class OrderDAO extends BaseDAO {
         order.setId(rs.getInt("id"));
         order.setOrderCode(rs.getString("order_code"));
         order.setCustomerId(rs.getObject("customer_id", Integer.class));
-        order.setVoucherId(rs.getObject("voucher_id", Integer.class));
         order.setOrderType(rs.getString("order_type"));
         order.setStatus(rs.getString("status"));
         order.setTotalAmount(rs.getDouble("total_amount"));
@@ -643,11 +671,11 @@ public class OrderDAO extends BaseDAO {
                     item.setId(rs.getInt("id"));
                     item.setOrderId(rs.getInt("order_id"));
                     item.setProductId(rs.getInt("product_id"));
-                    item.setProductNameAtTime(rs.getString("product_name_at_time"));
-                    item.setUnitPrice(rs.getDouble("unit_price"));
+                    item.setProductName(rs.getString("product_name_at_time"));
+                    item.setUnitPrice(rs.getBigDecimal("unit_price"));
                     item.setCustomization(rs.getString("customization"));
                     item.setQuantity(rs.getInt("quantity"));
-                    item.setSubtotal(rs.getDouble("subtotal"));
+                    item.setSubtotal(rs.getBigDecimal("subtotal"));
                     item.setImageUrl(rs.getString("image_url"));
                     orders.get(item.getOrderId()).getItems().add(item);
                 }
@@ -675,5 +703,391 @@ public class OrderDAO extends BaseDAO {
             return "null";
         }
         return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+
+    /**
+     * Định dạng chuỗi tuỳ chọn món tại quầy thành chuỗi JSON hợp lệ với cột customization (JSON) của MySQL.
+     */
+    private String formatCustomizationJson(String customStr) {
+        if (customStr == null || customStr.trim().isEmpty()) {
+            return null;
+        }
+        String trimmed = customStr.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            return trimmed;
+        }
+
+        String size = null;
+        List<String> toppings = new ArrayList<>();
+        List<String> extras = new ArrayList<>();
+
+        String[] parts = trimmed.split("\\s*\\|\\s*");
+        for (String part : parts) {
+            String p = part.trim();
+            if (p.toLowerCase().startsWith("size ")) {
+                size = p.substring(5).trim();
+            } else if (p.startsWith("+ ")) {
+                String toppingsPart = p.substring(2).trim();
+                for (String t : toppingsPart.split("\\s*,\\s*")) {
+                    if (!t.isEmpty()) {
+                        toppings.add(t);
+                    }
+                }
+            } else if (!p.isEmpty()) {
+                extras.add(p);
+            }
+        }
+
+        StringBuilder sb = new StringBuilder("{");
+        if (size != null) {
+            sb.append("\"size\":").append(toJsonString(size));
+        } else {
+            sb.append("\"size\":null");
+        }
+
+        sb.append(",\"toppings\":[");
+        for (int i = 0; i < toppings.size(); i++) {
+            if (i > 0) {
+                sb.append(",");
+            }
+            sb.append(toJsonString(toppings.get(i)));
+        }
+        sb.append("]");
+
+        if (!extras.isEmpty()) {
+            sb.append(",\"notes\":").append(toJsonString(String.join(", ", extras)));
+        }
+
+        sb.append("}");
+        return sb.toString();
+    }
+
+    /**
+     * Tạo và thanh toán đơn hàng tại quầy (Counter Order POS)
+     */
+    public int createCounterOrder(Order order, List<OrderDetail> items, String paymentMethod,
+                                  int pointsUsed, String paymentNote) {
+        String insertOrderSql = "INSERT INTO orders (order_code, customer_id, cashier_id, " +
+                "order_type, status, total_amount, discount_amount, delivery_fee, final_amount, " +
+                "recipient_name, recipient_phone, table_number, order_note, created_at) " +
+                "VALUES (?, ?, ?, ?, 'CONFIRMED', ?, ?, 0, ?, ?, ?, ?, ?, NOW())";
+
+        String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, " +
+                "unit_price, quantity, subtotal, customization) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        String insertPaymentSql = "INSERT INTO payments (order_id, payment_method, transaction_code, amount, status, paid_at, payment_note) " +
+                "VALUES (?, ?, ?, ?, 'SUCCESS', NOW(), ?)";
+
+        String redeemPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) " +
+                "VALUES (?, ?, ?, 'REDEEM')";
+        String deductUserPointsSql = "UPDATE users SET total_points = total_points - ? WHERE id = ?";
+
+        String earnPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) " +
+                "VALUES (?, ?, ?, 'EARN')";
+        String addUserPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";
+
+        Connection conn = null;
+        try {
+            conn = DBContext.getConnection();
+            conn.setAutoCommit(false);
+
+            int orderId = 0;
+            try (PreparedStatement ps = conn.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, order.getOrderCode());
+                ps.setObject(2, order.getCustomerId(), Types.INTEGER);
+                ps.setObject(3, order.getCashierId(), Types.INTEGER);
+                ps.setString(4, order.getOrderType());
+                ps.setDouble(5, order.getTotalAmount());
+                ps.setDouble(6, order.getDiscountAmount());
+                ps.setDouble(7, order.getFinalAmount());
+                ps.setString(8, order.getRecipientName());
+                ps.setString(9, order.getRecipientPhone());
+                ps.setString(10, order.getTableNumber());
+                ps.setString(11, order.getOrderNote());
+                ps.executeUpdate();
+
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        orderId = rs.getInt(1);
+                    }
+                }
+            }
+
+            if (orderId <= 0) {
+                conn.rollback();
+                return -1;
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(insertItemSql)) {
+                for (OrderDetail item : items) {
+                    ps.setInt(1, orderId);
+                    ps.setInt(2, item.getProductId());
+                    ps.setString(3, item.getProductName());
+                    ps.setBigDecimal(4, item.getUnitPrice());
+                    ps.setInt(5, item.getQuantity());
+                    ps.setBigDecimal(6, item.getSubtotal());
+                    String customJson = formatCustomizationJson(item.getCustomization());
+                    if (customJson != null) {
+                        ps.setString(7, customJson);
+                    } else {
+                        ps.setNull(7, Types.VARCHAR);
+                    }
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(insertPaymentSql)) {
+                ps.setInt(1, orderId);
+                ps.setString(2, paymentMethod != null ? paymentMethod : "CASH");
+                ps.setString(3, "POS-" + order.getOrderCode());
+                ps.setDouble(4, order.getFinalAmount());
+                ps.setString(5, paymentNote);
+                ps.executeUpdate();
+            }
+
+            if (order.getCustomerId() != null && order.getCustomerId() > 0) {
+                if (pointsUsed > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(redeemPointsSql)) {
+                        ps.setInt(1, order.getCustomerId());
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, -pointsUsed);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(deductUserPointsSql)) {
+                        ps.setInt(1, pointsUsed);
+                        ps.setInt(2, order.getCustomerId());
+                        ps.executeUpdate();
+                    }
+                }
+
+                int earnedPoints = (int) Math.floor((order.getTotalAmount() - order.getDiscountAmount()) / Cart.MONEY_PER_POINT);
+                if (earnedPoints > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(earnPointsSql)) {
+                        ps.setInt(1, order.getCustomerId());
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, earnedPoints);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(addUserPointsSql)) {
+                        ps.setInt(1, earnedPoints);
+                        ps.setInt(2, order.getCustomerId());
+                        ps.executeUpdate();
+                    }
+                }
+            }
+
+            conn.commit();
+            return orderId;
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
+            return -1;
+        } finally {
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
+
+    /**
+     * Danh sách các đơn quầy tạo trong ngày hôm nay
+     */
+    public List<Order> getCounterOrdersToday() {
+        String sql = CUSTOMER_ORDER_SELECT + 
+                     "WHERE DATE(o.created_at) = CURDATE() " +
+                     "  AND (o.cashier_id IS NOT NULL OR o.order_type IN ('DINE_IN', 'TAKEAWAY', 'ONLINE')) " +
+                     "ORDER BY o.created_at DESC, o.id DESC";
+
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        List<Order> list = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Order order = mapCustomerOrder(rs);
+                orders.put(order.getId(), order);
+                list.add(order);
+            }
+            loadOrderItems(conn, orders);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Hủy đơn hàng bởi Thu ngân với lý do và hoàn trả điểm/voucher
+     * Chỉ cho phép hủy khi đơn ở trạng thái PENDING hoặc CONFIRMED (chưa pha chế).
+     * Trả về null nếu thành công, hoặc chuỗi thông báo lỗi cụ thể.
+     */
+    public String cancelCounterOrderWithReason(int orderId) {
+        String querySql = "SELECT o.id, o.status, o.customer_id FROM orders o WHERE o.id = ? FOR UPDATE";
+        String cancelSql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ? AND status IN ('PENDING', 'CONFIRMED')";
+        
+        String queryRedeemPointsSql = "SELECT points_change FROM loyalty_transactions WHERE order_id = ? AND transaction_type = 'REDEEM' LIMIT 1";
+        String refundPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'REFUND')";
+        String addBackUserPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";
+
+        String queryEarnPointsSql = "SELECT points_change FROM loyalty_transactions WHERE order_id = ? AND transaction_type = 'EARN' LIMIT 1";
+        String adjustEarnedPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'ADJUST')";
+        String deductAwardedUserPointsSql = "UPDATE users SET total_points = GREATEST(0, total_points - ?) WHERE id = ?";
+
+        String cancelPaymentSql = "UPDATE payments SET status = 'FAILED', payment_note = CONCAT(COALESCE(payment_note, ''), ' [Đã hủy đơn bởi Thu ngân]') WHERE order_id = ?";
+
+        Connection conn = null;
+        try {
+            conn = DBContext.getConnection();
+            conn.setAutoCommit(false);
+
+            String currentStatus;
+            Integer customerId;
+            try (PreparedStatement ps = conn.prepareStatement(querySql)) {
+                ps.setInt(1, orderId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return "Không tìm thấy đơn hàng #" + orderId + ".";
+                    }
+                    currentStatus = rs.getString("status");
+                    customerId = rs.getObject("customer_id", Integer.class);
+                }
+            }
+
+            if ("CANCELLED".equals(currentStatus)) {
+                conn.rollback();
+                return "Đơn hàng này đã được hủy trước đó.";
+            }
+            if ("COMPLETED".equals(currentStatus)) {
+                conn.rollback();
+                return "Đơn hàng đã hoàn thành, không thể hủy.";
+            }
+            if ("PREPARING".equals(currentStatus) || "READY".equals(currentStatus) || "DELIVERING".equals(currentStatus)) {
+                conn.rollback();
+                return "Đơn hàng đang được Barista pha chế hoặc đang giao, không thể hủy.";
+            }
+            if (!"PENDING".equals(currentStatus) && !"CONFIRMED".equals(currentStatus)) {
+                conn.rollback();
+                return "Trạng thái đơn hàng không hợp lệ để hủy (" + currentStatus + ").";
+            }
+
+            // Thực hiện hủy đơn
+            try (PreparedStatement ps = conn.prepareStatement(cancelSql)) {
+                ps.setInt(1, orderId);
+                if (ps.executeUpdate() == 0) {
+                    conn.rollback();
+                    return "Không thể cập nhật trạng thái hủy đơn.";
+                }
+            }
+
+            // Hoàn lại điểm tích lũy và trừ điểm thưởng nếu có
+            if (customerId != null && customerId > 0) {
+                // 1. Điểm đã dùng (REDEEM - mang giá trị âm) -> Hoàn lại (REFUND - mang giá trị dương)
+                int redeemedPoints = 0;
+                try (PreparedStatement ps = conn.prepareStatement(queryRedeemPointsSql)) {
+                    ps.setInt(1, orderId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            redeemedPoints = Math.abs(rs.getInt("points_change"));
+                        }
+                    }
+                }
+                if (redeemedPoints > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(refundPointsSql)) {
+                        ps.setInt(1, customerId);
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, redeemedPoints);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(addBackUserPointsSql)) {
+                        ps.setInt(1, redeemedPoints);
+                        ps.setInt(2, customerId);
+                        ps.executeUpdate();
+                    }
+                }
+
+                // 2. Điểm thưởng đã tích (EARN - mang giá trị dương) -> Thu hồi lại (ADJUST - mang giá trị âm)
+                int earnedPoints = 0;
+                try (PreparedStatement ps = conn.prepareStatement(queryEarnPointsSql)) {
+                    ps.setInt(1, orderId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            earnedPoints = rs.getInt("points_change");
+                        }
+                    }
+                }
+                if (earnedPoints > 0) {
+                    try (PreparedStatement ps = conn.prepareStatement(adjustEarnedPointsSql)) {
+                        ps.setInt(1, customerId);
+                        ps.setInt(2, orderId);
+                        ps.setInt(3, -earnedPoints);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement(deductAwardedUserPointsSql)) {
+                        ps.setInt(1, earnedPoints);
+                        ps.setInt(2, customerId);
+                        ps.executeUpdate();
+                    }
+                }
+            }
+
+            // Cập nhật payment
+            try (PreparedStatement ps = conn.prepareStatement(cancelPaymentSql)) {
+                ps.setInt(1, orderId);
+                ps.executeUpdate();
+            }
+
+            conn.commit();
+            return null; // Thành công
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
+            return "Lỗi máy chủ khi hủy đơn: " + e.getMessage();
+        } finally {
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
+
+    public boolean cancelCounterOrder(int orderId) {
+        return cancelCounterOrderWithReason(orderId) == null;
+    }
+
+    /**
+     * Thu ngân chuyển đơn Online sang trạng thái đang giao hàng
+     */
+    public boolean deliverCounterOrder(int orderId) {
+        String sql = "UPDATE orders SET status = 'DELIVERING' WHERE id = ? AND status = 'READY'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Thu ngân đánh dấu đơn tại quầy / giao hàng đã hoàn tất (khách đã nhận món).
+     * Chỉ cho phép hoàn tất khi Barista đã làm xong (READY) hoặc đơn đang giao (DELIVERING).
+     */
+    public boolean completeCounterOrder(int orderId) {
+        String sql = "UPDATE orders SET status = 'COMPLETED' WHERE id = ? AND status IN ('READY', 'DELIVERING')";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
