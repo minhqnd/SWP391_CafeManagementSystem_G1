@@ -89,7 +89,6 @@ public class CheckoutController extends HttpServlet {
             showCheckout(request, response, cart);
             return;
         }
-
         String recipientName = trim(request.getParameter("recipientName"));
         String recipientPhone = trim(request.getParameter("recipientPhone")).replaceAll("[\\s.]", "");
         String deliveryAddress = trim(request.getParameter("deliveryAddress"));

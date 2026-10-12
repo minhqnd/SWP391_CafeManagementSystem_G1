@@ -82,7 +82,7 @@ public class UserDAO extends BaseDAO {
                         if (addressStr == null) addressStr = "";
                     }
 
-                    String tierName = "BRONZE";
+                    String tierName = "";
                     int totalPoints = hasColumn(rs, "total_points") ? rs.getInt("total_points") : 0;
 
                     return new User(
@@ -133,6 +133,23 @@ public class UserDAO extends BaseDAO {
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean checkPhoneExists(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return false;
+        }
+        String sql = "SELECT id FROM users WHERE phone = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, phone.trim());
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -246,7 +263,7 @@ public class UserDAO extends BaseDAO {
                             rs.getString("status"),
                             "",
                             "",
-                            "MEMBER",
+                            "",
                             rs.getInt("total_points")
                     );
                 }

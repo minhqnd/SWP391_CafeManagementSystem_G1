@@ -293,6 +293,16 @@
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">Số điện thoại</label>
+                                                                        <input type="tel"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="phone" placeholder="VD: 0912345678"
+                                                                            pattern="^(84|0)[3|5|7|8|9][0-9]{8}$"
+                                                                            title="Vui lòng nhập số điện thoại Việt Nam hợp lệ (VD: 0912345678)"
+                                                                            required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
                                                                             style="font-size: 0.85rem;">Email</label>
                                                                         <input type="email"
                                                                             class="form-control bg-light border-0 p-2"
