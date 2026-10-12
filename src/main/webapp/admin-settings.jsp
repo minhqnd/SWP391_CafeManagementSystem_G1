@@ -126,7 +126,7 @@
                                    min="1" max="100000" step="1" required value="${fn:escapeXml(form.pointsStep)}">
                             <span class="input-group-text">điểm</span>
                         </div>
-                        <div class="form-text">Khách chỉ dùng được bội số của mốc này (VD mốc 50: 50, 100, 150... điểm).</div>
+                        <div class="form-text">Khách chỉ dùng được bội số của mốc này (VD mốc 10: 10, 20, 30... điểm - là bước của thanh kéo ở Giỏ hàng).</div>
                     </div>
                     <div class="col-md-6">
                         <label for="pointsStepValue" class="form-label small fw-semibold mb-1">Mỗi mốc được giảm</label>

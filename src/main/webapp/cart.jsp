@@ -257,43 +257,40 @@
                                     </div>
                                 </c:when>
                                 <c:otherwise>
-                                    <div class="points-picker">
-                                        <form method="post" action="${ctx}/cart" class="qty-stepper">
-                                            <input type="hidden" name="action" value="usePoints">
-                                            <button type="submit" name="points" value="${cart.pointsUsed - shop.pointsStep}" title="Bớt ${shop.pointsStep} điểm"
-                                                    ${cart.pointsUsed <= 0 ? 'disabled' : ''}>&minus;</button>
-                                            <span class="qty-value points-value">${cart.pointsUsed} điểm</span>
-                                            <button type="submit" name="points" value="${cart.pointsUsed + shop.pointsStep}" title="Thêm ${shop.pointsStep} điểm"
-                                                    ${cart.pointsUsed + shop.pointsStep > cart.maxRedeemablePoints ? 'disabled' : ''}>+</button>
-                                        </form>
-                                        <div class="text-end">
+                                    <%-- Thanh kéo chọn số điểm theo mốc (0, 10, 20...), tối đa là số điểm dùng được cho đơn này --%>
+                                    <form method="post" action="${ctx}/cart" class="points-slider" id="pointsForm"
+                                          data-step="${shop.pointsStep}" data-step-value="${shop.pointsStepValue}">
+                                        <input type="hidden" name="action" value="usePoints">
+                                        <div class="d-flex justify-content-between align-items-end gap-2 mb-2">
+                                            <div>
+                                                <div class="points-slider-value"><span id="pointsValue">${cart.pointsUsed}</span> điểm</div>
+                                                <div class="text-muted" style="font-size: 0.72rem;">Kéo để chọn số điểm</div>
+                                            </div>
                                             <c:choose>
                                                 <c:when test="${cart.pointsUsed > 0}">
-                                                    <div class="fw-bold text-aura">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</div>
+                                                    <div class="fw-bold text-aura text-nowrap" id="pointsDiscount">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</div>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <div class="fw-semibold text-muted small">Chưa dùng điểm</div>
+                                                    <div class="fw-semibold text-muted small text-nowrap" id="pointsDiscount">Chưa dùng điểm</div>
                                                 </c:otherwise>
                                             </c:choose>
-                                            <div class="text-muted" style="font-size: 0.72rem;">Tối đa ${cart.maxRedeemablePoints} điểm</div>
                                         </div>
-                                    </div>
-                                    <div class="d-flex gap-3 mt-2">
-                                        <c:if test="${cart.pointsUsed < cart.maxRedeemablePoints}">
-                                            <form method="post" action="${ctx}/cart" class="m-0">
-                                                <input type="hidden" name="action" value="usePoints">
-                                                <input type="hidden" name="points" value="${cart.maxRedeemablePoints}">
-                                                <button type="submit" class="btn-link-aura">Dùng tối đa ${cart.maxRedeemablePoints} điểm</button>
-                                            </form>
-                                        </c:if>
-                                        <c:if test="${cart.pointsUsed > 0}">
-                                            <form method="post" action="${ctx}/cart" class="m-0">
-                                                <input type="hidden" name="action" value="usePoints">
-                                                <input type="hidden" name="points" value="0">
-                                                <button type="submit" class="btn-link-aura text-muted">Bỏ dùng điểm</button>
-                                            </form>
-                                        </c:if>
-                                    </div>
+                                        <input type="range" class="points-range" name="points" id="pointsRange"
+                                               min="0" max="${cart.maxRedeemablePoints}" step="${shop.pointsStep}" value="${cart.pointsUsed}"
+                                               aria-label="Số điểm Aura muốn dùng">
+                                        <div class="points-range-scale">
+                                            <span>0</span>
+                                            <span>Tối đa ${cart.maxRedeemablePoints} điểm</span>
+                                        </div>
+                                        <noscript>
+                                            <button type="submit" class="btn btn-soft btn-sm w-100 mt-2">Áp dụng</button>
+                                        </noscript>
+                                    </form>
+                                    <c:if test="${cart.maxRedeemablePoints < cart.availablePoints - cart.availablePoints % shop.pointsStep}">
+                                        <div class="text-muted mt-2" style="font-size: 0.72rem;">
+                                            Đơn này dùng tối đa ${cart.maxRedeemablePoints} điểm vì số tiền giảm không vượt quá tiền hàng.
+                                        </div>
+                                    </c:if>
                                 </c:otherwise>
                             </c:choose>
                         </div>
@@ -367,6 +364,49 @@
     </c:if>
 
     <!-- Bootstrap 5 JS Bundle (modal, dropdown, menu mobile) -->
+    <script>
+        // Thanh kéo điểm Aura: kéo để xem trước số tiền giảm, thả tay thì áp dụng (giữ nguyên vị trí cuộn trang sau khi tải lại)
+        (function () {
+            try {
+                var savedY = sessionStorage.getItem('cartScrollY');
+                if (savedY !== null) {
+                    sessionStorage.removeItem('cartScrollY');
+                    window.scrollTo(0, parseInt(savedY, 10));
+                }
+            } catch (e) {
+            }
+
+            var form = document.getElementById('pointsForm');
+            if (!form) {
+                return;
+            }
+            var range = document.getElementById('pointsRange');
+            var valueEl = document.getElementById('pointsValue');
+            var discountEl = document.getElementById('pointsDiscount');
+            var step = parseInt(form.dataset.step, 10);
+            var stepValue = parseFloat(form.dataset.stepValue);
+            var appliedPoints = range.value;
+
+            range.addEventListener('input', function () {
+                var points = parseInt(range.value, 10);
+                var discount = step > 0 ? Math.floor(points / step) * stepValue : 0;
+                valueEl.textContent = points;
+                discountEl.textContent = points > 0 ? '-' + discount.toLocaleString('vi-VN') + 'đ' : 'Chưa dùng điểm';
+                discountEl.className = points > 0 ? 'fw-bold text-aura text-nowrap' : 'fw-semibold text-muted small text-nowrap';
+            });
+
+            range.addEventListener('change', function () {
+                if (range.value === appliedPoints) {
+                    return;
+                }
+                try {
+                    sessionStorage.setItem('cartScrollY', String(window.scrollY));
+                } catch (e) {
+                }
+                form.submit();
+            });
+        })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

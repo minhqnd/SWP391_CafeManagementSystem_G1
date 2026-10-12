@@ -19,8 +19,8 @@ public class ShopSettings implements Serializable {
     private double freeshipThreshold = 150000;  // tiền hàng tối thiểu để miễn phí giao hàng (0 = mọi đơn)
     private double deliveryFee = 18000;         // phí giao hàng khi chưa đủ mức freeship
     private int deliveryMinutes = 30;           // thời gian giao dự kiến kể từ khi thanh toán
-    private int pointsStep = 50;                // mốc điểm: khách dùng 50, 100, 150... điểm
-    private double pointsStepValue = 10000;     // số tiền giảm cho mỗi mốc điểm
+    private int pointsStep = 10;                // mốc điểm: khách dùng 10, 20, 30... điểm
+    private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm
 
     public double getFreeshipThreshold() { return freeshipThreshold; }
     public void setFreeshipThreshold(double freeshipThreshold) { this.freeshipThreshold = freeshipThreshold; }

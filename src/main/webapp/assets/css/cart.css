@@ -279,21 +279,34 @@ body.aura-cart-page {
     margin-bottom: 0.5rem;
 }
 
-/* Dùng điểm Aura theo mốc (bộ tăng / giảm giống ô số lượng) */
-.points-picker {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
+/* Dùng điểm Aura: thanh kéo chọn số điểm theo mốc */
+.points-slider {
     background: #f5f7fc;
     border: 1px solid var(--aura-border);
     border-radius: 10px;
-    padding: 0.6rem 0.75rem;
+    padding: 0.7rem 0.85rem 0.55rem;
 }
 
-.qty-stepper .points-value {
-    min-width: 76px;
-    font-size: 0.85rem;
+.points-slider-value {
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.2;
+}
+
+.points-range {
+    display: block;
+    width: 100%;
+    margin: 0;
+    accent-color: var(--aura-primary);
+    cursor: pointer;
+}
+
+.points-range-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.15rem;
+    font-size: 0.72rem;
+    color: var(--aura-muted);
 }
 
 .points-chip {

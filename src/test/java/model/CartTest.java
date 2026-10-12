@@ -99,11 +99,11 @@ public class CartTest {
         cart.setAvailablePoints(180);
         cart.setPointsUsed(100);
 
-        // Mặc định mỗi 50 điểm giảm 10.000đ
+        // Mặc định mỗi 10 điểm giảm 2.000đ
         assertEquals(20000, cart.getDiscount());
         assertEquals(280000, cart.getTotal());
         assertEquals(28, cart.getRewardPoints());
-        assertEquals(150, cart.getMaxRedeemablePoints());
+        assertEquals(180, cart.getMaxRedeemablePoints());
         assertTrue(cart.normalizePointsUsed());
     }
 
@@ -112,15 +112,15 @@ public class CartTest {
     void testNormalizePointsUsed() {
         cart.addItem(item(1, "M", 25000, 1));
         cart.setAvailablePoints(500);
-        assertEquals(100, cart.getMaxRedeemablePoints());   // giảm tối đa 20.000đ <= 25.000đ tiền hàng
+        assertEquals(120, cart.getMaxRedeemablePoints());   // giảm tối đa 24.000đ <= 25.000đ tiền hàng
 
         cart.setPointsUsed(150);
         assertFalse(cart.normalizePointsUsed());
-        assertEquals(100, cart.getPointsUsed());
+        assertEquals(120, cart.getPointsUsed());
 
-        cart.setAvailablePoints(60);
+        cart.setAvailablePoints(65);                        // chỉ tính các mốc trọn vẹn: 60 điểm
         assertFalse(cart.normalizePointsUsed());
-        assertEquals(50, cart.getPointsUsed());
+        assertEquals(60, cart.getPointsUsed());
 
         cart.setAvailablePoints(0);
         assertFalse(cart.normalizePointsUsed());
