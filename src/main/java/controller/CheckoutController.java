@@ -179,8 +179,6 @@ public class CheckoutController extends HttpServlet {
         request.getRequestDispatcher("/checkout.jsp").forward(request, response);
     }
 
-
-
     private String paramOrDefault(HttpServletRequest request, String name, String defaultValue) {
         String value = request.getParameter(name);
         return value != null ? value : defaultValue;
