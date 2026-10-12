@@ -3,6 +3,8 @@
 -- TOTAL: 15 TABLES
 -- MySQL 8.0.16+
 -- =====================================================
+SET NAMES utf8mb4;
+
 
 CREATE DATABASE IF NOT EXISTS aura_cafe_erp
 CHARACTER SET utf8mb4

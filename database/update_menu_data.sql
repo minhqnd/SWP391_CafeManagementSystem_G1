@@ -1,3 +1,4 @@
+SET NAMES utf8mb4;
 USE aura_cafe_erp;
 
 -- 1. Cập nhật danh mục chuẩn theo thiết kế
