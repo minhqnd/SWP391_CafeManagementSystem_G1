@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ taglib prefix="c" uri="jakarta.tags.core" %>
         <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+            <fmt:setLocale value="vi_VN" />
 
             <c:if test="${empty sessionScope.user}">
                 <c:redirect url="/?login=true" />
@@ -50,72 +51,13 @@
                         background-color: var(--primary) !important;
                     }
 
-                    /* Loyalty Card */
-                    .loyalty-card {
-                        background: linear-gradient(135deg, #900b1a 0%, #4a040b 100%);
+                    /* Points Dashboard Card */
+                    .points-dashboard-card {
+                        background: white;
                         border-radius: 1rem;
-                        color: white;
-                        padding: 2rem;
-                        position: relative;
-                        overflow: hidden;
-                        box-shadow: 0 10px 20px rgba(144, 11, 26, 0.15);
-                        height: 100%;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: space-between;
-                    }
-
-                    .loyalty-card::after {
-                        content: '';
-                        position: absolute;
-                        top: -50%;
-                        right: -20%;
-                        width: 400px;
-                        height: 400px;
-                        background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
-                        border-radius: 50%;
-                        pointer-events: none;
-                    }
-
-                    .tier-badge-gold {
-                        background-color: var(--gold);
-                        color: #4a040b;
-                        font-weight: 800;
-                        padding: 0.4rem 1rem;
-                        border-radius: 2rem;
-                        font-size: 0.8rem;
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 0.3rem;
-                        box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
-                    }
-
-                    .tier-badge-silver {
-                        background-color: #e2e8f0;
-                        color: #334155;
-                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-                    }
-
-                    .tier-badge-diamond {
-                        background-color: #f3e5f5;
-                        color: #7b1fa2;
-                        box-shadow: 0 4px 10px rgba(156, 39, 176, 0.3);
-                    }
-
-                    .progress-bar-custom {
-                        height: 6px;
-                        background-color: rgba(255, 255, 255, 0.2);
-                        border-radius: 3px;
-                        overflow: hidden;
-                        margin: 0.75rem 0;
-                    }
-
-                    .progress-fill {
-                        height: 100%;
-                        background-color: var(--gold);
-                        width: 56%;
-                        /* 450/800 */
-                        border-radius: 3px;
+                        padding: 2rem 2.5rem;
+                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+                        border: 1px solid #e9ecef;
                     }
 
                     /* Barcode Card */
@@ -303,83 +245,44 @@
 
                 <main class="py-5">
                     <div class="container">
-                        <!-- Top Section: Loyalty & Barcode -->
+                        <!-- Top Section: Points Dashboard -->
                         <div class="row g-4 mb-4">
-                            <!-- Loyalty Card -->
                             <div class="col-lg-12">
-                                <div class="loyalty-card">
-                                    <div class="d-flex justify-content-between align-items-start mb-4">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="rounded-circle bg-white bg-opacity-10 d-flex align-items-center justify-content-center border border-white border-opacity-25"
-                                                style="width: 48px; height: 48px;">
-                                                <span
-                                                    class="material-symbols-outlined text-white fs-4">workspace_premium</span>
-                                            </div>
-                                            <div>
-                                                <h3 class="fs-5 fw-bold mb-0 text-uppercase"
-                                                    style="letter-spacing: 1px;">AURA PRIVILEGE CLUB</h3>
-                                                <span class="text-white-50" style="font-size: 0.85rem;">Thành viên thân
-                                                    thiết cấp cao</span>
-                                            </div>
+                                <div class="points-dashboard-card d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center gap-4">
+                                        <div class="rounded-circle bg-primary-custom d-flex align-items-center justify-content-center shadow-sm"
+                                            style="width: 60px; height: 60px;">
+                                            <span class="material-symbols-outlined text-white fs-2">toll</span>
                                         </div>
-                                        <div
-                                            class="tier-badge-gold ${currentDisplayTier == 'MEMBER' ? 'tier-badge-silver' : (currentDisplayTier == 'DIAMOND' || currentDisplayTier == 'VIP' ? 'tier-badge-diamond' : '')}">
-                                            <span class="material-symbols-outlined fs-6">stars</span> HẠNG
-                                            ${currentDisplayTier != null ? currentDisplayTier : 'MEMBER'}
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between align-items-end mb-4">
                                         <div>
-                                            <div class="text-white-50 mb-1"
-                                                style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">
-                                                Chủ thẻ</div>
-                                            <h2 class="fs-3 fw-bold mb-1">${sessionScope.user.fullName}</h2>
-                                            <div class="d-flex align-items-center gap-2 text-white-50">
-                                                <span
-                                                    style="font-size: 0.9rem; font-family: monospace;">#AURA-${sessionScope.user.id
-                                                    != null ? sessionScope.user.id + 9900 : 9981}</span>
-                                                <span class="material-symbols-outlined fs-6" style="cursor: pointer;"
-                                                    title="Sao chép mã"
-                                                    onclick="copyMemberId('#AURA-${sessionScope.user.id != null ? sessionScope.user.id + 9900 : 9981}')">content_copy</span>
+                                            <div class="text-muted mb-1" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">
+                                                Điểm Aura tích luỹ
+                                            </div>
+                                            <div class="d-flex align-items-baseline gap-2">
+                                                <h2 class="fs-1 fw-bold text-dark mb-0 lh-1">
+                                                    ${sessionScope.user.totalPoints != null ? sessionScope.user.totalPoints : 0}
+                                                </h2>
+                                                <span class="fs-5 fw-bold text-muted">pts</span>
+                                            </div>
+                                            <div class="text-muted mt-1" style="font-size: 0.8rem;">
+                                                Dùng điểm trừ thẳng vào đơn ở <a href="${pageContext.request.contextPath}/cart" class="text-primary-custom fw-semibold">Giỏ hàng</a>:
+                                                mỗi ${shopSettings.pointsStep} điểm giảm <fmt:formatNumber value="${shopSettings.pointsStepValue}" pattern="#,##0" />đ
                                             </div>
                                         </div>
-                                        <div
-                                            class="text-end bg-white bg-opacity-10 p-3 rounded-3 border border-white border-opacity-25">
-                                            <div class="text-white-50 mb-1"
-                                                style="font-size: 0.75rem; text-transform: uppercase;">Điểm tích luỹ
-                                                Aura</div>
-                                            <div class="fs-2 fw-bold text-white lh-1 mb-1">
-                                                ${sessionScope.user.totalPoints != null ? sessionScope.user.totalPoints
-                                                : 0} <span class="fs-6 fw-normal">pts</span></div>
-                                            <div class="text-white-50" style="font-size: 0.7rem;">Dùng điểm để đổi
-                                                voucher giảm giá</div>
-                                        </div>
                                     </div>
-
-                                    <div>
-                                        <div class="d-flex justify-content-between align-items-end mb-1 text-white"
-                                            style="font-size: 0.85rem;">
-                                            <c:choose>
-                                                <c:when test="${nextTierName == 'Tối đa'}">
-                                                    <span>Bạn đã đạt hạng <strong>VIP</strong> tối đa</span>
-                                                    <span class="fw-bold">${sessionScope.user.totalPoints != null ?
-                                                        sessionScope.user.totalPoints : 0}</span>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <span>Cần <strong style="color: var(--gold);">${pointsNeeded != null
-                                                            ? pointsNeeded : 0} điểm</strong> nữa để thăng hạng
-                                                        <strong>${nextTierName != null ? nextTierName :
-                                                            'Vàng'}</strong></span>
-                                                    <span class="fw-bold">${sessionScope.user.totalPoints != null ?
-                                                        sessionScope.user.totalPoints : 0} / ${nextPoints != null ?
-                                                        nextPoints : 300}</span>
-                                                </c:otherwise>
-                                            </c:choose>
+                                    <div class="text-end border-start ps-4">
+                                        <div class="text-muted mb-2" style="font-size: 0.9rem; font-weight: 500;">
+                                            Chủ tài khoản: <span class="text-dark fw-bold">${sessionScope.user.fullName}</span>
                                         </div>
-                                        <c:set var="fillPct" value="${empty progressPercent ? 0 : progressPercent}" />
-                                        <div class="progress-bar-custom">
-                                            <div class="progress-fill" style="width: ${fillPct}%;"></div>
+                                        <div class="d-flex align-items-center justify-content-end gap-2 text-muted">
+                                            <span style="font-family: monospace; font-size: 1rem; background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 0.5rem; border: 1px dashed #ced4da; font-weight: 600; color: var(--primary);">
+                                                #AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}
+                                            </span>
+                                            <span class="material-symbols-outlined fs-5" style="cursor: pointer; padding: 0.3rem; border-radius: 0.3rem;"
+                                                title="Sao chép mã"
+                                                onclick="copyMemberId('#AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}')"
+                                                onmouseover="this.style.background='#e9ecef'"
+                                                onmouseout="this.style.background='transparent'">content_copy</span>
                                         </div>
                                     </div>
                                 </div>
@@ -404,20 +307,9 @@
                         <!-- Menu Bar -->
                         <ul class="nav profile-nav-bar mb-4" id="profileTab" role="tablist">
                             <li class="nav-item flex-fill text-center" role="presentation">
-                                <button class="nav-link profile-nav-item w-100 justify-content-center" id="rewards-tab"
-                                    data-bs-toggle="tab" data-bs-target="#rewards" type="button" role="tab"><span
-                                        class="material-symbols-outlined fs-5">redeem</span> Đổi quà & Ưu đãi</button>
-                            </li>
-                            <li class="nav-item flex-fill text-center" role="presentation">
                                 <button class="nav-link profile-nav-item w-100 justify-content-center" id="history-tab"
                                     data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab"><span
                                         class="material-symbols-outlined fs-5">history</span> Lịch sử tích điểm</button>
-                            </li>
-                            <li class="nav-item flex-fill text-center" role="presentation">
-                                <button class="nav-link profile-nav-item w-100 justify-content-center"
-                                    id="privileges-tab" data-bs-toggle="tab" data-bs-target="#privileges" type="button"
-                                    role="tab"><span class="material-symbols-outlined fs-5">military_tech</span> Đặc
-                                    quyền thứ hạng</button>
                             </li>
                             <li class="nav-item flex-fill text-center" role="presentation">
                                 <button class="nav-link profile-nav-item active w-100 justify-content-center"
@@ -446,8 +338,7 @@
                                             <h2 class="fs-4 fw-bold mb-1">${sessionScope.user.fullName}</h2>
                                             <p class="text-muted mb-3"
                                                 style="font-size: 0.85rem; font-family: monospace;">
-                                                #AURA-${sessionScope.user.id != null ? sessionScope.user.id + 9900 :
-                                                9981}</p>
+                                                #AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}</p>
 
                                             <!-- Đã xóa các trường hardcode (Thành viên từ..., trạng thái tài khoản, 2FA) theo yêu cầu -->
                                         </div>
@@ -624,112 +515,6 @@
                                 </div>
                             </div>
 
-                            <!-- Tab: Rewards -->
-                            <div class="tab-pane fade" id="rewards" role="tabpanel" tabindex="0">
-                                <!-- Aura Loyalty Matrix Banner -->
-                                <div class="info-card mb-4 bg-dark text-white rounded-4 overflow-hidden position-relative"
-                                    style="border: 1px solid rgba(255,255,255,0.1);">
-                                    <div class="position-absolute top-0 end-0 h-100 w-50"
-                                        style="background: linear-gradient(90deg, transparent, rgba(255,193,7,0.1) 50%, rgba(255,193,7,0.2));">
-                                    </div>
-                                    <div
-                                        class="d-flex justify-content-between align-items-center position-relative z-1 p-2">
-                                        <div>
-                                            <h3 class="fs-4 fw-bold mb-2 text-warning d-flex align-items-center gap-2">
-                                                <span class="material-symbols-outlined">auto_awesome</span> Aura Loyalty
-                                                Matrix
-                                            </h3>
-                                            <p class="mb-2 fw-semibold fs-6">Ưu đãi điểm thưởng tích luỹ Member</p>
-                                            <p class="mb-0 text-white-50 small" style="line-height: 1.6;">Mỗi 10.000đ
-                                                chi tiêu tương đương 1 Điểm Aura (A-Point).<br>Nâng cấp hạng để nhận gấp
-                                                bội đặc quyền.</p>
-                                        </div>
-                                        <button
-                                            class="btn btn-warning fw-bold rounded-pill px-4 d-flex align-items-center gap-2 shadow-sm"
-                                            onclick="document.getElementById('privileges-tab').click();">
-                                            Xem chi tiết hạng <span
-                                                class="material-symbols-outlined fs-6">arrow_forward</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="info-card">
-                                    <div class="d-flex justify-content-between align-items-end mb-4 pb-3 border-bottom">
-                                        <div>
-                                            <h3 class="fs-5 fw-bold mb-1">Gian hàng đổi điểm Aura Rewards</h3>
-                                            <p class="text-muted mb-0" style="font-size: 0.85rem;">Đổi điểm tích luỹ lấy
-                                                voucher giảm giá và quà tặng thương hiệu</p>
-                                        </div>
-                                        <div class="text-muted d-flex align-items-center gap-2"
-                                            style="font-size: 0.85rem;">
-                                            Số điểm hiện có: <span
-                                                class="badge bg-danger-subtle text-danger fw-bold fs-6 px-3 py-2 border border-danger-subtle rounded-pill">${sessionScope.user.totalPoints}
-                                                pts</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="row g-4">
-                                        <c:forEach var="reward" items="${rewardsList}">
-                                            <div class="col-lg-3 col-md-6">
-                                                <div
-                                                    class="card h-100 border rounded-3 shadow-sm position-relative ${reward.stock == 0 ? 'bg-light' : ''}">
-                                                    <span
-                                                        class="position-absolute top-0 end-0 mt-3 me-3 ${reward.stock == 0 ? 'text-muted' : 'text-danger'} small fw-bold text-uppercase"
-                                                        style="font-size:0.7rem;">${reward.category}</span>
-                                                    <div
-                                                        class="card-body d-flex flex-column ${reward.stock == 0 ? 'opacity-75' : ''}">
-                                                        <div class="rounded ${reward.stock == 0 ? 'bg-secondary-subtle' : 'bg-danger-subtle'} d-inline-flex p-2 mb-3"
-                                                            style="width:fit-content;">
-                                                            <span
-                                                                class="material-symbols-outlined ${reward.stock == 0 ? 'text-secondary' : 'text-danger'}">${reward.imageIcon}</span>
-                                                        </div>
-                                                        <h5 class="fw-bold fs-6 mb-2">${reward.name}</h5>
-                                                        <p class="text-muted mb-4" style="font-size: 0.8rem;">
-                                                            ${reward.description}</p>
-                                                        <div
-                                                            class="mt-auto d-flex justify-content-between align-items-end">
-                                                            <div>
-                                                                <div class="text-muted" style="font-size: 0.7rem;">Điểm
-                                                                    cần:</div>
-                                                                <div
-                                                                    class="fw-bold ${reward.stock == 0 ? 'text-secondary' : 'text-danger'} fs-5">
-                                                                    ${reward.pointsCost} <span class="fs-6">pts</span>
-                                                                </div>
-                                                            </div>
-                                                            <c:choose>
-                                                                <c:when test="${reward.stock == 0}">
-                                                                    <button
-                                                                        class="btn btn-secondary btn-sm fw-bold px-3 py-2 rounded-pill"
-                                                                        disabled>Hết hàng</button>
-                                                                </c:when>
-                                                                <c:when
-                                                                    test="${sessionScope.user.totalPoints < reward.pointsCost}">
-                                                                    <button
-                                                                        class="btn btn-outline-secondary btn-sm fw-bold px-3 py-2 rounded-pill"
-                                                                        disabled>Thiếu điểm</button>
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <form
-                                                                        action="${pageContext.request.contextPath}/profile?action=redeemReward"
-                                                                        method="POST" class="m-0">
-                                                                        <input type="hidden" name="rewardId"
-                                                                            value="${reward.id}">
-                                                                        <button type="submit"
-                                                                            class="btn btn-primary-custom btn-sm fw-bold px-3 py-2 rounded-pill"
-                                                                            onclick="return confirm('Bạn có chắc chắn muốn dùng ${reward.pointsCost} điểm để đổi quà này?');">Đổi
-                                                                            ngay</button>
-                                                                    </form>
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </c:forEach>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Tab: History -->
                             <div class="tab-pane fade" id="history" role="tabpanel" tabindex="0">
                                 <div class="info-card">
@@ -740,10 +525,6 @@
                                             <p class="text-muted mb-0" style="font-size: 0.85rem;">Theo dõi chi tiết các
                                                 lần tích và tiêu điểm của bạn</p>
                                         </div>
-                                        <button
-                                            class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 fw-bold rounded-pill px-3 py-2">
-                                            <span class="material-symbols-outlined fs-6">download</span> Xuất sao kê
-                                        </button>
                                     </div>
 
                                     <div class="d-flex flex-column">
@@ -768,7 +549,10 @@
                                                                 <div class="fw-bold fs-6">
                                                                     <c:choose>
                                                                         <c:when test="${txn.transactionType == 'EARN'}">
-                                                                            Tích điểm đơn hàng #AUR-${txn.orderId}
+                                                                            Tích điểm từ đơn hàng #${txn.orderId}
+                                                                        </c:when>
+                                                                        <c:when test="${txn.orderId > 0}">
+                                                                            Dùng điểm giảm giá đơn hàng #${txn.orderId}
                                                                         </c:when>
                                                                         <c:otherwise>
                                                                             Sử dụng điểm đổi ưu đãi
@@ -793,165 +577,6 @@
                                                 </c:forEach>
                                             </c:otherwise>
                                         </c:choose>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Tab: Privileges -->
-                            <div class="tab-pane fade" id="privileges" role="tabpanel" tabindex="0">
-                                <div class="row g-4">
-                                    <!-- Member -->
-                                    <div class="col-lg-3 col-md-6">
-                                        <div class="info-card h-100 position-relative ${sessionScope.user.totalPoints < 300 ? 'border-warning shadow' : ''}"
-                                            ${sessionScope.user.totalPoints < 300 ? 'style="border-width: 2px;"' : '' }>
-                                            <c:if test="${sessionScope.user.totalPoints < 300}">
-                                                <span
-                                                    class="position-absolute top-0 end-0 mt-3 me-3 badge bg-warning text-dark fw-bold rounded-pill"
-                                                    style="font-size: 0.6rem;">HẠNG CỦA BẠN</span>
-                                            </c:if>
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3"
-                                                    style="width: 45px; height: 45px;">
-                                                    <span
-                                                        class="material-symbols-outlined text-secondary fs-4">account_circle</span>
-                                                </div>
-                                            </div>
-                                            <h4 class="fw-bold mb-1 fs-5">Thành viên</h4>
-                                            <p class="text-muted small">Dành cho khách hàng mới</p>
-                                            <div class="fw-bold mb-4">0 - 299 Điểm</div>
-                                            <hr class="mb-4">
-                                            <ul class="list-unstyled mb-0 d-flex flex-column gap-3">
-                                                <li class="d-flex align-items-start gap-2"><span
-                                                        class="material-symbols-outlined text-success fs-5">check_circle</span>
-                                                    <span class="small text-muted">Tích luỹ 5% trên mỗi hóa đơn thanh
-                                                        toán</span>
-                                                </li>
-                                                <li class="d-flex align-items-start gap-2"><span
-                                                        class="material-symbols-outlined text-success fs-5">check_circle</span>
-                                                    <span class="small text-muted">Tặng E-voucher 20.000đ mừng gia
-                                                        nhập</span>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <!-- Gold -->
-                                    <div class="col-lg-3 col-md-6">
-                                        <div class="info-card h-100 position-relative ${sessionScope.user.totalPoints >= 300 && sessionScope.user.totalPoints < 800 ? 'border-warning shadow' : ''}"
-                                            ${sessionScope.user.totalPoints>= 300 && sessionScope.user.totalPoints < 800
-                                                ? 'style="border-width: 2px;"' : '' }>
-                                                <c:if
-                                                    test="${sessionScope.user.totalPoints >= 300 && sessionScope.user.totalPoints < 800}">
-                                                    <span
-                                                        class="position-absolute top-0 end-0 mt-3 me-3 badge bg-warning text-dark fw-bold rounded-pill"
-                                                        style="font-size: 0.6rem;">HẠNG CỦA BẠN</span>
-                                                </c:if>
-                                                <div class="d-flex align-items-center mb-3">
-                                                    <div class="rounded-circle bg-warning bg-opacity-25 d-flex align-items-center justify-content-center me-3"
-                                                        style="width: 45px; height: 45px;">
-                                                        <span
-                                                            class="material-symbols-outlined text-warning fs-4">stars</span>
-                                                    </div>
-                                                </div>
-                                                <h4 class="fw-bold mb-1 fs-5">Vàng (Gold)</h4>
-                                                <p class="text-muted small">Khách hàng thân thiết</p>
-                                                <div class="fw-bold mb-4 text-warning">300 - 799 Điểm</div>
-                                                <hr class="mb-4 border-warning">
-                                                <ul class="list-unstyled mb-0 d-flex flex-column gap-3">
-                                                    <li class="d-flex align-items-start gap-2"><span
-                                                            class="material-symbols-outlined text-warning fs-5">check_circle</span>
-                                                        <span class="small fw-medium">Tích luỹ 10% trên mỗi đơn
-                                                            hàng</span>
-                                                    </li>
-                                                    <li class="d-flex align-items-start gap-2"><span
-                                                            class="material-symbols-outlined text-warning fs-5">check_circle</span>
-                                                        <span class="small fw-medium">Tặng 01 bánh ngọt miễn phí tháng
-                                                            sinh nhật</span>
-                                                    </li>
-                                                    <li class="d-flex align-items-start gap-2"><span
-                                                            class="material-symbols-outlined text-warning fs-5">check_circle</span>
-                                                        <span class="small fw-medium">Miễn phí Upsize thứ 3 hàng
-                                                            tuần</span>
-                                                    </li>
-                                                </ul>
-                                        </div>
-                                    </div>
-                                    <!-- Diamond -->
-                                    <div class="col-lg-3 col-md-6">
-                                        <div class="info-card h-100 position-relative ${sessionScope.user.totalPoints >= 800 && sessionScope.user.totalPoints < 1500 ? 'border-warning shadow' : ''}"
-                                            ${sessionScope.user.totalPoints>= 800 && sessionScope.user.totalPoints <
-                                                1500 ? 'style="border-width: 2px;"' : '' }>
-                                                <c:if
-                                                    test="${sessionScope.user.totalPoints >= 800 && sessionScope.user.totalPoints < 1500}">
-                                                    <span
-                                                        class="position-absolute top-0 end-0 mt-3 me-3 badge bg-warning text-dark fw-bold rounded-pill"
-                                                        style="font-size: 0.6rem;">HẠNG CỦA BẠN</span>
-                                                </c:if>
-                                                <div class="d-flex align-items-center mb-3">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
-                                                        style="width: 45px; height: 45px; background-color: #f3e5f5;">
-                                                        <span class="material-symbols-outlined fs-4"
-                                                            style="color: #9c27b0;">diamond</span>
-                                                    </div>
-                                                </div>
-                                                <h4 class="fw-bold mb-1 fs-5">Kim Cương</h4>
-                                                <p class="text-muted small">Khách hàng cao cấp</p>
-                                                <div class="fw-bold mb-4" style="color: #9c27b0;">800 - 1499 Điểm</div>
-                                                <hr class="mb-4">
-                                                <ul class="list-unstyled mb-0 d-flex flex-column gap-3">
-                                                    <li class="d-flex align-items-start gap-2"><span
-                                                            class="material-symbols-outlined fs-5"
-                                                            style="color: #9c27b0;">check_circle</span> <span
-                                                            class="small text-muted">Tích luỹ 12% không giới hạn</span>
-                                                    </li>
-                                                    <li class="d-flex align-items-start gap-2"><span
-                                                            class="material-symbols-outlined fs-5"
-                                                            style="color: #9c27b0;">check_circle</span> <span
-                                                            class="small text-muted">Miễn phí giao hàng đơn từ
-                                                            50k</span></li>
-                                                    <li class="d-flex align-items-start gap-2"><span
-                                                            class="material-symbols-outlined fs-5"
-                                                            style="color: #9c27b0;">check_circle</span> <span
-                                                            class="small text-muted">Đường dây nóng CSKH hỗ trợ
-                                                            24/7</span></li>
-                                                </ul>
-                                        </div>
-                                    </div>
-                                    <!-- VIP -->
-                                    <div class="col-lg-3 col-md-6">
-                                        <div class="info-card h-100 position-relative ${sessionScope.user.totalPoints >= 1500 ? 'border-warning shadow' : ''}"
-                                            ${sessionScope.user.totalPoints>= 1500 ? 'style="border-width: 2px;"' : ''}>
-                                            <c:if test="${sessionScope.user.totalPoints >= 1500}">
-                                                <span
-                                                    class="position-absolute top-0 end-0 mt-3 me-3 badge bg-warning text-dark fw-bold rounded-pill"
-                                                    style="font-size: 0.6rem;">HẠNG CỦA BẠN</span>
-                                            </c:if>
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="rounded-circle bg-dark d-flex align-items-center justify-content-center me-3"
-                                                    style="width: 45px; height: 45px;">
-                                                    <span
-                                                        class="material-symbols-outlined text-warning fs-4">workspace_premium</span>
-                                                </div>
-                                            </div>
-                                            <h4 class="fw-bold mb-1 fs-5">Hạng VIP</h4>
-                                            <p class="text-muted small">Đặc quyền tối thượng</p>
-                                            <div class="fw-bold mb-4 text-dark">Từ 1500 Điểm</div>
-                                            <hr class="mb-4">
-                                            <ul class="list-unstyled mb-0 d-flex flex-column gap-3">
-                                                <li class="d-flex align-items-start gap-2"><span
-                                                        class="material-symbols-outlined fs-5 text-dark">check_circle</span>
-                                                    <span class="small fw-medium">Tích luỹ 15% trọn đời</span>
-                                                </li>
-                                                <li class="d-flex align-items-start gap-2"><span
-                                                        class="material-symbols-outlined fs-5 text-dark">check_circle</span>
-                                                    <span class="small fw-medium">Mời tham dự workshop thử cà phê</span>
-                                                </li>
-                                                <li class="d-flex align-items-start gap-2"><span
-                                                        class="material-symbols-outlined fs-5 text-dark">check_circle</span>
-                                                    <span class="small fw-medium">Tặng set quà tặng cao cấp cuối
-                                                        năm</span>
-                                                </li>
-                                            </ul>
-                                        </div>
                                     </div>
                                 </div>
                             </div>

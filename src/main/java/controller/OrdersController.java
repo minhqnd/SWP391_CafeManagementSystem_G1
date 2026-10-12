@@ -1,6 +1,8 @@
 package controller;
 
 import dao.OrderDAO;
+import dao.ShopSettingDAO;
+import dao.UserDAO;
 import model.Cart;
 import model.Order;
 import model.User;
@@ -26,7 +28,7 @@ import java.util.Map;
 /**
  * OrdersController - Đơn hàng của tôi
  * GET  /orders : Theo dõi đơn đang thực hiện + lịch sử đơn (lọc theo tab, mã đơn, ngày đặt)
- * POST /orders : action=cancel (hủy đơn chưa thanh toán), action=reorder (đặt lại đơn cũ)
+ * POST /orders : action=cancel (hủy đơn chưa thanh toán, hoàn điểm Aura đã dùng), action=reorder (đặt lại đơn cũ)
  */
 @WebServlet(name = "OrdersController", urlPatterns = {"/orders"})
 public class OrdersController extends HttpServlet {
@@ -47,6 +49,8 @@ public class OrdersController extends HttpServlet {
     }
 
     private final OrderDAO orderDAO = new OrderDAO();
+    private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
+    private final UserDAO userDAO = new UserDAO();
     private final CartService cartService = new CartService();
 
     @Override
@@ -97,6 +101,7 @@ public class OrdersController extends HttpServlet {
         request.setAttribute("shownOrders", orders.size());
         request.setAttribute("totalOrders", totalOrders);
         request.setAttribute("storeAddress", CheckoutController.STORE_ADDRESS);
+        request.setAttribute("deliveryMinutes", shopSettingDAO.getSettings().getDeliveryMinutes());
         request.getRequestDispatcher("/orders.jsp").forward(request, response);
     }
 
@@ -122,7 +127,10 @@ public class OrdersController extends HttpServlet {
         } else if ("cancel".equals(action)) {
             if (orderDAO.cancelPendingOrder(orderId, user.getId())) {
                 session.setAttribute("ordersMessage", "Đã hủy đơn #" + order.getOrderCode()
-                        + (order.getVoucherCode() != null ? ". Mã " + order.getVoucherCode() + " đã được hoàn lại lượt dùng." : "."));
+                        + (order.getPointsUsed() > 0 ? " và hoàn lại " + order.getPointsUsed() + " điểm Aura." : "."));
+                if (order.getPointsUsed() > 0) {
+                    user.setTotalPoints(userDAO.getTotalPoints(user.getId()));
+                }
             } else {
                 session.setAttribute("ordersError", "Chỉ hủy được đơn chưa thanh toán.");
             }

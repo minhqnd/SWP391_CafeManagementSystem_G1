@@ -82,7 +82,7 @@ public class UserDAO extends BaseDAO {
                         if (addressStr == null) addressStr = "";
                     }
 
-                    String tierName = hasColumn(rs, "tier_name") ? rs.getString("tier_name") : "BRONZE";
+                    String tierName = "BRONZE";
                     int totalPoints = hasColumn(rs, "total_points") ? rs.getInt("total_points") : 0;
 
                     return new User(
@@ -228,7 +228,7 @@ public class UserDAO extends BaseDAO {
      */
     public model.User findCustomerByPhone(String phone) {
         if (phone == null || phone.trim().isEmpty()) return null;
-        String sql = "SELECT id, full_name, phone, email, role, position, status, tier_name, total_points " +
+        String sql = "SELECT id, full_name, phone, email, role, position, status, total_points " +
                      "FROM users WHERE role = 'CUSTOMER' AND (phone = ? OR email = ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -246,7 +246,7 @@ public class UserDAO extends BaseDAO {
                             rs.getString("status"),
                             "",
                             "",
-                            rs.getString("tier_name") != null ? rs.getString("tier_name") : "MEMBER",
+                            "MEMBER",
                             rs.getInt("total_points")
                     );
                 }

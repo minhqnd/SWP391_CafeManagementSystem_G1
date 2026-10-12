@@ -2,6 +2,7 @@ package controller;
 
 import dao.OrderDAO;
 import dao.PaymentDAO;
+import dao.ShopSettingDAO;
 import dao.UserDAO;
 import model.Order;
 import model.User;
@@ -33,6 +34,7 @@ public class PaymentController extends HttpServlet {
 
     private final OrderDAO orderDAO = new OrderDAO();
     private final PaymentDAO paymentDAO = new PaymentDAO();
+    private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
     private final UserDAO userDAO = new UserDAO();
 
     @Override
@@ -65,6 +67,7 @@ public class PaymentController extends HttpServlet {
         request.setAttribute("accountName", ACCOUNT_NAME);
         request.setAttribute("qrUrl", buildQrUrl(order));
         request.setAttribute("storeAddress", CheckoutController.STORE_ADDRESS);
+        request.setAttribute("deliveryMinutes", shopSettingDAO.getSettings().getDeliveryMinutes());
         request.getRequestDispatcher("/payment.jsp").forward(request, response);
     }
 
