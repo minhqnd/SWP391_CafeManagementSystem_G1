@@ -36,23 +36,23 @@ public class Order implements Serializable {
     }
 
     public Order(int id,
-                 String orderCode,
-                 Integer customerId,
-                 Integer cashierId,
-                 Integer voucherId,
-                 String orderType,
-                 String status,
-                 double totalAmount,
-                 double discountAmount,
-                 double deliveryFee,
-                 double finalAmount,
-                 String recipientName,
-                 String recipientPhone,
-                 String deliveryAddress,
-                 Integer shipperId,
-                 String tableNumber,
-                 String orderNote,
-                 LocalDateTime createdAt) {
+            String orderCode,
+            Integer customerId,
+            Integer cashierId,
+            Integer voucherId,
+            String orderType,
+            String status,
+            double totalAmount,
+            double discountAmount,
+            double deliveryFee,
+            double finalAmount,
+            String recipientName,
+            String recipientPhone,
+            String deliveryAddress,
+            Integer shipperId,
+            String tableNumber,
+            String orderNote,
+            LocalDateTime createdAt) {
         this.id = id;
         this.orderCode = orderCode;
         this.customerId = customerId;
@@ -73,75 +73,190 @@ public class Order implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public int getId() {
+        return id;
+    }
 
-    public String getOrderCode() { return orderCode; }
-    public void setOrderCode(String orderCode) { this.orderCode = orderCode; }
+    public void setId(int id) {
+        this.id = id;
+    }
 
-    public Integer getCustomerId() { return customerId; }
-    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
+    public String getOrderCode() {
+        return orderCode;
+    }
 
-    public Integer getCashierId() { return cashierId; }
-    public void setCashierId(Integer cashierId) { this.cashierId = cashierId; }
+    public void setOrderCode(String orderCode) {
+        this.orderCode = orderCode;
+    }
 
-    public Integer getVoucherId() { return voucherId; }
-    public void setVoucherId(Integer voucherId) { this.voucherId = voucherId; }
+    public Integer getCustomerId() {
+        return customerId;
+    }
 
-    public String getOrderType() { return orderType; }
-    public void setOrderType(String orderType) { this.orderType = orderType; }
+    public void setCustomerId(Integer customerId) {
+        this.customerId = customerId;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public Integer getCashierId() {
+        return cashierId;
+    }
 
-    public double getTotalAmount() { return totalAmount; }
-    public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
+    public void setCashierId(Integer cashierId) {
+        this.cashierId = cashierId;
+    }
 
-    public double getDiscountAmount() { return discountAmount; }
-    public void setDiscountAmount(double discountAmount) { this.discountAmount = discountAmount; }
+    public Integer getVoucherId() {
+        return voucherId;
+    }
 
-    public double getDeliveryFee() { return deliveryFee; }
-    public void setDeliveryFee(double deliveryFee) { this.deliveryFee = deliveryFee; }
+    public void setVoucherId(Integer voucherId) {
+        this.voucherId = voucherId;
+    }
 
-    public double getFinalAmount() { return finalAmount; }
-    public void setFinalAmount(double finalAmount) { this.finalAmount = finalAmount; }
+    public String getOrderType() {
+        return orderType;
+    }
+
+    public void setOrderType(String orderType) {
+        this.orderType = orderType;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public double getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public double getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(double discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public double getDeliveryFee() {
+        return deliveryFee;
+    }
+
+    public void setDeliveryFee(double deliveryFee) {
+        this.deliveryFee = deliveryFee;
+    }
+
+    public double getFinalAmount() {
+        return finalAmount;
+    }
+
+    public void setFinalAmount(double finalAmount) {
+        this.finalAmount = finalAmount;
+    }
 
     // BigDecimal compatibility helpers
-    public BigDecimal getTotalAmountBigDecimal() { return BigDecimal.valueOf(totalAmount); }
-    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount != null ? totalAmount.doubleValue() : 0.0; }
+    public BigDecimal getTotalAmountBigDecimal() {
+        return BigDecimal.valueOf(totalAmount);
+    }
 
-    public BigDecimal getDiscountAmountBigDecimal() { return BigDecimal.valueOf(discountAmount); }
-    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount != null ? discountAmount.doubleValue() : 0.0; }
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount != null ? totalAmount.doubleValue() : 0.0;
+    }
 
-    public BigDecimal getDeliveryFeeBigDecimal() { return BigDecimal.valueOf(deliveryFee); }
-    public void setDeliveryFee(BigDecimal deliveryFee) { this.deliveryFee = deliveryFee != null ? deliveryFee.doubleValue() : 0.0; }
+    public BigDecimal getDiscountAmountBigDecimal() {
+        return BigDecimal.valueOf(discountAmount);
+    }
 
-    public BigDecimal getFinalAmountBigDecimal() { return BigDecimal.valueOf(finalAmount); }
-    public void setFinalAmount(BigDecimal finalAmount) { this.finalAmount = finalAmount != null ? finalAmount.doubleValue() : 0.0; }
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount != null ? discountAmount.doubleValue() : 0.0;
+    }
 
-    public String getRecipientName() { return recipientName; }
-    public void setRecipientName(String recipientName) { this.recipientName = recipientName; }
+    public BigDecimal getDeliveryFeeBigDecimal() {
+        return BigDecimal.valueOf(deliveryFee);
+    }
 
-    public String getRecipientPhone() { return recipientPhone; }
-    public void setRecipientPhone(String recipientPhone) { this.recipientPhone = recipientPhone; }
+    public void setDeliveryFee(BigDecimal deliveryFee) {
+        this.deliveryFee = deliveryFee != null ? deliveryFee.doubleValue() : 0.0;
+    }
 
-    public String getDeliveryAddress() { return deliveryAddress; }
-    public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
+    public BigDecimal getFinalAmountBigDecimal() {
+        return BigDecimal.valueOf(finalAmount);
+    }
 
-    public Integer getShipperId() { return shipperId; }
-    public void setShipperId(Integer shipperId) { this.shipperId = shipperId; }
+    public void setFinalAmount(BigDecimal finalAmount) {
+        this.finalAmount = finalAmount != null ? finalAmount.doubleValue() : 0.0;
+    }
 
-    public String getTableNumber() { return tableNumber; }
-    public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
+    public String getRecipientName() {
+        return recipientName;
+    }
 
-    public String getOrderNote() { return orderNote; }
-    public void setOrderNote(String orderNote) { this.orderNote = orderNote; }
+    public void setRecipientName(String recipientName) {
+        this.recipientName = recipientName;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getRecipientPhone() {
+        return recipientPhone;
+    }
 
-    public List<OrderDetail> getItems() { return items; }
-    public void setItems(List<OrderDetail> items) { this.items = items != null ? items : new ArrayList<>(); }
+    public void setRecipientPhone(String recipientPhone) {
+        this.recipientPhone = recipientPhone;
+    }
+
+    public String getDeliveryAddress() {
+        return deliveryAddress;
+    }
+
+    public void setDeliveryAddress(String deliveryAddress) {
+        this.deliveryAddress = deliveryAddress;
+    }
+
+    public Integer getShipperId() {
+        return shipperId;
+    }
+
+    public void setShipperId(Integer shipperId) {
+        this.shipperId = shipperId;
+    }
+
+    public String getTableNumber() {
+        return tableNumber;
+    }
+
+    public void setTableNumber(String tableNumber) {
+        this.tableNumber = tableNumber;
+    }
+
+    public String getOrderNote() {
+        return orderNote;
+    }
+
+    public void setOrderNote(String orderNote) {
+        this.orderNote = orderNote;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public List<OrderDetail> getItems() {
+        return items;
+    }
+
+    public void setItems(List<OrderDetail> items) {
+        this.items = items != null ? items : new ArrayList<>();
+    }
 
     public int getItemCount() {
         return items != null ? items.stream().mapToInt(OrderDetail::getQuantity).sum() : 0;
