@@ -193,14 +193,9 @@
                                 <li class="user-dropdown-header">
                                     <div class="d-flex align-items-center justify-content-between mb-1">
                                         <span class="fw-bold text-dark text-truncate" style="max-width: 150px; font-size: 0.92rem;">${sessionScope.user.fullName}</span>
-                                        <c:choose>
-                                            <c:when test="${not empty sessionScope.user.tierName}">
-                                                <span class="badge bg-danger-subtle text-danger" style="font-size: 0.68rem; font-weight: 700;">${sessionScope.user.tierName}</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">${sessionScope.user.role}</span>
-                                            </c:otherwise>
-                                        </c:choose>
+                                        <c:if test="${sessionScope.user.role != 'CUSTOMER'}">
+                                            <span class="badge bg-danger-subtle text-danger" style="font-size: 0.68rem; font-weight: 700;">${sessionScope.user.role}</span>
+                                        </c:if>
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between text-muted" style="font-size: 0.78rem;">
                                         <span>${not empty sessionScope.user.phone ? sessionScope.user.phone : sessionScope.user.email}</span>

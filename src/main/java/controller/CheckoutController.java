@@ -25,10 +25,12 @@ import java.util.List;
 
 /**
  * CheckoutController - Bước 2: Xác nhận đơn & Giao nhận
- * GET  /checkout : Ai cũng xem được, nhưng chưa đăng nhập thì các lựa chọn bị khoá
- * POST /checkout : Bắt buộc đăng nhập - tạo đơn hàng rồi chuyển sang bước Thanh toán
+ * GET /checkout : Ai cũng xem được, nhưng chưa đăng nhập thì các lựa chọn bị
+ * khoá
+ * POST /checkout : Bắt buộc đăng nhập - tạo đơn hàng rồi chuyển sang bước Thanh
+ * toán
  */
-@WebServlet(name = "CheckoutController", urlPatterns = {"/checkout"})
+@WebServlet(name = "CheckoutController", urlPatterns = { "/checkout" })
 public class CheckoutController extends HttpServlet {
 
     public static final String METHOD_DELIVERY = "DELIVERY";
@@ -93,8 +95,6 @@ public class CheckoutController extends HttpServlet {
             return;
         }
 
-
-
         boolean homeDelivery = METHOD_DELIVERY.equals(method);
         String recipientName = trim(request.getParameter("recipientName"));
         String recipientPhone = trim(request.getParameter("recipientPhone")).replaceAll("[\\s.]", "");
@@ -126,7 +126,8 @@ public class CheckoutController extends HttpServlet {
         double deliveryFee = cart.getDeliveryFee(homeDelivery);
 
         Order order = new Order();
-        order.setOrderCode("AURA" + LocalDateTime.now(SHOP_ZONE).format(DateTimeFormatter.ofPattern("yyMMddHHmmssSSS")));
+        order.setOrderCode(
+                "AURA" + LocalDateTime.now(SHOP_ZONE).format(DateTimeFormatter.ofPattern("yyMMddHHmmssSSS")));
         order.setCustomerId(user.getId());
         order.setOrderType(homeDelivery ? "ONLINE" : "TAKEAWAY");
         order.setStatus("PENDING");
@@ -146,7 +147,8 @@ public class CheckoutController extends HttpServlet {
             return;
         }
 
-        // Đặt hàng thành công: bỏ các món đã đặt khỏi giỏ và chuyển sang bước Thanh toán
+        // Đặt hàng thành công: bỏ các món đã đặt khỏi giỏ và chuyển sang bước Thanh
+        // toán
         cart.getItems().removeAll(items);
         cart.setPointsUsed(0);
         response.sendRedirect(request.getContextPath() + "/payment?orderId=" + orderId);
@@ -159,10 +161,12 @@ public class CheckoutController extends HttpServlet {
         boolean homeDelivery = METHOD_DELIVERY.equals(method);
         double deliveryFee = cart.getDeliveryFee(homeDelivery);
 
-        // Lần đầu mở trang: điền sẵn thông tin từ tài khoản; khi gửi lại form: giữ nguyên dữ liệu khách đã nhập
+        // Lần đầu mở trang: điền sẵn thông tin từ tài khoản; khi gửi lại form: giữ
+        // nguyên dữ liệu khách đã nhập
         String defaultName = user != null ? user.getFullName() : "";
         String defaultPhone = user != null && user.getPhone() != null && user.getPhone().matches(PHONE_PATTERN)
-                ? user.getPhone() : "";
+                ? user.getPhone()
+                : "";
 
         request.setAttribute("cart", cart);
         request.setAttribute("method", method);
@@ -190,7 +194,8 @@ public class CheckoutController extends HttpServlet {
         }
         LocalDateTime scheduledAt = LocalDate.now(SHOP_ZONE).atTime(time);
         if (scheduledAt.isBefore(LocalDateTime.now(SHOP_ZONE).plusMinutes(MIN_SCHEDULE_MINUTES))) {
-            return "Giờ hẹn phải sau thời điểm hiện tại ít nhất " + MIN_SCHEDULE_MINUTES + " phút (trong ngày hôm nay).";
+            return "Giờ hẹn phải sau thời điểm hiện tại ít nhất " + MIN_SCHEDULE_MINUTES
+                    + " phút (trong ngày hôm nay).";
         }
         return null;
     }

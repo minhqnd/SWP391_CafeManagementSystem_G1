@@ -27,36 +27,80 @@ public class RegisterController extends HttpServlet {
         if (email == null || email.trim().isEmpty()) {
             email = request.getParameter("username");
         }
+        String phone = request.getParameter("phone");
+        if (phone != null) {
+            phone = phone.trim().replaceAll("[\\s.]", "");
+        }
         String password = request.getParameter("password");
+        String confirmPassword = request.getParameter("confirm_password");
         
-        // Mặc định tất cả user đăng ký mới từ web đều là Khách hàng
-        String dbRole = "CUSTOMER";
-        String dbPosition = null;
-        
-        String phone = String.valueOf(System.currentTimeMillis()); // Generate a placeholder phone since DB requires it to be UNIQUE
+        String redirect = request.getParameter("redirect");
+        String backPath = RedirectUtil.isSafeLocalPath(redirect) ? redirect : "/";
 
-        // Create new User object
-        User newUser = new User();
-        newUser.setFullName(fullName);
-        newUser.setEmail(email);
-        newUser.setPhone(phone);
-        newUser.setRole(dbRole);
-        newUser.setPosition(dbPosition);
-        
-        // Kiểm tra email đã tồn tại chưa
-        if (userDAO.checkEmailExists(email)) {
-            request.getSession().setAttribute("errorMsg", "Email đã tồn tại trong hệ thống.");
-            String redirect = request.getParameter("redirect");
-            String backPath = RedirectUtil.isSafeLocalPath(redirect) ? redirect : "/";
+        // Kiểm tra hợp lệ dữ liệu đầu vào
+        if (fullName == null || fullName.trim().isEmpty()) {
+            request.getSession().setAttribute("errorMsg", "Họ và tên không được để trống.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
             return;
         }
 
-        boolean isSuccess = userDAO.register(newUser, password);
+        if (phone == null || phone.isEmpty()) {
+            request.getSession().setAttribute("errorMsg", "Số điện thoại không được để trống.");
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
+            return;
+        }
 
-        // Đăng ký từ trang Checkout -> quay lại đúng trang đó để đăng nhập và đặt hàng tiếp
-        String redirect = request.getParameter("redirect");
-        String backPath = RedirectUtil.isSafeLocalPath(redirect) ? redirect : "/";
+        if (!phone.matches("^(84|0)[3|5|7|8|9][0-9]{8}$") && !phone.matches("^[0-9]{9,11}$")) {
+            request.getSession().setAttribute("errorMsg", "Số điện thoại không hợp lệ (VD: 0912345678).");
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
+            return;
+        }
+
+        if (email == null || email.trim().isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            request.getSession().setAttribute("errorMsg", "Địa chỉ email không hợp lệ.");
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
+            return;
+        }
+
+        if (password == null || password.length() < 6) {
+            request.getSession().setAttribute("errorMsg", "Mật khẩu phải từ 6 ký tự trở lên.");
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
+            return;
+        }
+
+        if (confirmPassword != null && !confirmPassword.isEmpty() && !password.equals(confirmPassword)) {
+            request.getSession().setAttribute("errorMsg", "Mật khẩu xác nhận không khớp.");
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
+            return;
+        }
+
+        // Kiểm tra số điện thoại đã tồn tại chưa
+        if (userDAO.checkPhoneExists(phone)) {
+            request.getSession().setAttribute("errorMsg", "Số điện thoại đã tồn tại trong hệ thống.");
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
+            return;
+        }
+
+        // Kiểm tra email đã tồn tại chưa
+        if (userDAO.checkEmailExists(email)) {
+            request.getSession().setAttribute("errorMsg", "Email đã tồn tại trong hệ thống.");
+            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
+            return;
+        }
+
+        // Mặc định tất cả user đăng ký mới từ web đều là Khách hàng
+        String dbRole = "CUSTOMER";
+        String dbPosition = null;
+
+        // Create new User object
+        User newUser = new User();
+        newUser.setFullName(fullName.trim());
+        newUser.setEmail(email.trim());
+        newUser.setPhone(phone);
+        newUser.setRole(dbRole);
+        newUser.setPosition(dbPosition);
+
+        boolean isSuccess = userDAO.register(newUser, password);
 
         if (isSuccess) {
             request.getSession().setAttribute("successMsg", "Đăng ký thành công! Vui lòng đăng nhập.");
