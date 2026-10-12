@@ -256,4 +256,109 @@ public class UserDAO extends BaseDAO {
         }
         return null;
     }
+
+    public static final String UNACTIVATED_PASSWORD_HASH = "UNACTIVATED_COUNTER_ACCOUNT";
+
+    /**
+     * Tạo tài khoản khách hàng nhanh tại quầy thu ngân (POS) chỉ với số điện thoại.
+     * Record rỗng các thông tin khác (fullName="", email=null), password_hash = UNACTIVATED_PASSWORD_HASH.
+     */
+    public model.User createQuickCustomer(String phone) {
+        if (phone == null || phone.trim().isEmpty()) return null;
+        phone = phone.trim();
+
+        model.User existing = findCustomerByPhone(phone);
+        if (existing != null) {
+            return existing;
+        }
+
+        String sql = "INSERT INTO users (full_name, phone, email, role, status, password_hash, total_points) " +
+                     "VALUES (?, ?, NULL, 'CUSTOMER', 'ACTIVE', ?, 0)";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, "");
+            ps.setString(2, phone);
+            ps.setString(3, UNACTIVATED_PASSWORD_HASH);
+
+            int affected = ps.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        int id = rs.getInt(1);
+                        return new model.User(
+                                id,
+                                "",
+                                phone,
+                                "",
+                                "CUSTOMER",
+                                null,
+                                "ACTIVE",
+                                "",
+                                "",
+                                "MEMBER",
+                                0
+                        );
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Kiểm tra tài khoản theo số điện thoại kèm lấy mật khẩu hash.
+     */
+    public model.User findUserByPhoneWithPassword(String phone, String[] outPasswordHash) {
+        if (phone == null || phone.trim().isEmpty()) return null;
+        String sql = "SELECT id, full_name, phone, email, role, position, status, total_points, password_hash " +
+                     "FROM users WHERE phone = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, phone.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    if (outPasswordHash != null && outPasswordHash.length > 0) {
+                        outPasswordHash[0] = rs.getString("password_hash");
+                    }
+                    return new model.User(
+                            rs.getInt("id"),
+                            rs.getString("full_name"),
+                            rs.getString("phone"),
+                            rs.getString("email"),
+                            rs.getString("role"),
+                            rs.getString("position"),
+                            rs.getString("status"),
+                            "",
+                            "",
+                            "MEMBER",
+                            rs.getInt("total_points")
+                    );
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Kích hoạt tài khoản đã tạo trước tại quầy khi khách hàng đăng ký trên web.
+     * Cập nhật Họ tên, Email, Mật khẩu mới, giữ nguyên điểm tích lũy và các đơn hàng cũ.
+     */
+    public boolean activateCounterCustomer(int userId, String fullName, String email, String passwordHash) {
+        String sql = "UPDATE users SET full_name = ?, email = ?, password_hash = ? WHERE id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, fullName != null ? fullName.trim() : "");
+            ps.setString(2, (email != null && !email.trim().isEmpty()) ? email.trim() : null);
+            ps.setString(3, passwordHash);
+            ps.setInt(4, userId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

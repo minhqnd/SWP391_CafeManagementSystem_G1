@@ -293,6 +293,15 @@
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">Số điện thoại (để đồng bộ tích điểm tại quầy)</label>
+                                                                        <input type="tel"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="phone" placeholder="0987654321"
+                                                                            pattern="[0-9]{9,15}"
+                                                                            title="Vui lòng nhập số điện thoại từ 9 đến 15 chữ số">
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
                                                                             style="font-size: 0.85rem;">Email</label>
                                                                         <input type="email"
                                                                             class="form-control bg-light border-0 p-2"

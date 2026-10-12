@@ -518,6 +518,44 @@
             background: var(--slate-900);
         }
 
+        .cust-quick-create {
+            margin-top: 6px;
+            padding: 8px 10px;
+            background: #fffbeb;
+            border: 1px dashed #f59e0b;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .cust-quick-create-text {
+            font-size: 11.5px;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .cust-quick-create-btn {
+            background: #b2292e;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s ease;
+        }
+
+        .cust-quick-create-btn:hover {
+            background: #901f23;
+        }
+
         .cust-info-badge {
             display: flex;
             align-items: center;
@@ -1997,8 +2035,18 @@
                 <!-- Customer Search / Loyalty -->
                 <div class="customer-loyalty-section">
                     <div class="cust-input-group" id="custSearchBox">
-                        <input type="text" id="custPhoneInput" class="cust-input" placeholder="Nhập SĐT khách hội viên..." onkeydown="if(event.key==='Enter') searchCustomer()">
+                        <input type="text" id="custPhoneInput" class="cust-input" placeholder="Nhập SĐT khách hội viên..." onkeydown="if(event.key==='Enter') searchCustomer()" oninput="handlePhoneInput()">
                         <button class="cust-btn-search" onclick="searchCustomer()">Tìm</button>
+                    </div>
+                    <!-- Quick Register Alert Box -->
+                    <div id="custQuickRegisterBox" class="cust-quick-create" style="display: none;">
+                        <div class="cust-quick-create-text">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">person_add</span>
+                            <span>Chưa có tài khoản: <strong id="quickRegPhoneDisplay"></strong></span>
+                        </div>
+                        <button type="button" class="cust-quick-create-btn" onclick="quickRegisterCustomer()">
+                            + Tạo tài khoản mới
+                        </button>
                     </div>
                     <div id="custInfoBox" style="display: none;">
                         <div class="cust-info-badge">
@@ -2867,11 +2915,20 @@
             return { subtotal, discount, vat, finalTotal };
         }
 
+        function handlePhoneInput() {
+            const quickBox = document.getElementById('custQuickRegisterBox');
+            if (quickBox) quickBox.style.display = 'none';
+        }
+
         // 7. Customer Loyalty Lookup
         async function searchCustomer() {
-            const phone = document.getElementById('custPhoneInput').value.trim();
+            const phoneInput = document.getElementById('custPhoneInput');
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+            const quickBox = document.getElementById('custQuickRegisterBox');
+            if (quickBox) quickBox.style.display = 'none';
+
             if (!phone) {
-                alert('Vui lòng nhập số điện thoại hoặc email khách hàng.');
+                showToast('Vui lòng nhập số điện thoại khách hàng.', 'warning');
                 return;
             }
 
@@ -2887,21 +2944,74 @@
                 const data = await resp.json();
                 if (data.success && data.customer) {
                     currentCustomer = data.customer;
-                    document.getElementById('custSearchBox').style.display = 'none';
-                    document.getElementById('custInfoBox').style.display = 'block';
-                    document.getElementById('custNameDisplay').textContent = currentCustomer.fullName;
-                    document.getElementById('custTierDisplay').textContent = currentCustomer.tierName;
-                    document.getElementById('custPointsDisplay').textContent = currentCustomer.totalPoints;
-                    document.getElementById('custDiscountDisplay').textContent = formatCurrency(currentCustomer.totalPoints * 1000);
-                    showToast('Đã nhận diện hội viên: ' + currentCustomer.fullName);
-                    renderCart();
+                    applyCustomerToCart(currentCustomer);
+                    const displayName = (currentCustomer.fullName && currentCustomer.fullName.trim()) 
+                        ? currentCustomer.fullName 
+                        : ('Hội viên (' + (currentCustomer.phone || '') + ')');
+                    showToast('Đã nhận diện hội viên: ' + displayName);
                 } else {
-                    alert(data.error || 'Không tìm thấy khách hàng với thông tin này.');
+                    if (quickBox) {
+                        document.getElementById('quickRegPhoneDisplay').textContent = phone;
+                        quickBox.style.display = 'flex';
+                    } else {
+                        showToast(data.error || 'Không tìm thấy thông tin hội viên.', 'info');
+                    }
                 }
             } catch (e) {
                 console.error(e);
-                alert('Lỗi kết nối khi tìm kiếm khách hàng.');
+                showToast('Lỗi kết nối khi tìm kiếm khách hàng.', 'danger');
             }
+        }
+
+        async function quickRegisterCustomer() {
+            const phoneInput = document.getElementById('custPhoneInput');
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+            if (!phone) {
+                showToast('Vui lòng nhập số điện thoại.', 'warning');
+                return;
+            }
+
+            try {
+                const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=quick-register&phone=\${encodeURIComponent(phone)}`, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (resp.status === 401) {
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = `\${CONTEXT_PATH}/login`;
+                    return;
+                }
+                const data = await resp.json();
+                if (data.success && data.customer) {
+                    currentCustomer = data.customer;
+                    const quickBox = document.getElementById('custQuickRegisterBox');
+                    if (quickBox) quickBox.style.display = 'none';
+                    applyCustomerToCart(currentCustomer);
+                    showToast('Đã tạo tài khoản tích điểm mới cho SĐT ' + currentCustomer.phone);
+                } else {
+                    alert(data.error || 'Không thể tạo tài khoản mới.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Lỗi kết nối khi tạo tài khoản tích điểm.');
+            }
+        }
+
+        function applyCustomerToCart(customer) {
+            document.getElementById('custSearchBox').style.display = 'none';
+            const quickBox = document.getElementById('custQuickRegisterBox');
+            if (quickBox) quickBox.style.display = 'none';
+            document.getElementById('custInfoBox').style.display = 'block';
+
+            const displayName = (customer.fullName && customer.fullName.trim()) 
+                ? customer.fullName 
+                : ('Hội viên (' + (customer.phone || '') + ')');
+
+            document.getElementById('custNameDisplay').textContent = displayName;
+            document.getElementById('custTierDisplay').textContent = customer.tierName || 'MEMBER';
+            document.getElementById('custPointsDisplay').textContent = customer.totalPoints || 0;
+            document.getElementById('custDiscountDisplay').textContent = formatCurrency((customer.totalPoints || 0) * 1000);
+            renderCart();
         }
 
         function clearCustomer() {
@@ -2910,6 +3020,8 @@
             document.getElementById('chkUsePoints').checked = false;
             document.getElementById('custSearchBox').style.display = 'flex';
             document.getElementById('custInfoBox').style.display = 'none';
+            const quickBox = document.getElementById('custQuickRegisterBox');
+            if (quickBox) quickBox.style.display = 'none';
             document.getElementById('custPhoneInput').value = '';
             renderCart();
         }
@@ -3044,7 +3156,9 @@
                 orderType: orderType,
                 tableNumber: '',
                 customerId: currentCustomer ? currentCustomer.id : null,
-                recipientName: currentCustomer ? currentCustomer.fullName : (orderType === 'DINE_IN' ? 'Khách tại quán' : 'Khách mang về'),
+                recipientName: (currentCustomer && currentCustomer.fullName && currentCustomer.fullName.trim()) 
+                    ? currentCustomer.fullName 
+                    : ((currentCustomer && currentCustomer.phone) ? ('Khách ' + currentCustomer.phone) : (orderType === 'DINE_IN' ? 'Khách tại quán' : 'Khách mang về')),
                 recipientPhone: currentCustomer ? currentCustomer.phone : '',
                 orderNote: orderNote,
                 paymentMethod: selectedPaymentMethod,

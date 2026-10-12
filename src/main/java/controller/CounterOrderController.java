@@ -88,6 +88,12 @@ public class CounterOrderController extends HttpServlet {
             return;
         }
 
+        // API: Đăng ký nhanh hội viên tại quầy
+        if ("quick-register".equals(action)) {
+            handleQuickRegister(request, response);
+            return;
+        }
+
         // API: Lấy chi tiết đơn hàng
         if ("order-detail".equals(action)) {
             handleOrderDetail(request, response);
@@ -128,6 +134,8 @@ public class CounterOrderController extends HttpServlet {
 
         if ("create-order".equals(action)) {
             handleCreateOrder(request, response);
+        } else if ("quick-register".equals(action)) {
+            handleQuickRegister(request, response);
         } else if ("cancel-order".equals(action)) {
             handleCancelOrder(request, response);
         } else if ("deliver-order".equals(action)) {
@@ -159,7 +167,37 @@ public class CounterOrderController extends HttpServlet {
             );
             sendJson(response, HttpServletResponse.SC_OK, json);
         } else {
-            sendJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"success\":false,\"error\":\"Không tìm thấy thông tin hội viên.\"}");
+            sendJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"success\":false,\"notFound\":true,\"error\":\"Không tìm thấy thông tin hội viên.\"}");
+        }
+    }
+
+    private void handleQuickRegister(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String phone = request.getParameter("phone");
+        if (phone == null || phone.trim().isEmpty()) {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Vui lòng nhập số điện thoại.\"}");
+            return;
+        }
+
+        phone = phone.trim().replaceAll("\\s+", "");
+        if (!phone.matches("^[0-9+]{9,15}$")) {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Số điện thoại không hợp lệ (cần từ 9 đến 15 chữ số).\"}");
+            return;
+        }
+
+        User customer = userDAO.createQuickCustomer(phone);
+        if (customer != null) {
+            String json = String.format(
+                    "{\"success\":true,\"message\":\"Tạo tài khoản tích điểm thành công!\",\"customer\":{\"id\":%d,\"fullName\":\"%s\",\"phone\":\"%s\",\"email\":\"%s\",\"tierName\":\"%s\",\"totalPoints\":%d}}",
+                    customer.getId(),
+                    escapeJson(customer.getFullName()),
+                    escapeJson(customer.getPhone() != null ? customer.getPhone() : ""),
+                    escapeJson(customer.getEmail() != null ? customer.getEmail() : ""),
+                    escapeJson(customer.getTierName() != null ? customer.getTierName() : "MEMBER"),
+                    customer.getTotalPoints()
+            );
+            sendJson(response, HttpServletResponse.SC_OK, json);
+        } else {
+            sendJson(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "{\"success\":false,\"error\":\"Không thể tạo tài khoản tích điểm. Vui lòng thử lại sau.\"}");
         }
     }
 
