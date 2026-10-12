@@ -4,6 +4,9 @@
 <body>
     <h1>Trang quản lý (Admin Dashboard)</h1>
     <p>Xin chào Admin: ${sessionScope.user.fullName}</p>
+    <ul>
+        <li><a href="${pageContext.request.contextPath}/admin/settings">Cài đặt bán hàng online (Freeship, phí giao hàng, thời gian giao, mốc điểm Aura)</a></li>
+    </ul>
     <a href="${pageContext.request.contextPath}/login?action=logout">Đăng xuất (Về trang Login)</a>
 </body>
 </html>

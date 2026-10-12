@@ -1,12 +1,12 @@
 package service;
 
 import dao.ProductDAO;
-import dao.VoucherDAO;
+import dao.ShopSettingDAO;
+import dao.UserDAO;
 import model.Cart;
 import model.CartItem;
 import model.OrderDetail;
 import model.Product;
-import model.Voucher;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,7 +34,8 @@ public class CartService {
     private static final Pattern QUOTED_TEXT = Pattern.compile("\"([^\"]+)\"");
 
     private final ProductDAO productDAO = new ProductDAO();
-    private final VoucherDAO voucherDAO = new VoucherDAO();
+    private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
+    private final UserDAO userDAO = new UserDAO();
 
     /**
      * Tạo một dòng giỏ hàng mới; trả về null nếu món không tồn tại hoặc đã ngừng phục vụ
@@ -50,9 +51,10 @@ public class CartService {
     }
 
     /**
-     * Cập nhật lại tên, ảnh, giá, trạng thái còn phục vụ của các món và voucher trong giỏ theo Database.
-     * customerId: khách đang đăng nhập (null nếu chưa đăng nhập) - voucher đổi điểm chỉ chủ của nó mới dùng được.
-     * Trả về false nếu voucher đang dùng đã hết hạn / hết lượt và bị gỡ khỏi giỏ.
+     * Cập nhật lại tên, ảnh, giá, trạng thái còn phục vụ của các món theo Database, nạp lại cấu hình
+     * freeship / phí giao hàng / mốc điểm của Admin và số điểm Aura khách đang có.
+     * customerId: khách đang đăng nhập (null nếu chưa đăng nhập - không dùng được điểm).
+     * Trả về false nếu số điểm đang dùng không còn hợp lệ và đã bị giảm về mốc hợp lệ gần nhất.
      */
     public boolean refreshCart(Cart cart, Integer customerId) {
         for (CartItem item : cart.getItems()) {
@@ -65,7 +67,9 @@ public class CartService {
             }
         }
 
-        return true;
+        cart.setSettings(shopSettingDAO.getSettings());
+        cart.setAvailablePoints(customerId != null ? userDAO.getTotalPoints(customerId) : 0);
+        return cart.normalizePointsUsed();
     }
 
     /**

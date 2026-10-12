@@ -182,61 +182,118 @@
                         </a>
                     </div>
 
-                    <%-- ===== Cột phải: Freeship, Voucher, Tóm tắt ===== --%>
+                    <%-- ===== Cột phải: Freeship, Điểm Aura, Tóm tắt ===== --%>
                     <div class="col-lg-4">
+                        <c:set var="shop" value="${cart.settings}" />
 
-                        <!-- Tiến độ Freeship -->
+                        <!-- Tiến độ Freeship (mức Freeship và phí giao hàng do Admin cài đặt) -->
                         <div class="aura-card p-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2 small fw-semibold">
-                                <span class="d-flex align-items-center gap-2 text-aura">
-                                    <span class="material-symbols-outlined fs-5">local_shipping</span>
-                                    <c:choose>
-                                        <c:when test="${cart.freeshipReached}">Đơn hàng đủ điều kiện FREESHIP!</c:when>
-                                        <c:otherwise>Mua thêm <fmt:formatNumber value="${cart.freeshipRemaining}" pattern="#,##0" />đ để được FREESHIP</c:otherwise>
-                                    </c:choose>
-                                </span>
-                                <span>${cart.freeshipPercent}%</span>
-                            </div>
-                            <div class="progress aura-progress" role="progressbar" aria-valuenow="${cart.freeshipPercent}" aria-valuemin="0" aria-valuemax="100">
-                                <div class="progress-bar" style="width: ${cart.freeshipPercent}%"></div>
-                            </div>
-                            <div class="text-muted mt-2" style="font-size: 0.78rem;">
-                                <c:choose>
-                                    <c:when test="${cart.freeshipReached}">Bạn đã đạt mốc <b>150.000đ</b> để nhận miễn phí giao hàng.</c:when>
-                                    <c:otherwise>Miễn phí giao hàng cho đơn từ <b>150.000đ</b> (tính trên các món đã chọn).</c:otherwise>
-                                </c:choose>
-                            </div>
+                            <c:choose>
+                                <c:when test="${shop.freeshipThreshold <= 0 || shop.deliveryFee <= 0}">
+                                    <div class="d-flex align-items-center gap-2 small fw-semibold text-aura">
+                                        <span class="material-symbols-outlined fs-5">local_shipping</span>
+                                        Miễn phí giao hàng cho mọi đơn!
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2 small fw-semibold">
+                                        <span class="d-flex align-items-center gap-2 text-aura">
+                                            <span class="material-symbols-outlined fs-5">local_shipping</span>
+                                            <c:choose>
+                                                <c:when test="${cart.freeshipReached}">Đơn hàng đủ điều kiện FREESHIP!</c:when>
+                                                <c:otherwise>Mua thêm <fmt:formatNumber value="${cart.freeshipRemaining}" pattern="#,##0" />đ để được FREESHIP</c:otherwise>
+                                            </c:choose>
+                                        </span>
+                                        <span>${cart.freeshipPercent}%</span>
+                                    </div>
+                                    <div class="progress aura-progress" role="progressbar" aria-valuenow="${cart.freeshipPercent}" aria-valuemin="0" aria-valuemax="100">
+                                        <div class="progress-bar" style="width: ${cart.freeshipPercent}%"></div>
+                                    </div>
+                                    <div class="text-muted mt-2" style="font-size: 0.78rem;">
+                                        <c:choose>
+                                            <c:when test="${cart.freeshipReached}">Bạn đã đạt mốc <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b> để nhận miễn phí giao hàng.</c:when>
+                                            <c:otherwise>
+                                                Miễn phí giao hàng cho đơn từ <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b>
+                                                (tính trên các món đã chọn), phí giao hàng hiện tại <fmt:formatNumber value="${shop.deliveryFee}" pattern="#,##0" />đ.
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
-                        <!-- Điểm thưởng -->
-                        <c:if test="${not empty user}">
-                            <div class="aura-card p-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                                    <span class="d-flex align-items-center gap-2 fw-semibold text-aura">
-                                        <span class="material-symbols-outlined fs-5" style="color: var(--aura-gold);">stars</span>
-                                        Đổi điểm thưởng
-                                    </span>
-                                    <span class="small text-muted">Bạn có: <b>${totalPoints} điểm</b></span>
+
+                        <!-- Dùng điểm Aura: trừ thẳng vào tiền hàng theo các mốc chẵn -->
+                        <div class="aura-card p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                <div class="section-title mb-0">
+                                    <span class="material-symbols-outlined" style="color: var(--aura-gold);">stars</span>
+                                    Dùng điểm Aura
                                 </div>
-                                <c:choose>
-                                    <c:when test="${cart.pointsUsed > 0}">
-                                        <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded border border-aura border-opacity-25">
-                                            <span class="small fw-semibold text-aura">Đang dùng ${cart.pointsUsed} điểm</span>
-                                            <form method="post" action="${ctx}/cart" class="m-0">
-                                                <input type="hidden" name="action" value="removePoints">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2"><i class="fas fa-times"></i> Hủy</button>
-                                            </form>
-                                        </div>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <form method="post" action="${ctx}/cart" class="d-flex gap-2">
-                                            <input type="hidden" name="action" value="applyPoints">
-                                            <input type="number" name="pointsToUse" class="form-control form-control-sm" placeholder="Nhập số điểm" min="1" max="${totalPoints}" required>
-                                            <button type="submit" class="btn btn-sm btn-aura text-nowrap px-3">Đổi điểm</button>
-                                        </form>
-                                    </c:otherwise>
-                                </c:choose>
+                                <c:if test="${not empty sessionScope.user}">
+                                    <span class="badge-soft">Bạn có ${cart.availablePoints} điểm</span>
+                                </c:if>
                             </div>
-                        </c:if>
+                            <div class="text-muted mb-3" style="font-size: 0.78rem;">
+                                Mỗi <b>${shop.pointsStep} điểm</b> giảm <b><fmt:formatNumber value="${shop.pointsStepValue}" pattern="#,##0" />đ</b>,
+                                dùng theo mốc ${shop.pointsStep}, ${2 * shop.pointsStep}, ${3 * shop.pointsStep}... điểm.
+                            </div>
+
+                            <c:choose>
+                                <c:when test="${empty sessionScope.user}">
+                                    <button type="button" class="btn btn-soft w-100 py-2" data-bs-toggle="modal" data-bs-target="#authModal">
+                                        <span class="material-symbols-outlined fs-6">login</span> Đăng nhập để dùng điểm Aura
+                                    </button>
+                                </c:when>
+                                <c:when test="${cart.maxRedeemablePoints <= 0 && cart.pointsUsed == 0}">
+                                    <div class="info-box small py-2 mb-0">
+                                        <c:choose>
+                                            <c:when test="${cart.availablePoints < shop.pointsStep}">
+                                                Cần tối thiểu ${shop.pointsStep} điểm để dùng (còn thiếu ${shop.pointsStep - cart.availablePoints} điểm).
+                                            </c:when>
+                                            <c:otherwise>
+                                                Chọn món từ <fmt:formatNumber value="${shop.pointsStepValue}" pattern="#,##0" />đ trở lên để dùng điểm.
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <%-- Thanh kéo chọn số điểm theo mốc (0, 10, 20...), tối đa là số điểm dùng được cho đơn này --%>
+                                    <form method="post" action="${ctx}/cart" class="points-slider" id="pointsForm"
+                                          data-step="${shop.pointsStep}" data-step-value="${shop.pointsStepValue}">
+                                        <input type="hidden" name="action" value="usePoints">
+                                        <div class="d-flex justify-content-between align-items-end gap-2 mb-2">
+                                            <div>
+                                                <div class="points-slider-value"><span id="pointsValue">${cart.pointsUsed}</span> điểm</div>
+                                                <div class="text-muted" style="font-size: 0.72rem;">Kéo để chọn số điểm</div>
+                                            </div>
+                                            <c:choose>
+                                                <c:when test="${cart.pointsUsed > 0}">
+                                                    <div class="fw-bold text-aura text-nowrap" id="pointsDiscount">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</div>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <div class="fw-semibold text-muted small text-nowrap" id="pointsDiscount">Chưa dùng điểm</div>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
+                                        <input type="range" class="points-range" name="points" id="pointsRange"
+                                               min="0" max="${cart.maxRedeemablePoints}" step="${shop.pointsStep}" value="${cart.pointsUsed}"
+                                               aria-label="Số điểm Aura muốn dùng">
+                                        <div class="points-range-scale">
+                                            <span>0</span>
+                                            <span>Tối đa ${cart.maxRedeemablePoints} điểm</span>
+                                        </div>
+                                        <noscript>
+                                            <button type="submit" class="btn btn-soft btn-sm w-100 mt-2">Áp dụng</button>
+                                        </noscript>
+                                    </form>
+                                    <c:if test="${cart.maxRedeemablePoints < cart.availablePoints - cart.availablePoints % shop.pointsStep}">
+                                        <div class="text-muted mt-2" style="font-size: 0.72rem;">
+                                            Đơn này dùng tối đa ${cart.maxRedeemablePoints} điểm vì số tiền giảm không vượt quá tiền hàng.
+                                        </div>
+                                    </c:if>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
 
                         <!-- Tóm tắt đơn hàng -->
                         <div class="aura-card p-3 p-md-4">
@@ -245,7 +302,19 @@
                                 <span class="label">Tổng tiền hàng (${fn:length(cart.selectedItems)} món)</span>
                                 <span class="fw-semibold"><fmt:formatNumber value="${cart.selectedSubtotal}" pattern="#,##0" />đ</span>
                             </div>
-
+                            <c:if test="${cart.pointsUsed > 0}">
+                                <div class="summary-row">
+                                    <span class="label">Dùng ${cart.pointsUsed} điểm Aura</span>
+                                    <span class="fw-semibold text-aura">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</span>
+                                </div>
+                            </c:if>
+                            <div class="summary-row">
+                                <span class="label">Phí giao hàng</span>
+                                <c:choose>
+                                    <c:when test="${cart.deliveryFee == 0}"><span class="fw-semibold text-success">Miễn phí</span></c:when>
+                                    <c:otherwise><span class="fw-semibold"><fmt:formatNumber value="${cart.deliveryFee}" pattern="#,##0" />đ</span></c:otherwise>
+                                </c:choose>
+                            </div>
                             <div class="summary-row">
                                 <span class="label d-flex align-items-center gap-1">
                                     <span class="material-symbols-outlined" style="font-size: 18px; color: var(--aura-gold);">stars</span>
@@ -259,14 +328,14 @@
                             <div class="d-flex justify-content-between align-items-end gap-2 mb-3">
                                 <div>
                                     <div class="fw-bold">Tổng thanh toán</div>
-                                    <div class="text-muted" style="font-size: 0.72rem;">Chưa gồm phí giao hàng (nếu có)</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">Đã gồm phí giao hàng</div>
                                 </div>
-                                <div class="grand-total"><fmt:formatNumber value="${cart.total}" pattern="#,##0" />đ</div>
+                                <div class="grand-total"><fmt:formatNumber value="${cart.grandTotal}" pattern="#,##0" />đ</div>
                             </div>
                             <c:if test="${cart.discount > 0}">
                                 <div class="saving-note mb-3">
                                     <span class="material-symbols-outlined fs-6">savings</span>
-                                    Đổi ${cart.pointsUsed} điểm giúp bạn tiết kiệm
+                                    Dùng ${cart.pointsUsed} điểm Aura giúp bạn tiết kiệm
                                     <b><fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</b>
                                 </div>
                             </c:if>
@@ -295,6 +364,49 @@
     </c:if>
 
     <!-- Bootstrap 5 JS Bundle (modal, dropdown, menu mobile) -->
+    <script>
+        // Thanh kéo điểm Aura: kéo để xem trước số tiền giảm, thả tay thì áp dụng (giữ nguyên vị trí cuộn trang sau khi tải lại)
+        (function () {
+            try {
+                var savedY = sessionStorage.getItem('cartScrollY');
+                if (savedY !== null) {
+                    sessionStorage.removeItem('cartScrollY');
+                    window.scrollTo(0, parseInt(savedY, 10));
+                }
+            } catch (e) {
+            }
+
+            var form = document.getElementById('pointsForm');
+            if (!form) {
+                return;
+            }
+            var range = document.getElementById('pointsRange');
+            var valueEl = document.getElementById('pointsValue');
+            var discountEl = document.getElementById('pointsDiscount');
+            var step = parseInt(form.dataset.step, 10);
+            var stepValue = parseFloat(form.dataset.stepValue);
+            var appliedPoints = range.value;
+
+            range.addEventListener('input', function () {
+                var points = parseInt(range.value, 10);
+                var discount = step > 0 ? Math.floor(points / step) * stepValue : 0;
+                valueEl.textContent = points;
+                discountEl.textContent = points > 0 ? '-' + discount.toLocaleString('vi-VN') + 'đ' : 'Chưa dùng điểm';
+                discountEl.className = points > 0 ? 'fw-bold text-aura text-nowrap' : 'fw-semibold text-muted small text-nowrap';
+            });
+
+            range.addEventListener('change', function () {
+                if (range.value === appliedPoints) {
+                    return;
+                }
+                try {
+                    sessionStorage.setItem('cartScrollY', String(window.scrollY));
+                } catch (e) {
+                }
+                form.submit();
+            });
+        })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

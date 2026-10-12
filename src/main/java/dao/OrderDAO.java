@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import model.Order;
 import model.OrderDetail;
-import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -263,31 +263,32 @@ public class OrderDAO extends BaseDAO {
         return 0;
     }
 
+    /** placeOrder: khách không còn đủ điểm Aura để trừ (VD vừa dùng điểm cho đơn khác) */
+    public static final int NOT_ENOUGH_POINTS = -2;
+
     /**
-     * Tạo đơn hàng từ các món đã chọn ở Checkout (orders + order_items + trừ lượt voucher)
-     * trong cùng một transaction. Trả về id đơn hàng mới, hoặc -1 nếu thất bại.
+     * Tạo đơn hàng từ các món đã chọn ở Checkout trong cùng một transaction:
+     * orders + order_items + trừ điểm Aura khách dùng (users.total_points + loyalty_transactions REDEEM gắn với đơn).
+     * Trả về id đơn hàng mới, NOT_ENOUGH_POINTS nếu không còn đủ điểm, hoặc -1 nếu lỗi.
      */
     public int placeOrder(Order order, List<CartItem> items, int pointsUsed) {
-
         String insertOrderSql = "INSERT INTO orders (order_code, customer_id, order_type, status, " +
                                 "total_amount, discount_amount, delivery_fee, final_amount, " +
                                 "recipient_name, recipient_phone, delivery_address, order_note) " +
                                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, unit_price, " +
                                "customization, quantity, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)";
-                               
-        String redeemPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'REDEEM')";
-        String deductUserPointsSql = "UPDATE users SET total_points = total_points - ? WHERE id = ?";
-        
-        String earnPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'EARN')";
-        String addUserPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";
+        // Chỉ trừ khi còn đủ điểm (tránh 2 đơn đặt cùng lúc dùng chung số điểm)
+        String usePointsSql = "UPDATE users SET total_points = total_points - ? WHERE id = ? AND total_points >= ?";
+        String redeemSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) " +
+                           "VALUES (?, ?, ?, 'REDEEM')";
 
         Connection conn = null;
         try {
             conn = DBContext.getConnection();
             conn.setAutoCommit(false);
 
-            // 2. Tạo đơn hàng
+            // 1. Tạo đơn hàng
             int orderId;
             try (PreparedStatement ps = conn.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, order.getOrderCode());
@@ -313,6 +314,25 @@ public class OrderDAO extends BaseDAO {
                 }
             }
 
+            // 2. Trừ điểm Aura dùng cho đơn (thất bại nếu không còn đủ điểm)
+            if (pointsUsed > 0) {
+                try (PreparedStatement ps = conn.prepareStatement(usePointsSql)) {
+                    ps.setInt(1, pointsUsed);
+                    ps.setInt(2, order.getCustomerId());
+                    ps.setInt(3, pointsUsed);
+                    if (ps.executeUpdate() == 0) {
+                        conn.rollback();
+                        return NOT_ENOUGH_POINTS;
+                    }
+                }
+                try (PreparedStatement ps = conn.prepareStatement(redeemSql)) {
+                    ps.setInt(1, order.getCustomerId());
+                    ps.setInt(2, orderId);
+                    ps.setInt(3, -pointsUsed);
+                    ps.executeUpdate();
+                }
+            }
+
             // 3. Lưu các món của đơn
             try (PreparedStatement ps = conn.prepareStatement(insertItemSql)) {
                 for (CartItem item : items) {
@@ -326,37 +346,6 @@ public class OrderDAO extends BaseDAO {
                     ps.addBatch();
                 }
                 ps.executeBatch();
-            }
-
-            if (order.getCustomerId() != null && order.getCustomerId() > 0) {
-                if (pointsUsed > 0) {
-                    try (PreparedStatement ps = conn.prepareStatement(redeemPointsSql)) {
-                        ps.setInt(1, order.getCustomerId());
-                        ps.setInt(2, orderId);
-                        ps.setInt(3, -pointsUsed);
-                        ps.executeUpdate();
-                    }
-                    try (PreparedStatement ps = conn.prepareStatement(deductUserPointsSql)) {
-                        ps.setInt(1, pointsUsed);
-                        ps.setInt(2, order.getCustomerId());
-                        ps.executeUpdate();
-                    }
-                }
-
-                int earnedPoints = (int) Math.floor((order.getTotalAmount() - order.getDiscountAmount()) / Cart.MONEY_PER_POINT);
-                if (earnedPoints > 0) {
-                    try (PreparedStatement ps = conn.prepareStatement(earnPointsSql)) {
-                        ps.setInt(1, order.getCustomerId());
-                        ps.setInt(2, orderId);
-                        ps.setInt(3, earnedPoints);
-                        ps.executeUpdate();
-                    }
-                    try (PreparedStatement ps = conn.prepareStatement(addUserPointsSql)) {
-                        ps.setInt(1, earnedPoints);
-                        ps.setInt(2, order.getCustomerId());
-                        ps.executeUpdate();
-                    }
-                }
             }
 
             conn.commit();
@@ -382,9 +371,11 @@ public class OrderDAO extends BaseDAO {
 
     // ===================== Đơn hàng của khách (Thanh toán / Đơn hàng của tôi) =====================
 
-    // Kèm mã voucher và lần thanh toán thành công gần nhất (nếu có)
+    // Kèm số điểm Aura đã dùng cho đơn và lần thanh toán thành công gần nhất (nếu có)
     private static final String CUSTOMER_ORDER_SELECT =
-            "SELECT o.*, pay.payment_method, pay.paid_at " +
+            "SELECT o.*, pay.payment_method, pay.paid_at, " +
+            "       (SELECT COALESCE(-SUM(lt.points_change), 0) FROM loyalty_transactions lt " +
+            "        WHERE lt.order_id = o.id AND lt.transaction_type = 'REDEEM') AS points_used " +
             "FROM orders o " +
             "LEFT JOIN payments pay ON pay.id = (SELECT MAX(p2.id) FROM payments p2 " +
             "                                    WHERE p2.order_id = o.id AND p2.status = 'SUCCESS') ";
@@ -533,13 +524,18 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Khách hủy đơn chưa thanh toán: đổi sang CANCELLED và trả lại lượt dùng voucher (nếu có) trong cùng transaction
+     * Khách hủy đơn chưa thanh toán: đổi sang CANCELLED và hoàn lại điểm Aura đã dùng cho đơn (nếu có)
+     * trong cùng transaction. Lần trừ điểm của đơn bị xoá khỏi lịch sử điểm nên khách thấy như chưa từng dùng.
      */
     public boolean cancelPendingOrder(int orderId, int customerId) {
         String cancelSql = "UPDATE orders SET status = 'CANCELLED' " +
                            "WHERE id = ? AND customer_id = ? AND status = 'PENDING' " +
                            "AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.order_id = orders.id AND p.status = 'SUCCESS')";
-
+        String usedPointsSql = "SELECT COALESCE(-SUM(points_change), 0) FROM loyalty_transactions " +
+                               "WHERE order_id = ? AND customer_id = ? AND transaction_type = 'REDEEM'";
+        String refundPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";
+        String deleteRedeemSql = "DELETE FROM loyalty_transactions " +
+                                 "WHERE order_id = ? AND customer_id = ? AND transaction_type = 'REDEEM'";
 
         Connection conn = null;
         try {
@@ -552,6 +548,29 @@ public class OrderDAO extends BaseDAO {
                 if (ps.executeUpdate() == 0) {
                     conn.rollback();
                     return false;
+                }
+            }
+
+            int usedPoints = 0;
+            try (PreparedStatement ps = conn.prepareStatement(usedPointsSql)) {
+                ps.setInt(1, orderId);
+                ps.setInt(2, customerId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        usedPoints = rs.getInt(1);
+                    }
+                }
+            }
+            if (usedPoints > 0) {
+                try (PreparedStatement ps = conn.prepareStatement(refundPointsSql)) {
+                    ps.setInt(1, usedPoints);
+                    ps.setInt(2, customerId);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = conn.prepareStatement(deleteRedeemSql)) {
+                    ps.setInt(1, orderId);
+                    ps.setInt(2, customerId);
+                    ps.executeUpdate();
                 }
             }
 
@@ -622,6 +641,7 @@ public class OrderDAO extends BaseDAO {
         order.setTableNumber(rs.getString("table_number"));
         order.setOrderNote(rs.getString("order_note"));
         order.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
+        order.setPointsUsed(rs.getInt("points_used"));
         order.setPaymentMethod(rs.getString("payment_method"));
         order.setPaidAt(rs.getObject("paid_at", LocalDateTime.class));
         return order;

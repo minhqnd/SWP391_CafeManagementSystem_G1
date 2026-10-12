@@ -7,8 +7,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -151,19 +149,15 @@ public class Order implements Serializable {
 
     // ===== Thông tin cho khách xem (màn Thanh toán, Đơn hàng của tôi) =====
 
-    // Giờ hẹn do CheckoutController ghi vào order_note, VD: "Hẹn giờ giao: 14:30 | Ít đá"
-    private static final Pattern SCHEDULED_TIME = Pattern.compile("Hẹn giờ (?:giao|lấy): (\\d{1,2}:\\d{2})");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final int DELIVERY_MINUTES = 30;
-    private static final int PICKUP_MINUTES = 15;
 
-    private String voucherCode;
+    private int pointsUsed;         // điểm Aura khách đã dùng để giảm giá đơn này
     private String paymentMethod;   // phương thức của lần thanh toán thành công
     private LocalDateTime paidAt;   // null = chưa thanh toán
 
-    public String getVoucherCode() { return voucherCode; }
-    public void setVoucherCode(String voucherCode) { this.voucherCode = voucherCode; }
+    public int getPointsUsed() { return pointsUsed; }
+    public void setPointsUsed(int pointsUsed) { this.pointsUsed = pointsUsed; }
 
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
@@ -263,25 +257,13 @@ public class Order implements Serializable {
         return (int) Math.floor((totalAmount - discountAmount) / Cart.MONEY_PER_POINT);
     }
 
-    /** Giờ nhận dự kiến: giờ khách hẹn, hoặc sau khi thanh toán 30 phút (giao hàng) / 15 phút (tự đến lấy) */
-    public LocalDateTime getEstimatedReceiveAt() {
-        if (createdAt == null) {
-            return null;
-        }
-        if (orderNote != null) {
-            Matcher scheduled = SCHEDULED_TIME.matcher(orderNote);
-            if (scheduled.find()) {
-                String[] parts = scheduled.group(1).split(":");
-                return createdAt.toLocalDate().atTime(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
-            }
-        }
+    /**
+     * Giờ nhận dự kiến (HH:mm) = lúc thanh toán (chưa thanh toán thì lúc đặt) + thời gian giao Admin cài đặt.
+     * Gọi trong JSP: ${o.estimateReceiveTime(deliveryMinutes)}
+     */
+    public String estimateReceiveTime(int deliveryMinutes) {
         LocalDateTime start = paidAt != null ? paidAt : createdAt;
-        return start.plusMinutes(isDelivery() ? DELIVERY_MINUTES : PICKUP_MINUTES);
-    }
-
-    public String getEstimatedReceiveText() {
-        LocalDateTime time = getEstimatedReceiveAt();
-        return time != null ? time.format(TIME_FORMAT) : "";
+        return start != null ? start.plusMinutes(deliveryMinutes).format(TIME_FORMAT) : "";
     }
 
     public String getCreatedTimeText() {

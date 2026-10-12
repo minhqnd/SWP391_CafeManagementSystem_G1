@@ -5,22 +5,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Cart - Giỏ hàng của khách, lưu trong HttpSession (khách chưa đăng nhập vẫn dùng được)
+ * Cart - Giỏ hàng của khách, lưu trong HttpSession (khách chưa đăng nhập vẫn dùng được).
+ * Mức freeship, phí giao hàng và mốc điểm lấy từ cấu hình Admin (CartService.refreshCart nạp lại mỗi lần xem giỏ).
  */
 public class Cart implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     public static final String SESSION_KEY = "cart";
-    public static final double FREESHIP_THRESHOLD = 150000;
-    public static final double DELIVERY_FEE = 18000;
     public static final double MONEY_PER_POINT = 10000;
     public static final int MAX_QUANTITY = 99;
 
-    public static final double DISCOUNT_PER_POINT = 500;
-
     private final List<CartItem> items = new ArrayList<>();
     private int nextLineId = 1;
-    private int pointsUsed = 0;
+    private ShopSettings settings = new ShopSettings();
+    private int availablePoints;   // điểm Aura khách đang có (0 nếu chưa đăng nhập)
+    private int pointsUsed;        // số điểm khách chọn trừ vào đơn, luôn là bội số của mốc điểm
 
     public List<CartItem> getItems() {
         return items;
@@ -132,19 +131,56 @@ public class Cart implements Serializable {
         return total;
     }
 
+    public ShopSettings getSettings() {
+        return settings;
+    }
+
+    public void setSettings(ShopSettings settings) {
+        this.settings = settings != null ? settings : new ShopSettings();
+    }
+
+    public int getAvailablePoints() {
+        return availablePoints;
+    }
+
+    public void setAvailablePoints(int availablePoints) {
+        this.availablePoints = Math.max(0, availablePoints);
+    }
+
     public int getPointsUsed() {
         return pointsUsed;
     }
 
     public void setPointsUsed(int pointsUsed) {
-        this.pointsUsed = pointsUsed;
+        this.pointsUsed = Math.max(0, pointsUsed);
     }
 
+    /** Số điểm tối đa dùng được cho các món đang chọn (bội số của mốc điểm) */
+    public int getMaxRedeemablePoints() {
+        return settings.getMaxRedeemablePoints(availablePoints, getSelectedSubtotal());
+    }
+
+    /**
+     * Đưa số điểm đang dùng về mốc hợp lệ gần nhất sau khi giỏ hàng, số điểm hiện có hoặc cấu hình mốc điểm thay đổi.
+     * Trả về false nếu đã phải điều chỉnh.
+     */
+    public boolean normalizePointsUsed() {
+        int validPoints = Math.min(pointsUsed, getMaxRedeemablePoints());
+        if (settings.getPointsStep() > 0) {
+            validPoints -= validPoints % settings.getPointsStep();
+        }
+        validPoints = Math.max(0, validPoints);
+        boolean unchanged = validPoints == pointsUsed;
+        pointsUsed = validPoints;
+        return unchanged;
+    }
+
+    /** Số tiền giảm nhờ dùng điểm Aura (không vượt quá tiền hàng) */
     public double getDiscount() {
-        return pointsUsed * DISCOUNT_PER_POINT;
+        return Math.min(settings.getPointsDiscount(pointsUsed), getSelectedSubtotal());
     }
 
-    /** Tổng tiền hàng sau giảm giá (chưa gồm phí giao hàng) */
+    /** Tổng tiền hàng sau khi trừ điểm (chưa gồm phí giao hàng) */
     public double getTotal() {
         return getSelectedSubtotal() - getDiscount();
     }
@@ -154,23 +190,29 @@ public class Cart implements Serializable {
         return (int) Math.floor(getTotal() / MONEY_PER_POINT);
     }
 
+    /** Freeship tính trên tiền các món đã chọn (trước khi trừ điểm) */
     public boolean isFreeshipReached() {
-        return getSelectedSubtotal() >= FREESHIP_THRESHOLD;
+        return getSelectedSubtotal() >= settings.getFreeshipThreshold();
     }
 
     public double getFreeshipRemaining() {
-        return Math.max(0, FREESHIP_THRESHOLD - getSelectedSubtotal());
+        return Math.max(0, settings.getFreeshipThreshold() - getSelectedSubtotal());
     }
 
     public int getFreeshipPercent() {
-        return (int) Math.min(100, Math.floor(getSelectedSubtotal() * 100 / FREESHIP_THRESHOLD));
+        if (settings.getFreeshipThreshold() <= 0) {
+            return 100;
+        }
+        return (int) Math.min(100, Math.floor(getSelectedSubtotal() * 100 / settings.getFreeshipThreshold()));
     }
 
-    /** Phí giao hàng: miễn phí khi lấy tại quầy hoặc đơn từ 150.000đ */
-    public double getDeliveryFee(boolean homeDelivery) {
-        if (!homeDelivery || isFreeshipReached()) {
-            return 0;
-        }
-        return DELIVERY_FEE;
+    /** Phí giao hàng: miễn phí khi tiền hàng đạt mức freeship Admin cài đặt */
+    public double getDeliveryFee() {
+        return isFreeshipReached() ? 0 : settings.getDeliveryFee();
+    }
+
+    /** Khách cần trả = tiền hàng - điểm + phí giao hàng */
+    public double getGrandTotal() {
+        return getTotal() + getDeliveryFee();
     }
 }

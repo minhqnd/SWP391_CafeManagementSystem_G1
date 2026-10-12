@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ taglib prefix="c" uri="jakarta.tags.core" %>
         <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+            <fmt:setLocale value="vi_VN" />
 
             <c:if test="${empty sessionScope.user}">
                 <c:redirect url="/?login=true" />
@@ -263,6 +264,10 @@
                                                 </h2>
                                                 <span class="fs-5 fw-bold text-muted">pts</span>
                                             </div>
+                                            <div class="text-muted mt-1" style="font-size: 0.8rem;">
+                                                Dùng điểm trừ thẳng vào đơn ở <a href="${pageContext.request.contextPath}/cart" class="text-primary-custom fw-semibold">Giỏ hàng</a>:
+                                                mỗi ${shopSettings.pointsStep} điểm giảm <fmt:formatNumber value="${shopSettings.pointsStepValue}" pattern="#,##0" />đ
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="text-end border-start ps-4">
@@ -270,12 +275,10 @@
                                             Chủ tài khoản: <span class="text-dark fw-bold">${sessionScope.user.fullName}</span>
                                         </div>
                                         <div class="d-flex align-items-center justify-content-end gap-2 text-muted">
-                                            <span style="font-family: monospace; font-size: 1rem; background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 0.5rem; border: 1px dashed #ced4da; font-weight: 600; color: var(--primary);">
-                                                #AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}
-                                            </span>
+                                            <span id="memberIdBadge" style="font-family: monospace; font-size: 1rem; background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 0.5rem; border: 1px dashed #ced4da; font-weight: 600; color: var(--primary);">#AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}</span>
                                             <span class="material-symbols-outlined fs-5" style="cursor: pointer; padding: 0.3rem; border-radius: 0.3rem;"
                                                 title="Sao chép mã"
-                                                onclick="copyMemberId('#AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}')"
+                                                onclick="copyMemberId(document.getElementById('memberIdBadge').innerText.trim())"
                                                 onmouseover="this.style.background='#e9ecef'"
                                                 onmouseout="this.style.background='transparent'">content_copy</span>
                                         </div>
@@ -510,8 +513,6 @@
                                 </div>
                             </div>
 
-
-
                             <!-- Tab: History -->
                             <div class="tab-pane fade" id="history" role="tabpanel" tabindex="0">
                                 <div class="info-card">
@@ -548,6 +549,9 @@
                                                                         <c:when test="${txn.transactionType == 'EARN'}">
                                                                             Tích điểm từ đơn hàng #${txn.orderId}
                                                                         </c:when>
+                                                                        <c:when test="${txn.orderId > 0}">
+                                                                            Dùng điểm giảm giá đơn hàng #${txn.orderId}
+                                                                        </c:when>
                                                                         <c:otherwise>
                                                                             Sử dụng điểm đổi ưu đãi
                                                                         </c:otherwise>
@@ -574,8 +578,6 @@
                                     </div>
                                 </div>
                             </div>
-
-
 
                         </div>
                     </div>

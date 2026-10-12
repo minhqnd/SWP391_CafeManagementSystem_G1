@@ -643,10 +643,10 @@
                             <span class="pulse-dot"></span>
                             <span>${o.statusLabel}</span>
                         </div>
-                        <c:if test="${not empty o.estimatedReceiveText}">
+                        <c:if test="${not empty o.estimateReceiveTime(deliveryMinutes)}">
                             <div class="text-end d-none d-sm-block">
                                 <div class="text-muted" style="font-size: 0.68rem; text-transform: uppercase; font-weight: 600;">Dự kiến xong</div>
-                                <div class="fw-bold" style="font-size: 0.95rem; color: #1e293b;">${o.estimatedReceiveText}</div>
+                                <div class="fw-bold" style="font-size: 0.95rem; color: #1e293b;">${o.estimateReceiveTime(deliveryMinutes)}</div>
                             </div>
                         </c:if>
                     </div>
@@ -695,7 +695,7 @@
                                         </div>
                                         <div class="stepper-title">Hoàn thành</div>
                                         <div class="stepper-sub">
-                                            <c:if test="${not empty o.estimatedReceiveText}">Dự kiến ${o.estimatedReceiveText}</c:if>
+                                            <c:if test="${not empty o.estimateReceiveTime(deliveryMinutes)}">Dự kiến ${o.estimateReceiveTime(deliveryMinutes)}</c:if>
                                         </div>
                                     </div>
                                 </div>
@@ -794,14 +794,14 @@
                                         </div>
                                     </div>
 
-                                    <!-- Voucher -->
-                                    <c:if test="${not empty o.voucherCode}">
+                                    <!-- Điểm Aura đã dùng -->
+                                    <c:if test="${o.pointsUsed > 0}">
                                         <div class="side-info-item">
-                                            <span class="material-symbols-outlined side-info-icon">sell</span>
+                                            <span class="material-symbols-outlined side-info-icon">redeem</span>
                                             <div>
-                                                <div class="side-info-label">Khuyến mãi áp dụng</div>
+                                                <div class="side-info-label">Điểm Aura đã dùng</div>
                                                 <div class="side-info-val text-success">
-                                                    <c:out value="${o.voucherCode}" /> (-<fmt:formatNumber value="${o.discountAmount}" pattern="#,##0" />đ)
+                                                    ${o.pointsUsed} điểm (-<fmt:formatNumber value="${o.discountAmount}" pattern="#,##0" />đ)
                                                 </div>
                                             </div>
                                         </div>
@@ -903,8 +903,8 @@
                                 </div>
                                 <div class="history-meta-text">
                                     <span>${o.paymentMethodLabel}</span>
-                                    <c:if test="${not empty o.voucherCode}">
-                                        <span class="text-success">• Mã: <c:out value="${o.voucherCode}" /></span>
+                                    <c:if test="${o.pointsUsed > 0}">
+                                        <span class="text-success">• Dùng ${o.pointsUsed} điểm Aura</span>
                                     </c:if>
                                     <c:if test="${o.completed && o.rewardPoints > 0}">
                                         <span class="text-warning-emphasis">• +${o.rewardPoints} điểm</span>
@@ -925,9 +925,11 @@
                         <div class="text-muted" style="font-size: 0.78rem;">
                             <c:if test="${o.pending}">
                                 <span class="text-warning-emphasis fw-semibold">Đang chờ bạn hoàn tất thanh toán.</span>
+                                <c:if test="${o.pointsUsed > 0}">Nếu hủy đơn, bạn được hoàn lại ${o.pointsUsed} điểm Aura đã dùng.</c:if>
                             </c:if>
                             <c:if test="${o.cancelled}">
                                 <span class="text-muted">Đơn hàng đã được hủy an toàn.</span>
+                                <c:if test="${empty o.paidAt && o.discountAmount > 0}">Điểm Aura đã dùng cho đơn đã được hoàn lại.</c:if>
                             </c:if>
                             <c:if test="${o.completed}">
                                 <span class="text-success-emphasis">Đã hoàn thành và nhận đơn thành công.</span>
