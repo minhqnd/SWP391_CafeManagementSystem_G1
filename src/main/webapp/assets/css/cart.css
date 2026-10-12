@@ -402,28 +402,6 @@ body.aura-cart-page {
     padding: 1rem;
 }
 
-.store-box {
-    display: flex;
-    gap: 0.9rem;
-    align-items: center;
-    background: #f5f7fc;
-    border: 1px solid var(--aura-border);
-    border-radius: 12px;
-    padding: 0.9rem 1rem;
-}
-
-.store-box .store-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    background: var(--aura-primary-soft);
-    color: var(--aura-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
 .checkout-locked .aura-card { opacity: 0.6; }
 
 .login-required {

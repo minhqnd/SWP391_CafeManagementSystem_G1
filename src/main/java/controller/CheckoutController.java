@@ -168,7 +168,6 @@ public class CheckoutController extends HttpServlet {
                 : "";
 
         request.setAttribute("cart", cart);
-        request.setAttribute("storeAddress", STORE_ADDRESS);
         request.setAttribute("recipientName", paramOrDefault(request, "recipientName", defaultName));
         request.setAttribute("recipientPhone", paramOrDefault(request, "recipientPhone", defaultPhone));
         request.setAttribute("deliveryAddress", paramOrDefault(request, "deliveryAddress", ""));

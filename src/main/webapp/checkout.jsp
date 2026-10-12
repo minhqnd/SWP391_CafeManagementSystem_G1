@@ -111,17 +111,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Thời gian giao dự kiến do Admin cài đặt (không còn chọn / hẹn giờ nhận) -->
-                            <div class="store-box">
-                                <span class="store-icon"><span class="material-symbols-outlined">schedule</span></span>
-                                <div>
-                                    <div class="fw-bold">Giao trong khoảng ${shop.deliveryMinutes} phút</div>
-                                    <div class="text-muted" style="font-size: 0.78rem;">
-                                        Tính từ lúc bạn thanh toán &bull; Aura Café &ndash; <c:out value="${storeAddress}" /> pha chế và giao tới bạn
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
                         <!-- Ghi chú -->
