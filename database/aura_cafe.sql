@@ -1,6 +1,6 @@
 -- =====================================================
 -- AURA CAFE ERP - DATABASE SCRIPT
--- TOTAL: 15 TABLES
+-- TOTAL: 16 TABLES
 -- MySQL 8.0.16+
 -- =====================================================
 SET NAMES utf8mb4;
@@ -17,6 +17,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS customer_reviews;
 DROP TABLE IF EXISTS loyalty_transactions;
+DROP TABLE IF EXISTS shop_settings;
 DROP TABLE IF EXISTS inventory_transactions;
 DROP TABLE IF EXISTS purchase_order_items;
 DROP TABLE IF EXISTS purchase_orders;
@@ -557,9 +558,16 @@ CREATE TABLE inventory_transactions (
     INDEX idx_inventory_reference (reference_type, reference_id)
 ) ENGINE=InnoDB;
 
+-- 16. SHOP SETTINGS
+CREATE TABLE shop_settings (
+    setting_key VARCHAR(50) PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- =====================================================
 -- END OF SCRIPT
--- TOTAL: 15 TABLES
+-- TOTAL: 16 TABLES
 -- =====================================================
 USE aura_cafe_erp;
 
@@ -861,6 +869,14 @@ VALUES
 (5, 'SPOILAGE', 100, 'ADJUSTMENT', NULL, '2026-10-03 11:00:00'),
 (3, 'ADJUSTMENT', 50, 'ADJUSTMENT', NULL, '2026-10-03 11:30:00');
 
+-- 16. SHOP SETTINGS
+INSERT INTO shop_settings (setting_key, setting_value) VALUES
+('freeship_threshold', '150000'),
+('delivery_fee', '18000'),
+('delivery_minutes', '30'),
+('points_step', '10'),
+('points_step_value', '2000');
+
 -- =====================================================
 -- VERIFY DATA
 -- =====================================================
@@ -879,7 +895,8 @@ UNION ALL SELECT 'ingredients', COUNT(*) FROM ingredients
 UNION ALL SELECT 'product_ingredients', COUNT(*) FROM product_ingredients
 UNION ALL SELECT 'purchase_orders', COUNT(*) FROM purchase_orders
 UNION ALL SELECT 'purchase_order_items', COUNT(*) FROM purchase_order_items
-UNION ALL SELECT 'inventory_transactions', COUNT(*) FROM inventory_transactions;
+UNION ALL SELECT 'inventory_transactions', COUNT(*) FROM inventory_transactions
+UNION ALL SELECT 'shop_settings', COUNT(*) FROM shop_settings;
 
 SELECT * FROM products;
 SELECT * FROM ingredients;
