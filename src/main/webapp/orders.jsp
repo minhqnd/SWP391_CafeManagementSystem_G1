@@ -396,7 +396,7 @@
             border: 1px solid #e2e8f0;
             height: 100%;
             display: flex;
-            flex-column;
+            flex-direction: column;
             justify-content: space-between;
         }
         .side-panel-title {
