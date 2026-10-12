@@ -1,10 +1,9 @@
 package controller;
 
-import dao.VoucherDAO;
 import model.Cart;
 import model.CartItem;
+import model.ShopSettings;
 import model.User;
-import model.Voucher;
 import service.CartService;
 
 import jakarta.servlet.ServletException;
@@ -23,14 +22,13 @@ import java.util.List;
 /**
  * CartController - Giỏ hàng lưu trong session (không bắt buộc đăng nhập)
  * GET  /cart      : Xem giỏ hàng
- * POST /cart      : Tăng/giảm số lượng, chọn món, xoá món, áp dụng voucher
+ * POST /cart      : Tăng/giảm số lượng, chọn món, xoá món, dùng điểm Aura (theo mốc điểm)
  * POST /cart/add  : Thêm món từ trang Menu / Chi tiết món / Trang chủ (trả về JSON)
  */
 @WebServlet(name = "CartController", urlPatterns = {"/cart", "/cart/add"})
 public class CartController extends HttpServlet {
 
     private final CartService cartService = new CartService();
-    private final VoucherDAO voucherDAO = new VoucherDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -38,19 +36,18 @@ public class CartController extends HttpServlet {
 
         HttpSession session = request.getSession();
         Cart cart = getCart(session);
-        Integer customerId = getCustomerId(session);
 
-        // Cập nhật giá & trạng thái món theo Database, kiểm tra voucher còn hiệu lực
-        String voucherCode = cart.getVoucher() != null ? cart.getVoucher().getCode() : null;
-        if (!cartService.refreshCart(cart, customerId)) {
-            session.setAttribute("cartError", "Mã " + voucherCode + " đã hết hạn hoặc hết lượt sử dụng.");
+        // Cập nhật giá & trạng thái món, cấu hình freeship / mốc điểm và số điểm hiện có theo Database
+        if (!cartService.refreshCart(cart, getCustomerId(session))) {
+            session.setAttribute("cartError", pointsAdjustedMessage(cart));
         }
 
         moveFlashMessage(session, request, "cartMessage");
         moveFlashMessage(session, request, "cartError");
 
         request.setAttribute("cart", cart);
-        request.setAttribute("vouchers", voucherDAO.getUsableVouchers(customerId));
+        // Đăng nhập từ trang này (để dùng điểm Aura) xong sẽ quay lại Giỏ hàng
+        request.setAttribute("authRedirect", "/cart");
         request.getRequestDispatcher("/cart.jsp").forward(request, response);
     }
 
@@ -82,10 +79,8 @@ public class CartController extends HttpServlet {
             cart.removeItem(lineId);
         } else if ("removeSelected".equals(action)) {
             cart.removeSelectedItems();
-        } else if ("applyVoucher".equals(action)) {
-            applyVoucher(session, cart, request.getParameter("voucherCode"));
-        } else if ("removeVoucher".equals(action)) {
-            cart.setVoucher(null);
+        } else if ("usePoints".equals(action)) {
+            usePoints(session, cart, parseInt(request.getParameter("points"), -1));
         }
 
         // PRG: quay lại trang giỏ hàng để tránh gửi lại form khi F5
@@ -125,29 +120,54 @@ public class CartController extends HttpServlet {
         response.getWriter().write("{\"success\":true,\"totalItems\":" + cart.getTotalQuantity() + "}");
     }
 
-    private void applyVoucher(HttpSession session, Cart cart, String code) {
-        if (code == null || code.trim().isEmpty()) {
-            session.setAttribute("cartError", "Vui lòng nhập mã khuyến mãi.");
-            return;
-        }
-
-        String voucherCode = code.trim().toUpperCase();
+    /**
+     * Dùng điểm Aura trừ thẳng vào tiền hàng, chỉ theo các mốc chẵn do Admin cài đặt
+     * (VD mốc 50 điểm: 50, 100, 150...). points = 0: bỏ dùng điểm.
+     */
+    private void usePoints(HttpSession session, Cart cart, int points) {
         Integer customerId = getCustomerId(session);
-        Voucher voucher = voucherDAO.getUsableVoucherByCode(voucherCode, customerId);
-        if (voucher == null) {
-            session.setAttribute("cartError", "Mã " + voucherCode + " không tồn tại hoặc đã hết hạn.");
+        if (customerId == null) {
+            session.setAttribute("cartError", "Vui lòng đăng nhập để dùng điểm Aura.");
+            return;
+        }
+        if (points == 0) {
+            cart.setPointsUsed(0);
+            session.setAttribute("cartMessage", "Đã bỏ dùng điểm Aura cho đơn này.");
             return;
         }
 
+        // Lấy số điểm hiện có, tiền hàng và mốc điểm mới nhất trước khi kiểm tra
         cartService.refreshCart(cart, customerId);
-        if (!voucher.isEligible(cart.getSelectedSubtotal())) {
-            session.setAttribute("cartError", "Mã " + voucher.getCode() + " áp dụng cho đơn từ "
-                    + formatMoney(voucher.getMinOrderValue()) + ". Hãy chọn thêm món nhé!");
+        ShopSettings settings = cart.getSettings();
+        int step = settings.getPointsStep();
+
+        if (points < 0 || step <= 0 || points % step != 0) {
+            session.setAttribute("cartError", "Điểm Aura chỉ được dùng theo mốc " + step + " điểm ("
+                    + step + ", " + (2 * step) + ", " + (3 * step) + "...).");
+            return;
+        }
+        if (points > cart.getAvailablePoints()) {
+            session.setAttribute("cartError", "Bạn chỉ có " + cart.getAvailablePoints() + " điểm Aura.");
+            return;
+        }
+        if (points > cart.getMaxRedeemablePoints()) {
+            session.setAttribute("cartError", cart.getMaxRedeemablePoints() > 0
+                    ? "Đơn này dùng tối đa " + cart.getMaxRedeemablePoints() + " điểm (số tiền giảm không vượt quá tiền hàng)."
+                    : "Tiền hàng chưa đủ để dùng mốc " + step + " điểm (giảm " + formatMoney(settings.getPointsStepValue()) + ").");
             return;
         }
 
-        cart.setVoucher(voucher);
-        session.setAttribute("cartMessage", "Đã áp dụng mã " + voucher.getCode() + ".");
+        cart.setPointsUsed(points);
+        session.setAttribute("cartMessage", "Đã dùng " + points + " điểm Aura, giảm "
+                + formatMoney(settings.getPointsDiscount(points)) + ".");
+    }
+
+    /** Thông báo khi số điểm đang dùng bị giảm do giỏ hàng / số điểm / mốc điểm thay đổi */
+    static String pointsAdjustedMessage(Cart cart) {
+        return cart.getPointsUsed() > 0
+                ? "Số điểm Aura dùng cho đơn đã được điều chỉnh còn " + cart.getPointsUsed()
+                  + " điểm do tiền hàng, số điểm của bạn hoặc mốc điểm vừa thay đổi."
+                : "Đã bỏ dùng điểm Aura do tiền hàng, số điểm của bạn hoặc mốc điểm vừa thay đổi.";
     }
 
     static Cart getCart(HttpSession session) {
@@ -159,7 +179,7 @@ public class CartController extends HttpServlet {
         return cart;
     }
 
-    /** Khách đang đăng nhập (null nếu chưa) - dùng để lấy voucher đổi điểm của riêng khách */
+    /** Khách đang đăng nhập (null nếu chưa) - chỉ khách đăng nhập mới dùng được điểm Aura */
     static Integer getCustomerId(HttpSession session) {
         User user = (User) session.getAttribute("user");
         return user != null ? user.getId() : null;
@@ -174,7 +194,7 @@ public class CartController extends HttpServlet {
         }
     }
 
-    private String formatMoney(double amount) {
+    static String formatMoney(double amount) {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols();
         symbols.setGroupingSeparator('.');
         return new DecimalFormat("#,##0", symbols).format(amount) + "đ";

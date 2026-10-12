@@ -5,7 +5,7 @@
 <fmt:setLocale value="vi_VN" />
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:set var="isGuest" value="${empty sessionScope.user}" />
-<c:set var="isDelivery" value="${method == 'DELIVERY'}" />
+<c:set var="shop" value="${cart.settings}" />
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -39,7 +39,7 @@
             <div class="step-line done"></div>
             <div class="step active">
                 <span class="step-circle"><span class="material-symbols-outlined">local_shipping</span></span>
-                <span class="step-label">2. Xác nhận đơn &amp; Giao nhận</span>
+                <span class="step-label">2. Xác nhận đơn &amp; Giao hàng</span>
             </div>
             <div class="step-line"></div>
             <div class="step">
@@ -55,7 +55,7 @@
                 <div class="flex-grow-1">
                     <div class="fw-bold">Đăng nhập để tiếp tục đặt hàng</div>
                     <div class="text-muted small">
-                        Bạn cần đăng nhập để chọn hình thức nhận hàng, địa chỉ, thời gian nhận và chuyển sang bước thanh toán.
+                        Bạn cần đăng nhập để nhập địa chỉ giao hàng, dùng điểm Aura và chuyển sang bước thanh toán.
                     </div>
                 </div>
                 <button type="button" class="btn btn-aura px-4 py-2 text-nowrap" data-bs-toggle="modal" data-bs-target="#authModal">
@@ -71,46 +71,21 @@
         </c:if>
 
         <form method="post" action="${ctx}/checkout">
-            <input type="hidden" name="method" value="${method}">
-            <c:if test="${!isGuest}">
-                <!-- Nút mặc định khi nhấn Enter trong ô nhập: Xác nhận đơn (không phải đổi hình thức nhận hàng) -->
-                <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">Xác nhận đơn</button>
-            </c:if>
 
             <div class="row g-4">
 
-                <%-- ===== Cột trái: Thông tin giao nhận (khoá khi chưa đăng nhập) ===== --%>
+                <%-- ===== Cột trái: Thông tin giao hàng (khoá khi chưa đăng nhập) ===== --%>
                 <div class="col-lg-7">
                     <fieldset class="${isGuest ? 'checkout-locked' : ''}" ${isGuest ? 'disabled' : ''}>
 
-                        <!-- Phương thức nhận hàng -->
+                        <!-- Địa chỉ giao hàng -->
                         <div class="aura-card p-3 p-md-4 mb-4">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="section-title">
-                                    <span class="section-icon"><span class="material-symbols-outlined">swap_horiz</span></span>
-                                    Phương thức nhận hàng
+                                    <span class="section-icon"><span class="material-symbols-outlined">location_on</span></span>
+                                    Địa chỉ giao hàng
                                 </div>
                                 <span class="badge-step mb-3">Bước 2 / 3</span>
-                            </div>
-                            <div class="method-switch">
-                                <button type="submit" name="switchTo" value="DELIVERY" formnovalidate
-                                        class="method-option ${isDelivery ? 'active' : ''}">
-                                    <span class="material-symbols-outlined fs-5">delivery_dining</span> Giao tận nơi (Delivery)
-                                </button>
-                                <button type="submit" name="switchTo" value="TAKEAWAY" formnovalidate
-                                        class="method-option ${isDelivery ? '' : 'active'}">
-                                    <span class="material-symbols-outlined fs-5">storefront</span> Đến lấy tại quầy (Take-away)
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Địa chỉ giao hàng / Thông tin người nhận -->
-                        <div class="aura-card p-3 p-md-4 mb-4">
-                            <div class="section-title">
-                                <span class="section-icon">
-                                    <span class="material-symbols-outlined">${isDelivery ? 'location_on' : 'person'}</span>
-                                </span>
-                                ${isDelivery ? 'Địa chỉ giao hàng' : 'Thông tin người nhận'}
                             </div>
 
                             <div class="info-box mb-3">
@@ -127,62 +102,23 @@
                                                maxlength="15" required placeholder="0908 123 456"
                                                value="${fn:escapeXml(recipientPhone)}">
                                     </div>
-                                    <c:if test="${isDelivery}">
-                                        <div class="col-12">
-                                            <label for="deliveryAddress" class="form-label small fw-semibold mb-1">Địa chỉ nhận hàng</label>
-                                            <input type="text" id="deliveryAddress" name="deliveryAddress" class="form-control aura-input bg-white"
-                                                   minlength="10" maxlength="255" required
-                                                   placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
-                                                   value="${fn:escapeXml(deliveryAddress)}">
-                                        </div>
-                                    </c:if>
+                                    <div class="col-12">
+                                        <label for="deliveryAddress" class="form-label small fw-semibold mb-1">Địa chỉ nhận hàng</label>
+                                        <input type="text" id="deliveryAddress" name="deliveryAddress" class="form-control aura-input bg-white"
+                                               minlength="10" maxlength="255" required
+                                               placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
+                                               value="${fn:escapeXml(deliveryAddress)}">
+                                    </div>
                                 </div>
                             </div>
 
+                            <!-- Thời gian giao dự kiến do Admin cài đặt (không còn chọn / hẹn giờ nhận) -->
                             <div class="store-box">
-                                <span class="store-icon"><span class="material-symbols-outlined">store</span></span>
+                                <span class="store-icon"><span class="material-symbols-outlined">schedule</span></span>
                                 <div>
-                                    <div class="item-category">${isDelivery ? 'Cửa hàng xử lý đơn' : 'Địa điểm nhận hàng'}</div>
-                                    <div class="fw-bold">Aura Café &ndash; <c:out value="${storeAddress}" /></div>
+                                    <div class="fw-bold">Giao trong khoảng ${shop.deliveryMinutes} phút</div>
                                     <div class="text-muted" style="font-size: 0.78rem;">
-                                        ${isDelivery ? 'Dự kiến hoàn thiện & giao tới bạn trong 25 - 30 phút' : 'Đồ uống sẵn sàng sau 10 - 15 phút kể từ khi thanh toán'}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Thời gian nhận hàng -->
-                        <div class="aura-card p-3 p-md-4 mb-4">
-                            <div class="section-title">
-                                <span class="section-icon"><span class="material-symbols-outlined">schedule</span></span>
-                                Thời gian nhận hàng
-                            </div>
-                            <div class="row g-3">
-                                <!-- Radio đứng ngay trước khung .time-option để CSS tô sáng khung đang chọn (input:checked + .time-option) -->
-                                <div class="col-md-6">
-                                    <div class="time-choice">
-                                        <input class="form-check-input" type="radio" name="deliveryTime" value="NOW" id="deliveryTimeNow"
-                                               ${deliveryTime != 'SCHEDULED' ? 'checked' : ''}>
-                                        <label class="time-option" for="deliveryTimeNow">
-                                            <span class="d-block fw-semibold small">${isDelivery ? 'Giao ngay lập tức' : 'Lấy ngay khi pha xong'}</span>
-                                            <span class="d-block text-muted" style="font-size: 0.75rem;">
-                                                ${isDelivery ? 'Ưu tiên Barista pha chế & giao trong 25 - 30 phút' : 'Barista pha chế ngay sau khi bạn thanh toán'}
-                                            </span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="time-choice">
-                                        <input class="form-check-input" type="radio" name="deliveryTime" value="SCHEDULED" id="deliveryTimeScheduled"
-                                               ${deliveryTime == 'SCHEDULED' ? 'checked' : ''}>
-                                        <div class="time-option">
-                                            <label class="d-block" for="deliveryTimeScheduled">
-                                                <span class="d-block fw-semibold small">${isDelivery ? 'Hẹn giờ giao cụ thể' : 'Hẹn giờ lấy cụ thể'}</span>
-                                                <span class="d-block text-muted" style="font-size: 0.75rem;">Chọn khung giờ tiện nhất trong ngày hôm nay</span>
-                                            </label>
-                                            <input type="time" name="scheduledTime" class="form-control form-control-sm aura-input bg-white mt-2"
-                                                   aria-label="Giờ hẹn nhận hàng" value="${fn:escapeXml(scheduledTime)}">
-                                        </div>
+                                        Tính từ lúc bạn thanh toán &bull; Aura Café &ndash; <c:out value="${storeAddress}" /> pha chế và giao tới bạn
                                     </div>
                                 </div>
                             </div>
@@ -192,10 +128,10 @@
                         <div class="aura-card p-3 p-md-4">
                             <div class="section-title">
                                 <span class="section-icon"><span class="material-symbols-outlined">edit_note</span></span>
-                                ${isDelivery ? 'Ghi chú giao hàng' : 'Ghi chú cho quán'}
+                                Ghi chú giao hàng
                             </div>
                             <textarea name="orderNote" class="form-control aura-input" rows="3" maxlength="500"
-                                      placeholder="${isDelivery ? 'VD: Gửi bảo vệ tầng hầm B1, gọi điện thoại trước khi đến nhận hàng.' : 'VD: Ít đá, đóng gói mang đi cẩn thận.'}"><c:out value="${orderNote}" /></textarea>
+                                      placeholder="VD: Ít đá, gửi bảo vệ tầng hầm B1, gọi điện thoại trước khi giao."><c:out value="${orderNote}" /></textarea>
                         </div>
                     </fieldset>
                 </div>
@@ -243,16 +179,15 @@
                         <div class="summary-row">
                             <span class="label">Phí giao hàng:</span>
                             <c:choose>
-                                <c:when test="${!isDelivery}"><span class="fw-semibold text-muted">Nhận tại quầy</span></c:when>
-                                <c:when test="${deliveryFee == 0}"><span class="fw-semibold text-success">Miễn phí</span></c:when>
-                                <c:otherwise><span class="fw-semibold"><fmt:formatNumber value="${deliveryFee}" pattern="#,##0" />đ</span></c:otherwise>
+                                <c:when test="${cart.deliveryFee == 0}"><span class="fw-semibold text-success">Miễn phí</span></c:when>
+                                <c:otherwise><span class="fw-semibold"><fmt:formatNumber value="${cart.deliveryFee}" pattern="#,##0" />đ</span></c:otherwise>
                             </c:choose>
                         </div>
-                        <c:if test="${cart.voucherEligible}">
+                        <c:if test="${cart.pointsUsed > 0}">
                             <div class="summary-row">
                                 <span class="label d-flex align-items-center gap-1">
-                                    <span class="material-symbols-outlined" style="font-size: 17px;">sell</span>
-                                    Voucher giảm giá (<c:out value="${cart.voucher.code}" />)
+                                    <span class="material-symbols-outlined" style="font-size: 17px; color: var(--aura-gold);">stars</span>
+                                    Dùng ${cart.pointsUsed} điểm Aura:
                                 </span>
                                 <span class="fw-semibold text-aura">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</span>
                             </div>
@@ -262,11 +197,16 @@
 
                         <div class="d-flex justify-content-between align-items-end gap-2 mb-3">
                             <div class="fw-bold fs-5">Tổng thanh toán</div>
-                            <div class="grand-total"><fmt:formatNumber value="${grandTotal}" pattern="#,##0" />đ</div>
+                            <div class="grand-total"><fmt:formatNumber value="${cart.grandTotal}" pattern="#,##0" />đ</div>
                         </div>
                         <div class="info-box small mb-3 d-flex align-items-center gap-2">
                             <span class="material-symbols-outlined fs-5 text-aura">qr_code_2</span>
-                            <span>Thanh toán bằng <b>chuyển khoản VietQR</b> ở bước tiếp theo. Đơn được cộng <b>+${cart.rewardPoints} điểm Aura</b> sau khi thanh toán.</span>
+                            <span>
+                                Thanh toán bằng <b>chuyển khoản VietQR</b> ở bước tiếp theo. Đơn được cộng <b>+${cart.rewardPoints} điểm Aura</b> sau khi thanh toán.
+                                <c:if test="${cart.pointsUsed > 0}">
+                                    ${cart.pointsUsed} điểm dùng cho đơn được trừ ngay khi xác nhận và hoàn lại nếu bạn hủy đơn chưa thanh toán.
+                                </c:if>
+                            </span>
                         </div>
 
                         <c:choose>

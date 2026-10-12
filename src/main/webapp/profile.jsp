@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<fmt:setLocale value="vi_VN" />
 
 <c:if test="${empty sessionScope.user}">
     <c:redirect url="/?login=true" />
@@ -285,7 +286,7 @@
                             <div class="text-end bg-white bg-opacity-10 p-3 rounded-3 border border-white border-opacity-25">
                                 <div class="text-white-50 mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Điểm tích luỹ Aura</div>
                                 <div class="fs-2 fw-bold text-white lh-1 mb-1">${sessionScope.user.totalPoints != null ? sessionScope.user.totalPoints : 0} <span class="fs-6 fw-normal">pts</span></div>
-                                <div class="text-white-50" style="font-size: 0.7rem;">Dùng điểm để đổi voucher giảm giá</div>
+                                <div class="text-white-50" style="font-size: 0.7rem;">Dùng điểm trừ thẳng vào đơn hàng</div>
                             </div>
                         </div>
 
@@ -374,7 +375,7 @@
             <!-- Menu Bar -->
             <ul class="nav profile-nav-bar mb-4" id="profileTab" role="tablist">
                 <li class="nav-item flex-fill text-center" role="presentation">
-                    <button class="nav-link profile-nav-item w-100 justify-content-center" id="rewards-tab" data-bs-toggle="tab" data-bs-target="#rewards" type="button" role="tab"><span class="material-symbols-outlined fs-5">redeem</span> Đổi quà & Ưu đãi</button>
+                    <button class="nav-link profile-nav-item w-100 justify-content-center" id="rewards-tab" data-bs-toggle="tab" data-bs-target="#rewards" type="button" role="tab"><span class="material-symbols-outlined fs-5">redeem</span> Dùng điểm Aura</button>
                 </li>
                 <li class="nav-item flex-fill text-center" role="presentation">
                     <button class="nav-link profile-nav-item w-100 justify-content-center" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab"><span class="material-symbols-outlined fs-5">history</span> Lịch sử tích điểm</button>
@@ -539,52 +540,55 @@
                         </div>
                     </div>
 
+                    <!-- Dùng điểm Aura: trừ thẳng vào đơn hàng theo mốc Admin cài đặt (không còn đổi voucher) -->
+                    <c:set var="myPoints" value="${sessionScope.user.totalPoints != null ? sessionScope.user.totalPoints : 0}" />
+                    <c:set var="myMaxPoints" value="${myPoints - (myPoints % shopSettings.pointsStep)}" />
                     <div class="info-card">
-                        <div class="d-flex justify-content-between align-items-end mb-4 pb-3 border-bottom">
+                        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4 pb-3 border-bottom">
                             <div>
-                                <h3 class="fs-5 fw-bold mb-1">Gian hàng đổi điểm Aura Rewards</h3>
-                                <p class="text-muted mb-0" style="font-size: 0.85rem;">Đổi điểm tích luỹ lấy voucher giảm giá và quà tặng thương hiệu</p>
+                                <h3 class="fs-5 fw-bold mb-1">Dùng điểm Aura khi đặt hàng</h3>
+                                <p class="text-muted mb-0" style="font-size: 0.85rem;">
+                                    Điểm được trừ thẳng vào tiền hàng ở bước Giỏ hàng, theo các mốc chẵn
+                                    ${shopSettings.pointsStep}, ${2 * shopSettings.pointsStep}, ${3 * shopSettings.pointsStep}... điểm
+                                </p>
                             </div>
                             <div class="text-muted d-flex align-items-center gap-2" style="font-size: 0.85rem;">
-                                Số điểm hiện có: <span class="badge bg-danger-subtle text-danger fw-bold fs-6 px-3 py-2 border border-danger-subtle rounded-pill">${sessionScope.user.totalPoints} pts</span>
+                                Số điểm hiện có: <span class="badge bg-danger-subtle text-danger fw-bold fs-6 px-3 py-2 border border-danger-subtle rounded-pill">${myPoints} pts</span>
                             </div>
                         </div>
 
-                        <div class="row g-4">
-                            <c:forEach var="reward" items="${rewardsList}">
-                                <div class="col-lg-3 col-md-6">
-                                    <div class="card h-100 border rounded-3 shadow-sm position-relative ${reward.stock == 0 ? 'bg-light' : ''}">
-                                        <span class="position-absolute top-0 end-0 mt-3 me-3 ${reward.stock == 0 ? 'text-muted' : 'text-danger'} small fw-bold text-uppercase" style="font-size:0.7rem;">${reward.category}</span>
-                                        <div class="card-body d-flex flex-column ${reward.stock == 0 ? 'opacity-75' : ''}">
-                                            <div class="rounded ${reward.stock == 0 ? 'bg-secondary-subtle' : 'bg-danger-subtle'} d-inline-flex p-2 mb-3" style="width:fit-content;">
-                                                <span class="material-symbols-outlined ${reward.stock == 0 ? 'text-secondary' : 'text-danger'}">${reward.imageIcon}</span>
-                                            </div>
-                                            <h5 class="fw-bold fs-6 mb-2">${reward.name}</h5>
-                                            <p class="text-muted mb-4" style="font-size: 0.8rem;">${reward.description}</p>
-                                            <div class="mt-auto d-flex justify-content-between align-items-end">
-                                                <div>
-                                                    <div class="text-muted" style="font-size: 0.7rem;">Điểm cần:</div>
-                                                    <div class="fw-bold ${reward.stock == 0 ? 'text-secondary' : 'text-danger'} fs-5">${reward.pointsCost} <span class="fs-6">pts</span></div>
-                                                </div>
-                                                <c:choose>
-                                                    <c:when test="${reward.stock == 0}">
-                                                        <button class="btn btn-secondary btn-sm fw-bold px-3 py-2 rounded-pill" disabled>Hết hàng</button>
-                                                    </c:when>
-                                                    <c:when test="${sessionScope.user.totalPoints < reward.pointsCost}">
-                                                        <button class="btn btn-outline-secondary btn-sm fw-bold px-3 py-2 rounded-pill" disabled>Thiếu điểm</button>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <form action="${pageContext.request.contextPath}/profile?action=redeemReward" method="POST" class="m-0">
-                                                            <input type="hidden" name="rewardId" value="${reward.id}">
-                                                            <button type="submit" class="btn btn-primary-custom btn-sm fw-bold px-3 py-2 rounded-pill" onclick="return confirm('Bạn có chắc chắn muốn dùng ${reward.pointsCost} điểm để đổi quà này?');">Đổi ngay</button>
-                                                        </form>
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </div>
+                        <div class="row g-3 mb-4">
+                            <c:forEach var="i" begin="1" end="4">
+                                <div class="col-lg-3 col-6">
+                                    <div class="card h-100 border rounded-3 shadow-sm ${myPoints < i * shopSettings.pointsStep ? 'bg-light opacity-75' : ''}">
+                                        <div class="card-body text-center">
+                                            <div class="fw-bold fs-5 ${myPoints < i * shopSettings.pointsStep ? 'text-secondary' : 'text-danger'}">${i * shopSettings.pointsStep} <span class="fs-6">pts</span></div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">giảm</div>
+                                            <div class="fw-bold fs-6"><fmt:formatNumber value="${i * shopSettings.pointsStepValue}" pattern="#,##0" />đ</div>
                                         </div>
                                     </div>
                                 </div>
                             </c:forEach>
+                        </div>
+
+                        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 p-3 rounded-3 bg-light">
+                            <div style="font-size: 0.9rem;">
+                                <c:choose>
+                                    <c:when test="${myMaxPoints > 0}">
+                                        Bạn đang dùng được tối đa <b>${myMaxPoints} điểm</b> = giảm
+                                        <b><fmt:formatNumber value="${(myMaxPoints / shopSettings.pointsStep) * shopSettings.pointsStepValue}" pattern="#,##0" />đ</b>
+                                        (số tiền giảm không vượt quá tiền hàng của đơn).
+                                    </c:when>
+                                    <c:otherwise>
+                                        Tích thêm <b>${shopSettings.pointsStep - myPoints} điểm</b> nữa để dùng mốc đầu tiên
+                                        (giảm <fmt:formatNumber value="${shopSettings.pointsStepValue}" pattern="#,##0" />đ).
+                                    </c:otherwise>
+                                </c:choose>
+                                <div class="text-muted small mt-1">Điểm dùng cho đơn được hoàn lại nếu bạn hủy đơn chưa thanh toán.</div>
+                            </div>
+                            <a href="${pageContext.request.contextPath}/cart" class="btn btn-danger fw-bold px-4 py-2 rounded-pill text-nowrap">
+                                Dùng điểm ở Giỏ hàng
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -622,6 +626,9 @@
                                                         <c:choose>
                                                             <c:when test="${txn.transactionType == 'EARN'}">
                                                                 Tích điểm đơn hàng #AUR-${txn.orderId}
+                                                            </c:when>
+                                                            <c:when test="${txn.orderId > 0}">
+                                                                Dùng điểm giảm giá đơn hàng #AUR-${txn.orderId}
                                                             </c:when>
                                                             <c:otherwise>
                                                                 Sử dụng điểm đổi ưu đãi

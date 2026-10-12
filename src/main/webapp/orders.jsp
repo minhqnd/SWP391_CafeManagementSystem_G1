@@ -103,7 +103,7 @@
                     </div>
                     <div class="text-lg-end">
                         <div class="text-uppercase opacity-75" style="font-size: 0.7rem; letter-spacing: 0.5px;">Thời gian nhận dự kiến</div>
-                        <div class="fw-bold fs-4 lh-1">${o.estimatedReceiveText}</div>
+                        <div class="fw-bold fs-4 lh-1">${o.estimateReceiveTime(deliveryMinutes)}</div>
                     </div>
                 </div>
 
@@ -135,7 +135,7 @@
                                     <div class="tracker-step ${o.progressStep == 4 ? 'done' : ''}">
                                         <span class="tracker-dot"><span class="material-symbols-outlined">${o.delivery ? 'flag' : 'task_alt'}</span></span>
                                         <div class="tracker-label">${o.delivery ? 'Giao thành công' : 'Đã nhận món'}</div>
-                                        <div class="tracker-sub">Dự kiến ${o.estimatedReceiveText}</div>
+                                        <div class="tracker-sub">Dự kiến ${o.estimateReceiveTime(deliveryMinutes)}</div>
                                     </div>
                                 </div>
                             </div>
@@ -200,12 +200,12 @@
                                         <div class="text-muted" style="font-size: 0.75rem;">Lúc ${o.paidAtText}</div>
                                     </div>
                                 </div>
-                                <c:if test="${not empty o.voucherCode}">
+                                <c:if test="${o.pointsUsed > 0}">
                                     <div class="info-row">
-                                        <span class="material-symbols-outlined">sell</span>
+                                        <span class="material-symbols-outlined">redeem</span>
                                         <div>
-                                            <div class="bank-label">Voucher</div>
-                                            <div class="fw-semibold"><c:out value="${o.voucherCode}" /> (-<fmt:formatNumber value="${o.discountAmount}" pattern="#,##0" />đ)</div>
+                                            <div class="bank-label">Điểm Aura đã dùng</div>
+                                            <div class="fw-semibold">${o.pointsUsed} điểm (-<fmt:formatNumber value="${o.discountAmount}" pattern="#,##0" />đ)</div>
                                         </div>
                                     </div>
                                 </c:if>
@@ -265,21 +265,24 @@
                             <div class="text-muted" style="font-size: 0.78rem;">
                                 ${o.delivery ? 'Giao đến' : 'Nhận tại quầy'}: <c:out value="${o.delivery ? o.deliveryAddress : storeAddress}" />
                                 • Thanh toán: ${o.paymentMethodLabel}
-                                <c:if test="${not empty o.voucherCode}"> • Voucher <c:out value="${o.voucherCode}" /> (-<fmt:formatNumber value="${o.discountAmount}" pattern="#,##0" />đ)</c:if>
+                                <c:if test="${o.pointsUsed > 0}"> • Dùng ${o.pointsUsed} điểm Aura (-<fmt:formatNumber value="${o.discountAmount}" pattern="#,##0" />đ)</c:if>
                                 <c:if test="${o.completed && o.rewardPoints > 0}"> • Đã tích luỹ +${o.rewardPoints} điểm Aura</c:if>
                             </div>
                             <c:if test="${o.pending}">
                                 <div class="info-box small mt-2 mb-0">
                                     Đơn đang chờ bạn chuyển khoản. Bar sẽ bắt đầu pha chế ngay sau khi thanh toán.
+                                    <c:if test="${o.pointsUsed > 0}">Nếu hủy đơn, bạn được hoàn lại ${o.pointsUsed} điểm Aura đã dùng.</c:if>
                                 </div>
                             </c:if>
                             <c:if test="${o.cancelled}">
                                 <div class="info-box small mt-2 mb-0">
                                     <c:choose>
                                         <c:when test="${not empty o.paidAt}">Đơn đã hủy sau khi thanh toán, vui lòng liên hệ quầy để được hoàn tiền.</c:when>
-                                        <c:otherwise>Đơn đã hủy trước khi thanh toán nên không phát sinh chi phí.</c:otherwise>
+                                        <c:otherwise>
+                                            Đơn đã hủy trước khi thanh toán nên không phát sinh chi phí.
+                                            <c:if test="${o.discountAmount > 0}">Điểm Aura đã dùng cho đơn đã được hoàn lại.</c:if>
+                                        </c:otherwise>
                                     </c:choose>
-                                    <c:if test="${not empty o.voucherCode}"> Mã <c:out value="${o.voucherCode}" /> đã được hoàn lại lượt dùng.</c:if>
                                 </div>
                             </c:if>
                         </div>

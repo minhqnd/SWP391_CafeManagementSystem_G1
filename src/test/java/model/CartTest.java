@@ -93,40 +93,80 @@ public class CartTest {
     }
 
     @Test
-    @DisplayName("Voucher phần trăm có giới hạn mức giảm tối đa")
-    void testPercentVoucherWithCap() {
+    @DisplayName("Dùng điểm Aura theo mốc: trừ thẳng vào tiền hàng")
+    void testPointsDiscount() {
         cart.addItem(item(1, "M", 100000, 3));
-        cart.setVoucher(new Voucher(1, "WELCOME10", Voucher.TYPE_PERCENT, 10, 50000, 25000.0));
+        cart.setAvailablePoints(180);
+        cart.setPointsUsed(100);
 
-        assertEquals(300000, cart.getSelectedSubtotal());
-        assertEquals(25000, cart.getDiscount());
-        assertEquals(275000, cart.getTotal());
-        assertEquals(27, cart.getRewardPoints());
+        // Mặc định mỗi 50 điểm giảm 10.000đ
+        assertEquals(20000, cart.getDiscount());
+        assertEquals(280000, cart.getTotal());
+        assertEquals(28, cart.getRewardPoints());
+        assertEquals(150, cart.getMaxRedeemablePoints());
+        assertTrue(cart.normalizePointsUsed());
     }
 
     @Test
-    @DisplayName("Voucher chưa đạt giá trị tối thiểu thì không được giảm")
-    void testVoucherBelowMinimumOrder() {
-        cart.addItem(item(1, "M", 45000, 1));
-        cart.setVoucher(new Voucher(2, "AURA20000", Voucher.TYPE_FIXED_AMOUNT, 20000, 100000, null));
+    @DisplayName("Số điểm đang dùng tự giảm về mốc hợp lệ khi tiền hàng / số điểm thay đổi")
+    void testNormalizePointsUsed() {
+        cart.addItem(item(1, "M", 25000, 1));
+        cart.setAvailablePoints(500);
+        assertEquals(100, cart.getMaxRedeemablePoints());   // giảm tối đa 20.000đ <= 25.000đ tiền hàng
 
-        assertFalse(cart.isVoucherEligible());
+        cart.setPointsUsed(150);
+        assertFalse(cart.normalizePointsUsed());
+        assertEquals(100, cart.getPointsUsed());
+
+        cart.setAvailablePoints(60);
+        assertFalse(cart.normalizePointsUsed());
+        assertEquals(50, cart.getPointsUsed());
+
+        cart.setAvailablePoints(0);
+        assertFalse(cart.normalizePointsUsed());
+        assertEquals(0, cart.getPointsUsed());
         assertEquals(0, cart.getDiscount());
-        assertEquals(45000, cart.getTotal());
     }
 
     @Test
-    @DisplayName("Phí giao hàng: miễn phí từ 150.000đ hoặc khi lấy tại quầy")
+    @DisplayName("Phí giao hàng & mức Freeship theo cấu hình Admin")
     void testDeliveryFee() {
         cart.addItem(item(1, "M", 50000, 2));
-        assertEquals(Cart.DELIVERY_FEE, cart.getDeliveryFee(true));
-        assertEquals(0, cart.getDeliveryFee(false));
+        assertEquals(18000, cart.getDeliveryFee());
         assertEquals(50000, cart.getFreeshipRemaining());
         assertEquals(66, cart.getFreeshipPercent());
+        assertEquals(118000, cart.getGrandTotal());
 
         cart.addItem(item(2, "M", 50000, 1));
         assertTrue(cart.isFreeshipReached());
-        assertEquals(0, cart.getDeliveryFee(true));
+        assertEquals(0, cart.getDeliveryFee());
         assertEquals(100, cart.getFreeshipPercent());
+
+        // Admin nâng mức Freeship và phí giao hàng
+        ShopSettings settings = new ShopSettings();
+        settings.setFreeshipThreshold(200000);
+        settings.setDeliveryFee(25000);
+        cart.setSettings(settings);
+        assertFalse(cart.isFreeshipReached());
+        assertEquals(25000, cart.getDeliveryFee());
+        assertEquals(50000, cart.getFreeshipRemaining());
+        assertEquals(175000, cart.getGrandTotal());
+
+        // Mức Freeship = 0: mọi đơn đều miễn phí giao hàng
+        settings.setFreeshipThreshold(0);
+        assertEquals(0, cart.getDeliveryFee());
+        assertEquals(100, cart.getFreeshipPercent());
+    }
+
+    @Test
+    @DisplayName("Freeship tính trên tiền hàng trước khi trừ điểm")
+    void testFreeshipBeforePoints() {
+        cart.addItem(item(1, "M", 150000, 1));
+        cart.setAvailablePoints(100);
+        cart.setPointsUsed(100);
+
+        assertEquals(130000, cart.getTotal());
+        assertTrue(cart.isFreeshipReached());
+        assertEquals(130000, cart.getGrandTotal());
     }
 }

@@ -182,103 +182,120 @@
                         </a>
                     </div>
 
-                    <%-- ===== Cột phải: Freeship, Voucher, Tóm tắt ===== --%>
+                    <%-- ===== Cột phải: Freeship, Điểm Aura, Tóm tắt ===== --%>
                     <div class="col-lg-4">
+                        <c:set var="shop" value="${cart.settings}" />
 
-                        <!-- Tiến độ Freeship -->
+                        <!-- Tiến độ Freeship (mức Freeship và phí giao hàng do Admin cài đặt) -->
                         <div class="aura-card p-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2 small fw-semibold">
-                                <span class="d-flex align-items-center gap-2 text-aura">
-                                    <span class="material-symbols-outlined fs-5">local_shipping</span>
-                                    <c:choose>
-                                        <c:when test="${cart.freeshipReached}">Đơn hàng đủ điều kiện FREESHIP!</c:when>
-                                        <c:otherwise>Mua thêm <fmt:formatNumber value="${cart.freeshipRemaining}" pattern="#,##0" />đ để được FREESHIP</c:otherwise>
-                                    </c:choose>
-                                </span>
-                                <span>${cart.freeshipPercent}%</span>
-                            </div>
-                            <div class="progress aura-progress" role="progressbar" aria-valuenow="${cart.freeshipPercent}" aria-valuemin="0" aria-valuemax="100">
-                                <div class="progress-bar" style="width: ${cart.freeshipPercent}%"></div>
-                            </div>
-                            <div class="text-muted mt-2" style="font-size: 0.78rem;">
-                                <c:choose>
-                                    <c:when test="${cart.freeshipReached}">Bạn đã đạt mốc <b>150.000đ</b> để nhận miễn phí giao hàng.</c:when>
-                                    <c:otherwise>Miễn phí giao hàng cho đơn từ <b>150.000đ</b> (tính trên các món đã chọn).</c:otherwise>
-                                </c:choose>
-                            </div>
-                        </div>
-
-                        <!-- Voucher -->
-                        <div class="aura-card p-3 mb-3">
-                            <div class="section-title">
-                                <span class="material-symbols-outlined text-aura">confirmation_number</span>
-                                Mã khuyến mãi / Voucher Aura
-                            </div>
-                            <form method="post" action="${ctx}/cart" class="d-flex gap-2 mb-3">
-                                <input type="hidden" name="action" value="applyVoucher">
-                                <input type="text" name="voucherCode" class="form-control aura-input text-uppercase fw-semibold"
-                                       placeholder="Nhập mã khuyến mãi" maxlength="50"
-                                       value="${fn:escapeXml(cart.voucher.code)}">
-                                <button type="submit" class="btn btn-aura px-3 text-nowrap">Áp dụng</button>
-                            </form>
-
-                            <div class="small-label">Ưu đãi khả dụng</div>
-                            <c:forEach var="v" items="${vouchers}">
-                                <c:set var="isActive" value="${cart.voucher != null && cart.voucher.id == v.id}" />
-                                <c:set var="isEligible" value="${v.isEligible(cart.selectedSubtotal)}" />
-                                <div class="voucher-option ${isActive ? 'active' : ''} ${isEligible || isActive ? '' : 'muted'}">
-                                    <span class="material-symbols-outlined voucher-icon">${v.personal ? 'redeem' : (v.percent ? 'percent' : 'sell')}</span>
-                                    <div class="flex-grow-1" style="min-width: 0;">
-                                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                                            <span class="fw-bold"><c:out value="${v.code}" /></span>
-                                            <c:if test="${v.personal}"><span class="badge-personal">Đổi từ điểm</span></c:if>
-                                            <c:if test="${isActive}"><span class="badge-using">Đang dùng</span></c:if>
-                                        </div>
-                                        <div class="text-muted" style="font-size: 0.75rem;">
-                                            <c:choose>
-                                                <c:when test="${v.percent}">
-                                                    Giảm <fmt:formatNumber value="${v.discountValue}" pattern="#,##0" />%<c:if test="${v.maxDiscount != null}"> (tối đa <fmt:formatNumber value="${v.maxDiscount}" pattern="#,##0" />đ)</c:if>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    Giảm <fmt:formatNumber value="${v.discountValue}" pattern="#,##0" />đ
-                                                </c:otherwise>
-                                            </c:choose>
-                                            cho đơn từ <fmt:formatNumber value="${v.minOrderValue}" pattern="#,##0" />đ<c:if test="${v.personal}"> • HSD ${v.validUntilText}</c:if>
-                                        </div>
-                                        <%-- Số tiền mã này giảm được cho các món đang chọn --%>
-                                        <div class="voucher-saving">
-                                            <c:choose>
-                                                <c:when test="${isEligible}">
-                                                    Giảm <b><fmt:formatNumber value="${v.calculateDiscount(cart.selectedSubtotal)}" pattern="#,##0" />đ</b> cho giỏ hàng này
-                                                </c:when>
-                                                <c:otherwise>
-                                                    Chọn thêm <fmt:formatNumber value="${v.minOrderValue - cart.selectedSubtotal}" pattern="#,##0" />đ để dùng mã
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </div>
+                            <c:choose>
+                                <c:when test="${shop.freeshipThreshold <= 0 || shop.deliveryFee <= 0}">
+                                    <div class="d-flex align-items-center gap-2 small fw-semibold text-aura">
+                                        <span class="material-symbols-outlined fs-5">local_shipping</span>
+                                        Miễn phí giao hàng cho mọi đơn!
                                     </div>
-                                    <form method="post" action="${ctx}/cart" class="m-0">
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2 small fw-semibold">
+                                        <span class="d-flex align-items-center gap-2 text-aura">
+                                            <span class="material-symbols-outlined fs-5">local_shipping</span>
+                                            <c:choose>
+                                                <c:when test="${cart.freeshipReached}">Đơn hàng đủ điều kiện FREESHIP!</c:when>
+                                                <c:otherwise>Mua thêm <fmt:formatNumber value="${cart.freeshipRemaining}" pattern="#,##0" />đ để được FREESHIP</c:otherwise>
+                                            </c:choose>
+                                        </span>
+                                        <span>${cart.freeshipPercent}%</span>
+                                    </div>
+                                    <div class="progress aura-progress" role="progressbar" aria-valuenow="${cart.freeshipPercent}" aria-valuemin="0" aria-valuemax="100">
+                                        <div class="progress-bar" style="width: ${cart.freeshipPercent}%"></div>
+                                    </div>
+                                    <div class="text-muted mt-2" style="font-size: 0.78rem;">
                                         <c:choose>
-                                            <c:when test="${isActive}">
-                                                <input type="hidden" name="action" value="removeVoucher">
-                                                <button type="submit" class="btn-link-aura">Gỡ</button>
-                                            </c:when>
+                                            <c:when test="${cart.freeshipReached}">Bạn đã đạt mốc <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b> để nhận miễn phí giao hàng.</c:when>
                                             <c:otherwise>
-                                                <input type="hidden" name="action" value="applyVoucher">
-                                                <input type="hidden" name="voucherCode" value="${fn:escapeXml(v.code)}">
-                                                <button type="submit" class="btn-link-aura" ${isEligible ? '' : 'disabled'}>Chọn</button>
+                                                Miễn phí giao hàng cho đơn từ <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b>
+                                                (tính trên các món đã chọn), phí giao hàng hiện tại <fmt:formatNumber value="${shop.deliveryFee}" pattern="#,##0" />đ.
                                             </c:otherwise>
                                         </c:choose>
-                                    </form>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+
+                        <!-- Dùng điểm Aura: trừ thẳng vào tiền hàng theo các mốc chẵn -->
+                        <div class="aura-card p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                <div class="section-title mb-0">
+                                    <span class="material-symbols-outlined" style="color: var(--aura-gold);">stars</span>
+                                    Dùng điểm Aura
                                 </div>
-                            </c:forEach>
-                            <c:if test="${empty vouchers}">
-                                <div class="text-muted small">Hiện chưa có ưu đãi nào khả dụng.</div>
-                            </c:if>
-                            <div class="text-muted mt-2" style="font-size: 0.75rem;">
-                                Điểm Aura không trừ trực tiếp vào giá, hãy
-                                <a href="${ctx}/profile" class="text-aura fw-semibold">đổi điểm lấy voucher</a> rồi chọn mã tại đây.
+                                <c:if test="${not empty sessionScope.user}">
+                                    <span class="badge-soft">Bạn có ${cart.availablePoints} điểm</span>
+                                </c:if>
                             </div>
+                            <div class="text-muted mb-3" style="font-size: 0.78rem;">
+                                Mỗi <b>${shop.pointsStep} điểm</b> giảm <b><fmt:formatNumber value="${shop.pointsStepValue}" pattern="#,##0" />đ</b>,
+                                dùng theo mốc ${shop.pointsStep}, ${2 * shop.pointsStep}, ${3 * shop.pointsStep}... điểm.
+                            </div>
+
+                            <c:choose>
+                                <c:when test="${empty sessionScope.user}">
+                                    <button type="button" class="btn btn-soft w-100 py-2" data-bs-toggle="modal" data-bs-target="#authModal">
+                                        <span class="material-symbols-outlined fs-6">login</span> Đăng nhập để dùng điểm Aura
+                                    </button>
+                                </c:when>
+                                <c:when test="${cart.maxRedeemablePoints <= 0 && cart.pointsUsed == 0}">
+                                    <div class="info-box small py-2 mb-0">
+                                        <c:choose>
+                                            <c:when test="${cart.availablePoints < shop.pointsStep}">
+                                                Cần tối thiểu ${shop.pointsStep} điểm để dùng (còn thiếu ${shop.pointsStep - cart.availablePoints} điểm).
+                                            </c:when>
+                                            <c:otherwise>
+                                                Chọn món từ <fmt:formatNumber value="${shop.pointsStepValue}" pattern="#,##0" />đ trở lên để dùng điểm.
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="points-picker">
+                                        <form method="post" action="${ctx}/cart" class="qty-stepper">
+                                            <input type="hidden" name="action" value="usePoints">
+                                            <button type="submit" name="points" value="${cart.pointsUsed - shop.pointsStep}" title="Bớt ${shop.pointsStep} điểm"
+                                                    ${cart.pointsUsed <= 0 ? 'disabled' : ''}>&minus;</button>
+                                            <span class="qty-value points-value">${cart.pointsUsed} điểm</span>
+                                            <button type="submit" name="points" value="${cart.pointsUsed + shop.pointsStep}" title="Thêm ${shop.pointsStep} điểm"
+                                                    ${cart.pointsUsed + shop.pointsStep > cart.maxRedeemablePoints ? 'disabled' : ''}>+</button>
+                                        </form>
+                                        <div class="text-end">
+                                            <c:choose>
+                                                <c:when test="${cart.pointsUsed > 0}">
+                                                    <div class="fw-bold text-aura">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</div>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <div class="fw-semibold text-muted small">Chưa dùng điểm</div>
+                                                </c:otherwise>
+                                            </c:choose>
+                                            <div class="text-muted" style="font-size: 0.72rem;">Tối đa ${cart.maxRedeemablePoints} điểm</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-3 mt-2">
+                                        <c:if test="${cart.pointsUsed < cart.maxRedeemablePoints}">
+                                            <form method="post" action="${ctx}/cart" class="m-0">
+                                                <input type="hidden" name="action" value="usePoints">
+                                                <input type="hidden" name="points" value="${cart.maxRedeemablePoints}">
+                                                <button type="submit" class="btn-link-aura">Dùng tối đa ${cart.maxRedeemablePoints} điểm</button>
+                                            </form>
+                                        </c:if>
+                                        <c:if test="${cart.pointsUsed > 0}">
+                                            <form method="post" action="${ctx}/cart" class="m-0">
+                                                <input type="hidden" name="action" value="usePoints">
+                                                <input type="hidden" name="points" value="0">
+                                                <button type="submit" class="btn-link-aura text-muted">Bỏ dùng điểm</button>
+                                            </form>
+                                        </c:if>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
 
                         <!-- Tóm tắt đơn hàng -->
@@ -288,18 +305,19 @@
                                 <span class="label">Tổng tiền hàng (${fn:length(cart.selectedItems)} món)</span>
                                 <span class="fw-semibold"><fmt:formatNumber value="${cart.selectedSubtotal}" pattern="#,##0" />đ</span>
                             </div>
-                            <c:if test="${cart.voucher != null}">
+                            <c:if test="${cart.pointsUsed > 0}">
                                 <div class="summary-row">
-                                    <span class="label">Giảm giá voucher (<c:out value="${cart.voucher.code}" />)</span>
+                                    <span class="label">Dùng ${cart.pointsUsed} điểm Aura</span>
                                     <span class="fw-semibold text-aura">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</span>
                                 </div>
-                                <c:if test="${!cart.voucherEligible}">
-                                    <div class="alert alert-warning py-1 px-2 small mb-2">
-                                        Chọn thêm <fmt:formatNumber value="${cart.voucher.minOrderValue - cart.selectedSubtotal}" pattern="#,##0" />đ
-                                        để dùng mã <c:out value="${cart.voucher.code}" />.
-                                    </div>
-                                </c:if>
                             </c:if>
+                            <div class="summary-row">
+                                <span class="label">Phí giao hàng</span>
+                                <c:choose>
+                                    <c:when test="${cart.deliveryFee == 0}"><span class="fw-semibold text-success">Miễn phí</span></c:when>
+                                    <c:otherwise><span class="fw-semibold"><fmt:formatNumber value="${cart.deliveryFee}" pattern="#,##0" />đ</span></c:otherwise>
+                                </c:choose>
+                            </div>
                             <div class="summary-row">
                                 <span class="label d-flex align-items-center gap-1">
                                     <span class="material-symbols-outlined" style="font-size: 18px; color: var(--aura-gold);">stars</span>
@@ -313,14 +331,14 @@
                             <div class="d-flex justify-content-between align-items-end gap-2 mb-3">
                                 <div>
                                     <div class="fw-bold">Tổng thanh toán</div>
-                                    <div class="text-muted" style="font-size: 0.72rem;">Chưa gồm phí giao hàng (nếu có)</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">Đã gồm phí giao hàng</div>
                                 </div>
-                                <div class="grand-total"><fmt:formatNumber value="${cart.total}" pattern="#,##0" />đ</div>
+                                <div class="grand-total"><fmt:formatNumber value="${cart.grandTotal}" pattern="#,##0" />đ</div>
                             </div>
                             <c:if test="${cart.discount > 0}">
                                 <div class="saving-note mb-3">
                                     <span class="material-symbols-outlined fs-6">savings</span>
-                                    Voucher <c:out value="${cart.voucher.code}" /> giúp bạn tiết kiệm
+                                    Dùng ${cart.pointsUsed} điểm Aura giúp bạn tiết kiệm
                                     <b><fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</b>
                                 </div>
                             </c:if>
