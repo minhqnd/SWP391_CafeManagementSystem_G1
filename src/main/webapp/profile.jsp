@@ -275,12 +275,10 @@
                                             Chủ tài khoản: <span class="text-dark fw-bold">${sessionScope.user.fullName}</span>
                                         </div>
                                         <div class="d-flex align-items-center justify-content-end gap-2 text-muted">
-                                            <span style="font-family: monospace; font-size: 1rem; background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 0.5rem; border: 1px dashed #ced4da; font-weight: 600; color: var(--primary);">
-                                                #AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}
-                                            </span>
+                                            <span id="memberIdBadge" style="font-family: monospace; font-size: 1rem; background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 0.5rem; border: 1px dashed #ced4da; font-weight: 600; color: var(--primary);">#AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}</span>
                                             <span class="material-symbols-outlined fs-5" style="cursor: pointer; padding: 0.3rem; border-radius: 0.3rem;"
                                                 title="Sao chép mã"
-                                                onclick="copyMemberId('#AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}')"
+                                                onclick="copyMemberId(document.getElementById('memberIdBadge').innerText.trim())"
                                                 onmouseover="this.style.background='#e9ecef'"
                                                 onmouseout="this.style.background='transparent'">content_copy</span>
                                         </div>
