@@ -257,12 +257,15 @@
                                 <span class="material-symbols-outlined fs-5">arrow_forward</span>
                             </button>
                         </form>
-                        <button type="button" class="btn btn-soft w-100 py-2 mt-2" onclick="window.print()">
-                            <span class="material-symbols-outlined fs-6">print</span> In hóa đơn
-                        </button>
-                        <div class="text-center mt-3">
-                            <a href="${ctx}/orders" class="small text-muted">Thanh toán sau, xem Đơn hàng của tôi</a>
-                        </div>
+                        <%-- Hủy đơn chưa thanh toán (hoàn lại điểm Aura đã dùng) --%>
+                        <form method="post" action="${ctx}/orders" class="mt-2"
+                              onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn #${fn:escapeXml(order.orderCode)}?');">
+                            <input type="hidden" name="action" value="cancel">
+                            <input type="hidden" name="orderId" value="${order.id}">
+                            <button type="submit" class="btn btn-outline-danger w-100 py-2 fw-semibold" style="border-radius: 10px;">
+                                Hủy
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
