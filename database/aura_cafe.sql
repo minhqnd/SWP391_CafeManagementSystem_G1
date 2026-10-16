@@ -719,17 +719,7 @@ VALUES
  'ONLINE', 'DELIVERING', 100000, 0,
  15000, 115000, 'Pham Quang Huy',
  '0900000005', 'Cau Giay, Hanoi', 6,
- NULL, 'Call before delivery', '2026-10-03 10:00:00'),
-
-(3, 'AURA-003', 4, 3,
- 'TAKEAWAY', 'CONFIRMED', 130000, 20000,
- 0, 110000, NULL, NULL, NULL, NULL,
- NULL, 'No sugar', '2026-10-03 11:00:00'),
-
-(4, 'AURA-004', NULL, 3,
- 'DINE_IN', 'PREPARING', 70000, 0,
- 0, 70000, NULL, NULL, NULL, NULL,
- 'T02', NULL, '2026-10-03 12:00:00');
+ NULL, 'Call before delivery', '2026-10-03 10:00:00');
 
 -- 6. ORDER ITEMS
 INSERT INTO order_items
@@ -743,13 +733,7 @@ VALUES
  '{"size":"M"}', 1, 45000),
 
 (2, 12, 'Bánh Cheesecake Việt Quất', 55000,
- NULL, 1, 55000),
-
-(3, 2, 'Caramel Macchiato Đặc Sản', 65000,
- '{"size":"L"}', 2, 130000),
-
-(4, 6, 'Bánh Croissant Bơ Pháp', 35000,
- '{"size":"Tiêu chuẩn"}', 2, 70000);
+ NULL, 1, 55000);
 
 -- 7. PAYMENTS
 INSERT INTO payments
@@ -760,21 +744,14 @@ VALUES
  'SUCCESS', '2026-10-03 09:05:00', 'Paid at counter'),
 
 (2, 'MOMO', 'MOMO-DEMO-002', 115000,
- 'SUCCESS', '2026-10-03 10:05:00', 'Online payment'),
-
-(3, 'VNPAY', 'VNPAY-DEMO-003', 110000,
- 'SUCCESS', '2026-10-03 11:05:00', 'Paid by VNPAY'),
-
-(4, 'CASH', NULL, 70000,
- 'SUCCESS', '2026-10-03 12:05:00', 'Paid at counter');
+ 'SUCCESS', '2026-10-03 10:05:00', 'Online payment');
 
 -- 8. LOYALTY TRANSACTIONS
 INSERT INTO loyalty_transactions
 (customer_id, order_id, points_change, transaction_type)
 VALUES
 (4, 1, 80, 'EARN'),
-(5, 2, 100, 'EARN'),
-(4, 3, -20, 'REDEEM');
+(5, 2, 100, 'EARN');
 
 -- 9. CUSTOMER REVIEWS
 INSERT INTO customer_reviews
@@ -787,10 +764,6 @@ VALUES
 
 (5, 2, 'COMPLAINT', NULL,
  'Delivery took longer than expected',
- 'PENDING', NULL),
-
-(4, 3, 'RATING', 4,
- 'Good taste, but a little too sweet',
  'PENDING', NULL);
 
 -- 10. SUPPLIERS
