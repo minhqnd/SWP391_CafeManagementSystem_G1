@@ -1,0 +1,1152 @@
+/* =========================================================
+   Aura Café - Admin Shift & Employee Schedule Styles
+   ========================================================= */
+
+:root {
+    --aura-primary: #7a121d;
+    --aura-primary-hover: #941825;
+    --aura-primary-subtle: #fbf0f1;
+    --aura-primary-border: #f8d7da;
+    --aura-bg: #f8f9fa;
+    --aura-card-bg: #ffffff;
+    --aura-text: #1f2937;
+    --aura-text-muted: #6b7280;
+    --aura-border: #eef0f3;
+}
+
+body.admin-body {
+    background-color: var(--aura-bg);
+    color: var(--aura-text);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.aura-admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    background: #ffffff;
+    border-right: 1px solid var(--aura-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 1020;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+}
+
+.sidebar-brand-wrapper {
+    padding: 20px 20px 16px 20px;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-badge-box {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background-color: var(--aura-primary);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 8px rgba(122, 18, 29, 0.25);
+}
+
+.brand-main-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--aura-primary);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+
+.brand-sub-title {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #9ca3af;
+    letter-spacing: 0.03em;
+    margin-top: 1px;
+}
+
+.sidebar-menu-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 10px;
+}
+
+.menu-group-header {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.05em;
+    padding: 14px 14px 6px 14px;
+    text-transform: uppercase;
+}
+
+.menu-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 16px;
+    border-radius: 9999px;
+    color: #4b5563;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all 0.18s ease;
+    margin-bottom: 2px;
+    text-decoration: none;
+}
+
+.menu-nav .nav-link .material-symbols-outlined {
+    font-size: 1.25rem;
+    color: #6b7280;
+    transition: color 0.18s ease;
+}
+
+.menu-nav .nav-link:hover {
+    background-color: #fbf5f4;
+    color: var(--aura-primary);
+}
+
+.menu-nav .nav-link:hover .material-symbols-outlined {
+    color: var(--aura-primary);
+}
+
+.menu-nav .nav-link.active {
+    background-color: var(--aura-primary) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(122, 18, 29, 0.22);
+}
+
+.menu-nav .nav-link.active .material-symbols-outlined {
+    color: #ffffff !important;
+}
+
+.sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--aura-border);
+    background-color: #fcfcfd;
+}
+
+.avatar-sm {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background-color: #e5e7eb;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn-logout {
+    color: #9ca3af;
+    padding: 4px;
+    border-radius: 8px;
+    transition: color 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.btn-logout:hover {
+    color: #ef4444;
+}
+
+/* Main Content Area */
+.admin-main-wrapper {
+    margin-left: 250px;
+    padding: 30px 40px;
+    min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+    .admin-main-wrapper {
+        margin-left: 0;
+        padding: 20px 16px;
+    }
+    .aura-admin-sidebar {
+        display: none; /* Mobile handling */
+    }
+}
+
+/* =========================================================
+   Employee Schedule Styles (Lịch phân ca)
+   ========================================================= */
+
+.schedule-header-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.schedule-title {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 0;
+}
+
+.schedule-subtitle {
+    font-size: 0.88rem;
+    color: var(--aura-text-muted);
+    margin: 3px 0 0 0;
+}
+
+.btn-aura-primary {
+    background-color: var(--aura-primary);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 9px 18px;
+    border-radius: 10px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 6px rgba(122, 18, 29, 0.25);
+    transition: all 0.18s ease;
+    text-decoration: none;
+}
+
+.btn-aura-primary:hover {
+    background-color: var(--aura-primary-hover);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(122, 18, 29, 0.3);
+}
+
+.filter-toolbar-card {
+    background: #ffffff;
+    border: 1px solid var(--aura-border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.week-navigation-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-week-nav {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+
+.btn-week-nav:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.week-range-text {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 6px;
+}
+
+/* Calendar Grid */
+.calendar-grid-container {
+    background: #ffffff;
+    border: 1px solid var(--aura-border);
+    border-radius: 16px;
+    overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.calendar-table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.calendar-table th,
+.calendar-table td {
+    border: 1px solid #f0f2f5;
+    vertical-align: top;
+}
+
+.calendar-table thead th {
+    background: #fdfdfd;
+    padding: 12px 10px;
+    text-align: center;
+    font-size: 0.84rem;
+}
+
+.day-header-title {
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 2px;
+}
+
+.day-header-date {
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+.day-header-today {
+    background: #fff8f8 !important;
+}
+
+.day-header-today .day-header-title {
+    color: var(--aura-primary);
+}
+
+.shift-row-header {
+    width: 130px;
+    background: #fbfbfc;
+    padding: 16px 14px;
+    text-align: left;
+    border-right: 2px solid #eef0f3;
+}
+
+.shift-header-name {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: #111827;
+}
+
+.shift-header-time {
+    font-size: 0.78rem;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+.calendar-slot-cell {
+    padding: 10px;
+    background: #ffffff;
+    min-height: 140px;
+    position: relative;
+    transition: background 0.15s ease;
+}
+
+.calendar-slot-cell:hover {
+    background: #fafbfc;
+}
+
+.calendar-slot-cell.today-cell {
+    background: #fffdfd;
+}
+
+/* Shift Employee Badge Card */
+.slot-staff-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: 3px solid var(--aura-primary);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    position: relative;
+    transition: all 0.15s ease;
+}
+
+.slot-staff-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.staff-name-line {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.position-pill {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.position-barista { background: #e0f2fe; color: #0369a1; }
+.position-cashier { background: #dcfce7; color: #15803d; }
+.position-shipper { background: #fef3c7; color: #b45309; }
+.position-manager { background: #f3e8ff; color: #7e22ce; }
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+}
+
+.status-scheduled { background: #f3f4f6; color: #4b5563; }
+.status-present { background: #fef9c3; color: #854d0e; }
+.status-completed { background: #d1fae5; color: #065f46; }
+.status-absent { background: #fee2e2; color: #991b1b; }
+
+.slot-action-dots {
+    color: #9ca3af;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.btn-slot-quick-add {
+    width: 100%;
+    padding: 4px;
+    border: 1px dashed #d1d5db;
+    border-radius: 6px;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 0.76rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-slot-quick-add:hover {
+    border-color: var(--aura-primary);
+    color: var(--aura-primary);
+    background: var(--aura-primary-subtle);
+}
+
+/* Modal Customization */
+.modal-aura .modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-aura .modal-header {
+    border-bottom: 1px solid #f3f4f6;
+    padding: 20px 24px;
+}
+
+.modal-aura .modal-body {
+    padding: 24px;
+}
+
+.modal-aura .modal-footer {
+    border-top: 1px solid #f3f4f6;
+    padding: 16px 24px;
+}
+
+/* =========================================================
+   KPI Metrics Summary Grid
+   ========================================================= */
+.kpi-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+    .kpi-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .kpi-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.kpi-metric-card {
+    background: #ffffff;
+    border: 1px solid var(--aura-border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.kpi-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.06);
+}
+
+.kpi-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kpi-icon-blue { background: #e0f2fe; color: #0284c7; }
+.kpi-icon-amber { background: #fef3c7; color: #d97706; }
+.kpi-icon-green { background: #dcfce7; color: #16a34a; }
+.kpi-icon-rose { background: #fee2e2; color: #dc2626; }
+
+.kpi-val {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.1;
+}
+
+.kpi-label {
+    font-size: 0.78rem;
+    color: #6b7280;
+    font-weight: 500;
+    margin-top: 3px;
+}
+
+/* =========================================================
+   Day Shift Lanes (Board View)
+   ========================================================= */
+.shift-lanes-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+@media (max-width: 992px) {
+    .shift-lanes-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.shift-lane {
+    background: #ffffff;
+    border: 1px solid var(--aura-border);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.shift-lane-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.shift-lane-body {
+    padding: 16px 20px;
+    flex: 1;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.lane-staff-card {
+    background: #fafafc;
+    border: 1px solid #eef0f3;
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: all 0.15s ease;
+}
+
+.lane-staff-card:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.staff-avatar-initials {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background-color: var(--aura-primary);
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.cash-handover-box {
+    background: #fffdf5;
+    border: 1px dashed #fde68a;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    margin-top: 10px;
+}
+
+.cash-flow-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    color: #4b5563;
+}
+
+/* =========================================================
+   Employee weekly schedule screen
+   ========================================================= */
+.employee-schedule-page {
+    padding: 24px;
+    background: #f7f7f8;
+}
+
+.schedule-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+}
+
+.schedule-alert .btn-close {
+    margin-left: auto;
+}
+
+.employee-schedule-header {
+    min-height: 118px;
+    padding: 22px 20px;
+    background: #ffffff;
+    border: 1px solid #dedfe3;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.schedule-heading-copy {
+    min-width: 0;
+}
+
+.schedule-table-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    margin-bottom: 9px;
+    color: #6b7280;
+    background: #f4f4f5;
+    border-radius: 5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.68rem;
+    line-height: 1.2;
+}
+
+.schedule-table-ref strong {
+    color: #4b5563;
+    font-weight: 700;
+}
+
+.schedule-heading-copy h1 {
+    margin: 0;
+    color: #111827;
+    font-size: clamp(1.3rem, 1.8vw, 1.62rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.035em;
+}
+
+.schedule-heading-copy p {
+    margin: 5px 0 0;
+    color: #7c6259;
+    font-size: 0.79rem;
+}
+
+.schedule-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.schedule-nav-button,
+.schedule-create-button {
+    min-height: 43px;
+    padding: 0 17px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.schedule-nav-button {
+    color: #292524;
+    background: #f5f5f4;
+    border: 1px solid #e3e1df;
+}
+
+.schedule-nav-button:hover {
+    color: #111827;
+    background: #eceae8;
+    border-color: #d6d3d1;
+}
+
+.schedule-nav-button .material-symbols-outlined {
+    font-size: 21px;
+}
+
+.schedule-create-button {
+    margin-left: 1px;
+    color: #ffffff;
+    background: #a5001c;
+    border: 1px solid #a5001c;
+    box-shadow: 0 3px 8px rgba(165, 0, 28, 0.14);
+}
+
+.schedule-create-button:hover {
+    background: #8f0018;
+    border-color: #8f0018;
+    transform: translateY(-1px);
+}
+
+.schedule-create-button .material-symbols-outlined {
+    font-size: 22px;
+}
+
+.weekly-schedule-card {
+    margin-top: 16px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #dedfe3;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.weekly-schedule-toolbar {
+    min-height: 55px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #ececef;
+}
+
+.weekly-schedule-toolbar h2 {
+    margin: 0;
+    color: #1c1917;
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
+.position-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.legend-pill {
+    padding: 3px 10px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.legend-manager {
+    color: #7e22ce;
+    background: #faf5ff;
+    border-color: #e9d5ff;
+}
+
+.legend-barista {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.legend-cashier {
+    color: #b45309;
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+
+.legend-shipper {
+    color: #047857;
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+.weekly-calendar-scroll {
+    overflow-x: auto;
+    scrollbar-color: #d6d3d1 transparent;
+    scrollbar-width: thin;
+}
+
+.weekly-calendar {
+    min-width: 1050px;
+}
+
+.weekly-calendar-head,
+.weekly-day-columns {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
+}
+
+.weekly-calendar-head {
+    background: #fafaf9;
+    border-bottom: 1px solid #dedfe3;
+}
+
+.weekly-day-heading {
+    min-height: 54px;
+    padding: 11px 8px 9px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid #dedfe3;
+    text-align: center;
+}
+
+.weekly-day-heading:last-child {
+    border-right: none;
+}
+
+.weekly-day-heading.is-selected {
+    background: #fffaf9;
+}
+
+.weekly-day-heading strong {
+    color: #292524;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.weekly-day-heading span {
+    margin-top: 2px;
+    color: #78716c;
+    font-size: 0.62rem;
+    line-height: 1.2;
+}
+
+.weekly-day-column {
+    min-height: 420px;
+    padding: 9px 8px 18px;
+    border-right: 1px solid #dedfe3;
+    background: #ffffff;
+}
+
+.weekly-day-column:last-child {
+    border-right: none;
+}
+
+.weekly-day-column.is-selected {
+    background: #fffdfc;
+}
+
+.day-shift-section + .day-shift-section {
+    margin-top: 9px;
+}
+
+.day-shift-label {
+    margin-bottom: 5px;
+    color: #a8a29e;
+    font-size: 0.61rem;
+    font-weight: 800;
+    letter-spacing: 0.035em;
+    line-height: 1.3;
+    text-transform: uppercase;
+}
+
+.day-shift-label span {
+    white-space: nowrap;
+}
+
+.employee-shift-card {
+    position: relative;
+    min-height: 52px;
+    padding: 10px 28px 9px 9px;
+    margin-bottom: 4px;
+    border: 1px solid;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.employee-shift-card:hover,
+.employee-shift-card:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    outline: none;
+}
+
+.employee-card-name {
+    overflow: hidden;
+    font-size: 0.74rem;
+    font-weight: 800;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.employee-card-meta {
+    margin-top: 4px;
+    overflow: hidden;
+    font-size: 0.57rem;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.employee-shift-card.role-manager {
+    color: #7e22ce;
+    background: #f6eaff;
+    border-color: #e4c7ff;
+}
+
+.employee-shift-card.role-barista {
+    color: #1d4ed8;
+    background: #dceafe;
+    border-color: #adcdfd;
+}
+
+.employee-shift-card.role-cashier {
+    color: #b45309;
+    background: #fff4c9;
+    border-color: #f8d866;
+}
+
+.employee-shift-card.role-shipper {
+    color: #047857;
+    background: #d9faec;
+    border-color: #9becc9;
+}
+
+.employee-shift-card.role-,
+.employee-shift-card:not([class*="role-"]) {
+    color: #475569;
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.employee-card-delete {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    margin: 0;
+}
+
+.employee-card-delete button {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    color: currentColor;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.65;
+}
+
+.employee-card-delete button:hover {
+    background: rgba(255, 255, 255, 0.6);
+    opacity: 1;
+}
+
+.employee-card-delete .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.empty-shift-slot {
+    width: 100%;
+    min-height: 29px;
+    padding: 4px 8px;
+    color: #a8a29e;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px dashed #dedbd8;
+    border-radius: 9px;
+    font-size: 0.62rem;
+    font-weight: 500;
+    line-height: 1.2;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.empty-shift-slot:hover {
+    color: #a5001c;
+    background: #fff8f8;
+    border-color: #d8a1aa;
+}
+
+.modal-aura .modal-dialog {
+    max-width: 510px;
+}
+
+.modal-aura .modal-title {
+    margin: 0;
+    color: #111827;
+    font-size: 1.08rem;
+    font-weight: 800;
+}
+
+.modal-aura .modal-subtitle {
+    margin: 4px 0 0;
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.modal-aura .form-label {
+    margin-bottom: 6px;
+    color: #374151;
+    font-size: 0.79rem;
+    font-weight: 700;
+}
+
+.aura-input {
+    border-color: #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.84rem;
+}
+
+.aura-input:focus {
+    border-color: #c7838f;
+    box-shadow: 0 0 0 0.2rem rgba(165, 0, 28, 0.1);
+}
+
+.field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.character-count,
+.field-hint {
+    color: #9ca3af;
+    font-size: 0.7rem;
+    line-height: 1.4;
+}
+
+.field-hint {
+    margin-top: 6px;
+}
+
+.cash-field-group {
+    transition: opacity 0.15s ease;
+}
+
+.cash-field-group.is-disabled {
+    opacity: 0.68;
+}
+
+.cash-field-group.is-disabled .aura-input {
+    cursor: not-allowed;
+    background-color: #f3f4f6;
+}
+
+.modal-aura .invalid-feedback {
+    margin-top: 5px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.modal-aura .was-validated .form-control.aura-input:valid {
+    border-color: #d1d5db;
+    background-image: none;
+}
+
+.modal-aura .was-validated .form-control.aura-input:valid:focus {
+    border-color: #c7838f;
+    box-shadow: 0 0 0 0.2rem rgba(165, 0, 28, 0.1);
+}
+
+@media (max-width: 1100px) {
+    .employee-schedule-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .schedule-header-actions {
+        width: 100%;
+    }
+
+    .schedule-create-button {
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .employee-schedule-page {
+        padding: 16px;
+    }
+
+    .employee-schedule-header {
+        padding: 18px 16px;
+    }
+
+    .schedule-header-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .schedule-create-button {
+        grid-column: 1 / -1;
+        margin-left: 0;
+    }
+
+    .weekly-schedule-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .position-legend {
+        justify-content: flex-start;
+        gap: 7px;
+    }
+}

@@ -39,7 +39,7 @@
             <div class="step-line done"></div>
             <div class="step done">
                 <span class="step-circle"><span class="material-symbols-outlined">check</span></span>
-                <span class="step-label">2. Xác nhận đơn &amp; Giao nhận</span>
+                <span class="step-label">2. Xác nhận đơn &amp; Giao hàng</span>
             </div>
             <div class="step-line done"></div>
             <div class="step active">
@@ -163,7 +163,12 @@
                         </div>
                         <div>
                             <div class="bank-label">Hình thức nhận</div>
-                            <div class="fw-semibold">${order.delivery ? 'Giao tận nơi' : 'Tự đến lấy tại quầy'}</div>
+                            <div class="fw-semibold">
+                                <c:choose>
+                                    <c:when test="${order.delivery}">Giao trong khoảng ${deliveryMinutes} phút</c:when>
+                                    <c:otherwise>Tự đến lấy tại quầy</c:otherwise>
+                                </c:choose>
+                            </div>
                         </div>
                         <div>
                             <div class="bank-label">Khách hàng</div>
@@ -218,8 +223,11 @@
                         <c:if test="${order.discountAmount > 0}">
                             <div class="summary-row text-aura">
                                 <span class="d-flex align-items-center gap-1">
-                                    <span class="material-symbols-outlined" style="font-size: 17px;">sell</span>
-                                    Mã giảm <c:out value="${order.voucherCode}" />:
+                                    <span class="material-symbols-outlined" style="font-size: 17px;">stars</span>
+                                    <c:choose>
+                                        <c:when test="${order.pointsUsed > 0}">Dùng ${order.pointsUsed} điểm Aura:</c:when>
+                                        <c:otherwise>Giảm giá:</c:otherwise>
+                                    </c:choose>
                                 </span>
                                 <span class="fw-semibold">-<fmt:formatNumber value="${order.discountAmount}" pattern="#,##0" /> đ</span>
                             </div>
@@ -229,7 +237,7 @@
                     <div class="d-flex justify-content-between align-items-end gap-2 mt-3 mb-1">
                         <div>
                             <div class="fw-bold fs-5">Tổng thanh toán</div>
-                            <div class="text-muted" style="font-size: 0.72rem;">Đã gồm phí giao hàng và giảm giá voucher</div>
+                            <div class="text-muted" style="font-size: 0.72rem;">Đã gồm phí giao hàng và điểm Aura đã dùng</div>
                         </div>
                         <div class="grand-total"><fmt:formatNumber value="${order.finalAmount}" pattern="#,##0" /> đ</div>
                     </div>
@@ -249,12 +257,15 @@
                                 <span class="material-symbols-outlined fs-5">arrow_forward</span>
                             </button>
                         </form>
-                        <button type="button" class="btn btn-soft w-100 py-2 mt-2" onclick="window.print()">
-                            <span class="material-symbols-outlined fs-6">print</span> In hóa đơn
-                        </button>
-                        <div class="text-center mt-3">
-                            <a href="${ctx}/orders" class="small text-muted">Thanh toán sau, xem Đơn hàng của tôi</a>
-                        </div>
+                        <%-- Hủy đơn chưa thanh toán (hoàn lại điểm Aura đã dùng) --%>
+                        <form method="post" action="${ctx}/orders" class="mt-2"
+                              onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn #${fn:escapeXml(order.orderCode)}?');">
+                            <input type="hidden" name="action" value="cancel">
+                            <input type="hidden" name="orderId" value="${order.id}">
+                            <button type="submit" class="btn btn-outline-danger w-100 py-2 fw-semibold" style="border-radius: 10px;">
+                                Hủy
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

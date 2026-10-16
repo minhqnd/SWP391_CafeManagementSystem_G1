@@ -65,9 +65,8 @@ public class ProfileController extends HttpServlet {
         java.util.List<model.LoyaltyTransaction> history = userDAO.getLoyaltyHistoryByUserId(((User)session.getAttribute("user")).getId());
         request.setAttribute("loyaltyHistory", history);
 
-        dao.RewardDAO rewardDAO = new dao.RewardDAO();
-        java.util.List<model.RewardItem> rewards = rewardDAO.getAllRewards();
-        request.setAttribute("rewardsList", rewards);
+        // Mốc điểm Admin cài đặt: điểm Aura trừ thẳng vào đơn ở Giỏ hàng
+        request.setAttribute("shopSettings", new dao.ShopSettingDAO().getSettings());
 
         request.getRequestDispatcher("/profile.jsp").forward(request, response);
     }
@@ -88,7 +87,13 @@ public class ProfileController extends HttpServlet {
         if ("update".equals(action)) {
             String fullName = request.getParameter("fullName");
             String phone = request.getParameter("phone");
+            if (phone == null) {
+                phone = user.getPhone(); // Giữ nguyên sđt cũ do đã ẩn field này
+            }
             String email = request.getParameter("email");
+            if (email == null) {
+                email = user.getEmail(); // Giữ nguyên email
+            }
             String birthday = request.getParameter("birthday");
             String address = request.getParameter("address");
             
@@ -138,22 +143,6 @@ public class ProfileController extends HttpServlet {
                     request.setAttribute("errorMsg", "Mật khẩu hiện tại không đúng!");
                 }
             }
-        } else if ("redeemReward".equals(action)) {
-            try {
-                int rewardId = Integer.parseInt(request.getParameter("rewardId"));
-                dao.RewardDAO rewardDAO = new dao.RewardDAO();
-                String voucherCode = rewardDAO.redeemReward(user.getId(), rewardId);
-                if (voucherCode != null) {
-                    user.setTotalPoints(new dao.UserDAO().getTotalPoints(user.getId()));
-                    session.setAttribute("user", user);
-                    request.setAttribute("successMsg", "Đổi thưởng thành công! Voucher " + voucherCode
-                            + " đã được thêm vào tài khoản, chọn mã này ở Giỏ hàng để được giảm giá.");
-                } else {
-                    request.setAttribute("errorMsg", "Đổi thưởng thất bại. Có thể bạn không đủ điểm hoặc phần quà đã hết!");
-                }
-            } catch (Exception e) {
-                request.setAttribute("errorMsg", "Lỗi xử lý đổi thưởng.");
-            }
         }
         
         calculateLoyaltyData(request, session);
@@ -161,9 +150,7 @@ public class ProfileController extends HttpServlet {
         java.util.List<model.LoyaltyTransaction> history = new dao.UserDAO().getLoyaltyHistoryByUserId(((User)session.getAttribute("user")).getId());
         request.setAttribute("loyaltyHistory", history);
         
-        dao.RewardDAO rewardDAO = new dao.RewardDAO();
-        java.util.List<model.RewardItem> rewards = rewardDAO.getAllRewards();
-        request.setAttribute("rewardsList", rewards);
+        request.setAttribute("shopSettings", new dao.ShopSettingDAO().getSettings());
         
         request.getRequestDispatcher("/profile.jsp").forward(request, response);
     }

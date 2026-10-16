@@ -125,6 +125,7 @@
             gap: 6px;
             cursor: pointer;
             transition: all 0.15s ease;
+            text-decoration: none;
         }
 
         .nav-tab-btn:hover {
@@ -1903,6 +1904,14 @@
                 <span class="material-symbols-outlined">receipt_long</span>
                 <span>Đơn hôm nay (<span id="todayOrderCount">${counterOrders.size()}</span>)</span>
             </button>
+            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover?mode=close">
+                <span class="material-symbols-outlined">calculate</span>
+                <span>Chốt ca</span>
+            </a>
+            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover">
+                <span class="material-symbols-outlined">assignment_turned_in</span>
+                <span>Bàn giao ca</span>
+            </a>
         </div>
 
         <!-- Right User Actions -->
@@ -2004,7 +2013,6 @@
                         <div class="cust-info-badge">
                             <div>
                                 <span class="fw-bold" id="custNameDisplay">Nguyễn Văn A</span>
-                                <span class="badge bg-secondary ms-1" id="custTierDisplay">GOLD</span>
                             </div>
                             <button class="cust-remove-btn" onclick="clearCustomer()" title="Xóa thông tin khách">
                                 <span class="material-symbols-outlined">close</span>
@@ -2614,6 +2622,12 @@
             document.querySelectorAll('input[name="optSize"], input[name="optTopping"]').forEach(el => {
                 el.addEventListener('change', updateCustomizerPrice);
             });
+
+            // Cho phép các màn Cashier khác quay lại đúng tab danh sách đơn.
+            const requestedTab = new URLSearchParams(window.location.search).get('tab');
+            if (requestedTab === 'orders') {
+                switchMainTab('orders');
+            }
         });
 
         // 1. Navigation Switches
@@ -2890,7 +2904,6 @@
                     document.getElementById('custSearchBox').style.display = 'none';
                     document.getElementById('custInfoBox').style.display = 'block';
                     document.getElementById('custNameDisplay').textContent = currentCustomer.fullName;
-                    document.getElementById('custTierDisplay').textContent = currentCustomer.tierName;
                     document.getElementById('custPointsDisplay').textContent = currentCustomer.totalPoints;
                     document.getElementById('custDiscountDisplay').textContent = formatCurrency(currentCustomer.totalPoints * 1000);
                     showToast('Đã nhận diện hội viên: ' + currentCustomer.fullName);

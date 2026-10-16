@@ -10,7 +10,19 @@
     }
     boolean isRegisterTab = "register".equals(activeTab);
     boolean isForgotTab = "forgot".equals(activeTab);
-    boolean isLoginTab = !isRegisterTab; // Quên mật khẩu cũng hiển thị dưới tab Đăng nhập
+    boolean isOtpTab = "otp".equals(activeTab);
+    boolean isResetTab = "reset_password".equals(activeTab);
+    boolean isLoginTab = !isRegisterTab && !isOtpTab && !isResetTab; // Quên mật khẩu cũng hiển thị dưới tab Đăng nhập
+    
+    /* Tính thời gian đếm ngược gửi lại OTP */
+    Long lastOtpSentTime = (Long) session.getAttribute("lastOtpSentTime");
+    long otpRemainingTime = 0;
+    if (lastOtpSentTime != null) {
+        long elapsed = System.currentTimeMillis() - lastOtpSentTime;
+        if (elapsed < 60000) {
+            otpRemainingTime = (60000 - elapsed) / 1000;
+        }
+    }
     /* Trang cần quay lại sau khi đăng nhập / đăng ký (VD: /checkout) */
     String authRedirect = (String) request.getAttribute("authRedirect");
 %>
@@ -152,6 +164,7 @@
                                             </div>
                                             <% } %>
 
+                                                <% if (!isOtpTab && !isResetTab) { %>
                                                 <ul class="nav nav-pills-custom nav-justified" id="modalAuthTab">
                                                     <li class="nav-item">
                                                         <button class="nav-link <%= isLoginTab ? " active" : "" %>"
@@ -167,6 +180,7 @@
                                                             id="tab-btn-register">Đăng ký</button>
                                                     </li>
                                                 </ul>
+                                                <% } %>
 
                                                 <div class="tab-content">
                                                     <!-- LOGIN & FORGOT PANE -->
@@ -184,11 +198,11 @@
                                                                     <input type="hidden" name="redirect" value="<%= authRedirect %>">
                                                                 <% } %>
                                                                 <div class="mb-3">
-                                                                    <label class="form-label fw-medium" style="font-size: 0.85rem;">Số điện thoại / Email</label>
-                                                                    <input type="text"
+                                                                    <label class="form-label fw-medium" style="font-size: 0.85rem;">Email</label>
+                                                                    <input type="email"
                                                                         class="form-control bg-light border-0 p-2"
                                                                         name="username"
-                                                                        placeholder="0901234567 hoặc email@domain.com"
+                                                                        placeholder="email@domain.com"
                                                                         required>
                                                                 </div>
                                                                 <div class="mb-2">
@@ -279,13 +293,20 @@
                                                                     </div>
                                                                     <div class="mb-3">
                                                                         <label class="form-label fw-medium"
-                                                                            style="font-size: 0.85rem;">SĐT /
-                                                                            Email</label>
-                                                                        <input type="text"
+                                                                            style="font-size: 0.85rem;">Số điện thoại</label>
+                                                                        <input type="tel"
                                                                             class="form-control bg-light border-0 p-2"
-                                                                            name="username" placeholder="SĐT hoặc Email"
-                                                                            pattern="^(\d{10,11}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$"
-                                                                            title="Vui lòng nhập số điện thoại hợp lệ (10-11 số) hoặc Email"
+                                                                            name="phone" placeholder="VD: 0912345678"
+                                                                            pattern="^(84|0)[3|5|7|8|9][0-9]{8}$"
+                                                                            title="Vui lòng nhập số điện thoại Việt Nam hợp lệ (VD: 0912345678)"
+                                                                            required>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-medium"
+                                                                            style="font-size: 0.85rem;">Email</label>
+                                                                        <input type="email"
+                                                                            class="form-control bg-light border-0 p-2"
+                                                                            name="email" placeholder="Email của bạn"
                                                                             required>
                                                                     </div>
                                                                     <div class="mb-3">
@@ -313,6 +334,87 @@
                                                                         Tạo tài khoản mới <span
                                                                             class="material-symbols-outlined fs-5">how_to_reg</span>
                                                                     </button>
+                                                        </form>
+                                                    </div>
+
+                                                    <!-- OTP VERIFICATION -->
+                                                    <div class="tab-pane fade <%= isOtpTab ? " show active" : "" %>" id="modal-otp-pane">
+                                                        <div class="mb-3">
+                                                            <h2 class="fs-4 fw-semibold mb-1">Xác thực Email</h2>
+                                                            <p class="text-muted" style="font-size: 0.85rem;">Nhập mã OTP đã được gửi đến email của bạn</p>
+                                                        </div>
+                                                        <form action="${pageContext.request.contextPath}/verify-otp" method="POST">
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-medium" style="font-size: 0.85rem;">Mã xác thực (OTP)</label>
+                                                                <input type="text"
+                                                                    class="form-control bg-light border-0 p-2 text-center fw-bold fs-4"
+                                                                    name="otp"
+                                                                    placeholder="------"
+                                                                    maxlength="6"
+                                                                    autocomplete="off"
+                                                                    required>
+                                                            </div>
+                                                            <div class="alert alert-info d-flex gap-2 p-3 mt-3" style="font-size: 0.8rem; line-height: 1.5;">
+                                                                <span class="material-symbols-outlined text-info" style="font-size: 1.25rem;">info</span>
+                                                                <div>
+                                                                    Vui lòng kiểm tra hòm thư đến (hoặc thư rác) để lấy mã xác thực gồm 6 chữ số.
+                                                                </div>
+                                                            </div>
+                                                            <button type="submit"
+                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
+                                                                style="background-color: var(--primary-container); height: 48px;">
+                                                                Xác nhận OTP <span class="material-symbols-outlined fs-5">check_circle</span>
+                                                            </button>
+                                                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                                                <a href="${pageContext.request.contextPath}/?tab=forgot"
+                                                                    class="text-decoration-none text-muted d-inline-flex align-items-center gap-1"
+                                                                    style="font-size: 0.85rem;">
+                                                                    <span class="material-symbols-outlined fs-6">arrow_back</span>
+                                                                    <span>Quay lại</span>
+                                                                </a>
+                                                                <div>
+                                                                    <span id="modal-resend-timer" style="font-size: 0.85rem; color: var(--secondary); <%= otpRemainingTime > 0 ? "" : "display: none;" %>">
+                                                                        Gửi lại sau <strong id="modal-countdown-sec"><%= otpRemainingTime %></strong>s
+                                                                    </span>
+                                                                    <a href="${pageContext.request.contextPath}/resend-otp"
+                                                                        id="modal-resend-btn"
+                                                                        class="text-decoration-none fw-semibold"
+                                                                        style="font-size: 0.85rem; color: var(--primary-container); <%= otpRemainingTime > 0 ? "display: none;" : "" %>">
+                                                                        Gửi lại mã OTP
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+
+                                                    <!-- RESET PASSWORD -->
+                                                    <div class="tab-pane fade <%= isResetTab ? " show active" : "" %>" id="modal-reset-pane">
+                                                        <div class="mb-3">
+                                                            <h2 class="fs-4 fw-semibold mb-1">Thiết lập mật khẩu mới</h2>
+                                                            <p class="text-muted" style="font-size: 0.85rem;">Vui lòng tạo mật khẩu mới cho tài khoản của bạn</p>
+                                                        </div>
+                                                        <form action="${pageContext.request.contextPath}/reset-password" method="POST">
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-medium" style="font-size: 0.85rem;">Mật khẩu mới</label>
+                                                                <input type="password" id="reset-password-input"
+                                                                    class="form-control bg-light border-0 p-2"
+                                                                    name="password"
+                                                                    placeholder="Tối thiểu 6 ký tự"
+                                                                    minlength="6" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-medium" style="font-size: 0.85rem;">Xác nhận mật khẩu</label>
+                                                                <input type="password" id="reset-confirm-password-input"
+                                                                    class="form-control bg-light border-0 p-2"
+                                                                    name="confirm_password"
+                                                                    placeholder="Nhập lại mật khẩu mới"
+                                                                    minlength="6" required>
+                                                            </div>
+                                                            <button type="submit"
+                                                                class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
+                                                                style="background-color: var(--primary-container); height: 48px;">
+                                                                Cập nhật mật khẩu <span class="material-symbols-outlined fs-5">save</span>
+                                                            </button>
                                                         </form>
                                                     </div>
 
@@ -363,5 +465,38 @@
                 }
                 regPassword.addEventListener("change", validatePassword);
                 regConfirm.addEventListener("keyup", validatePassword);
+            }
+
+            const resetPassword = document.getElementById("reset-password-input");
+            const resetConfirm = document.getElementById("reset-confirm-password-input");
+            if (resetPassword && resetConfirm) {
+                function validateResetPassword() {
+                    if (resetPassword.value != resetConfirm.value) {
+                        resetConfirm.setCustomValidity("Mật khẩu xác nhận không khớp");
+                    } else {
+                        resetConfirm.setCustomValidity('');
+                    }
+                }
+                resetPassword.addEventListener("change", validateResetPassword);
+                resetConfirm.addEventListener("keyup", validateResetPassword);
+            }
+
+            // Xử lý bộ đếm ngược gửi lại OTP
+            let modalRemaining = <%= otpRemainingTime %>;
+            if (modalRemaining > 0) {
+                const countdownSpan = document.getElementById("modal-countdown-sec");
+                const timerWrapper = document.getElementById("modal-resend-timer");
+                const resendBtn = document.getElementById("modal-resend-btn");
+                
+                const interval = setInterval(() => {
+                    modalRemaining--;
+                    if (modalRemaining <= 0) {
+                        clearInterval(interval);
+                        if (timerWrapper) timerWrapper.style.display = "none";
+                        if (resendBtn) resendBtn.style.display = "inline";
+                    } else {
+                        if (countdownSpan) countdownSpan.innerText = modalRemaining;
+                    }
+                }, 1000);
             }
         </script>

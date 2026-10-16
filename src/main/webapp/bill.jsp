@@ -267,8 +267,8 @@
                 <c:if test="${order.discountAmount > 0}">
                     <div class="flex justify-between font-body-sm text-body-sm text-primary font-medium">
                         <span class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[16px]">sell</span>
-                            Voucher khuyến mãi (${order.voucherCode != null ? order.voucherCode : 'Aura Coupon'}):
+                            <span class="material-symbols-outlined text-[16px]">redeem</span>
+                            Dùng ${order.pointsUsed} điểm Aura:
                         </span>
                         <span class="font-tabular-data font-semibold">-${order.formattedDiscountAmount}</span>
                     </div>

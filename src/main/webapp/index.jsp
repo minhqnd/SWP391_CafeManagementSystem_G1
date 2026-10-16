@@ -277,6 +277,17 @@
         <jsp:param name="activePage" value="home" />
     </jsp:include>
 
+    <!-- Fetch Data for Hero and Best Sellers -->
+    <%
+        ProductDAO productDAO = new ProductDAO();
+        List<Product> productsList = productDAO.getBestSellingProducts(4);
+        request.setAttribute("bestSellerProducts", productsList);
+        if (productsList != null && !productsList.isEmpty()) {
+            request.setAttribute("heroProduct", productsList.get(0));
+        }
+        DecimalFormat formatter = new DecimalFormat("###,###,###");
+    %>
+
     <!-- Hero Showcase Section -->
     <section class="hero-section">
         <div class="blur-blob-1"></div>
@@ -290,9 +301,6 @@
                             Hương vị chuẩn mực.<br/>
                             <span class="text-primary-custom">Đặc quyền hội viên.</span>
                         </h1>
-                        <p class="text-muted mb-0" style="font-size: 1.05rem; line-height: 1.6; max-width: 520px;">
-                            Khám phá không gian cà phê thủ công chọn lọc từ những nông trại cao nguyên danh tiếng, cùng đặc quyền tích luỹ điểm thưởng và ưu đãi hấp dẫn dành riêng cho thành viên mới.
-                        </p>
                     </div>
                     
                     <div class="d-flex flex-wrap gap-3 mb-5">
@@ -309,33 +317,19 @@
                             </a>
                         <% } %>
                     </div>
-                    
-                    <div class="stats-box row g-0 text-center text-md-start">
-                        <div class="col-4 pe-3">
-                            <div class="stat-value">100%</div>
-                            <div class="stat-label">Hạt Arabica Cầu Đất</div>
-                        </div>
-                        <div class="col-4 px-3 border-start">
-                            <div class="stat-value">4.9 / 5</div>
-                            <div class="stat-label">Đánh giá trải nghiệm</div>
-                        </div>
-                        <div class="col-4 ps-3 border-start">
-                            <div class="stat-value">15 phút</div>
-                            <div class="stat-label">Giao tận nơi giữ nhiệt</div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="col-lg-5 position-relative mt-5 mt-lg-0">
-                    <div class="hero-img-container">
-                        <div class="hero-img-bg" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBw-dbJgXjvCR5nkOrwZ8VgbS5GY2OEyRxEbOPz5Icbwto9r4_yy3ThjTmDPVYgkVS0qvw9zgWOIgZyovscgGXFfWYGZIWnz4J-kEojbOR_3UIVRm6Pc2K3JfHrvidn2O5NIY6kYDmJT7_FHzfZXsvm5SPBgxa8HNtPCnWXgdeqGGBi8jSUbqQkSy9_zS1iUSwY3th8A9HlEIBbs8WrZi_JfRhmcTX_OGMjA0Fi-G89MqKh9nlG6OfL');"></div>
-                        <div class="hero-img-overlay">
-                            <span class="text-uppercase fw-bold mb-1" style="color: #ffb4a9; font-size: 0.75rem; letter-spacing: 1.5px;">Món Signature Aura</span>
-                            <h2 class="fw-bold text-white fs-3 mb-2">Cà Phê Muối Aura</h2>
-                            <p class="text-white-50 mb-0" style="font-size: 0.875rem; line-height: 1.5;">Lớp kem béo mặn đặc chế hòa quyện cà phê phin nguyên bản từ cao nguyên Lâm Đồng.</p>
+                    <c:if test="${not empty heroProduct}">
+                        <div class="hero-img-container">
+                            <div class="hero-img-bg" style="background-image: url('${heroProduct.imageUrl}');"></div>
+                            <div class="hero-img-overlay">
+                                <span class="text-uppercase fw-bold mb-1" style="color: #ffb4a9; font-size: 0.75rem; letter-spacing: 1.5px;">Món Signature Aura</span>
+                                <h2 class="fw-bold text-white fs-3 mb-2">${heroProduct.name}</h2>
+                                <p class="text-white-50 mb-0" style="font-size: 0.875rem; line-height: 1.5;">${heroProduct.description}</p>
+                            </div>
                         </div>
-                    </div>
-                    
+                    </c:if>
                 </div>
             </div>
         </div>
@@ -358,12 +352,7 @@
             </div>
             
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-                <%
-                    ProductDAO productDAO = new ProductDAO();
-                    List<Product> productsList = productDAO.getAllProducts();
-                    request.setAttribute("bestSellerProducts", productsList);
-                    DecimalFormat formatter = new DecimalFormat("###,###,###");
-                %>
+                <%-- Data fetched at the top of the page --%>
                 <c:forEach var="p" items="${bestSellerProducts}">
                     <div class="col">
                         <c:set var="product" value="${p}" scope="request" />
@@ -407,39 +396,11 @@
                     request.setAttribute("landingCategories", landingCategories);
                 %>
                 <c:forEach var="cat" items="${landingCategories}">
-                    <c:set var="catImg" value="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80" />
-                    <c:set var="catDesc" value="Hương vị trọn vẹn được tuyển chọn kỹ lưỡng." />
-                    <c:choose>
-                        <c:when test="${cat.id == 1}">
-                            <c:set var="catImg" value="https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80" />
-                            <c:set var="catDesc" value="Espresso, Caramel Macchiato đậm đà chuẩn gu hiện đại." />
-                        </c:when>
-                        <c:when test="${cat.id == 2}">
-                            <c:set var="catImg" value="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80" />
-                            <c:set var="catDesc" value="Cà phê muối, sữa đá Sài Gòn ủ phin nguyên bản ngọt êm." />
-                        </c:when>
-                        <c:when test="${cat.id == 3}">
-                            <c:set var="catImg" value="https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80" />
-                            <c:set var="catDesc" value="Trà đào cam sả, hoa quả nhiệt đới tươi mát thanh nhiệt." />
-                        </c:when>
-                        <c:when test="${cat.id == 4}">
-                            <c:set var="catImg" value="https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80" />
-                            <c:set var="catDesc" value="Matcha Uji thơm bùi, đá xay mát lạnh đánh tan ngày hè." />
-                        </c:when>
-                        <c:when test="${cat.id == 5}">
-                            <c:set var="catImg" value="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80" />
-                            <c:set var="catDesc" value="Bánh Croissant nướng bơ Pháp, cheesecake mềm béo hấp dẫn." />
-                        </c:when>
-                        <c:when test="${cat.id == 6}">
-                            <c:set var="catImg" value="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80" />
-                            <c:set var="catDesc" value="Cold brew ủ lạnh 16h đóng chai tiện lợi mang đi bất cứ đâu." />
-                        </c:when>
-                    </c:choose>
 
                     <div class="col">
                         <a href="${pageContext.request.contextPath}/menu?category=${cat.id}" class="cat-card">
                             <div class="cat-img-box">
-                                <img src="${catImg}" alt="${cat.name}" class="cat-img" loading="lazy" />
+                                <img src="${not empty cat.imageUrl ? cat.imageUrl : 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'}" alt="${cat.name}" class="cat-img" loading="lazy" />
                                 <div class="cat-icon-badge">
                                     <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon : 'local_cafe'}</span>
                                 </div>
@@ -447,7 +408,7 @@
                             <div class="cat-body">
                                 <div>
                                     <h3 class="cat-title">${cat.name}</h3>
-                                    <p class="text-secondary-custom mb-0 small" style="line-height: 1.5;">${catDesc}</p>
+                                    <p class="text-secondary-custom mb-0 small" style="line-height: 1.5;">${not empty cat.description ? cat.description : 'Hương vị trọn vẹn được tuyển chọn kỹ lưỡng.'}</p>
                                 </div>
                                 <div class="cat-meta">
                                     <span class="fw-semibold text-primary-custom">${cat.productCount} món có sẵn</span>

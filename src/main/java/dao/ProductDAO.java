@@ -254,4 +254,32 @@ public class ProductDAO extends BaseDAO {
         }
         return list;
     }
+
+    public List<Product> getBestSellingProducts(int limit) {
+        List<Product> list = new ArrayList<>();
+        String sql = "SELECT p.*, c.name AS category_name, COALESCE(SUM(oi.quantity), 0) as total_sold " +
+                     "FROM products p " +
+                     "JOIN categories c ON p.category_id = c.id " +
+                     "LEFT JOIN order_items oi ON p.id = oi.product_id " +
+                     "LEFT JOIN orders o ON oi.order_id = o.id AND o.status = 'COMPLETED' " +
+                     "WHERE p.is_available = 1 " +
+                     "GROUP BY p.id " +
+                     "ORDER BY total_sold DESC, p.id ASC " +
+                     "LIMIT ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToProduct(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

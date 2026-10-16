@@ -82,7 +82,7 @@ public class UserDAO extends BaseDAO {
                         if (addressStr == null) addressStr = "";
                     }
 
-                    String tierName = hasColumn(rs, "tier_name") ? rs.getString("tier_name") : "BRONZE";
+                    String tierName = "";
                     int totalPoints = hasColumn(rs, "total_points") ? rs.getInt("total_points") : 0;
 
                     return new User(
@@ -133,6 +133,23 @@ public class UserDAO extends BaseDAO {
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean checkPhoneExists(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return false;
+        }
+        String sql = "SELECT id FROM users WHERE phone = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, phone.trim());
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -228,7 +245,7 @@ public class UserDAO extends BaseDAO {
      */
     public model.User findCustomerByPhone(String phone) {
         if (phone == null || phone.trim().isEmpty()) return null;
-        String sql = "SELECT id, full_name, phone, email, role, position, status, tier_name, total_points " +
+        String sql = "SELECT id, full_name, phone, email, role, position, status, total_points " +
                      "FROM users WHERE role = 'CUSTOMER' AND (phone = ? OR email = ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -246,7 +263,7 @@ public class UserDAO extends BaseDAO {
                             rs.getString("status"),
                             "",
                             "",
-                            rs.getString("tier_name") != null ? rs.getString("tier_name") : "MEMBER",
+                            "",
                             rs.getInt("total_points")
                     );
                 }
@@ -255,5 +272,71 @@ public class UserDAO extends BaseDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Lấy danh sách nhân viên phục vụ việc xếp lịch làm việc (STAFF và ADMIN active)
+     */
+    public model.User getActiveStaffById(int userId) {
+        if (userId <= 0) return null;
+
+        String sql = "SELECT id, full_name, phone, email, role, position, status, birthday, address " +
+                     "FROM users " +
+                     "WHERE id = ? AND role IN ('STAFF', 'ADMIN') AND status = 'ACTIVE'";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new model.User(
+                            rs.getInt("id"),
+                            rs.getString("full_name"),
+                            rs.getString("phone"),
+                            rs.getString("email"),
+                            rs.getString("role"),
+                            rs.getString("position"),
+                            rs.getString("status"),
+                            rs.getString("birthday"),
+                            rs.getString("address")
+                    );
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public java.util.List<model.User> getStaffEmployees() {
+        java.util.List<model.User> list = new java.util.ArrayList<>();
+        String sql = "SELECT id, full_name, phone, email, role, position, status, birthday, address " +
+                     "FROM users WHERE role IN ('STAFF', 'ADMIN') AND status = 'ACTIVE' " +
+                     "ORDER BY CASE position " +
+                     "  WHEN 'MANAGER' THEN 1 " +
+                     "  WHEN 'BARISTA' THEN 2 " +
+                     "  WHEN 'CASHIER' THEN 3 " +
+                     "  WHEN 'SHIPPER' THEN 4 " +
+                     "  ELSE 5 END ASC, full_name ASC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new model.User(
+                        rs.getInt("id"),
+                        rs.getString("full_name"),
+                        rs.getString("phone"),
+                        rs.getString("email"),
+                        rs.getString("role"),
+                        rs.getString("position"),
+                        rs.getString("status"),
+                        rs.getString("birthday"),
+                        rs.getString("address")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }

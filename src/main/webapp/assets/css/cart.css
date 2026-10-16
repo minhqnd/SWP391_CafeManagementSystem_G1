@@ -1,6 +1,6 @@
 /* =========================================================
    Aura Café - Luồng đặt hàng của khách
-   (dùng chung cho cart.jsp, checkout.jsp, payment.jsp, orders.jsp)
+   (dùng chung cho cart.jsp, checkout.jsp, payment.jsp, orders.jsp, admin-settings.jsp)
    ========================================================= */
 :root {
     --aura-primary: #a31d2d;
@@ -270,7 +270,6 @@ body.aura-cart-page {
     border-radius: 999px;
 }
 
-/* Voucher */
 .small-label {
     font-size: 0.68rem;
     font-weight: 700;
@@ -280,33 +279,43 @@ body.aura-cart-page {
     margin-bottom: 0.5rem;
 }
 
-.voucher-option {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+/* Dùng điểm Aura: thanh kéo chọn số điểm theo mốc */
+.points-slider {
     background: #f5f7fc;
     border: 1px solid var(--aura-border);
     border-radius: 10px;
-    padding: 0.7rem 0.8rem;
-    margin-bottom: 0.5rem;
+    padding: 0.7rem 0.85rem 0.55rem;
 }
 
-.voucher-option.active {
-    background: var(--aura-blue-soft);
-    border-color: #d4dbec;
-}
-
-.voucher-option.muted { opacity: 0.6; }
-
-.voucher-option .voucher-icon { color: var(--aura-primary); }
-
-.badge-using {
-    background: var(--aura-primary);
-    color: #fff;
-    font-size: 0.65rem;
+.points-slider-value {
     font-weight: 700;
-    border-radius: 4px;
-    padding: 0.1rem 0.4rem;
+    font-size: 1.05rem;
+    line-height: 1.2;
+}
+
+.points-range {
+    display: block;
+    width: 100%;
+    margin: 0;
+    accent-color: var(--aura-primary);
+    cursor: pointer;
+}
+
+.points-range-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.15rem;
+    font-size: 0.72rem;
+    color: var(--aura-muted);
+}
+
+.points-chip {
+    background: #fff;
+    border: 1px solid var(--aura-border);
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 /* Tóm tắt đơn */
@@ -387,97 +396,10 @@ body.aura-cart-page {
 
 .checkout-stepper .step-line.done { background: var(--aura-primary); }
 
-.method-switch {
-    display: flex;
-    gap: 0.35rem;
-    background: var(--aura-blue-soft);
-    border-radius: 12px;
-    padding: 0.3rem;
-}
-
-.method-option {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border: none;
-    background: transparent;
-    border-radius: 9px;
-    padding: 0.6rem 0.5rem;
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--aura-blue-text);
-}
-
-.method-option.active {
-    background: #fff;
-    color: var(--aura-primary);
-    box-shadow: 0 1px 4px rgba(17, 24, 39, 0.08);
-}
-
-.method-option:disabled { cursor: not-allowed; }
-
 .info-box {
     background: var(--aura-blue-soft);
     border-radius: 12px;
     padding: 1rem;
-}
-
-.store-box {
-    display: flex;
-    gap: 0.9rem;
-    align-items: center;
-    background: #f5f7fc;
-    border: 1px solid var(--aura-border);
-    border-radius: 12px;
-    padding: 0.9rem 1rem;
-}
-
-.store-box .store-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    background: var(--aura-primary-soft);
-    color: var(--aura-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-/* Ô chọn thời gian: radio nằm đè ở góc trái, khung đứng ngay sau radio */
-.time-choice {
-    position: relative;
-    height: 100%;
-}
-
-.time-choice .form-check-input {
-    position: absolute;
-    top: 1.05rem;
-    left: 1rem;
-    margin: 0;
-    z-index: 1;
-}
-
-.time-option {
-    display: block;
-    height: 100%;
-    border: 1px solid var(--aura-border);
-    background: #f5f7fc;
-    border-radius: 12px;
-    padding: 0.85rem 1rem 0.85rem 2.6rem;
-}
-
-label.time-option,
-.time-option label {
-    cursor: pointer;
-}
-
-/* Tô sáng khung của lựa chọn đang được tích */
-.time-choice .form-check-input:checked + .time-option {
-    border-color: #d4dbec;
-    background: var(--aura-blue-soft);
 }
 
 .checkout-locked .aura-card { opacity: 0.6; }
@@ -496,24 +418,7 @@ label.time-option,
     background: var(--aura-blue-soft);
 }
 
-/* ---------- Voucher: số tiền giảm cho giỏ hiện tại ---------- */
-.badge-personal {
-    background: #fff4e0;
-    color: var(--aura-gold);
-    font-size: 0.65rem;
-    font-weight: 700;
-    border-radius: 4px;
-    padding: 0.1rem 0.4rem;
-}
-
-.voucher-saving {
-    font-size: 0.75rem;
-    color: var(--aura-primary);
-    margin-top: 0.15rem;
-}
-
-.voucher-option.muted .voucher-saving { color: var(--aura-muted); }
-
+/* ---------- Số tiền tiết kiệm nhờ dùng điểm ---------- */
 .saving-note {
     display: flex;
     align-items: center;
@@ -905,10 +810,16 @@ label.time-option,
     .track-header { padding: 1rem; }
 }
 
+/* ---------- Trang quản trị: Cài đặt bán hàng online ---------- */
+.admin-topbar {
+    background: #fff;
+    border-bottom: 1px solid var(--aura-border);
+    padding: 0.75rem 0;
+}
+
 @media (max-width: 575.98px) {
     .cart-item-img { width: 72px; height: 72px; }
     .grand-total { font-size: 1.6rem; }
     .checkout-stepper .step { min-width: 80px; }
     .checkout-stepper .step-label { font-size: 0.7rem; }
-    .method-option { font-size: 0.8rem; }
 }

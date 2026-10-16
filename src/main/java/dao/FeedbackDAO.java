@@ -139,7 +139,14 @@ public class FeedbackDAO extends BaseDAO {
 
     public List<String[]> getRecentOrdersForCustomer(int customerId) {
         List<String[]> list = new ArrayList<>();
-        String sql = "SELECT id, order_code, created_at, final_amount, status FROM orders WHERE customer_id = ? ORDER BY id DESC LIMIT 10";
+        String sql = "SELECT o.id, o.order_code, o.created_at, o.final_amount, o.status " +
+                     "FROM orders o " +
+                     "WHERE o.customer_id = ? " +
+                     "AND NOT EXISTS (" +
+                     "    SELECT 1 FROM customer_reviews cr " +
+                     "    WHERE cr.customer_id = o.customer_id AND cr.order_id = o.id" +
+                     ") " +
+                     "ORDER BY o.id DESC LIMIT 10";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, customerId);
@@ -161,55 +168,45 @@ public class FeedbackDAO extends BaseDAO {
 
     public int findOrderId(String orderCodeOrId, int customerId) {
         if (orderCodeOrId == null || orderCodeOrId.trim().isEmpty()) {
-            return getDefaultOrderForCustomer(customerId);
+            return 0;
         }
         String clean = orderCodeOrId.replace("#", "").trim();
 
-        // 1. Thử parse trực tiếp số ID đơn hàng
+        // Chỉ cho phép chọn đơn thuộc khách hàng và chưa từng phản hồi.
         try {
             int orderId = Integer.parseInt(clean);
-            String sql = "SELECT id FROM orders WHERE id = ?";
+            String sql = "SELECT o.id FROM orders o " +
+                         "WHERE o.id = ? AND o.customer_id = ? " +
+                         "AND NOT EXISTS (" +
+                         "    SELECT 1 FROM customer_reviews cr " +
+                         "    WHERE cr.customer_id = o.customer_id AND cr.order_id = o.id" +
+                         ")";
             try (Connection conn = DBContext.getConnection();
                  PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, orderId);
+                ps.setInt(2, customerId);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) return rs.getInt("id");
                 }
             }
         } catch (Exception ignored) {}
 
-        // 2. Tìm kiếm theo order_code
-        String sql = "SELECT id FROM orders WHERE order_code = ? OR order_code = ?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, clean);
-            ps.setString(2, orderCodeOrId.trim());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt("id");
-            }
-        } catch (Exception ignored) {}
-
-        // Fallback đơn hàng gần nhất của khách hàng hoặc đơn hàng mặc định
-        return getDefaultOrderForCustomer(customerId);
-    }
-
-    private int getDefaultOrderForCustomer(int customerId) {
-        String sql = "SELECT id FROM orders WHERE customer_id = ? ORDER BY id DESC LIMIT 1";
+        String sql = "SELECT o.id FROM orders o " +
+                     "WHERE o.customer_id = ? AND (o.order_code = ? OR o.order_code = ?) " +
+                     "AND NOT EXISTS (" +
+                     "    SELECT 1 FROM customer_reviews cr " +
+                     "    WHERE cr.customer_id = o.customer_id AND cr.order_id = o.id" +
+                     ")";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, customerId);
+            ps.setString(2, clean);
+            ps.setString(3, orderCodeOrId.trim());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt("id");
             }
         } catch (Exception ignored) {}
 
-        String fallbackSql = "SELECT id FROM orders ORDER BY id ASC LIMIT 1";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(fallbackSql);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) return rs.getInt("id");
-        } catch (Exception ignored) {}
-
-        return 1;
+        return 0;
     }
 }
