@@ -1,9 +1,11 @@
 package dao;
 
 import model.ShiftStat;
+import model.ShiftHandoverSummary;
 import model.ShopSettings;
 import model.WorkSchedule;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -354,6 +356,83 @@ public class WorkScheduleDAO extends BaseDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    /**
+     * Chốt ca từ màn hình Cashier. Điều kiện user_id và trạng thái PRESENT được đặt
+     * ngay trong câu UPDATE để tránh chốt nhầm ca hoặc gửi lại biểu mẫu hai lần.
+     */
+    public boolean closeCashierShift(int id, int userId, BigDecimal endingCashActual,
+                                     BigDecimal endingCashSystem, String note) {
+        String sql = "UPDATE work_schedules " +
+                     "SET status = 'COMPLETED', check_out_time = NOW(), " +
+                     "    ending_cash_actual = ?, ending_cash_system = ?, note = ? " +
+                     "WHERE id = ? AND user_id = ? AND status = 'PRESENT'";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBigDecimal(1, endingCashActual);
+            ps.setBigDecimal(2, endingCashSystem);
+            ps.setString(3, note);
+            ps.setInt(4, id);
+            ps.setInt(5, userId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Tổng hợp các giao dịch thành công do chính thu ngân xử lý trong thời gian ca.
+     */
+    public ShiftHandoverSummary getShiftHandoverSummary(WorkSchedule schedule, Timestamp fallbackEndTime) {
+        ShiftHandoverSummary summary = new ShiftHandoverSummary();
+        summary.setSchedule(schedule);
+
+        if (schedule == null) {
+            return summary;
+        }
+
+        Timestamp startTime = schedule.getCheckInTime();
+        if (startTime == null && schedule.getWorkDate() != null) {
+            startTime = Timestamp.valueOf(schedule.getWorkDate().toLocalDate().atStartOfDay());
+        }
+        Timestamp endTime = schedule.getCheckOutTime() != null
+                ? schedule.getCheckOutTime()
+                : fallbackEndTime;
+        if (startTime == null || endTime == null) {
+            return summary;
+        }
+
+        String sql = "SELECT COUNT(DISTINCT o.id) AS order_count, " +
+                     "       COALESCE(SUM(CASE WHEN p.payment_method = 'CASH' THEN p.amount ELSE 0 END), 0) AS cash_sales, " +
+                     "       COALESCE(SUM(CASE WHEN p.payment_method <> 'CASH' THEN p.amount ELSE 0 END), 0) AS non_cash_sales, " +
+                     "       COALESCE(SUM(p.amount), 0) AS total_sales " +
+                     "FROM orders o " +
+                     "JOIN payments p ON p.order_id = o.id " +
+                     "WHERE o.cashier_id = ? AND o.status <> 'CANCELLED' " +
+                     "  AND p.status = 'SUCCESS' AND p.paid_at >= ? AND p.paid_at <= ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, schedule.getUserId());
+            ps.setTimestamp(2, startTime);
+            ps.setTimestamp(3, endTime);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    summary.setSuccessfulOrderCount(rs.getInt("order_count"));
+                    summary.setCashSales(rs.getBigDecimal("cash_sales"));
+                    summary.setNonCashSales(rs.getBigDecimal("non_cash_sales"));
+                    summary.setTotalSales(rs.getBigDecimal("total_sales"));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return summary;
     }
 
     /**
