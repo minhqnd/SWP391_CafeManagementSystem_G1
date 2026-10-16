@@ -637,3 +637,157 @@ body.admin-body {
     border-top: 1px solid #f3f4f6;
     padding: 16px 24px;
 }
+
+/* =========================================================
+   KPI Metrics Summary Grid
+   ========================================================= */
+.kpi-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+    .kpi-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .kpi-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.kpi-metric-card {
+    background: #ffffff;
+    border: 1px solid var(--aura-border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.kpi-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.06);
+}
+
+.kpi-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kpi-icon-blue { background: #e0f2fe; color: #0284c7; }
+.kpi-icon-amber { background: #fef3c7; color: #d97706; }
+.kpi-icon-green { background: #dcfce7; color: #16a34a; }
+.kpi-icon-rose { background: #fee2e2; color: #dc2626; }
+
+.kpi-val {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.1;
+}
+
+.kpi-label {
+    font-size: 0.78rem;
+    color: #6b7280;
+    font-weight: 500;
+    margin-top: 3px;
+}
+
+/* =========================================================
+   Day Shift Lanes (Board View)
+   ========================================================= */
+.shift-lanes-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+@media (max-width: 992px) {
+    .shift-lanes-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.shift-lane {
+    background: #ffffff;
+    border: 1px solid var(--aura-border);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.shift-lane-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.shift-lane-body {
+    padding: 16px 20px;
+    flex: 1;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.lane-staff-card {
+    background: #fafafc;
+    border: 1px solid #eef0f3;
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: all 0.15s ease;
+}
+
+.lane-staff-card:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.staff-avatar-initials {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background-color: var(--aura-primary);
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.cash-handover-box {
+    background: #fffdf5;
+    border: 1px dashed #fde68a;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    margin-top: 10px;
+}
+
+.cash-flow-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    color: #4b5563;
+}

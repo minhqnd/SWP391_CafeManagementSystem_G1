@@ -10,7 +10,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lịch phân ca nhân viên | Aura Café Admin</title>
+    <title>Quản lý Ca làm việc &amp; Bàn giao két | Aura Café</title>
 
     <!-- Google Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,11 +57,11 @@
                     <ol class="breadcrumb small mb-1">
                         <li class="breadcrumb-item"><a href="${ctx}/admin-dashboard.jsp" class="text-decoration-none text-muted">Admin</a></li>
                         <li class="breadcrumb-item"><a href="${ctx}/admin/shifts" class="text-decoration-none text-muted">Nhân sự &amp; Ca làm</a></li>
-                        <li class="breadcrumb-item active fw-semibold text-dark" aria-current="page">Lịch phân ca</li>
+                        <li class="breadcrumb-item active fw-semibold text-dark" aria-current="page">Quản lý Ca làm việc</li>
                     </ol>
                 </nav>
-                <h1 class="schedule-title">Lịch phân ca nhân viên</h1>
-                <p class="schedule-subtitle">Xếp ca làm việc, điểm danh và quản lý lịch trực cho nhân sự toàn hệ thống</p>
+                <h1 class="schedule-title">Quản lý Ca làm việc (Work Shift Management)</h1>
+                <p class="schedule-subtitle">Điều phối nhân sự (Barista, Thu ngân, Shipper), giám sát điểm danh và kiểm toán bàn giao két tiền mặt</p>
             </div>
 
             <div class="d-flex align-items-center gap-3">
@@ -71,49 +71,112 @@
                        class="btn btn-sm ${view == 'calendar' ? 'btn-dark fw-bold' : 'btn-light border-0 text-muted'}">
                         <span class="material-symbols-outlined fs-6 align-middle me-1">calendar_view_week</span> Lịch tuần
                     </a>
+                    <a href="${ctx}/admin/schedules?view=board&date=${selectedDate}&shift=${shiftFilter}&position=${positionFilter}&status=${statusFilter}&staffId=${staffIdFilter}"
+                       class="btn btn-sm ${view == 'board' ? 'btn-dark fw-bold' : 'btn-light border-0 text-muted'}">
+                        <span class="material-symbols-outlined fs-6 align-middle me-1">view_column</span> Ca theo ngày
+                    </a>
                     <a href="${ctx}/admin/schedules?view=table&date=${selectedDate}&shift=${shiftFilter}&position=${positionFilter}&status=${statusFilter}&staffId=${staffIdFilter}"
                        class="btn btn-sm ${view == 'table' ? 'btn-dark fw-bold' : 'btn-light border-0 text-muted'}">
-                        <span class="material-symbols-outlined fs-6 align-middle me-1">table_rows</span> Danh sách
+                        <span class="material-symbols-outlined fs-6 align-middle me-1">table_rows</span> Kiểm toán két
                     </a>
                 </div>
 
                 <!-- Button Phân ca mới -->
-                <button type="button" class="btn-aura-primary" onclick="openAddScheduleModal()">
+                <button type="button" class="btn-aura-primary" onclick="openAddScheduleModal('${selectedDate}')">
                     <span class="material-symbols-outlined fs-5">add</span> Phân ca mới
                 </button>
             </div>
         </div>
 
-        <!-- Filter & Week Navigation Toolbar -->
+        <!-- KPI Metrics Grid (Real-time Shift & Cash Stats) -->
+        <div class="kpi-metrics-grid">
+            <!-- Metric 1: Total Shifts -->
+            <div class="kpi-metric-card">
+                <div class="kpi-icon-box kpi-icon-blue">
+                    <span class="material-symbols-outlined fs-4">schedule</span>
+                </div>
+                <div>
+                    <div class="kpi-val">${totalShifts}</div>
+                    <div class="kpi-label">Tổng lượt ca phân bổ</div>
+                </div>
+            </div>
+
+            <!-- Metric 2: Live Active Staff -->
+            <div class="kpi-metric-card">
+                <div class="kpi-icon-box kpi-icon-amber">
+                    <span class="material-symbols-outlined fs-4">badge</span>
+                </div>
+                <div>
+                    <div class="kpi-val text-warning d-flex align-items-center gap-2">
+                        <span>${liveActiveCount}</span>
+                        <c:if test="${liveActiveCount > 0}">
+                            <span class="spinner-grow spinner-grow-sm text-warning" role="status"></span>
+                        </c:if>
+                    </div>
+                    <div class="kpi-label">Đang có mặt trực ca</div>
+                </div>
+            </div>
+
+            <!-- Metric 3: Completed Shifts -->
+            <div class="kpi-metric-card">
+                <div class="kpi-icon-box kpi-icon-green">
+                    <span class="material-symbols-outlined fs-4">task_alt</span>
+                </div>
+                <div>
+                    <div class="kpi-val text-success">${completedCount}</div>
+                    <div class="kpi-label">Ca đã hoàn thành</div>
+                </div>
+            </div>
+
+            <!-- Metric 4: Cash Handover & Discrepancies -->
+            <div class="kpi-metric-card">
+                <div class="kpi-icon-box ${cashDiscrepancyCount > 0 ? 'kpi-icon-rose' : 'kpi-icon-green'}">
+                    <span class="material-symbols-outlined fs-4">point_of_sale</span>
+                </div>
+                <div>
+                    <div class="kpi-val">
+                        <fmt:formatNumber value="${totalCashHandover}" pattern="#,###" />đ
+                    </div>
+                    <div class="kpi-label">
+                        <c:choose>
+                            <c:when test="${cashDiscrepancyCount > 0}">
+                                <span class="text-danger fw-bold">⚠️ Có ${cashDiscrepancyCount} ca lệch két!</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span>Tiền két bàn giao (Khớp 100%)</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Date Navigator Toolbar -->
         <div class="filter-toolbar-card">
-            <!-- Week Navigator -->
             <div class="week-navigation-group">
                 <a href="${ctx}/admin/schedules?view=${view}&date=${prevWeekDate}&shift=${shiftFilter}&position=${positionFilter}&status=${statusFilter}&staffId=${staffIdFilter}"
                    class="btn-week-nav" title="Tuần trước">
                     <span class="material-symbols-outlined fs-6">chevron_left</span> Tuần trước
                 </a>
                 <a href="${ctx}/admin/schedules?view=${view}&date=&shift=${shiftFilter}&position=${positionFilter}&status=${statusFilter}&staffId=${staffIdFilter}"
-                   class="btn-week-nav" title="Trở về tuần hiện tại">
-                    Tuần này
+                   class="btn-week-nav" title="Trở về ngày hiện tại">
+                    Hôm nay
                 </a>
                 <a href="${ctx}/admin/schedules?view=${view}&date=${nextWeekDate}&shift=${shiftFilter}&position=${positionFilter}&status=${statusFilter}&staffId=${staffIdFilter}"
                    class="btn-week-nav" title="Tuần sau">
                     Tuần sau <span class="material-symbols-outlined fs-6">chevron_right</span>
                 </a>
                 <span class="week-range-text">
-                    <span class="text-muted fw-normal">Tuần:</span> ${monday} <span class="text-muted">➔</span> ${sunday}
+                    <span class="text-muted fw-normal">Đang xem:</span> <b>${selectedDate}</b>
                 </span>
             </div>
 
-            <!-- Filter Controls Form -->
             <form method="get" action="${ctx}/admin/schedules" class="d-flex align-items-center gap-2 flex-wrap m-0">
                 <input type="hidden" name="view" value="${view}">
                 
-                <!-- Quick Date Picker -->
                 <input type="date" name="date" class="form-control form-control-sm" style="width: 140px;"
-                       value="${selectedDate}" onchange="this.form.submit()" title="Chọn ngày để nhảy đến tuần đó">
+                       value="${selectedDate}" onchange="this.form.submit()" title="Chọn ngày">
 
-                <!-- Filter Shift -->
                 <select name="shift" class="form-select form-select-sm" style="width: 130px;" onchange="this.form.submit()">
                     <option value="ALL" ${shiftFilter == 'ALL' ? 'selected' : ''}>Tất cả ca</option>
                     <option value="MORNING" ${shiftFilter == 'MORNING' ? 'selected' : ''}>Ca sáng</option>
@@ -121,7 +184,6 @@
                     <option value="EVENING" ${shiftFilter == 'EVENING' ? 'selected' : ''}>Ca tối</option>
                 </select>
 
-                <!-- Filter Position -->
                 <select name="position" class="form-select form-select-sm" style="width: 135px;" onchange="this.form.submit()">
                     <option value="ALL" ${positionFilter == 'ALL' ? 'selected' : ''}>Tất cả vị trí</option>
                     <option value="BARISTA" ${positionFilter == 'BARISTA' ? 'selected' : ''}>Pha chế</option>
@@ -130,7 +192,6 @@
                     <option value="MANAGER" ${positionFilter == 'MANAGER' ? 'selected' : ''}>Quản lý</option>
                 </select>
 
-                <!-- Filter Status -->
                 <select name="status" class="form-select form-select-sm" style="width: 140px;" onchange="this.form.submit()">
                     <option value="ALL" ${statusFilter == 'ALL' ? 'selected' : ''}>Tất cả trạng thái</option>
                     <option value="SCHEDULED" ${statusFilter == 'SCHEDULED' ? 'selected' : ''}>Đã xếp lịch</option>
@@ -139,7 +200,6 @@
                     <option value="ABSENT" ${statusFilter == 'ABSENT' ? 'selected' : ''}>Vắng mặt</option>
                 </select>
 
-                <!-- Reset Filters -->
                 <c:if test="${shiftFilter != 'ALL' || positionFilter != 'ALL' || statusFilter != 'ALL' || not empty staffIdFilter}">
                     <a href="${ctx}/admin/schedules?view=${view}&date=${selectedDate}" class="btn btn-outline-secondary btn-sm" title="Xóa bộ lọc">
                         <span class="material-symbols-outlined fs-6 align-middle">close</span>
@@ -149,7 +209,233 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- VIEW 1: WEEKLY CALENDAR GRID               -->
+        <!-- VIEW 1: DAY SHIFT LANES (BOARD VIEW)       -->
+        <!-- ========================================== -->
+        <c:if test="${view == 'board'}">
+            <div class="shift-lanes-container">
+                <!-- Lane 1: Ca sáng -->
+                <div class="shift-lane">
+                    <div class="shift-lane-header">
+                        <div>
+                            <div class="fw-bold text-dark">Ca sáng</div>
+                            <div class="text-muted small">${settings.shiftMorning}</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-dark" onclick="openAddScheduleModal('${selectedDate}', 'MORNING')">
+                            + Thêm
+                        </button>
+                    </div>
+                    <div class="shift-lane-body">
+                        <c:set var="mList" value="${calendarSlotMap[selectedDate.concat('_MORNING')]}" />
+                        <c:forEach items="${mList}" var="item">
+                            <div class="lane-staff-card">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="staff-avatar-initials">${item.initials}</div>
+                                        <div>
+                                            <div class="fw-bold text-dark lh-1">${item.userName}</div>
+                                            <span class="position-pill position-${fn:toLowerCase(item.userPosition)}">${item.positionDisplayName}</span>
+                                        </div>
+                                    </div>
+                                    <span class="${item.statusBadgeClass}">${item.statusDisplayName}</span>
+                                </div>
+
+                                <div class="small text-muted mb-2">
+                                    <span>Vào: <b>${item.checkInFormatted}</b></span> &bull; 
+                                    <span>Ra: <b>${item.checkOutFormatted}</b></span>
+                                </div>
+
+                                <c:if test="${not empty item.startingCash || not empty item.endingCashActual}">
+                                    <div class="cash-handover-box">
+                                        <div class="cash-flow-line">
+                                            <span>Két đầu ca:</span>
+                                            <b><fmt:formatNumber value="${item.startingCash}" pattern="#,###" />đ</b>
+                                        </div>
+                                        <c:if test="${not empty item.endingCashActual}">
+                                            <div class="cash-flow-line">
+                                                <span>Két kết ca:</span>
+                                                <b><fmt:formatNumber value="${item.endingCashActual}" pattern="#,###" />đ</b>
+                                            </div>
+                                            <div class="mt-1">${item.cashStatusBadge}</div>
+                                        </c:if>
+                                    </div>
+                                </c:if>
+
+                                <div class="d-flex align-items-center justify-content-end gap-2 mt-3 pt-2 border-top">
+                                    <c:if test="${item.status == 'SCHEDULED'}">
+                                        <button type="button" class="btn btn-sm btn-success py-1 px-2"
+                                                onclick="openCheckInModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                            Check-in
+                                        </button>
+                                    </c:if>
+                                    <c:if test="${item.status == 'PRESENT'}">
+                                        <button type="button" class="btn btn-sm btn-primary py-1 px-2"
+                                                onclick="openCloseShiftModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                            Chốt ca &amp; Két
+                                        </button>
+                                    </c:if>
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2"
+                                            onclick="openEditScheduleModal('${item.id}', '${item.userId}', '${item.workDateFormatted}', '${item.shiftName}', '${item.status}', '${item.note}', '${item.startingCash}', '${item.endingCashActual}')">
+                                        Sửa
+                                    </button>
+                                </div>
+                            </div>
+                        </c:forEach>
+                        <c:if test="${empty mList}">
+                            <div class="text-center py-4 text-muted small">Chưa xếp nhân sự cho ca sáng.</div>
+                        </c:if>
+                    </div>
+                </div>
+
+                <!-- Lane 2: Ca chiều -->
+                <div class="shift-lane">
+                    <div class="shift-lane-header">
+                        <div>
+                            <div class="fw-bold text-dark">Ca chiều</div>
+                            <div class="text-muted small">${settings.shiftAfternoon}</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-dark" onclick="openAddScheduleModal('${selectedDate}', 'AFTERNOON')">
+                            + Thêm
+                        </button>
+                    </div>
+                    <div class="shift-lane-body">
+                        <c:set var="aList" value="${calendarSlotMap[selectedDate.concat('_AFTERNOON')]}" />
+                        <c:forEach items="${aList}" var="item">
+                            <div class="lane-staff-card">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="staff-avatar-initials">${item.initials}</div>
+                                        <div>
+                                            <div class="fw-bold text-dark lh-1">${item.userName}</div>
+                                            <span class="position-pill position-${fn:toLowerCase(item.userPosition)}">${item.positionDisplayName}</span>
+                                        </div>
+                                    </div>
+                                    <span class="${item.statusBadgeClass}">${item.statusDisplayName}</span>
+                                </div>
+
+                                <div class="small text-muted mb-2">
+                                    <span>Vào: <b>${item.checkInFormatted}</b></span> &bull; 
+                                    <span>Ra: <b>${item.checkOutFormatted}</b></span>
+                                </div>
+
+                                <c:if test="${not empty item.startingCash || not empty item.endingCashActual}">
+                                    <div class="cash-handover-box">
+                                        <div class="cash-flow-line">
+                                            <span>Két đầu ca:</span>
+                                            <b><fmt:formatNumber value="${item.startingCash}" pattern="#,###" />đ</b>
+                                        </div>
+                                        <c:if test="${not empty item.endingCashActual}">
+                                            <div class="cash-flow-line">
+                                                <span>Két kết ca:</span>
+                                                <b><fmt:formatNumber value="${item.endingCashActual}" pattern="#,###" />đ</b>
+                                            </div>
+                                            <div class="mt-1">${item.cashStatusBadge}</div>
+                                        </c:if>
+                                    </div>
+                                </c:if>
+
+                                <div class="d-flex align-items-center justify-content-end gap-2 mt-3 pt-2 border-top">
+                                    <c:if test="${item.status == 'SCHEDULED'}">
+                                        <button type="button" class="btn btn-sm btn-success py-1 px-2"
+                                                onclick="openCheckInModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                            Check-in
+                                        </button>
+                                    </c:if>
+                                    <c:if test="${item.status == 'PRESENT'}">
+                                        <button type="button" class="btn btn-sm btn-primary py-1 px-2"
+                                                onclick="openCloseShiftModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                            Chốt ca &amp; Két
+                                        </button>
+                                    </c:if>
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2"
+                                            onclick="openEditScheduleModal('${item.id}', '${item.userId}', '${item.workDateFormatted}', '${item.shiftName}', '${item.status}', '${item.note}', '${item.startingCash}', '${item.endingCashActual}')">
+                                        Sửa
+                                    </button>
+                                </div>
+                            </div>
+                        </c:forEach>
+                        <c:if test="${empty aList}">
+                            <div class="text-center py-4 text-muted small">Chưa xếp nhân sự cho ca chiều.</div>
+                        </c:if>
+                    </div>
+                </div>
+
+                <!-- Lane 3: Ca tối -->
+                <div class="shift-lane">
+                    <div class="shift-lane-header">
+                        <div>
+                            <div class="fw-bold text-dark">Ca tối</div>
+                            <div class="text-muted small">${settings.shiftEvening}</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-dark" onclick="openAddScheduleModal('${selectedDate}', 'EVENING')">
+                            + Thêm
+                        </button>
+                    </div>
+                    <div class="shift-lane-body">
+                        <c:set var="eList" value="${calendarSlotMap[selectedDate.concat('_EVENING')]}" />
+                        <c:forEach items="${eList}" var="item">
+                            <div class="lane-staff-card">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="staff-avatar-initials">${item.initials}</div>
+                                        <div>
+                                            <div class="fw-bold text-dark lh-1">${item.userName}</div>
+                                            <span class="position-pill position-${fn:toLowerCase(item.userPosition)}">${item.positionDisplayName}</span>
+                                        </div>
+                                    </div>
+                                    <span class="${item.statusBadgeClass}">${item.statusDisplayName}</span>
+                                </div>
+
+                                <div class="small text-muted mb-2">
+                                    <span>Vào: <b>${item.checkInFormatted}</b></span> &bull; 
+                                    <span>Ra: <b>${item.checkOutFormatted}</b></span>
+                                </div>
+
+                                <c:if test="${not empty item.startingCash || not empty item.endingCashActual}">
+                                    <div class="cash-handover-box">
+                                        <div class="cash-flow-line">
+                                            <span>Két đầu ca:</span>
+                                            <b><fmt:formatNumber value="${item.startingCash}" pattern="#,###" />đ</b>
+                                        </div>
+                                        <c:if test="${not empty item.endingCashActual}">
+                                            <div class="cash-flow-line">
+                                                <span>Két kết ca:</span>
+                                                <b><fmt:formatNumber value="${item.endingCashActual}" pattern="#,###" />đ</b>
+                                            </div>
+                                            <div class="mt-1">${item.cashStatusBadge}</div>
+                                        </c:if>
+                                    </div>
+                                </c:if>
+
+                                <div class="d-flex align-items-center justify-content-end gap-2 mt-3 pt-2 border-top">
+                                    <c:if test="${item.status == 'SCHEDULED'}">
+                                        <button type="button" class="btn btn-sm btn-success py-1 px-2"
+                                                onclick="openCheckInModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                            Check-in
+                                        </button>
+                                    </c:if>
+                                    <c:if test="${item.status == 'PRESENT'}">
+                                        <button type="button" class="btn btn-sm btn-primary py-1 px-2"
+                                                onclick="openCloseShiftModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                            Chốt ca &amp; Két
+                                        </button>
+                                    </c:if>
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2"
+                                            onclick="openEditScheduleModal('${item.id}', '${item.userId}', '${item.workDateFormatted}', '${item.shiftName}', '${item.status}', '${item.note}', '${item.startingCash}', '${item.endingCashActual}')">
+                                        Sửa
+                                    </button>
+                                </div>
+                            </div>
+                        </c:forEach>
+                        <c:if test="${empty eList}">
+                            <div class="text-center py-4 text-muted small">Chưa xếp nhân sự cho ca tối.</div>
+                        </c:if>
+                    </div>
+                </div>
+            </div>
+        </c:if>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: WEEKLY CALENDAR MATRIX             -->
         <!-- ========================================== -->
         <c:if test="${view == 'calendar'}">
             <div class="calendar-grid-container mb-4">
@@ -182,7 +468,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- ROW 1: CA SÁNG -->
+                        <!-- CA SÁNG -->
                         <c:if test="${shiftFilter == 'ALL' || shiftFilter == 'MORNING'}">
                             <tr>
                                 <td class="shift-row-header">
@@ -197,41 +483,36 @@
                                             <div class="slot-staff-card">
                                                 <div class="staff-name-line">
                                                     <span><c:out value="${item.userName}" /></span>
-                                                    <!-- Actions Dropdown -->
                                                     <div class="dropdown d-inline-block">
                                                         <button class="slot-action-dots" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                             <span class="material-symbols-outlined fs-6">more_vert</span>
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
-                                                            <li><h6 class="dropdown-header">Điểm danh</h6></li>
-                                                            <li>
-                                                                <form method="post" action="${ctx}/admin/schedules" class="m-0">
-                                                                    <input type="hidden" name="action" value="quick_status">
-                                                                    <input type="hidden" name="id" value="${item.id}">
-                                                                    <input type="hidden" name="status" value="PRESENT">
-                                                                    <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
-                                                                    <button type="submit" class="dropdown-item text-success"><span class="material-symbols-outlined fs-6 align-middle">check</span> Có mặt</button>
-                                                                </form>
-                                                            </li>
-                                                            <li>
-                                                                <form method="post" action="${ctx}/admin/schedules" class="m-0">
-                                                                    <input type="hidden" name="action" value="quick_status">
-                                                                    <input type="hidden" name="id" value="${item.id}">
-                                                                    <input type="hidden" name="status" value="COMPLETED">
-                                                                    <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
-                                                                    <button type="submit" class="dropdown-item text-primary"><span class="material-symbols-outlined fs-6 align-middle">task_alt</span> Hoàn thành ca</button>
-                                                                </form>
-                                                            </li>
+                                                            <li><h6 class="dropdown-header">Thao tác ca</h6></li>
+                                                            <c:if test="${item.status == 'SCHEDULED'}">
+                                                                <li>
+                                                                    <a class="dropdown-item text-success" href="javascript:void(0)"
+                                                                       onclick="openCheckInModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                                                        <span class="material-symbols-outlined fs-6 align-middle">login</span> Check-in trực ca
+                                                                    </a>
+                                                                </li>
+                                                            </c:if>
+                                                            <c:if test="${item.status == 'PRESENT'}">
+                                                                <li>
+                                                                    <a class="dropdown-item text-primary" href="javascript:void(0)"
+                                                                       onclick="openCloseShiftModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                                                        <span class="material-symbols-outlined fs-6 align-middle">point_of_sale</span> Chốt ca &amp; Két
+                                                                    </a>
+                                                                </li>
+                                                            </c:if>
                                                             <li>
                                                                 <form method="post" action="${ctx}/admin/schedules" class="m-0">
                                                                     <input type="hidden" name="action" value="quick_status">
                                                                     <input type="hidden" name="id" value="${item.id}">
                                                                     <input type="hidden" name="status" value="ABSENT">
                                                                     <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
-                                                                    <button type="submit" class="dropdown-item text-danger"><span class="material-symbols-outlined fs-6 align-middle">close</span> Vắng mặt</button>
+                                                                    <input type="hidden" name="returnView" value="${view}">
+                                                                    <button type="submit" class="dropdown-item text-danger"><span class="material-symbols-outlined fs-6 align-middle">close</span> Báo vắng mặt</button>
                                                                 </form>
                                                             </li>
                                                             <li><hr class="dropdown-divider"></li>
@@ -246,7 +527,7 @@
                                                                     <input type="hidden" name="action" value="delete">
                                                                     <input type="hidden" name="id" value="${item.id}">
                                                                     <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
+                                                                    <input type="hidden" name="returnView" value="${view}">
                                                                     <button type="submit" class="dropdown-item text-danger"><span class="material-symbols-outlined fs-6 align-middle">delete</span> Hủy ca</button>
                                                                 </form>
                                                             </li>
@@ -257,10 +538,8 @@
                                                     <span class="position-pill position-${fn:toLowerCase(item.userPosition)}">${item.positionDisplayName}</span>
                                                     <span class="${item.statusBadgeClass}">${item.statusDisplayName}</span>
                                                 </div>
-                                                <c:if test="${not empty item.note}">
-                                                    <div class="text-muted text-truncate" style="font-size: 0.72rem;" title="${item.note}">
-                                                        📝 ${item.note}
-                                                    </div>
+                                                <c:if test="${not empty item.startingCash}">
+                                                    <div class="text-muted" style="font-size: 0.72rem;">Két: <fmt:formatNumber value="${item.startingCash}" pattern="#,###" />đ</div>
                                                 </c:if>
                                             </div>
                                         </c:forEach>
@@ -272,7 +551,7 @@
                             </tr>
                         </c:if>
 
-                        <!-- ROW 2: CA CHIỀU -->
+                        <!-- CA CHIỀU -->
                         <c:if test="${shiftFilter == 'ALL' || shiftFilter == 'AFTERNOON'}">
                             <tr>
                                 <td class="shift-row-header">
@@ -292,35 +571,31 @@
                                                             <span class="material-symbols-outlined fs-6">more_vert</span>
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
-                                                            <li><h6 class="dropdown-header">Điểm danh</h6></li>
-                                                            <li>
-                                                                <form method="post" action="${ctx}/admin/schedules" class="m-0">
-                                                                    <input type="hidden" name="action" value="quick_status">
-                                                                    <input type="hidden" name="id" value="${item.id}">
-                                                                    <input type="hidden" name="status" value="PRESENT">
-                                                                    <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
-                                                                    <button type="submit" class="dropdown-item text-success"><span class="material-symbols-outlined fs-6 align-middle">check</span> Có mặt</button>
-                                                                </form>
-                                                            </li>
-                                                            <li>
-                                                                <form method="post" action="${ctx}/admin/schedules" class="m-0">
-                                                                    <input type="hidden" name="action" value="quick_status">
-                                                                    <input type="hidden" name="id" value="${item.id}">
-                                                                    <input type="hidden" name="status" value="COMPLETED">
-                                                                    <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
-                                                                    <button type="submit" class="dropdown-item text-primary"><span class="material-symbols-outlined fs-6 align-middle">task_alt</span> Hoàn thành ca</button>
-                                                                </form>
-                                                            </li>
+                                                            <li><h6 class="dropdown-header">Thao tác ca</h6></li>
+                                                            <c:if test="${item.status == 'SCHEDULED'}">
+                                                                <li>
+                                                                    <a class="dropdown-item text-success" href="javascript:void(0)"
+                                                                       onclick="openCheckInModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                                                        <span class="material-symbols-outlined fs-6 align-middle">login</span> Check-in trực ca
+                                                                    </a>
+                                                                </li>
+                                                            </c:if>
+                                                            <c:if test="${item.status == 'PRESENT'}">
+                                                                <li>
+                                                                    <a class="dropdown-item text-primary" href="javascript:void(0)"
+                                                                       onclick="openCloseShiftModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                                                        <span class="material-symbols-outlined fs-6 align-middle">point_of_sale</span> Chốt ca &amp; Két
+                                                                    </a>
+                                                                </li>
+                                                            </c:if>
                                                             <li>
                                                                 <form method="post" action="${ctx}/admin/schedules" class="m-0">
                                                                     <input type="hidden" name="action" value="quick_status">
                                                                     <input type="hidden" name="id" value="${item.id}">
                                                                     <input type="hidden" name="status" value="ABSENT">
                                                                     <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
-                                                                    <button type="submit" class="dropdown-item text-danger"><span class="material-symbols-outlined fs-6 align-middle">close</span> Vắng mặt</button>
+                                                                    <input type="hidden" name="returnView" value="${view}">
+                                                                    <button type="submit" class="dropdown-item text-danger"><span class="material-symbols-outlined fs-6 align-middle">close</span> Báo vắng mặt</button>
                                                                 </form>
                                                             </li>
                                                             <li><hr class="dropdown-divider"></li>
@@ -335,7 +610,7 @@
                                                                     <input type="hidden" name="action" value="delete">
                                                                     <input type="hidden" name="id" value="${item.id}">
                                                                     <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
+                                                                    <input type="hidden" name="returnView" value="${view}">
                                                                     <button type="submit" class="dropdown-item text-danger"><span class="material-symbols-outlined fs-6 align-middle">delete</span> Hủy ca</button>
                                                                 </form>
                                                             </li>
@@ -346,10 +621,8 @@
                                                     <span class="position-pill position-${fn:toLowerCase(item.userPosition)}">${item.positionDisplayName}</span>
                                                     <span class="${item.statusBadgeClass}">${item.statusDisplayName}</span>
                                                 </div>
-                                                <c:if test="${not empty item.note}">
-                                                    <div class="text-muted text-truncate" style="font-size: 0.72rem;" title="${item.note}">
-                                                        📝 ${item.note}
-                                                    </div>
+                                                <c:if test="${not empty item.startingCash}">
+                                                    <div class="text-muted" style="font-size: 0.72rem;">Két: <fmt:formatNumber value="${item.startingCash}" pattern="#,###" />đ</div>
                                                 </c:if>
                                             </div>
                                         </c:forEach>
@@ -361,7 +634,7 @@
                             </tr>
                         </c:if>
 
-                        <!-- ROW 3: CA TỐI -->
+                        <!-- CA TỐI -->
                         <c:if test="${shiftFilter == 'ALL' || shiftFilter == 'EVENING'}">
                             <tr>
                                 <td class="shift-row-header">
@@ -381,35 +654,31 @@
                                                             <span class="material-symbols-outlined fs-6">more_vert</span>
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
-                                                            <li><h6 class="dropdown-header">Điểm danh</h6></li>
-                                                            <li>
-                                                                <form method="post" action="${ctx}/admin/schedules" class="m-0">
-                                                                    <input type="hidden" name="action" value="quick_status">
-                                                                    <input type="hidden" name="id" value="${item.id}">
-                                                                    <input type="hidden" name="status" value="PRESENT">
-                                                                    <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
-                                                                    <button type="submit" class="dropdown-item text-success"><span class="material-symbols-outlined fs-6 align-middle">check</span> Có mặt</button>
-                                                                </form>
-                                                            </li>
-                                                            <li>
-                                                                <form method="post" action="${ctx}/admin/schedules" class="m-0">
-                                                                    <input type="hidden" name="action" value="quick_status">
-                                                                    <input type="hidden" name="id" value="${item.id}">
-                                                                    <input type="hidden" name="status" value="COMPLETED">
-                                                                    <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
-                                                                    <button type="submit" class="dropdown-item text-primary"><span class="material-symbols-outlined fs-6 align-middle">task_alt</span> Hoàn thành ca</button>
-                                                                </form>
-                                                            </li>
+                                                            <li><h6 class="dropdown-header">Thao tác ca</h6></li>
+                                                            <c:if test="${item.status == 'SCHEDULED'}">
+                                                                <li>
+                                                                    <a class="dropdown-item text-success" href="javascript:void(0)"
+                                                                       onclick="openCheckInModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                                                        <span class="material-symbols-outlined fs-6 align-middle">login</span> Check-in trực ca
+                                                                    </a>
+                                                                </li>
+                                                            </c:if>
+                                                            <c:if test="${item.status == 'PRESENT'}">
+                                                                <li>
+                                                                    <a class="dropdown-item text-primary" href="javascript:void(0)"
+                                                                       onclick="openCloseShiftModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                                                        <span class="material-symbols-outlined fs-6 align-middle">point_of_sale</span> Chốt ca &amp; Két
+                                                                    </a>
+                                                                </li>
+                                                            </c:if>
                                                             <li>
                                                                 <form method="post" action="${ctx}/admin/schedules" class="m-0">
                                                                     <input type="hidden" name="action" value="quick_status">
                                                                     <input type="hidden" name="id" value="${item.id}">
                                                                     <input type="hidden" name="status" value="ABSENT">
                                                                     <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
-                                                                    <button type="submit" class="dropdown-item text-danger"><span class="material-symbols-outlined fs-6 align-middle">close</span> Vắng mặt</button>
+                                                                    <input type="hidden" name="returnView" value="${view}">
+                                                                    <button type="submit" class="dropdown-item text-danger"><span class="material-symbols-outlined fs-6 align-middle">close</span> Báo vắng mặt</button>
                                                                 </form>
                                                             </li>
                                                             <li><hr class="dropdown-divider"></li>
@@ -424,7 +693,7 @@
                                                                     <input type="hidden" name="action" value="delete">
                                                                     <input type="hidden" name="id" value="${item.id}">
                                                                     <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                                    <input type="hidden" name="returnView" value="calendar">
+                                                                    <input type="hidden" name="returnView" value="${view}">
                                                                     <button type="submit" class="dropdown-item text-danger"><span class="material-symbols-outlined fs-6 align-middle">delete</span> Hủy ca</button>
                                                                 </form>
                                                             </li>
@@ -435,10 +704,8 @@
                                                     <span class="position-pill position-${fn:toLowerCase(item.userPosition)}">${item.positionDisplayName}</span>
                                                     <span class="${item.statusBadgeClass}">${item.statusDisplayName}</span>
                                                 </div>
-                                                <c:if test="${not empty item.note}">
-                                                    <div class="text-muted text-truncate" style="font-size: 0.72rem;" title="${item.note}">
-                                                        📝 ${item.note}
-                                                    </div>
+                                                <c:if test="${not empty item.startingCash}">
+                                                    <div class="text-muted" style="font-size: 0.72rem;">Két: <fmt:formatNumber value="${item.startingCash}" pattern="#,###" />đ</div>
                                                 </c:if>
                                             </div>
                                         </c:forEach>
@@ -456,7 +723,7 @@
         </c:if>
 
         <!-- ========================================== -->
-        <!-- VIEW 2: TABLE LIST VIEW                    -->
+        <!-- VIEW 3: CASH HANDOVER & AUDIT TABLE        -->
         <!-- ========================================== -->
         <c:if test="${view == 'table'}">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
@@ -465,14 +732,15 @@
                         <thead class="table-light text-muted small text-uppercase">
                             <tr>
                                 <th class="ps-3 py-3">Ngày làm</th>
-                                <th>Ca trực</th>
+                                <th>Ca trực &amp; Giờ</th>
                                 <th>Nhân viên</th>
                                 <th>Vị trí</th>
                                 <th>Điểm danh</th>
                                 <th>Trạng thái</th>
-                                <th>Bàn giao tiền</th>
-                                <th>Ghi chú</th>
-                                <th class="text-end pe-3">Thao tác</th>
+                                <th>Két đầu ca</th>
+                                <th>Két chốt thực tế</th>
+                                <th>Chênh lệch két</th>
+                                <th class="text-end pe-3">Hành động</th>
                             </tr>
                         </thead>
                         <tbody class="small">
@@ -504,19 +772,38 @@
                                         <span class="${item.statusBadgeClass}">${item.statusDisplayName}</span>
                                     </td>
                                     <td>
-                                        <c:if test="${not empty item.startingCash}">
-                                            <div>Đầu ca: <fmt:formatNumber value="${item.startingCash}" pattern="#,###" />đ</div>
-                                        </c:if>
-                                        <c:if test="${not empty item.endingCashActual}">
-                                            <div>Thực tế: <fmt:formatNumber value="${item.endingCashActual}" pattern="#,###" />đ</div>
-                                        </c:if>
-                                        <c:if test="${empty item.startingCash && empty item.endingCashActual}">
-                                            <span class="text-muted">--</span>
-                                        </c:if>
+                                        <c:choose>
+                                            <c:when test="${not empty item.startingCash}">
+                                                <b><fmt:formatNumber value="${item.startingCash}" pattern="#,###" />đ</b>
+                                            </c:when>
+                                            <c:otherwise><span class="text-muted">--</span></c:otherwise>
+                                        </c:choose>
                                     </td>
-                                    <td class="text-muted">${empty item.note ? '--' : item.note}</td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${not empty item.endingCashActual}">
+                                                <b><fmt:formatNumber value="${item.endingCashActual}" pattern="#,###" />đ</b>
+                                            </c:when>
+                                            <c:otherwise><span class="text-muted">Chưa chốt</span></c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td>
+                                        ${item.cashStatusBadge}
+                                    </td>
                                     <td class="text-end pe-3">
                                         <div class="btn-group btn-group-sm">
+                                            <c:if test="${item.status == 'SCHEDULED'}">
+                                                <button type="button" class="btn btn-outline-success" title="Check-in"
+                                                        onclick="openCheckInModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                                    <span class="material-symbols-outlined fs-6 align-middle">login</span>
+                                                </button>
+                                            </c:if>
+                                            <c:if test="${item.status == 'PRESENT'}">
+                                                <button type="button" class="btn btn-outline-primary" title="Chốt ca &amp; két"
+                                                        onclick="openCloseShiftModal('${item.id}', '${item.userName}', '${item.startingCash}')">
+                                                    <span class="material-symbols-outlined fs-6 align-middle">point_of_sale</span>
+                                                </button>
+                                            </c:if>
                                             <button type="button" class="btn btn-outline-secondary" title="Sửa ca"
                                                     onclick="openEditScheduleModal('${item.id}', '${item.userId}', '${item.workDateFormatted}', '${item.shiftName}', '${item.status}', '${item.note}', '${item.startingCash}', '${item.endingCashActual}')">
                                                 <span class="material-symbols-outlined fs-6 align-middle">edit</span>
@@ -525,7 +812,7 @@
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="${item.id}">
                                                 <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                <input type="hidden" name="returnView" value="table">
+                                                <input type="hidden" name="returnView" value="${view}">
                                                 <button type="submit" class="btn btn-outline-danger" title="Xóa ca">
                                                     <span class="material-symbols-outlined fs-6 align-middle">delete</span>
                                                 </button>
@@ -536,9 +823,9 @@
                             </c:forEach>
                             <c:if test="${empty scheduleList}">
                                 <tr>
-                                    <td colspan="9" class="text-center py-5 text-muted">
+                                    <td colspan="10" class="text-center py-5 text-muted">
                                         <span class="material-symbols-outlined fs-1 text-secondary mb-2">event_busy</span>
-                                        <div>Không tìm thấy ca làm việc nào phù hợp với bộ lọc trong tuần này.</div>
+                                        <div>Không tìm thấy ca làm việc nào phù hợp với bộ lọc trong khoảng thời gian này.</div>
                                     </td>
                                 </tr>
                             </c:if>
@@ -614,9 +901,9 @@
 
                         <!-- Tiền bàn giao đầu ca (áp dụng cho Thu ngân) -->
                         <div class="mb-3">
-                            <label for="addStartingCash" class="form-label small fw-semibold">Tiền bàn giao đầu ca (VNĐ)</label>
+                            <label for="addStartingCash" class="form-label small fw-semibold">Tiền bàn giao két đầu ca (VNĐ)</label>
                             <input type="number" class="form-control aura-input" id="addStartingCash" name="startingCash" placeholder="VD: 500000" min="0" step="1000">
-                            <div class="form-text">Dành cho thu ngân nhận ca quản lý két tiền mặt.</div>
+                            <div class="form-text">Bàn giao tiền lẻ cho Thu ngân đầu ca quản lý két tiền.</div>
                         </div>
 
                         <!-- Ghi chú -->
@@ -635,7 +922,102 @@
         </div>
     </div>
 
-    <!-- Modal 2: Chỉnh sửa ca làm việc -->
+    <!-- Modal 2: Check-in xác nhận đầu ca -->
+    <div class="modal fade modal-aura" id="checkInModal" tabindex="-1" aria-labelledby="checkInModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+            <div class="modal-content">
+                <form method="post" action="${ctx}/admin/schedules">
+                    <input type="hidden" name="action" value="check_in">
+                    <input type="hidden" name="id" id="checkInId" value="">
+                    <input type="hidden" name="returnDate" value="${selectedDate}">
+                    <input type="hidden" name="returnView" value="${view}">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="checkInModalLabel">Check-in nhận ca</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">Xác nhận nhân viên <b id="checkInStaffName" class="text-dark"></b> đã có mặt tại quán để bắt đầu ca trực.</p>
+
+                        <div class="mb-3">
+                            <label for="checkInStartingCash" class="form-label small fw-semibold">Tiền bàn giao két đầu ca (đ)</label>
+                            <input type="number" class="form-control aura-input" id="checkInStartingCash" name="startingCash" min="0" step="1000">
+                            <div class="form-text">Tiền thối bàn giao cho nhân viên đầu ca.</div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-success">Xác nhận Check-in</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Chốt ca & Bàn giao két tiền mặt cuối ca -->
+    <div class="modal fade modal-aura" id="closeShiftModal" tabindex="-1" aria-labelledby="closeShiftModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+            <div class="modal-content">
+                <form method="post" action="${ctx}/admin/schedules">
+                    <input type="hidden" name="action" value="close_shift">
+                    <input type="hidden" name="id" id="closeShiftId" value="">
+                    <input type="hidden" name="returnDate" value="${selectedDate}">
+                    <input type="hidden" name="returnView" value="${view}">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="closeShiftModalLabel">Chốt ca &amp; Bàn giao két tiền</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="p-3 bg-light rounded-3 mb-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="text-muted">Nhân viên:</span>
+                                <b id="closeShiftStaffName" class="text-dark"></b>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span class="text-muted">Tiền két đầu ca:</span>
+                                <b id="closeShiftStartCashDisplay" class="text-dark">--</b>
+                            </div>
+                        </div>
+
+                        <!-- Tiền hệ thống tính toán -->
+                        <div class="mb-3">
+                            <label for="closeShiftSystemCash" class="form-label small fw-semibold">Tiền hệ thống ghi nhận (đ)</label>
+                            <input type="number" class="form-control aura-input" id="closeShiftSystemCash" name="endingCashSystem" placeholder="VD: 2500000" min="0" step="1000">
+                            <div class="form-text">Tổng tiền thối đầu ca + doanh thu tiền mặt bán được trong ca.</div>
+                        </div>
+
+                        <!-- Tiền kiểm đếm thực tế -->
+                        <div class="mb-3">
+                            <label for="closeShiftActualCash" class="form-label small fw-semibold">Tiền thực tế kiểm đếm được <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control aura-input" id="closeShiftActualCash" name="endingCashActual" required placeholder="VD: 2500000" min="0" step="1000">
+                        </div>
+
+                        <!-- Live Difference Preview -->
+                        <div class="p-2 px-3 rounded text-center small mb-3" id="diffPreviewBox" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                            Chênh lệch két tiền: <b id="diffPreviewText">0đ (Khớp két)</b>
+                        </div>
+
+                        <!-- Ghi chú giải trình -->
+                        <div class="mb-2">
+                            <label for="closeShiftNote" class="form-label small fw-semibold">Ghi chú bàn giao / Giải trình nếu lệch</label>
+                            <textarea class="form-control aura-input" id="closeShiftNote" name="note" rows="2" placeholder="Giải trình lý do nếu tiền thực tế bị lệch với hệ thống..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-aura-primary">Hoàn tất chốt ca</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Chỉnh sửa ca làm việc -->
     <div class="modal fade modal-aura" id="editScheduleModal" tabindex="-1" aria-labelledby="editScheduleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
             <div class="modal-content">
@@ -721,6 +1103,8 @@
 
     <script>
         const addScheduleModal = new bootstrap.Modal(document.getElementById('addScheduleModal'));
+        const checkInModal = new bootstrap.Modal(document.getElementById('checkInModal'));
+        const closeShiftModal = new bootstrap.Modal(document.getElementById('closeShiftModal'));
         const editScheduleModal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
 
         function openAddScheduleModal(dateStr, shiftName) {
@@ -734,6 +1118,55 @@
             }
             addScheduleModal.show();
         }
+
+        function openCheckInModal(id, staffName, startingCash) {
+            document.getElementById('checkInId').value = id;
+            document.getElementById('checkInStaffName').textContent = staffName;
+            document.getElementById('checkInStartingCash').value = startingCash && startingCash !== 'null' ? startingCash : '';
+            checkInModal.show();
+        }
+
+        function openCloseShiftModal(id, staffName, startingCash) {
+            document.getElementById('closeShiftId').value = id;
+            document.getElementById('closeShiftStaffName').textContent = staffName;
+            
+            const startVal = startingCash && startingCash !== 'null' ? Number(startingCash) : 0;
+            document.getElementById('closeShiftStartCashDisplay').textContent = startVal > 0 ? startVal.toLocaleString('vi-VN') + 'đ' : '--';
+            document.getElementById('closeShiftSystemCash').value = startVal > 0 ? startVal : '';
+            document.getElementById('closeShiftActualCash').value = '';
+            document.getElementById('closeShiftNote').value = '';
+
+            calculateDiff();
+            closeShiftModal.show();
+        }
+
+        function calculateDiff() {
+            const sys = Number(document.getElementById('closeShiftSystemCash').value || 0);
+            const act = Number(document.getElementById('closeShiftActualCash').value || 0);
+            const box = document.getElementById('diffPreviewBox');
+            const txt = document.getElementById('diffPreviewText');
+
+            if (!document.getElementById('closeShiftActualCash').value) {
+                txt.textContent = 'Chưa nhập tiền thực tế';
+                box.className = 'p-2 px-3 rounded text-center small mb-3 bg-light text-muted border';
+                return;
+            }
+
+            const diff = act - sys;
+            if (Math.abs(diff) <= 1) {
+                txt.textContent = '0đ (Khớp két 100%)';
+                box.className = 'p-2 px-3 rounded text-center small mb-3 bg-success-subtle text-success border border-success-subtle';
+            } else if (diff > 0) {
+                txt.textContent = 'Thừa +' + diff.toLocaleString('vi-VN') + 'đ (Thừa tiền)';
+                box.className = 'p-2 px-3 rounded text-center small mb-3 bg-warning-subtle text-warning border border-warning-subtle';
+            } else {
+                txt.textContent = 'Thiếu ' + diff.toLocaleString('vi-VN') + 'đ (Thụt két tiền!)';
+                box.className = 'p-2 px-3 rounded text-center small mb-3 bg-danger-subtle text-danger border border-danger-subtle';
+            }
+        }
+
+        document.getElementById('closeShiftSystemCash').addEventListener('input', calculateDiff);
+        document.getElementById('closeShiftActualCash').addEventListener('input', calculateDiff);
 
         function openEditScheduleModal(id, userId, workDate, shiftName, status, note, startingCash, endingCashActual) {
             document.getElementById('editId').value = id;

@@ -278,6 +278,50 @@ public class WorkScheduleDAO extends BaseDAO {
     }
 
     /**
+     * Check-in nhanh kèm cập nhật tiền đầu ca
+     */
+    public boolean checkInStaff(int id, Double startingCash) {
+        String sql = "UPDATE work_schedules SET status = 'PRESENT', check_in_time = COALESCE(check_in_time, NOW()), " +
+                     "starting_cash = COALESCE(?, starting_cash) WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (startingCash != null) {
+                ps.setDouble(1, startingCash);
+            } else {
+                ps.setNull(1, java.sql.Types.DECIMAL);
+            }
+            ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Bàn giao ca & Chốt két tiền mặt cuối ca
+     */
+    public boolean closeShiftAndHandoverCash(int id, double endingCashActual, Double endingCashSystem, String note) {
+        String sql = "UPDATE work_schedules SET status = 'COMPLETED', check_out_time = COALESCE(check_out_time, NOW()), " +
+                     "ending_cash_actual = ?, ending_cash_system = ?, note = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, endingCashActual);
+            if (endingCashSystem != null) {
+                ps.setDouble(2, endingCashSystem);
+            } else {
+                ps.setNull(2, java.sql.Types.DECIMAL);
+            }
+            ps.setString(3, note);
+            ps.setInt(4, id);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
      * Xóa ca làm việc
      */
     public boolean deleteSchedule(int id) {

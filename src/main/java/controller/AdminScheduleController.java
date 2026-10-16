@@ -48,7 +48,7 @@ public class AdminScheduleController extends HttpServlet {
 
         // View mode: calendar (mặc định) hoặc table
         String view = request.getParameter("view");
-        if (view == null || (!"calendar".equalsIgnoreCase(view) && !"table".equalsIgnoreCase(view))) {
+        if (view == null || (!"calendar".equalsIgnoreCase(view) && !"table".equalsIgnoreCase(view) && !"board".equalsIgnoreCase(view))) {
             view = "calendar";
         }
 
@@ -89,10 +89,30 @@ public class AdminScheduleController extends HttpServlet {
             }
         }
 
-        // Lấy danh sách lịch theo tuần (hoặc ngày)
-        Date fromDate = Date.valueOf(monday);
-        Date toDate = Date.valueOf(sunday);
+        // Lấy danh sách lịch theo tuần (hoặc ngày nếu là board view)
+        Date fromDate = "board".equalsIgnoreCase(view) ? Date.valueOf(selectedDate) : Date.valueOf(monday);
+        Date toDate = "board".equalsIgnoreCase(view) ? Date.valueOf(selectedDate) : Date.valueOf(sunday);
         List<WorkSchedule> scheduleList = workScheduleDAO.getSchedules(fromDate, toDate, staffId, shiftFilter, statusFilter, positionFilter);
+
+        // Tính toán các chỉ số KPI theo dõi ca và két tiền
+        int totalShifts = scheduleList.size();
+        int liveActiveCount = 0;
+        int completedCount = 0;
+        int absentCount = 0;
+        int scheduledCount = 0;
+        int cashDiscrepancyCount = 0;
+        double totalCashHandover = 0.0;
+
+        for (WorkSchedule ws : scheduleList) {
+            if ("PRESENT".equalsIgnoreCase(ws.getStatus())) liveActiveCount++;
+            else if ("COMPLETED".equalsIgnoreCase(ws.getStatus())) completedCount++;
+            else if ("ABSENT".equalsIgnoreCase(ws.getStatus())) absentCount++;
+            else if ("SCHEDULED".equalsIgnoreCase(ws.getStatus())) scheduledCount++;
+
+            if (ws.hasCashDiscrepancy()) cashDiscrepancyCount++;
+            if (ws.getEndingCashActual() != null) totalCashHandover += ws.getEndingCashActual();
+            else if (ws.getStartingCash() != null) totalCashHandover += ws.getStartingCash();
+        }
 
         // Tổ chức map theo dạng: dateStr + "_" + shiftName -> List<WorkSchedule> để render nhanh trên Calendar Grid
         Map<String, List<WorkSchedule>> calendarSlotMap = new HashMap<>();
@@ -121,6 +141,15 @@ public class AdminScheduleController extends HttpServlet {
         request.setAttribute("positionFilter", positionFilter != null ? positionFilter : "ALL");
         request.setAttribute("statusFilter", statusFilter != null ? statusFilter : "ALL");
         request.setAttribute("staffIdFilter", staffId);
+
+        // Gán KPI metrics
+        request.setAttribute("totalShifts", totalShifts);
+        request.setAttribute("liveActiveCount", liveActiveCount);
+        request.setAttribute("completedCount", completedCount);
+        request.setAttribute("absentCount", absentCount);
+        request.setAttribute("scheduledCount", scheduledCount);
+        request.setAttribute("cashDiscrepancyCount", cashDiscrepancyCount);
+        request.setAttribute("totalCashHandover", totalCashHandover);
 
         // Flash message
         HttpSession session = request.getSession();
@@ -246,6 +275,42 @@ public class AdminScheduleController extends HttpServlet {
                 }
             } catch (Exception e) {
                 session.setAttribute("scheduleErrorMsg", "Lỗi: " + e.getMessage());
+            }
+        } else if ("check_in".equalsIgnoreCase(action)) {
+            try {
+                int id = Integer.parseInt(request.getParameter("id"));
+                String startCashStr = request.getParameter("startingCash");
+                Double startCash = null;
+                if (startCashStr != null && !startCashStr.trim().isEmpty()) {
+                    startCash = Double.parseDouble(startCashStr.replaceAll("[.,\\s]", ""));
+                }
+                boolean ok = workScheduleDAO.checkInStaff(id, startCash);
+                if (ok) {
+                    session.setAttribute("scheduleSuccessMsg", "Check-in ca trực thành công!");
+                } else {
+                    session.setAttribute("scheduleErrorMsg", "Không thể check-in ca trực!");
+                }
+            } catch (Exception e) {
+                session.setAttribute("scheduleErrorMsg", "Lỗi check-in: " + e.getMessage());
+            }
+        } else if ("close_shift".equalsIgnoreCase(action)) {
+            try {
+                int id = Integer.parseInt(request.getParameter("id"));
+                double actualCash = Double.parseDouble(request.getParameter("endingCashActual").replaceAll("[.,\\s]", ""));
+                Double systemCash = null;
+                String sysCashStr = request.getParameter("endingCashSystem");
+                if (sysCashStr != null && !sysCashStr.trim().isEmpty()) {
+                    systemCash = Double.parseDouble(sysCashStr.replaceAll("[.,\\s]", ""));
+                }
+                String note = request.getParameter("note");
+                boolean ok = workScheduleDAO.closeShiftAndHandoverCash(id, actualCash, systemCash, note != null ? note.trim() : "");
+                if (ok) {
+                    session.setAttribute("scheduleSuccessMsg", "Đã chốt ca và bàn giao két tiền thành công!");
+                } else {
+                    session.setAttribute("scheduleErrorMsg", "Không thể chốt ca!");
+                }
+            } catch (Exception e) {
+                session.setAttribute("scheduleErrorMsg", "Lỗi chốt ca: " + e.getMessage());
             }
         } else if ("delete".equalsIgnoreCase(action)) {
             try {

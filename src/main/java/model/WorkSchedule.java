@@ -146,4 +146,38 @@ public class WorkSchedule implements Serializable {
         if (checkOutTime == null) return "--:--";
         return new SimpleDateFormat("HH:mm").format(checkOutTime);
     }
+
+    /** Chênh lệch tiền két = Thực tế đếm được - Hệ thống tính toán */
+    public Double getCashDifference() {
+        if (endingCashActual != null && endingCashSystem != null) {
+            return endingCashActual - endingCashSystem;
+        }
+        return null;
+    }
+
+    public boolean hasCashDiscrepancy() {
+        Double diff = getCashDifference();
+        return diff != null && Math.abs(diff) > 1.0;
+    }
+
+    public String getCashStatusBadge() {
+        Double diff = getCashDifference();
+        if (diff == null) return "";
+        if (Math.abs(diff) <= 1.0) {
+            return "<span class=\"badge bg-success-subtle text-success border border-success-subtle\">Khớp két (0đ)</span>";
+        }
+        if (diff > 0) {
+            return "<span class=\"badge bg-warning-subtle text-warning border border-warning-subtle\">Thừa +" + String.format("%,.0f", diff) + "đ</span>";
+        }
+        return "<span class=\"badge bg-danger-subtle text-danger border border-danger-subtle\">Thiếu " + String.format("%,.0f", diff) + "đ</span>";
+    }
+
+    public String getInitials() {
+        if (userName == null || userName.trim().isEmpty()) return "NV";
+        String[] parts = userName.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase();
+        }
+        return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
+    }
 }
