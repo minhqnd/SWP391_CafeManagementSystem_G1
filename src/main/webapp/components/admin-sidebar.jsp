@@ -103,12 +103,6 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin/shifts" class="nav-link ${param.activeMenu == 'shifts' ? 'active' : ''}">
-                    <span class="material-symbols-outlined">schedule</span>
-                    <span>Khung giờ ca</span>
-                </a>
-            </li>
-            <li class="nav-item">
                 <a href="${ctx}/admin/schedules" class="nav-link ${param.activeMenu == 'schedules' ? 'active' : ''}">
                     <span class="material-symbols-outlined">calendar_month</span>
                     <span>Lịch phân ca</span>

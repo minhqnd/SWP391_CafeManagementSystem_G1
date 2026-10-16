@@ -89,7 +89,6 @@ Sau khi chay ung dung tai `http://localhost:8080/SWP391_CafeManagementSystem/`:
   - Man hinh Pha che (KDS): `/barista`
   - Man hinh Giao hang: `/delivery-dashboard.jsp`
   - Man hinh Quan tri tong quan: `/admin-dashboard.jsp`
-  - Man hinh Khung gio ca lam viec: `/admin/shifts`
   - Man hinh Lich phan ca nhan vien: `/admin/schedules`
 
 ---

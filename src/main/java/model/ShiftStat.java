@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 /**
  * ShiftStat - Thống kê số lượng lượt xếp ca và trạng thái theo từng ca làm việc
- * Dùng trực tiếp cho màn hình Admin "Khung giờ ca làm việc".
+ * Dùng cho các truy vấn thống kê lịch theo từng ca làm việc.
  */
 public class ShiftStat implements Serializable {
     private static final long serialVersionUID = 1L;
