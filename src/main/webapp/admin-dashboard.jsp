@@ -7,6 +7,7 @@
     <ul>
         <li><a href="${pageContext.request.contextPath}/admin/settings">Cài đặt bán hàng online (Freeship, phí giao hàng, thời gian giao, mốc điểm Aura)</a></li>
         <li><a href="${pageContext.request.contextPath}/admin/schedules">Lịch phân ca nhân viên (Employee Schedule Screen - Lịch tuần / Danh sách)</a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/attendance">Chấm công nhân viên (Attendance Management Screen)</a></li>
     </ul>
     <a href="${pageContext.request.contextPath}/login?action=logout">Đăng xuất (Về trang Login)</a>
 </body>

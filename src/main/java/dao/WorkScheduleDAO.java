@@ -9,6 +9,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -270,6 +271,40 @@ public class WorkScheduleDAO extends BaseDAO {
             ps.setString(1, status);
             ps.setInt(2, id);
 
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Cập nhật dữ liệu chấm công do quản trị viên xác nhận.
+     */
+    public boolean updateAttendance(int id, Timestamp checkInTime, Timestamp checkOutTime,
+                                    String status, String note) {
+        String sql = "UPDATE work_schedules " +
+                     "SET check_in_time = ?, check_out_time = ?, status = ?, note = ? " +
+                     "WHERE id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            if (checkInTime != null) {
+                ps.setTimestamp(1, checkInTime);
+            } else {
+                ps.setNull(1, java.sql.Types.TIMESTAMP);
+            }
+
+            if (checkOutTime != null) {
+                ps.setTimestamp(2, checkOutTime);
+            } else {
+                ps.setNull(2, java.sql.Types.TIMESTAMP);
+            }
+
+            ps.setString(3, status);
+            ps.setString(4, note);
+            ps.setInt(5, id);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();

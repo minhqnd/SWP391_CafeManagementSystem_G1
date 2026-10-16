@@ -109,7 +109,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'attendance' ? 'active' : ''}">
+                <a href="${ctx}/admin/attendance" class="nav-link ${param.activeMenu == 'attendance' ? 'active' : ''}">
                     <span class="material-symbols-outlined">badge</span>
                     <span>Chấm công</span>
                 </a>

@@ -26,6 +26,8 @@ public class WorkSchedule implements Serializable {
     private String status; // SCHEDULED, PRESENT, ABSENT, COMPLETED
     private String note;
     private String shiftTime; // e.g. "07:00-12:00" from shop_settings
+    private boolean late;
+    private int lateMinutes;
 
     public WorkSchedule() {
     }
@@ -94,6 +96,12 @@ public class WorkSchedule implements Serializable {
 
     public String getShiftTime() { return shiftTime; }
     public void setShiftTime(String shiftTime) { this.shiftTime = shiftTime; }
+
+    public boolean isLate() { return late; }
+    public void setLate(boolean late) { this.late = late; }
+
+    public int getLateMinutes() { return lateMinutes; }
+    public void setLateMinutes(int lateMinutes) { this.lateMinutes = lateMinutes; }
 
     // Helper methods
     public String getShiftDisplayName() {
