@@ -25,6 +25,9 @@ INSERT IGNORE INTO shop_settings (setting_key, setting_value) VALUES
 ('delivery_fee', '18000'),         -- phí giao hàng khi chưa đủ Freeship
 ('delivery_minutes', '30'),        -- thời gian giao dự kiến (phút) kể từ khi thanh toán
 ('points_step', '10'),             -- mốc điểm Aura (bước của thanh kéo ở Giỏ hàng)
-('points_step_value', '2000');     -- số tiền giảm cho mỗi mốc điểm
+('points_step_value', '2000'),     -- số tiền giảm cho mỗi mốc điểm
+('shift_morning', '07:00-12:00'),  -- khung giờ ca sáng
+('shift_afternoon', '12:00-17:00'),-- khung giờ ca chiều
+('shift_evening', '17:00-22:00');  -- khung giờ ca tối
 
 SELECT setting_key, setting_value FROM shop_settings;

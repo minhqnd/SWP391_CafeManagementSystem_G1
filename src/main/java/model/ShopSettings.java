@@ -15,12 +15,18 @@ public class ShopSettings implements Serializable {
     public static final String KEY_DELIVERY_MINUTES = "delivery_minutes";
     public static final String KEY_POINTS_STEP = "points_step";
     public static final String KEY_POINTS_STEP_VALUE = "points_step_value";
+    public static final String KEY_SHIFT_MORNING = "shift_morning";
+    public static final String KEY_SHIFT_AFTERNOON = "shift_afternoon";
+    public static final String KEY_SHIFT_EVENING = "shift_evening";
 
     private double freeshipThreshold = 150000;  // tiền hàng tối thiểu để miễn phí giao hàng (0 = mọi đơn)
     private double deliveryFee = 18000;         // phí giao hàng khi chưa đủ mức freeship
     private int deliveryMinutes = 30;           // thời gian giao dự kiến kể từ khi thanh toán
     private int pointsStep = 10;                // mốc điểm: khách dùng 10, 20, 30... điểm
     private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm
+    private String shiftMorning = "07:00-12:00";
+    private String shiftAfternoon = "12:00-17:00";
+    private String shiftEvening = "17:00-22:00";
 
     public double getFreeshipThreshold() { return freeshipThreshold; }
     public void setFreeshipThreshold(double freeshipThreshold) { this.freeshipThreshold = freeshipThreshold; }
@@ -36,6 +42,15 @@ public class ShopSettings implements Serializable {
 
     public double getPointsStepValue() { return pointsStepValue; }
     public void setPointsStepValue(double pointsStepValue) { this.pointsStepValue = pointsStepValue; }
+
+    public String getShiftMorning() { return shiftMorning; }
+    public void setShiftMorning(String shiftMorning) { this.shiftMorning = shiftMorning; }
+
+    public String getShiftAfternoon() { return shiftAfternoon; }
+    public void setShiftAfternoon(String shiftAfternoon) { this.shiftAfternoon = shiftAfternoon; }
+
+    public String getShiftEvening() { return shiftEvening; }
+    public void setShiftEvening(String shiftEvening) { this.shiftEvening = shiftEvening; }
 
     /** Số tiền giảm khi dùng số điểm này - chỉ tính các mốc trọn vẹn (VD mốc 50: 120 điểm = 2 mốc) */
     public double getPointsDiscount(int points) {

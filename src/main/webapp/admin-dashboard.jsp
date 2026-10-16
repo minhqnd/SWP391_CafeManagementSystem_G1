@@ -6,6 +6,8 @@
     <p>Xin chào Admin: ${sessionScope.user.fullName}</p>
     <ul>
         <li><a href="${pageContext.request.contextPath}/admin/settings">Cài đặt bán hàng online (Freeship, phí giao hàng, thời gian giao, mốc điểm Aura)</a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/shifts">Khung giờ ca làm việc (Cấu hình ca sáng, chiều, tối &amp; thống kê)</a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/schedules">Lịch phân ca nhân viên (Employee Schedule Screen - Lịch tuần / Danh sách)</a></li>
     </ul>
     <a href="${pageContext.request.contextPath}/login?action=logout">Đăng xuất (Về trang Login)</a>
 </body>

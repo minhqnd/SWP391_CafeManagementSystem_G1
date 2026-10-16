@@ -608,15 +608,23 @@ INSERT INTO work_schedules
 VALUES
 (2, '2026-10-03', 'MORNING',
  '2026-10-03 08:00:00', '2026-10-03 12:00:00',
- 'COMPLETED', NULL, NULL, NULL, 'Morning shift'),
+ 'COMPLETED', NULL, NULL, NULL, 'Ca sáng pha chế'),
 
 (3, '2026-10-03', 'AFTERNOON',
  '2026-10-03 12:00:00', NULL,
- 'PRESENT', 500000, NULL, NULL, 'Cashier shift'),
+ 'PRESENT', 500000, NULL, NULL, 'Ca chiều thu ngân'),
+
+(2, '2026-10-04', 'AFTERNOON',
+ '2026-10-04 12:05:00', NULL,
+ 'PRESENT', NULL, NULL, NULL, 'Ca chiều pha chế'),
 
 (6, '2026-10-03', 'EVENING',
  NULL, NULL, 'SCHEDULED', NULL, NULL, NULL,
- 'Delivery shift');
+ 'Ca tối giao hàng'),
+
+(3, '2026-10-04', 'EVENING',
+ NULL, NULL, 'SCHEDULED', 500000, NULL, NULL,
+ 'Ca tối thu ngân');
 
 -- 3. CATEGORIES
 INSERT INTO categories (id, name, status, icon, description, image_url) VALUES
@@ -848,7 +856,10 @@ INSERT INTO shop_settings (setting_key, setting_value) VALUES
 ('delivery_fee', '18000'),
 ('delivery_minutes', '30'),
 ('points_step', '10'),
-('points_step_value', '2000');
+('points_step_value', '2000'),
+('shift_morning', '07:00-12:00'),
+('shift_afternoon', '12:00-17:00'),
+('shift_evening', '17:00-22:00');
 
 -- =====================================================
 -- VERIFY DATA

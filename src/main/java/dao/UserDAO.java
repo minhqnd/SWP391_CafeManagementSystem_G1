@@ -273,4 +273,39 @@ public class UserDAO extends BaseDAO {
         }
         return null;
     }
+
+    /**
+     * Lấy danh sách nhân viên phục vụ việc xếp lịch làm việc (STAFF và ADMIN active)
+     */
+    public java.util.List<model.User> getStaffEmployees() {
+        java.util.List<model.User> list = new java.util.ArrayList<>();
+        String sql = "SELECT id, full_name, phone, email, role, position, status, birthday, address " +
+                     "FROM users WHERE role IN ('STAFF', 'ADMIN') AND status = 'ACTIVE' " +
+                     "ORDER BY CASE position " +
+                     "  WHEN 'MANAGER' THEN 1 " +
+                     "  WHEN 'BARISTA' THEN 2 " +
+                     "  WHEN 'CASHIER' THEN 3 " +
+                     "  WHEN 'SHIPPER' THEN 4 " +
+                     "  ELSE 5 END ASC, full_name ASC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new model.User(
+                        rs.getInt("id"),
+                        rs.getString("full_name"),
+                        rs.getString("phone"),
+                        rs.getString("email"),
+                        rs.getString("role"),
+                        rs.getString("position"),
+                        rs.getString("status"),
+                        rs.getString("birthday"),
+                        rs.getString("address")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }
