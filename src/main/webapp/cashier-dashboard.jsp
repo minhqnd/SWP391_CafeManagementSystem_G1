@@ -125,6 +125,7 @@
             gap: 6px;
             cursor: pointer;
             transition: all 0.15s ease;
+            text-decoration: none;
         }
 
         .nav-tab-btn:hover {
@@ -1903,6 +1904,14 @@
                 <span class="material-symbols-outlined">receipt_long</span>
                 <span>Đơn hôm nay (<span id="todayOrderCount">${counterOrders.size()}</span>)</span>
             </button>
+            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover?mode=close">
+                <span class="material-symbols-outlined">calculate</span>
+                <span>Chốt ca</span>
+            </a>
+            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover">
+                <span class="material-symbols-outlined">assignment_turned_in</span>
+                <span>Bàn giao ca</span>
+            </a>
         </div>
 
         <!-- Right User Actions -->
@@ -2613,6 +2622,12 @@
             document.querySelectorAll('input[name="optSize"], input[name="optTopping"]').forEach(el => {
                 el.addEventListener('change', updateCustomizerPrice);
             });
+
+            // Cho phép các màn Cashier khác quay lại đúng tab danh sách đơn.
+            const requestedTab = new URLSearchParams(window.location.search).get('tab');
+            if (requestedTab === 'orders') {
+                switchMainTab('orders');
+            }
         });
 
         // 1. Navigation Switches

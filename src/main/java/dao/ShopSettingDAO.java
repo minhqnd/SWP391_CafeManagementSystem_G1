@@ -95,11 +95,39 @@ public class ShopSettingDAO extends BaseDAO {
                 case ShopSettings.KEY_POINTS_STEP_VALUE:
                     settings.setPointsStepValue(Double.parseDouble(value.trim()));
                     break;
+                case ShopSettings.KEY_SHIFT_MORNING:
+                    settings.setShiftMorning(value.trim());
+                    break;
+                case ShopSettings.KEY_SHIFT_AFTERNOON:
+                    settings.setShiftAfternoon(value.trim());
+                    break;
+                case ShopSettings.KEY_SHIFT_EVENING:
+                    settings.setShiftEvening(value.trim());
+                    break;
                 default:
                     break;
             }
         } catch (Exception e) {
             System.err.println("[ShopSettingDAO] Giá trị cấu hình không hợp lệ " + key + " = " + value);
+        }
+    }
+
+    /** Cập nhật khung giờ ca làm việc theo key (shift_morning, shift_afternoon, shift_evening) */
+    public boolean updateShiftHours(String shiftKey, String timeRange) {
+        if (shiftKey == null || timeRange == null || timeRange.trim().isEmpty()) {
+            return false;
+        }
+        String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) "
+                + "ON DUPLICATE KEY UPDATE setting_value = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, shiftKey.trim());
+            ps.setString(2, timeRange.trim());
+            ps.setString(3, timeRange.trim());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }

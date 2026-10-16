@@ -1,0 +1,282 @@
+package controller;
+
+import dao.ShopSettingDAO;
+import dao.WorkScheduleDAO;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import model.ShopSettings;
+import model.User;
+import model.WorkSchedule;
+
+import java.io.IOException;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+/**
+ * Màn hình quản lý chấm công dựa trên dữ liệu bảng work_schedules.
+ * URL: /admin/attendance
+ */
+@WebServlet(name = "AdminAttendanceController", urlPatterns = {"/admin/attendance"})
+public class AdminAttendanceController extends HttpServlet {
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final DateTimeFormatter DATE_DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final Set<String> VALID_STATUSES =
+            Set.of("SCHEDULED", "PRESENT", "ABSENT", "COMPLETED");
+    private static final int MAX_NOTE_LENGTH = 500;
+
+    private final WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
+    private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        if (!isAdmin(request, response)) {
+            return;
+        }
+
+        LocalDate selectedDate = parseDateOrDefault(request.getParameter("date"), LocalDate.now());
+        Date sqlDate = Date.valueOf(selectedDate);
+        ShopSettings settings = shopSettingDAO.getSettings();
+        List<WorkSchedule> attendanceList =
+                workScheduleDAO.getSchedules(sqlDate, sqlDate, null, null, null, null);
+
+        int presentCompletedCount = 0;
+        int lateCount = 0;
+        int absentCount = 0;
+
+        for (WorkSchedule schedule : attendanceList) {
+            String shiftTime = resolveShiftTime(schedule.getShiftName(), settings);
+            schedule.setShiftTime(shiftTime);
+            applyLateInformation(schedule, shiftTime);
+
+            if ("PRESENT".equalsIgnoreCase(schedule.getStatus())
+                    || "COMPLETED".equalsIgnoreCase(schedule.getStatus())) {
+                presentCompletedCount++;
+            }
+            if (schedule.isLate()) {
+                lateCount++;
+            }
+            if ("ABSENT".equalsIgnoreCase(schedule.getStatus())) {
+                absentCount++;
+            }
+        }
+
+        request.setAttribute("selectedDate", selectedDate.format(DATE_FORMATTER));
+        request.setAttribute("selectedDateDisplay", selectedDate.format(DATE_DISPLAY_FORMATTER));
+        request.setAttribute("attendanceList", attendanceList);
+        request.setAttribute("totalShiftCount", attendanceList.size());
+        request.setAttribute("presentCompletedCount", presentCompletedCount);
+        request.setAttribute("lateCount", lateCount);
+        request.setAttribute("absentCount", absentCount);
+
+        moveFlashMessage(request, "attendanceSuccessMsg");
+        moveFlashMessage(request, "attendanceErrorMsg");
+        request.getRequestDispatcher("/admin-attendance.jsp").forward(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        request.setCharacterEncoding("UTF-8");
+        if (!isAdmin(request, response)) {
+            return;
+        }
+
+        HttpSession session = request.getSession();
+        LocalDate redirectDate = parseDateOrDefault(request.getParameter("returnDate"), LocalDate.now());
+
+        try {
+            if (!"update".equalsIgnoreCase(request.getParameter("action"))) {
+                throw new IllegalArgumentException("Thao tác chấm công không hợp lệ.");
+            }
+
+            int scheduleId = parsePositiveId(request.getParameter("id"));
+            WorkSchedule schedule = workScheduleDAO.getScheduleById(scheduleId);
+            if (schedule == null) {
+                throw new IllegalArgumentException("Ca làm việc không tồn tại hoặc đã bị xóa.");
+            }
+            redirectDate = schedule.getWorkDate().toLocalDate();
+
+            String status = normalizeStatus(request.getParameter("status"));
+            String note = normalizeNote(request.getParameter("note"));
+            LocalTime checkIn = parseOptionalTime(request.getParameter("checkInTime"), "Giờ vào");
+            LocalTime checkOut = parseOptionalTime(request.getParameter("checkOutTime"), "Giờ ra");
+            validateAttendance(status, checkIn, checkOut);
+
+            LocalDate workDate = schedule.getWorkDate().toLocalDate();
+            Timestamp checkInTimestamp = toTimestamp(workDate, checkIn);
+            Timestamp checkOutTimestamp = toTimestamp(workDate, checkOut);
+
+            boolean updated = workScheduleDAO.updateAttendance(
+                    scheduleId, checkInTimestamp, checkOutTimestamp, status, note);
+            if (!updated) {
+                throw new IllegalStateException("Không thể lưu dữ liệu chấm công.");
+            }
+            session.setAttribute("attendanceSuccessMsg", "Đã cập nhật chấm công cho "
+                    + schedule.getUserName() + ".");
+        } catch (IllegalArgumentException e) {
+            session.setAttribute("attendanceErrorMsg", e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            session.setAttribute("attendanceErrorMsg",
+                    "Không thể cập nhật chấm công do lỗi hệ thống. Vui lòng thử lại.");
+        }
+
+        response.sendRedirect(request.getContextPath() + "/admin/attendance?date="
+                + redirectDate.format(DATE_FORMATTER));
+    }
+
+    private void applyLateInformation(WorkSchedule schedule, String shiftTime) {
+        schedule.setLate(false);
+        schedule.setLateMinutes(0);
+        if (schedule.getCheckInTime() == null || shiftTime == null) {
+            return;
+        }
+
+        try {
+            String startText = shiftTime.split("-", 2)[0].trim();
+            LocalTime shiftStart = LocalTime.parse(startText, TIME_FORMATTER);
+            LocalTime checkIn = schedule.getCheckInTime().toLocalDateTime().toLocalTime();
+            long lateMinutes = Duration.between(shiftStart, checkIn).toMinutes();
+            if (lateMinutes > 0) {
+                schedule.setLate(true);
+                schedule.setLateMinutes((int) Math.min(lateMinutes, Integer.MAX_VALUE));
+            }
+        } catch (RuntimeException ignored) {
+            // Cấu hình ca sai định dạng không được làm hỏng toàn bộ màn hình.
+        }
+    }
+
+    private String resolveShiftTime(String shiftName, ShopSettings settings) {
+        if ("MORNING".equalsIgnoreCase(shiftName)) {
+            return settings.getShiftMorning();
+        }
+        if ("AFTERNOON".equalsIgnoreCase(shiftName)) {
+            return settings.getShiftAfternoon();
+        }
+        if ("EVENING".equalsIgnoreCase(shiftName)) {
+            return settings.getShiftEvening();
+        }
+        return "";
+    }
+
+    private void validateAttendance(String status, LocalTime checkIn, LocalTime checkOut) {
+        if ("SCHEDULED".equals(status) || "ABSENT".equals(status)) {
+            if (checkIn != null || checkOut != null) {
+                throw new IllegalArgumentException(
+                        "Ca đã xếp lịch hoặc vắng mặt không được có giờ vào/ra.");
+            }
+            return;
+        }
+
+        if (checkIn == null) {
+            throw new IllegalArgumentException("Vui lòng nhập giờ vào.");
+        }
+
+        if ("PRESENT".equals(status)) {
+            if (checkOut != null) {
+                throw new IllegalArgumentException("Nhân viên đang có mặt chưa được nhập giờ ra.");
+            }
+            return;
+        }
+
+        if (checkOut == null) {
+            throw new IllegalArgumentException("Vui lòng nhập giờ ra khi ca đã hoàn thành.");
+        }
+        if (!checkOut.isAfter(checkIn)) {
+            throw new IllegalArgumentException("Giờ ra phải sau giờ vào.");
+        }
+    }
+
+    private String normalizeStatus(String rawStatus) {
+        String status = rawStatus == null ? "" : rawStatus.trim().toUpperCase(Locale.ROOT);
+        if (!VALID_STATUSES.contains(status)) {
+            throw new IllegalArgumentException("Trạng thái chấm công không hợp lệ.");
+        }
+        return status;
+    }
+
+    private String normalizeNote(String rawNote) {
+        String note = rawNote == null ? "" : rawNote.trim();
+        if (note.length() > MAX_NOTE_LENGTH) {
+            throw new IllegalArgumentException("Ghi chú không được vượt quá 500 ký tự.");
+        }
+        return note;
+    }
+
+    private LocalTime parseOptionalTime(String rawTime, String fieldName) {
+        if (rawTime == null || rawTime.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(rawTime.trim(), TIME_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(fieldName + " không đúng định dạng HH:mm.");
+        }
+    }
+
+    private Timestamp toTimestamp(LocalDate date, LocalTime time) {
+        return time == null ? null : Timestamp.valueOf(LocalDateTime.of(date, time));
+    }
+
+    private int parsePositiveId(String rawId) {
+        try {
+            int id = Integer.parseInt(rawId == null ? "" : rawId.trim());
+            if (id <= 0) {
+                throw new NumberFormatException();
+            }
+            return id;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Ca làm việc không hợp lệ.");
+        }
+    }
+
+    private LocalDate parseDateOrDefault(String rawDate, LocalDate fallback) {
+        try {
+            return rawDate == null || rawDate.trim().isEmpty()
+                    ? fallback : LocalDate.parse(rawDate.trim(), DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            return fallback;
+        }
+    }
+
+    private void moveFlashMessage(HttpServletRequest request, String attributeName) {
+        HttpSession session = request.getSession();
+        Object message = session.getAttribute(attributeName);
+        if (message != null) {
+            request.setAttribute(attributeName, message);
+            session.removeAttribute(attributeName);
+        }
+    }
+
+    private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/?tab=login");
+            return false;
+        }
+
+        User user = (User) session.getAttribute("user");
+        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                    "Chỉ Admin có quyền truy cập trang này.");
+            return false;
+        }
+        return true;
+    }
+}
