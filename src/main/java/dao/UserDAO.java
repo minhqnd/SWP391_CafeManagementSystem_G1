@@ -277,6 +277,37 @@ public class UserDAO extends BaseDAO {
     /**
      * Lấy danh sách nhân viên phục vụ việc xếp lịch làm việc (STAFF và ADMIN active)
      */
+    public model.User getActiveStaffById(int userId) {
+        if (userId <= 0) return null;
+
+        String sql = "SELECT id, full_name, phone, email, role, position, status, birthday, address " +
+                     "FROM users " +
+                     "WHERE id = ? AND role IN ('STAFF', 'ADMIN') AND status = 'ACTIVE'";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new model.User(
+                            rs.getInt("id"),
+                            rs.getString("full_name"),
+                            rs.getString("phone"),
+                            rs.getString("email"),
+                            rs.getString("role"),
+                            rs.getString("position"),
+                            rs.getString("status"),
+                            rs.getString("birthday"),
+                            rs.getString("address")
+                    );
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public java.util.List<model.User> getStaffEmployees() {
         java.util.List<model.User> list = new java.util.ArrayList<>();
         String sql = "SELECT id, full_name, phone, email, role, position, status, birthday, address " +

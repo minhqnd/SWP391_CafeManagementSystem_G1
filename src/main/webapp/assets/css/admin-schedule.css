@@ -791,3 +791,532 @@ body.admin-body {
     padding: 2px 0;
     color: #4b5563;
 }
+
+/* =========================================================
+   Employee weekly schedule screen
+   ========================================================= */
+.employee-schedule-page {
+    padding: 24px;
+    background: #f7f7f8;
+}
+
+.schedule-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+}
+
+.schedule-alert .btn-close {
+    margin-left: auto;
+}
+
+.employee-schedule-header {
+    min-height: 118px;
+    padding: 22px 20px;
+    background: #ffffff;
+    border: 1px solid #dedfe3;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.schedule-heading-copy {
+    min-width: 0;
+}
+
+.schedule-table-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    margin-bottom: 9px;
+    color: #6b7280;
+    background: #f4f4f5;
+    border-radius: 5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.68rem;
+    line-height: 1.2;
+}
+
+.schedule-table-ref strong {
+    color: #4b5563;
+    font-weight: 700;
+}
+
+.schedule-heading-copy h1 {
+    margin: 0;
+    color: #111827;
+    font-size: clamp(1.3rem, 1.8vw, 1.62rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.035em;
+}
+
+.schedule-heading-copy p {
+    margin: 5px 0 0;
+    color: #7c6259;
+    font-size: 0.79rem;
+}
+
+.schedule-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.schedule-nav-button,
+.schedule-create-button {
+    min-height: 43px;
+    padding: 0 17px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.schedule-nav-button {
+    color: #292524;
+    background: #f5f5f4;
+    border: 1px solid #e3e1df;
+}
+
+.schedule-nav-button:hover {
+    color: #111827;
+    background: #eceae8;
+    border-color: #d6d3d1;
+}
+
+.schedule-nav-button .material-symbols-outlined {
+    font-size: 21px;
+}
+
+.schedule-create-button {
+    margin-left: 1px;
+    color: #ffffff;
+    background: #a5001c;
+    border: 1px solid #a5001c;
+    box-shadow: 0 3px 8px rgba(165, 0, 28, 0.14);
+}
+
+.schedule-create-button:hover {
+    background: #8f0018;
+    border-color: #8f0018;
+    transform: translateY(-1px);
+}
+
+.schedule-create-button .material-symbols-outlined {
+    font-size: 22px;
+}
+
+.weekly-schedule-card {
+    margin-top: 16px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #dedfe3;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.weekly-schedule-toolbar {
+    min-height: 55px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #ececef;
+}
+
+.weekly-schedule-toolbar h2 {
+    margin: 0;
+    color: #1c1917;
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
+.position-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.legend-pill {
+    padding: 3px 10px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.legend-manager {
+    color: #7e22ce;
+    background: #faf5ff;
+    border-color: #e9d5ff;
+}
+
+.legend-barista {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.legend-cashier {
+    color: #b45309;
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+
+.legend-shipper {
+    color: #047857;
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+.weekly-calendar-scroll {
+    overflow-x: auto;
+    scrollbar-color: #d6d3d1 transparent;
+    scrollbar-width: thin;
+}
+
+.weekly-calendar {
+    min-width: 1050px;
+}
+
+.weekly-calendar-head,
+.weekly-day-columns {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
+}
+
+.weekly-calendar-head {
+    background: #fafaf9;
+    border-bottom: 1px solid #dedfe3;
+}
+
+.weekly-day-heading {
+    min-height: 54px;
+    padding: 11px 8px 9px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid #dedfe3;
+    text-align: center;
+}
+
+.weekly-day-heading:last-child {
+    border-right: none;
+}
+
+.weekly-day-heading.is-selected {
+    background: #fffaf9;
+}
+
+.weekly-day-heading strong {
+    color: #292524;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.weekly-day-heading span {
+    margin-top: 2px;
+    color: #78716c;
+    font-size: 0.62rem;
+    line-height: 1.2;
+}
+
+.weekly-day-column {
+    min-height: 420px;
+    padding: 9px 8px 18px;
+    border-right: 1px solid #dedfe3;
+    background: #ffffff;
+}
+
+.weekly-day-column:last-child {
+    border-right: none;
+}
+
+.weekly-day-column.is-selected {
+    background: #fffdfc;
+}
+
+.day-shift-section + .day-shift-section {
+    margin-top: 9px;
+}
+
+.day-shift-label {
+    margin-bottom: 5px;
+    color: #a8a29e;
+    font-size: 0.61rem;
+    font-weight: 800;
+    letter-spacing: 0.035em;
+    line-height: 1.3;
+    text-transform: uppercase;
+}
+
+.day-shift-label span {
+    white-space: nowrap;
+}
+
+.employee-shift-card {
+    position: relative;
+    min-height: 52px;
+    padding: 10px 28px 9px 9px;
+    margin-bottom: 4px;
+    border: 1px solid;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.employee-shift-card:hover,
+.employee-shift-card:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    outline: none;
+}
+
+.employee-card-name {
+    overflow: hidden;
+    font-size: 0.74rem;
+    font-weight: 800;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.employee-card-meta {
+    margin-top: 4px;
+    overflow: hidden;
+    font-size: 0.57rem;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.employee-shift-card.role-manager {
+    color: #7e22ce;
+    background: #f6eaff;
+    border-color: #e4c7ff;
+}
+
+.employee-shift-card.role-barista {
+    color: #1d4ed8;
+    background: #dceafe;
+    border-color: #adcdfd;
+}
+
+.employee-shift-card.role-cashier {
+    color: #b45309;
+    background: #fff4c9;
+    border-color: #f8d866;
+}
+
+.employee-shift-card.role-shipper {
+    color: #047857;
+    background: #d9faec;
+    border-color: #9becc9;
+}
+
+.employee-shift-card.role-,
+.employee-shift-card:not([class*="role-"]) {
+    color: #475569;
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.employee-card-delete {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    margin: 0;
+}
+
+.employee-card-delete button {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    color: currentColor;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.65;
+}
+
+.employee-card-delete button:hover {
+    background: rgba(255, 255, 255, 0.6);
+    opacity: 1;
+}
+
+.employee-card-delete .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.empty-shift-slot {
+    width: 100%;
+    min-height: 29px;
+    padding: 4px 8px;
+    color: #a8a29e;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px dashed #dedbd8;
+    border-radius: 9px;
+    font-size: 0.62rem;
+    font-weight: 500;
+    line-height: 1.2;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.empty-shift-slot:hover {
+    color: #a5001c;
+    background: #fff8f8;
+    border-color: #d8a1aa;
+}
+
+.modal-aura .modal-dialog {
+    max-width: 510px;
+}
+
+.modal-aura .modal-title {
+    margin: 0;
+    color: #111827;
+    font-size: 1.08rem;
+    font-weight: 800;
+}
+
+.modal-aura .modal-subtitle {
+    margin: 4px 0 0;
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.modal-aura .form-label {
+    margin-bottom: 6px;
+    color: #374151;
+    font-size: 0.79rem;
+    font-weight: 700;
+}
+
+.aura-input {
+    border-color: #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.84rem;
+}
+
+.aura-input:focus {
+    border-color: #c7838f;
+    box-shadow: 0 0 0 0.2rem rgba(165, 0, 28, 0.1);
+}
+
+.field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.character-count,
+.field-hint {
+    color: #9ca3af;
+    font-size: 0.7rem;
+    line-height: 1.4;
+}
+
+.field-hint {
+    margin-top: 6px;
+}
+
+.cash-field-group {
+    transition: opacity 0.15s ease;
+}
+
+.cash-field-group.is-disabled {
+    opacity: 0.68;
+}
+
+.cash-field-group.is-disabled .aura-input {
+    cursor: not-allowed;
+    background-color: #f3f4f6;
+}
+
+.modal-aura .invalid-feedback {
+    margin-top: 5px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.modal-aura .was-validated .form-control.aura-input:valid {
+    border-color: #d1d5db;
+    background-image: none;
+}
+
+.modal-aura .was-validated .form-control.aura-input:valid:focus {
+    border-color: #c7838f;
+    box-shadow: 0 0 0 0.2rem rgba(165, 0, 28, 0.1);
+}
+
+@media (max-width: 1100px) {
+    .employee-schedule-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .schedule-header-actions {
+        width: 100%;
+    }
+
+    .schedule-create-button {
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .employee-schedule-page {
+        padding: 16px;
+    }
+
+    .employee-schedule-header {
+        padding: 18px 16px;
+    }
+
+    .schedule-header-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .schedule-create-button {
+        grid-column: 1 / -1;
+        margin-left: 0;
+    }
+
+    .weekly-schedule-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .position-legend {
+        justify-content: flex-start;
+        gap: 7px;
+    }
+}

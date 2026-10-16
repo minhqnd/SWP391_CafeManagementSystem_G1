@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -23,7 +24,9 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * AdminScheduleController - Màn hình Lịch phân ca nhân viên (Employee Schedule Screen)
@@ -37,6 +40,11 @@ public class AdminScheduleController extends HttpServlet {
     private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final Set<String> VALID_SHIFTS = Set.of("MORNING", "AFTERNOON", "EVENING");
+    private static final Set<String> VALID_STATUSES = Set.of("SCHEDULED", "PRESENT", "ABSENT", "COMPLETED");
+    private static final int MAX_NOTE_LENGTH = 500;
+    private static final BigDecimal MAX_CASH_AMOUNT = new BigDecimal("9999999999");
+    private static final BigDecimal CASH_STEP = new BigDecimal("1000");
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -183,85 +191,83 @@ public class AdminScheduleController extends HttpServlet {
 
         if ("add".equalsIgnoreCase(action)) {
             try {
-                int userId = Integer.parseInt(request.getParameter("userId"));
-                String workDateStr = request.getParameter("workDate");
-                String shiftName = request.getParameter("shiftName");
-                String note = request.getParameter("note");
-                String startingCashStr = request.getParameter("startingCash");
+                int userId = parsePositiveId(request.getParameter("userId"), "Vui lòng chọn nhân viên.");
+                User staff = requireActiveStaff(userId);
+                Date workDate = parseWorkDate(request.getParameter("workDate"));
+                String shiftName = requireAllowedValue(request.getParameter("shiftName"), VALID_SHIFTS,
+                        "Ca làm việc không hợp lệ.");
+                String note = validateNote(request.getParameter("note"));
+                Double startingCash = parseCashAmount(request.getParameter("startingCash"), "Tiền két đầu ca");
+                validateCashierCash(staff, startingCash, null);
 
-                if (workDateStr == null || shiftName == null) {
-                    session.setAttribute("scheduleErrorMsg", "Vui lòng chọn ngày và ca làm việc hợp lệ!");
-                    redirectToPage(request, response, returnDate, returnView);
-                    return;
+                if (workScheduleDAO.isShiftExists(userId, workDate, shiftName, null)) {
+                    throw new IllegalArgumentException("Nhân viên đã được xếp vào ca này trong ngày đã chọn.");
                 }
 
-                Date workDate = Date.valueOf(workDateStr.trim());
                 WorkSchedule ws = new WorkSchedule();
                 ws.setUserId(userId);
                 ws.setWorkDate(workDate);
-                ws.setShiftName(shiftName.trim().toUpperCase());
+                ws.setShiftName(shiftName);
                 ws.setStatus("SCHEDULED");
-                ws.setNote(note != null ? note.trim() : "");
-
-                if (startingCashStr != null && !startingCashStr.trim().isEmpty()) {
-                    try {
-                        ws.setStartingCash(Double.parseDouble(startingCashStr.replaceAll("[.,\\s]", "")));
-                    } catch (Exception ignored) {
-                    }
-                }
+                ws.setNote(note);
+                ws.setStartingCash(startingCash);
 
                 boolean ok = workScheduleDAO.addSchedule(ws);
                 if (ok) {
                     session.setAttribute("scheduleSuccessMsg", "Phân ca làm việc thành công!");
                 } else {
-                    session.setAttribute("scheduleErrorMsg", "Nhân viên này đã được xếp vào ca " + shiftName + " trong ngày " + workDateStr + "!");
+                    session.setAttribute("scheduleErrorMsg", "Không thể phân ca. Vui lòng kiểm tra lại dữ liệu hoặc ca bị trùng.");
                 }
+            } catch (IllegalArgumentException e) {
+                session.setAttribute("scheduleErrorMsg", e.getMessage());
             } catch (Exception e) {
                 e.printStackTrace();
-                session.setAttribute("scheduleErrorMsg", "Lỗi dữ liệu: " + e.getMessage());
+                session.setAttribute("scheduleErrorMsg", "Không thể phân ca do lỗi hệ thống. Vui lòng thử lại.");
             }
         } else if ("update".equalsIgnoreCase(action)) {
             try {
-                int id = Integer.parseInt(request.getParameter("id"));
-                int userId = Integer.parseInt(request.getParameter("userId"));
-                String workDateStr = request.getParameter("workDate");
-                String shiftName = request.getParameter("shiftName");
-                String status = request.getParameter("status");
-                String note = request.getParameter("note");
-                String startingCashStr = request.getParameter("startingCash");
-                String endingCashActualStr = request.getParameter("endingCashActual");
+                int id = parsePositiveId(request.getParameter("id"), "Ca làm việc không hợp lệ.");
+                if (workScheduleDAO.getScheduleById(id) == null) {
+                    throw new IllegalArgumentException("Ca làm việc không tồn tại hoặc đã bị xóa.");
+                }
 
-                Date workDate = Date.valueOf(workDateStr.trim());
+                int userId = parsePositiveId(request.getParameter("userId"), "Vui lòng chọn nhân viên.");
+                User staff = requireActiveStaff(userId);
+                Date workDate = parseWorkDate(request.getParameter("workDate"));
+                String shiftName = requireAllowedValue(request.getParameter("shiftName"), VALID_SHIFTS,
+                        "Ca làm việc không hợp lệ.");
+                String status = requireAllowedValue(request.getParameter("status"), VALID_STATUSES,
+                        "Trạng thái ca làm việc không hợp lệ.");
+                String note = validateNote(request.getParameter("note"));
+                Double startingCash = parseCashAmount(request.getParameter("startingCash"), "Tiền két đầu ca");
+                Double endingCashActual = parseCashAmount(request.getParameter("endingCashActual"), "Tiền két cuối ca");
+                validateCashierCash(staff, startingCash, endingCashActual);
+
+                if (workScheduleDAO.isShiftExists(userId, workDate, shiftName, id)) {
+                    throw new IllegalArgumentException("Nhân viên đã được xếp vào ca này trong ngày đã chọn.");
+                }
+
                 WorkSchedule ws = new WorkSchedule();
                 ws.setId(id);
                 ws.setUserId(userId);
                 ws.setWorkDate(workDate);
-                ws.setShiftName(shiftName.trim().toUpperCase());
-                ws.setStatus(status != null ? status.trim().toUpperCase() : "SCHEDULED");
-                ws.setNote(note != null ? note.trim() : "");
-
-                if (startingCashStr != null && !startingCashStr.trim().isEmpty()) {
-                    try {
-                        ws.setStartingCash(Double.parseDouble(startingCashStr.replaceAll("[.,\\s]", "")));
-                    } catch (Exception ignored) {
-                    }
-                }
-                if (endingCashActualStr != null && !endingCashActualStr.trim().isEmpty()) {
-                    try {
-                        ws.setEndingCashActual(Double.parseDouble(endingCashActualStr.replaceAll("[.,\\s]", "")));
-                    } catch (Exception ignored) {
-                    }
-                }
+                ws.setShiftName(shiftName);
+                ws.setStatus(status);
+                ws.setNote(note);
+                ws.setStartingCash(startingCash);
+                ws.setEndingCashActual(endingCashActual);
 
                 boolean ok = workScheduleDAO.updateSchedule(ws);
                 if (ok) {
                     session.setAttribute("scheduleSuccessMsg", "Cập nhật ca làm việc thành công!");
                 } else {
-                    session.setAttribute("scheduleErrorMsg", "Không thể cập nhật hoặc nhân viên bị trùng ca!");
+                    session.setAttribute("scheduleErrorMsg", "Không thể cập nhật ca làm việc. Vui lòng thử lại.");
                 }
+            } catch (IllegalArgumentException e) {
+                session.setAttribute("scheduleErrorMsg", e.getMessage());
             } catch (Exception e) {
                 e.printStackTrace();
-                session.setAttribute("scheduleErrorMsg", "Lỗi cập nhật: " + e.getMessage());
+                session.setAttribute("scheduleErrorMsg", "Không thể cập nhật do lỗi hệ thống. Vui lòng thử lại.");
             }
         } else if ("quick_status".equalsIgnoreCase(action)) {
             try {
@@ -327,6 +333,84 @@ public class AdminScheduleController extends HttpServlet {
         }
 
         redirectToPage(request, response, returnDate, returnView);
+    }
+
+    private int parsePositiveId(String rawValue, String errorMessage) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+        try {
+            int value = Integer.parseInt(rawValue.trim());
+            if (value <= 0) throw new NumberFormatException();
+            return value;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+    }
+
+    private User requireActiveStaff(int userId) {
+        User staff = userDAO.getActiveStaffById(userId);
+        if (staff == null || staff.getPosition() == null) {
+            throw new IllegalArgumentException("Nhân viên không tồn tại, đã ngừng hoạt động hoặc chưa có vị trí làm việc.");
+        }
+        return staff;
+    }
+
+    private Date parseWorkDate(String rawValue) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn ngày làm việc.");
+        }
+        try {
+            return Date.valueOf(LocalDate.parse(rawValue.trim(), DATE_FORMATTER));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Ngày làm việc không đúng định dạng.");
+        }
+    }
+
+    private String requireAllowedValue(String rawValue, Set<String> allowedValues, String errorMessage) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+        String normalized = rawValue.trim().toUpperCase(Locale.ROOT);
+        if (!allowedValues.contains(normalized)) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+        return normalized;
+    }
+
+    private String validateNote(String rawValue) {
+        String note = rawValue == null ? "" : rawValue.trim();
+        if (note.length() > MAX_NOTE_LENGTH) {
+            throw new IllegalArgumentException("Ghi chú không được vượt quá " + MAX_NOTE_LENGTH + " ký tự.");
+        }
+        return note;
+    }
+
+    private Double parseCashAmount(String rawValue, String fieldName) {
+        if (rawValue == null || rawValue.trim().isEmpty()) return null;
+
+        try {
+            BigDecimal amount = new BigDecimal(rawValue.trim());
+            if (amount.compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException(fieldName + " không được là số âm.");
+            }
+            if (amount.compareTo(MAX_CASH_AMOUNT) > 0) {
+                throw new IllegalArgumentException(fieldName + " không được vượt quá 9.999.999.999đ.");
+            }
+            if (amount.stripTrailingZeros().scale() > 0 || amount.remainder(CASH_STEP).compareTo(BigDecimal.ZERO) != 0) {
+                throw new IllegalArgumentException(fieldName + " phải là bội số của 1.000đ.");
+            }
+            return amount.doubleValue();
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(fieldName + " phải là một số hợp lệ.");
+        }
+    }
+
+    private void validateCashierCash(User staff, Double startingCash, Double endingCashActual) {
+        boolean hasCashValue = startingCash != null || endingCashActual != null;
+        if (hasCashValue && !"CASHIER".equalsIgnoreCase(staff.getPosition())) {
+            throw new IllegalArgumentException("Chỉ nhân viên Thu ngân mới được nhập thông tin tiền két.");
+        }
     }
 
     private void redirectToPage(HttpServletRequest request, HttpServletResponse response,
