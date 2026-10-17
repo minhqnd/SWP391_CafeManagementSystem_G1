@@ -99,13 +99,11 @@ public class AdminCategoriesController extends HttpServlet {
     private void save(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
         int id = parseId(request.getParameter("id"), true);
         String name = trimToNull(request.getParameter("name"));
-        String icon = trimToNull(request.getParameter("icon"));
         String description = trimToNull(request.getParameter("description"));
         String imageUrl = trimToNull(request.getParameter("imageUrl"));
         String status = request.getParameter("status");
 
         if (name == null || name.length() > 100) throw new IllegalArgumentException("Tên danh mục bắt buộc và tối đa 100 ký tự.");
-        if (icon != null && icon.length() > 50) throw new IllegalArgumentException("Tên icon tối đa 50 ký tự.");
         if (imageUrl != null && imageUrl.length() > 500) throw new IllegalArgumentException("Đường dẫn ảnh tối đa 500 ký tự.");
         if (imageUrl != null && !(imageUrl.startsWith("https://") || imageUrl.startsWith("http://"))) {
             throw new IllegalArgumentException("Đường dẫn ảnh phải bắt đầu bằng http:// hoặc https://.");
@@ -113,7 +111,7 @@ public class AdminCategoriesController extends HttpServlet {
         if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) throw new IllegalArgumentException("Trạng thái không hợp lệ.");
         if (categoryDAO.categoryNameExists(name, id)) throw new IllegalArgumentException("Tên danh mục đã tồn tại.");
 
-        Category category = new Category(id, name, status, icon, description, imageUrl, 0);
+        Category category = new Category(id, name, status, description, imageUrl, 0);
         if (!categoryDAO.saveCategory(category)) throw new IllegalArgumentException("Không tìm thấy danh mục cần cập nhật.");
         session.setAttribute("categoryMessage", id > 0 ? "Đã cập nhật danh mục '" + name + "'." : "Đã tạo danh mục '" + name + "'.");
     }
