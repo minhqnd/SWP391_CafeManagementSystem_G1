@@ -16,15 +16,15 @@ public class CategoryDAO extends BaseDAO {
     /** Returns every category, including inactive ones, with the number of linked products. */
     public List<Category> getAllCategoriesWithCount() {
         List<Category> list = new ArrayList<>();
-        String sql = "SELECT c.id, c.name, c.status, c.icon, c.description, c.image_url, COUNT(p.id) AS product_count "
+        String sql = "SELECT c.id, c.name, c.status, c.description, c.image_url, COUNT(p.id) AS product_count "
                 + "FROM categories c LEFT JOIN products p ON p.category_id = c.id "
-                + "GROUP BY c.id, c.name, c.status, c.icon, c.description, c.image_url ORDER BY c.id ASC";
+                + "GROUP BY c.id, c.name, c.status, c.description, c.image_url ORDER BY c.id ASC";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(new Category(rs.getInt("id"), rs.getString("name"), rs.getString("status"),
-                        rs.getString("icon"), rs.getString("description"), rs.getString("image_url"),
+                        rs.getString("description"), rs.getString("image_url"),
                         rs.getInt("product_count")));
             }
         } catch (Exception e) {
@@ -71,10 +71,10 @@ public class CategoryDAO extends BaseDAO {
 
     public boolean saveCategory(Category category) throws SQLException, ClassNotFoundException {
         if (category.getId() > 0) {
-            String sql = "UPDATE categories SET name = ?, icon = ?, description = ?, image_url = ?, status = ? WHERE id = ?";
+            String sql = "UPDATE categories SET name = ?, description = ?, image_url = ?, status = ? WHERE id = ?";
             try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 bindCategory(ps, category);
-                ps.setInt(6, category.getId());
+                ps.setInt(5, category.getId());
                 int updated = ps.executeUpdate();
                 if (updated > 0) return true;
                 try (PreparedStatement exists = conn.prepareStatement("SELECT 1 FROM categories WHERE id = ?")) {
@@ -85,7 +85,7 @@ public class CategoryDAO extends BaseDAO {
                 }
             }
         }
-        String sql = "INSERT INTO categories (name, icon, description, image_url, status) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO categories (name, description, image_url, status) VALUES (?, ?, ?, ?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bindCategory(ps, category);
             if (ps.executeUpdate() == 0) return false;
@@ -98,10 +98,9 @@ public class CategoryDAO extends BaseDAO {
 
     private void bindCategory(PreparedStatement ps, Category category) throws SQLException {
         ps.setString(1, category.getName());
-        ps.setString(2, category.getIcon());
-        ps.setString(3, category.getDescription());
-        ps.setString(4, category.getImageUrl());
-        ps.setString(5, category.getStatus());
+        ps.setString(2, category.getDescription());
+        ps.setString(3, category.getImageUrl());
+        ps.setString(4, category.getStatus());
     }
 
     public boolean updateCategoryStatus(int id, String status) throws SQLException, ClassNotFoundException {
@@ -122,11 +121,11 @@ public class CategoryDAO extends BaseDAO {
 
     public List<Category> getAllActiveCategoriesWithCount() {
         List<Category> list = new ArrayList<>();
-        String sql = "SELECT c.id, c.name, c.status, c.icon, c.description, c.image_url, COUNT(p.id) AS product_count " +
+        String sql = "SELECT c.id, c.name, c.status, c.description, c.image_url, COUNT(p.id) AS product_count " +
                      "FROM categories c " +
                      "LEFT JOIN products p ON c.id = p.category_id AND p.is_available = 1 " +
                      "WHERE c.status = 'ACTIVE' " +
-                     "GROUP BY c.id, c.name, c.status, c.icon, c.description, c.image_url " +
+                     "GROUP BY c.id, c.name, c.status, c.description, c.image_url " +
                      "ORDER BY c.id ASC";
 
         try (Connection conn = DBContext.getConnection();
@@ -138,7 +137,6 @@ public class CategoryDAO extends BaseDAO {
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("status"),
-                        rs.getString("icon"),
                         rs.getString("description"),
                         rs.getString("image_url"),
                         rs.getInt("product_count")
@@ -152,7 +150,7 @@ public class CategoryDAO extends BaseDAO {
     }
 
     public Category getCategoryById(int id) {
-        String sql = "SELECT id, name, status, icon, description, image_url FROM categories WHERE id = ?";
+        String sql = "SELECT id, name, status, description, image_url FROM categories WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -163,7 +161,6 @@ public class CategoryDAO extends BaseDAO {
                             rs.getInt("id"),
                             rs.getString("name"),
                             rs.getString("status"),
-                            rs.getString("icon"),
                             rs.getString("description"),
                             rs.getString("image_url"),
                             0

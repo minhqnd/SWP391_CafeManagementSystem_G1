@@ -37,9 +37,10 @@
         .category-editor .form-control, .category-editor .form-select { border-color:#e7e5e4; border-radius:10px; background:#fafaf9; font-size:.83rem; }
         .category-editor .form-control:focus, .category-editor .form-select:focus { border-color:#900b1a; box-shadow:0 0 0 .18rem rgba(144,11,26,.1); }
         .category-form-field { margin-bottom:13px; }
-        .category-image, .icon-preview { width:36px; height:36px; }
-        .category-image { object-fit:cover; border-radius:9px; }
-        .icon-preview { display:inline-flex; align-items:center; justify-content:center; border-radius:10px; color:#900b1a; background:#f5f5f4; }
+        .category-image, .category-image-placeholder { width:48px; height:42px; }
+        .category-image { object-fit:cover; border-radius:8px; background:#f5f5f4; }
+        .category-image-placeholder { display:flex; align-items:center; justify-content:center; border:1px dashed #d6d3d1; border-radius:8px; color:#78716c; background:#fafaf9; font-size:9px; text-align:center; }
+        .category-image-preview { width:100%; max-width:240px; height:120px; object-fit:cover; border:1px solid #e7e5e4; border-radius:10px; background:#fafaf9; }
         .category-table > :not(caption) > * > * { padding:.7rem .6rem; vertical-align:middle; }
         .category-table thead th { color:#78716c; font-size:10px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
         .category-table tbody tr:hover { background:#fafaf9; }
@@ -90,16 +91,13 @@
                 <div class="table-responsive">
                     <table class="table table-hover category-table mb-0">
                         <thead class="table-light text-uppercase">
-                            <tr><th>ID</th><th>Ảnh / Icon</th><th>Tên danh mục</th><th>Mô tả</th><th class="text-end">Số món</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr>
+                            <tr><th>ID</th><th>Ảnh</th><th>Tên danh mục</th><th>Mô tả</th><th class="text-end">Số món</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr>
                         </thead>
                         <tbody>
                         <c:forEach var="category" items="${categories}">
                             <tr>
                                 <td class="font-monospace text-muted">#<c:out value="${category.id}" /></td>
-                                <td><div class="d-flex align-items-center gap-2">
-                                    <c:if test="${not empty category.imageUrl}"><img class="category-image" src="${fn:escapeXml(category.imageUrl)}" alt="Ảnh danh mục"></c:if>
-                                    <span class="icon-preview"><span class="material-symbols-outlined"><c:out value="${empty category.icon ? 'category' : category.icon}" /></span></span>
-                                </div></td>
+                                <td><c:choose><c:when test="${not empty category.imageUrl}"><img class="category-image" src="${fn:escapeXml(category.imageUrl)}" alt="Ảnh danh mục"></c:when><c:otherwise><div class="category-image-placeholder">Chưa có ảnh</div></c:otherwise></c:choose></td>
                                 <td class="fw-bold text-dark"><c:out value="${category.name}" /></td>
                                 <td class="text-muted small" style="max-width:250px"><div class="text-truncate"><c:out value="${category.description}" /></div></td>
                                 <td class="text-end fw-bold font-monospace"><c:out value="${category.productCount}" /></td>
@@ -134,14 +132,12 @@
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="save">
                     <input type="hidden" name="id" value="${empty selectedCategory ? 0 : selectedCategory.id}">
                     <div class="category-form-field"><label for="name" class="form-label">Tên danh mục *</label><input id="name" name="name" class="form-control" required maxlength="100" value="${fn:escapeXml(selectedCategory.name)}"></div>
-                    <div class="category-form-field"><label for="icon" class="form-label">Icon (Material Symbols)</label>
-                        <div class="input-group"><select id="icon" name="icon" class="form-select">
-                            <c:set var="icons" value="coffee_maker,local_cafe,emoji_food_beverage,icecream,bakery_dining,liquor,local_bar,lunch_dining" />
-                            <c:forTokens var="iconName" items="${icons}" delims=","><option value="${iconName}" <c:if test="${selectedCategory.icon eq iconName or (empty selectedCategory and iconName eq 'local_cafe')}">selected</c:if>><c:out value="${iconName}" /></option></c:forTokens>
-                        </select><span class="input-group-text"><span class="material-symbols-outlined">category</span></span></div>
-                    </div>
                     <div class="category-form-field"><label for="description" class="form-label">Mô tả</label><textarea id="description" name="description" rows="3" class="form-control"><c:out value="${selectedCategory.description}" /></textarea></div>
                     <div class="category-form-field"><label for="imageUrl" class="form-label">Ảnh đại diện (URL)</label><input id="imageUrl" name="imageUrl" type="url" maxlength="500" class="form-control" value="${fn:escapeXml(selectedCategory.imageUrl)}" placeholder="https://..."></div>
+                    <div class="mt-2">
+                        <img id="categoryImagePreview" class="category-image-preview" src="${fn:escapeXml(selectedCategory.imageUrl)}" alt="Ảnh danh mục preview" <c:if test="${empty selectedCategory.imageUrl}">hidden</c:if>>
+                        <div id="categoryImagePlaceholder" class="category-image-placeholder" style="width:100%;max-width:240px;height:120px" <c:if test="${not empty selectedCategory.imageUrl}">hidden</c:if>>Xem trước ảnh</div>
+                    </div>
                     <div class="category-form-field"><label for="status" class="form-label">Trạng thái</label><select id="status" name="status" class="form-select">
                         <option value="ACTIVE" <c:if test="${empty selectedCategory or selectedCategory.status eq 'ACTIVE'}">selected</c:if>>ACTIVE - Hoạt động</option>
                         <option value="INACTIVE" <c:if test="${selectedCategory.status eq 'INACTIVE'}">selected</c:if>>INACTIVE - Tạm ẩn</option>
@@ -153,5 +149,21 @@
         </section>
     </div>
 </main>
-</body>
+<script>
+(() => {
+    const input = document.getElementById('imageUrl');
+    const preview = document.getElementById('categoryImagePreview');
+    const placeholder = document.getElementById('categoryImagePlaceholder');
+    if (!input || !preview || !placeholder) return;
+    const showPlaceholder = () => { preview.hidden = true; placeholder.hidden = false; };
+    preview.addEventListener('error', showPlaceholder);
+    input.addEventListener('input', () => {
+        const value = input.value.trim();
+        if (!/^https?:\/\//i.test(value)) { showPlaceholder(); return; }
+        placeholder.hidden = true;
+        preview.hidden = false;
+        preview.src = value;
+    });
+})();
+</script></body>
 </html>

@@ -8,7 +8,6 @@ public class Category implements Serializable {
     private int id;
     private String name;
     private String status;
-    private String icon;
     private String description;
     private String imageUrl;
     private int productCount;
@@ -16,11 +15,10 @@ public class Category implements Serializable {
     public Category() {
     }
 
-    public Category(int id, String name, String status, String icon, String description, String imageUrl, int productCount) {
+    public Category(int id, String name, String status, String description, String imageUrl, int productCount) {
         this.id = id;
         this.name = name;
         this.status = status;
-        this.icon = icon;
         this.description = description;
         this.imageUrl = imageUrl;
         this.productCount = productCount;
@@ -48,14 +46,6 @@ public class Category implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public String getIcon() {
-        return icon;
-    }
-
-    public void setIcon(String icon) {
-        this.icon = icon;
     }
 
     public String getDescription() {
