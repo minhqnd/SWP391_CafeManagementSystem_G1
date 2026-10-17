@@ -145,32 +145,7 @@
                     .product-card:hover .product-img-box img {
                         transform: scale(1.05);
                     }
-
-                    /* Clean Badge */
-                    .pill-badge {
-                        position: absolute;
-                        top: 12px;
-                        left: 12px;
-                        padding: 4px 10px;
-                        font-size: 0.7rem;
-                        font-weight: 700;
-                        letter-spacing: 0.3px;
-                        text-transform: uppercase;
-                        border-radius: 999px;
-                        z-index: 2;
-                    }
-
-                    .pill-badge-hot {
-                        background-color: rgba(225, 29, 72, 0.95);
-                        color: #ffffff;
-                    }
-
-                    .pill-badge-new {
-                        background-color: rgba(14, 165, 233, 0.95);
-                        color: #ffffff;
-                    }
-
-                    /* Card Content */
+/* Card Content */
                     .product-card-body {
                         padding: 1.15rem 1.25rem;
                         display: flex;
@@ -178,7 +153,7 @@
                         flex-grow: 1;
                     }
 
-                    .product-meta-subtitle {
+                    .product-meta-category {
                         font-size: 0.72rem;
                         font-weight: 600;
                         text-transform: uppercase;
@@ -372,7 +347,7 @@
                     .product-card:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(20, 25, 35, .10); }
                     .product-img-box { height: 220px; }
                     .product-card-body { padding: 10px 11px; }
-                    .product-meta-subtitle { font-size: 0.62rem; margin-bottom: 2px; }
+                    .product-meta-category { font-size: 0.62rem; margin-bottom: 2px; }
                     .product-name { font-size: 0.82rem; margin-bottom: 3px; }
                     .product-brief { font-size: 0.69rem; min-height: 0; margin-bottom: 5px; }
                     .product-card-footer { padding-top: 4px; }

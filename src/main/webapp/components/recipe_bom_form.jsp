@@ -2,18 +2,7 @@
 <%@taglib uri="jakarta.tags.core" prefix="c" %>
 
 <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm mt-4">
-    <h3 class="font-bold text-lg text-stone-900 mb-4 border-b pb-2">Cấu Hình Kênh Bán & Định Lượng Kỹ Thuật (SOP)</h3>
-
-    <!-- Nút bật/tắt hiển thị (Có thể giữ lại vì nó tiện, dù SRS không bắt buộc) -->
-    <div class="flex flex-col gap-4 mb-6">
-        <label class="flex items-center gap-3 cursor-pointer">
-            <div class="relative">
-                <input type="checkbox" name="isAvailableOnline" value="true" class="sr-only peer" checked>
-                <div class="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </div>
-            <span class="text-sm font-medium text-stone-700">Được bán online (Website/Delivery)?</span>
-        </label>
-    </div>
+    <h3 class="font-bold text-lg text-stone-900 mb-4 border-b pb-2">Công Thức & Định Lượng Kỹ Thuật (SOP)</h3>
 
     <!-- Theo SRS: Entity Recipe phải có "instructions" -->
     <div class="mb-8">

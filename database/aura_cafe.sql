@@ -15,6 +15,8 @@ USE aura_cafe_erp;
 SET FOREIGN_KEY_CHECKS = 0;
 
 
+DROP TABLE IF EXISTS user_rewards;
+DROP TABLE IF EXISTS reward_items;
 DROP TABLE IF EXISTS customer_reviews;
 DROP TABLE IF EXISTS loyalty_transactions;
 DROP TABLE IF EXISTS shop_settings;
@@ -128,7 +130,7 @@ CREATE TABLE work_schedules (
 ) ENGINE=InnoDB;
 
 -- =====================================================
--- GROUP B: PRODUCTS AND SALES (5 TABLES)
+-- GROUP B: PRODUCTS AND SALES (4 TABLES)
 -- =====================================================
 
 -- 3. CATEGORIES
@@ -136,7 +138,6 @@ CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     icon VARCHAR(50) NULL,
-    description TEXT,
     image_url VARCHAR(500),
     status ENUM('ACTIVE', 'INACTIVE')
         NOT NULL DEFAULT 'ACTIVE'
@@ -149,8 +150,6 @@ CREATE TABLE products (
     name VARCHAR(150) NOT NULL,
     base_price DECIMAL(12,2) NOT NULL,
 
-    badge VARCHAR(50) NULL,
-    subtitle VARCHAR(150) NULL,
     -- Example:
     -- {"sizes":{"L":10000},"toppings":["Pearl"]}
     variants_config JSON NULL,
@@ -329,7 +328,9 @@ CREATE TABLE loyalty_transactions (
 
     transaction_type ENUM(
         'EARN',
-        'REDEEM'
+        'REDEEM',
+        'REFUND',
+        'ADJUST'
     ) NOT NULL,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -347,8 +348,9 @@ CREATE TABLE loyalty_transactions (
     CONSTRAINT chk_loyalty_points
         CHECK (
             (transaction_type = 'EARN' AND points_change > 0)
-            OR
-            (transaction_type = 'REDEEM' AND points_change < 0)
+            OR (transaction_type = 'REDEEM' AND points_change < 0)
+            OR (transaction_type = 'REFUND' AND points_change > 0)
+            OR (transaction_type = 'ADJUST' AND points_change <> 0)
         ),
 
     INDEX idx_loyalty_customer (customer_id)
@@ -357,8 +359,12 @@ CREATE TABLE loyalty_transactions (
 -- 9. CUSTOMER REVIEWS
 CREATE TABLE customer_reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    ticket_code VARCHAR(30) NULL UNIQUE,
     customer_id INT NOT NULL,
-    order_id INT NOT NULL,
+    customer_name VARCHAR(120) NULL,
+    customer_phone VARCHAR(20) NULL,
+    order_id INT NULL,
+    order_code VARCHAR(50) NULL,
 
     -- Combined rating and complaint
     issue_type ENUM(
@@ -367,16 +373,28 @@ CREATE TABLE customer_reviews (
     ) NOT NULL,
 
     rating INT NULL,
+    category VARCHAR(50) NULL,
+    category_label VARCHAR(100) NULL,
+    title VARCHAR(255) NULL,
     content TEXT NOT NULL,
+    images TEXT NULL,
+    contact_method VARCHAR(30) NOT NULL DEFAULT 'phone',
 
     status ENUM(
         'PENDING',
+        'PROCESSING',
         'RESOLVED',
         'REJECTED'
     ) NOT NULL DEFAULT 'PENDING',
+    status_label VARCHAR(50) NULL,
 
     admin_response TEXT NULL,
+    progress_percent INT NOT NULL DEFAULT 25,
+    agent_name VARCHAR(100) NULL,
+    agent_note TEXT NULL,
+    resolution TEXT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_review_customer
         FOREIGN KEY (customer_id)
@@ -392,7 +410,7 @@ CREATE TABLE customer_reviews (
         CHECK (
             (issue_type = 'RATING' AND rating BETWEEN 1 AND 5)
             OR
-            (issue_type = 'COMPLAINT' AND rating IS NULL)
+            (issue_type = 'COMPLAINT' AND (rating IS NULL OR rating BETWEEN 1 AND 5))
         ),
 
     INDEX idx_reviews_customer (customer_id),
@@ -558,6 +576,7 @@ CREATE TABLE inventory_transactions (
     INDEX idx_inventory_reference (reference_type, reference_id)
 ) ENGINE=InnoDB;
 
+-- GROUP E: SHOP SETTINGS (1 TABLE)
 -- 16. SHOP SETTINGS
 CREATE TABLE shop_settings (
     setting_key VARCHAR(50) PRIMARY KEY,
@@ -627,85 +646,73 @@ VALUES
  'Ca tối thu ngân');
 
 -- 3. CATEGORIES
-INSERT INTO categories (id, name, status, icon, description, image_url) VALUES
-(1, 'Cà phê máy', 'ACTIVE', 'coffee_maker', 'Espresso, Caramel Macchiato đậm đà chuẩn gu hiện đại.', 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80'),
-(2, 'Cà phê truyền thống', 'ACTIVE', 'local_cafe', 'Cà phê muối, sữa đá Sài Gòn ủ phin nguyên bản ngọt êm.', 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'),
-(3, 'Trà trái cây', 'ACTIVE', 'emoji_food_beverage', 'Trà đào cam sả, hoa quả nhiệt đới tươi mát thanh nhiệt.', 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80'),
-(4, 'Đá xay & Matcha', 'ACTIVE', 'icecream', 'Matcha Uji thơm bùi, đá xay mát lạnh đánh tan ngày hè.', 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80'),
-(5, 'Bánh ngọt', 'ACTIVE', 'bakery_dining', 'Bánh Croissant nướng bơ Pháp, cheesecake mềm béo hấp dẫn.', 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80'),
-(6, 'Đóng chai', 'ACTIVE', 'liquor', 'Cold brew ủ lạnh 16h đóng chai tiện lợi mang đi bất cứ đâu.', 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80');
+INSERT INTO categories (id, name, status, icon, image_url) VALUES
+(1, 'Cà phê máy', 'ACTIVE', 'coffee_maker', 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80'),
+(2, 'Cà phê truyền thống', 'ACTIVE', 'local_cafe', 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'),
+(3, 'Trà trái cây', 'ACTIVE', 'emoji_food_beverage', 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80'),
+(4, 'Đá xay & Matcha', 'ACTIVE', 'icecream', 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80'),
+(5, 'Bánh ngọt', 'ACTIVE', 'bakery_dining', 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80'),
+(6, 'Đóng chai', 'ACTIVE', 'liquor', 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80');
 
 -- 4. PRODUCTS (12 menu items)
-INSERT INTO products (id, category_id, name, base_price, description, badge, subtitle, variants_config, image_url, is_available) VALUES
+INSERT INTO products (id, category_id, name, base_price, description, variants_config, image_url, is_available) VALUES
 (1, 2, 'Cà Phê Muối Aura Đặc Biệt', 45000, 
  'Fine Robusta ủ phin truyền thống phối kem sữa mằn mặn béo ngậy, cân bằng hậu vị ngọt đầm.', 
- 'BÁN CHẠY', 'Phin Cổ Điển', 
  '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Extra kem muối","price":8000},{"name":"Extra shot espresso","price":10000}]}',
  'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80', 1),
 
 (2, 1, 'Caramel Macchiato Đặc Sản', 55000, 
  'Lớp sữa tươi nóng thanh dịu, quyện cùng espresso kép Arabica Cầu Đất đậm đà và vân sốt caramel thơm lừng.', 
- 'BÁN CHẠY', 'Espresso Base', 
  '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Sốt caramel thêm","price":5000},{"name":"Kem whipping","price":8000}]}',
  'https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80', 1),
 
 (3, 6, 'Cold Brew Đóng Chai Aura Reserve', 68000, 
  'Chiết xuất lạnh 16 tiếng từ 100% Arabica Bourbon, hương hoa quả nhiệt đới tươi mát, giữ trọn vị nguyên bản.', 
- 'BÁN CHẠY', 'Ủ Lạnh 16 Tiếng', 
  '{"sizes":{"Chai 250ml":0,"Chai 500ml":35000},"toppings":[]}',
  'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80', 1),
 
 (4, 2, 'Cà Phê Sữa Đá Sài Gòn Nâu', 39000, 
  'Hạt Fine Robusta rang nâu bóng mượt, chiết xuất phin chậm kết hợp sữa đặc ngọt êm béo ngậy truyền thống.', 
- NULL, 'Đậm Vị Phin', 
  '{"sizes":{"M":0,"L":8000},"toppings":[{"name":"Thạch cà phê","price":6000},{"name":"Extra shot phin","price":8000}]}',
  'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&auto=format&fit=crop&q=80', 1),
 
 (5, 3, 'Trà Đào Cam Sả Tươi', 45000, 
  'Nước cốt trà đen Ceylon thanh dịu kết hợp miếng đào giòn ngọt mọng nước cùng sả tươi ấm nồng.', 
- 'MÓN MỚI', 'Fresh Brew', 
  '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Thạch đào giòn","price":8000},{"name":"Hạt chia","price":5000}]}',
  'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80', 1),
 
 (6, 5, 'Bánh Croissant Bơ Pháp', 35000, 
  'Bột ngàn lớp thủ công giòn rụm bên ngoài, mềm xốp ngậy hương bơ Elle & Vire hảo hạng bên trong.', 
- 'BÁN CHẠY', 'Bơ Elle & Vire', 
  '{"sizes":{"Tiêu chuẩn":0},"toppings":[{"name":"Mứt dâu tây","price":6000},{"name":"Sốt sôcôla","price":6000}]}',
  'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80', 1),
 
 (7, 4, 'Matcha Latte Uji Kyoto Đá Xay', 58000, 
  'Bột trà xanh Uji trứ danh cố đô Kyoto xay cùng sữa hạt và kem whipping bông xốp béo mịn thượng hạng.', 
- 'BÁN CHẠY', 'Uji Kyoto Grade', 
  '{"sizes":{"M":0,"L":12000},"toppings":[{"name":"Kem whipping","price":8000},{"name":"Thạch matcha","price":8000}]}',
  'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600&auto=format&fit=crop&q=80', 1),
 
 (8, 3, 'Trà Sen Vàng Long Nhãn', 49000, 
  'Hạt sen Huế ninh mềm dẻo, nhãn nhục ngọt thanh quyện cùng trà ô long hảo hạng và lớp kem củ năng giòn.', 
- NULL, 'Trà Đen Ceylon', 
  '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Hạt sen thêm","price":10000},{"name":"Củ năng giòn","price":8000}]}',
  'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=600&auto=format&fit=crop&q=80', 1),
 
 (9, 1, 'Americano Đá Rang Đậm', 35000, 
  'Espresso kép chiết xuất áp suất cao từ hạt cà phê đặc sản, vị chua thanh thanh tao và hậu ngọt dài lâu.', 
- NULL, 'Espresso Base', 
  '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Extra shot espresso","price":10000}]}',
  'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop&q=80', 1),
 
 (10, 1, 'Latte Nghệ Thuật Hạt Phỉ', 52000, 
  'Hòa quyện tinh tế giữa espresso thơm ngát, sữa tươi đánh bọt mịn màng và siro hạt phỉ thơm lừng.', 
- 'MÓN MỚI', 'Espresso Base', 
  '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Siro hạt phỉ","price":6000},{"name":"Sữa yến mạch (Oat milk)","price":12000}]}',
  'https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80', 1),
 
 (11, 4, 'Sôcôla Bỉ Đá Xay Hạnh Nhân', 55000, 
  'Bột cacao nguyên chất nhập khẩu Bỉ xay nhuyễn cùng sữa đặc, rắc hạnh nhân nướng giòn tan.', 
- NULL, 'Chocolate Rich', 
  '{"sizes":{"M":0,"L":10000},"toppings":[{"name":"Kem whipping","price":8000},{"name":"Hạnh nhân vụn","price":6000}]}',
  'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&auto=format&fit=crop&q=80', 1),
 
 (12, 5, 'Bánh Cheesecake Việt Quất', 55000, 
  'Cream cheese Philadelphia béo ngậy kết hợp mứt việt quất chua ngọt dịu và đế bánh quy nướng thơm lừng.', 
- 'BÁN CHẠY', 'New York Style', 
  '{"sizes":{"1 Phần":0},"toppings":[]}',
  'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=600&auto=format&fit=crop&q=80', 1);
 
@@ -860,6 +867,26 @@ INSERT INTO shop_settings (setting_key, setting_value) VALUES
 ('shift_morning', '07:00-12:00'),
 ('shift_afternoon', '12:00-17:00'),
 ('shift_evening', '17:00-22:00');
+
+-- FEEDBACK SAMPLE DATA (stored with customer ratings and complaints)
+INSERT INTO customer_reviews
+(ticket_code, customer_id, customer_name, customer_phone, order_id, order_code, issue_type,
+ rating, category, category_label, title, content, images, contact_method, status, status_label,
+ admin_response, progress_percent, agent_name, agent_note, resolution, created_at)
+VALUES
+('#FB-2024-089', 4, 'Le Minh Anh', '0900000004', NULL, '#AUR-86410', 'COMPLAINT', 2,
+ 'wrong_size', 'Sai kích cỡ / Món', 'Giao sai size ly từ L xuống M',
+ 'Ly Bạc Xỉu Kem Trứng của tôi bị nhầm thành size M thay vì size L như đã đặt trên hóa đơn.',
+ 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmpTys3KoN-gBpIZ2NHZpRJuTwcv-5IYk5GLa4_0uVM_hhieERDkGhxBxjxrEkep1JSAnjV_4SPCgWBVKnMb6fwivTCsPDIZrULPy7mL5ADYCvY6PIwelzBqc3MDBhcvjIWD8AIfWl4SwKLbsFrj0d1ysYfNX_B5EnxoRyDrgKDFgvdcyO-Ms8_F5cd-FImpqdFCuvDZb5yW0IJIY2nfBTxVlU5v0Ss4rTwrmL4ZtFkSiyLaAxWJKC',
+ 'phone', 'PROCESSING', 'Đang xử lý', 'Đang kiểm tra phản ánh của khách hàng.', 65, 'Thu Hà',
+ 'Đang kiểm tra phản ánh của khách hàng.', NULL, '2024-10-20 14:45:00'),
+('#FB-2024-042', 4, 'Le Minh Anh', '0900000004', NULL, '#AUR-78219', 'COMPLAINT', 3,
+ 'packaging', 'Thiếu ống hút/đồ ăn', 'Thiếu ống hút và khăn giấy',
+ 'Đơn hàng giao thiếu ống hút và khăn giấy khi tôi nhận tại văn phòng.',
+ '', 'chat', 'RESOLVED', 'Đã giải quyết xong',
+ 'Aura chân thành xin lỗi quý khách về sự bất tiện trên.', 100, 'Thanh Trúc',
+ 'Cửa hàng đã kiểm điểm khâu kiểm tra trước khi bàn giao cho shipper.',
+ 'Aura chân thành xin lỗi quý khách về sự bất tiện trên.', '2024-10-16 10:15:00');
 
 -- =====================================================
 -- VERIFY DATA

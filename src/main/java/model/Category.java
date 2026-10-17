@@ -8,18 +8,16 @@ public class Category implements Serializable {
     private int id;
     private String name;
     private String status;
-    private String description;
     private String imageUrl;
     private int productCount;
 
     public Category() {
     }
 
-    public Category(int id, String name, String status, String description, String imageUrl, int productCount) {
+    public Category(int id, String name, String status, String imageUrl, int productCount) {
         this.id = id;
         this.name = name;
         this.status = status;
-        this.description = description;
         this.imageUrl = imageUrl;
         this.productCount = productCount;
     }
@@ -46,14 +44,6 @@ public class Category implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getImageUrl() {

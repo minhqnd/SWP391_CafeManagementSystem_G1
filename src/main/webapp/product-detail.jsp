@@ -95,27 +95,7 @@
         .product-gallery:hover img {
             transform: scale(1.04);
         }
-        .gallery-badge {
-            position: absolute;
-            top: 1.25rem;
-            left: 1.25rem;
-            padding: 0.4rem 1rem;
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            border-radius: 999px;
-            z-index: 2;
-            backdrop-filter: blur(8px);
-        }
-        .gallery-badge-hot {
-            background: rgba(225, 29, 72, 0.92);
-            color: #fff;
-        }
-        .gallery-badge-new {
-            background: rgba(14, 165, 233, 0.92);
-            color: #fff;
-        }
+
         .gallery-category-tag {
             position: absolute;
             bottom: 1.25rem;
@@ -614,11 +594,6 @@
                 <!-- Left: Product Image -->
                 <div class="col-12 col-md-6 col-lg-5 animate-in animate-delay-1">
                     <div class="product-gallery">
-                        <c:if test="${not empty product.badge}">
-                            <span class="gallery-badge ${product.badge == 'BÁN CHẠY' ? 'gallery-badge-hot' : 'gallery-badge-new'}">
-                                ${product.badge}
-                            </span>
-                        </c:if>
                         <img id="productMainImg" src="${product.imageUrl}" alt="${product.name}"
                              onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80'">
                         <div class="gallery-category-tag">
@@ -647,12 +622,6 @@
                                 <span class="info-tag info-tag-available">
                                     <span class="material-symbols-outlined">check_circle</span>
                                     Còn phục vụ
-                                </span>
-                            </c:if>
-                            <c:if test="${not empty product.subtitle}">
-                                <span class="info-tag">
-                                    <span class="material-symbols-outlined">star</span>
-                                    ${product.subtitle}
                                 </span>
                             </c:if>
                             <span class="info-tag">

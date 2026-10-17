@@ -15,7 +15,7 @@ import java.util.Map;
 public class ShopSettingDAO extends BaseDAO {
 
     /**
-     * Cấu hình hiện tại. Khoá nào chưa có trong Database (hoặc chưa chạy update_shop_settings.sql)
+     * Cấu hình hiện tại. Khoá nào chưa có trong Database
      * thì dùng giá trị mặc định của ShopSettings.
      */
     public ShopSettings getSettings() {

@@ -1,6 +1,7 @@
 package model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
@@ -14,8 +15,6 @@ public class Product implements Serializable {
     private String name;
     private double basePrice;
     private String description;
-    private String badge;
-    private String subtitle;
     private String variantsConfig;
     private String imageUrl;
     private boolean isAvailable;
@@ -36,7 +35,7 @@ public class Product implements Serializable {
 
     // Full constructor used by Menu & detailed catalog
     public Product(int id, int categoryId, String categoryName, String name, double basePrice,
-                   String description, String badge, String subtitle, String variantsConfig,
+                   String description, String variantsConfig,
                    String imageUrl, boolean isAvailable) {
         this.id = id;
         this.categoryId = categoryId;
@@ -44,8 +43,6 @@ public class Product implements Serializable {
         this.name = name;
         this.basePrice = basePrice;
         this.description = description;
-        this.badge = badge;
-        this.subtitle = subtitle;
         this.variantsConfig = variantsConfig;
         this.imageUrl = imageUrl;
         this.isAvailable = isAvailable;
@@ -87,6 +84,10 @@ public class Product implements Serializable {
         return basePrice;
     }
 
+    public String getBasePriceInputValue() {
+        return BigDecimal.valueOf(basePrice).stripTrailingZeros().toPlainString();
+    }
+
     public void setBasePrice(double basePrice) {
         this.basePrice = basePrice;
     }
@@ -97,22 +98,6 @@ public class Product implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getBadge() {
-        return badge;
-    }
-
-    public void setBadge(String badge) {
-        this.badge = badge;
-    }
-
-    public String getSubtitle() {
-        return subtitle;
-    }
-
-    public void setSubtitle(String subtitle) {
-        this.subtitle = subtitle;
     }
 
     public String getVariantsConfig() {
@@ -157,15 +142,15 @@ public class Product implements Serializable {
             return "";
         }
         try {
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"instructions\"\\s*:\\s*\"([^\"]*)\"").matcher(variantsConfig);
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"instructions\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(variantsConfig);
             if (m.find()) {
-                return m.group(1).replace("\\n", "\n").replace("\\\"", "\"");
+                return m.group(1).replace("\\n", "\n").replace("\\r", "\r").replace("\\t", "\t")
+                        .replace("\\\"", "\"").replace("\\\\", "\\");
             }
         } catch (Exception ignored) {
         }
         return "";
     }
-
     /**
      * Định dạng giá tiền dạng 45.000đ
      */

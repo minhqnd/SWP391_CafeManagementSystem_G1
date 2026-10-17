@@ -70,8 +70,6 @@ public class ProductDAOTest {
         Product p = productDAO.getProductById(1);
         Assumptions.assumeTrue(p != null, "Skipping because product ID 1 is not in database");
         assertEquals("Cà Phê Muối Aura Đặc Biệt", p.getName());
-        assertEquals("Phin Cổ Điển", p.getSubtitle());
-        assertEquals("BÁN CHẠY", p.getBadge());
         assertEquals("45.000đ", p.getFormattedPrice());
     }
 

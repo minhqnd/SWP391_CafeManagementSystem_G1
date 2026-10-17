@@ -46,6 +46,7 @@ public class CheckoutController extends HttpServlet {
 
         HttpSession session = request.getSession();
         Cart cart = CartController.getCart(session);
+        cart.setPointsUsed(0);
         boolean pointsStillValid = cartService.refreshCart(cart, CartController.getCustomerId(session));
 
         if (cart.getSelectedItems().isEmpty()) {
@@ -67,6 +68,7 @@ public class CheckoutController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
         Cart cart = CartController.getCart(session);
+        cart.setPointsUsed(0);
         boolean pointsStillValid = cartService.refreshCart(cart, CartController.getCustomerId(session));
 
         if (cart.getSelectedItems().isEmpty()) {

@@ -94,8 +94,8 @@ public class AdminSettingsController extends HttpServlet {
         settings.setPointsStepValue(pointsStepValue);
 
         if (!shopSettingDAO.saveSettings(settings)) {
-            request.setAttribute("settingsError", "Không lưu được cấu hình. Hãy kiểm tra Database đã chạy "
-                    + "database/update_shop_settings.sql (bảng shop_settings) chưa.");
+            request.setAttribute("settingsError", "Không lưu được cấu hình. Hãy kiểm tra database aura_cafe_erp "
+                    + "và xác nhận bảng shop_settings tồn tại.");
             showSettings(request, response, shopSettingDAO.getSettings(), form);
             return;
         }

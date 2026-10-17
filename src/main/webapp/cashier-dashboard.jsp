@@ -336,18 +336,6 @@
             object-fit: cover;
         }
 
-        .product-tag {
-            position: absolute;
-            top: 6px;
-            left: 6px;
-            background: rgba(15, 23, 42, 0.75);
-            color: #ffffff;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            backdrop-filter: blur(4px);
-        }
 
         .product-name {
             font-size: 13.5px;
@@ -1971,9 +1959,6 @@
                          onclick="openProductCustomization(${p.id}, '<c:out value="${p.name}"/>', ${p.basePrice}, '${p.imageUrl}')">
                         <div class="product-img-box">
                             <img src="${p.imageUrl}" alt="${p.name}" class="product-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';">
-                            <c:if test="${not empty p.badge}">
-                                <span class="product-tag">${p.badge}</span>
-                            </c:if>
                         </div>
                         <div class="product-name" title="${p.name}">${p.name}</div>
                         <div class="product-category-sub">${p.categoryName}</div>
