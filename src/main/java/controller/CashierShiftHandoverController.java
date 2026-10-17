@@ -1,7 +1,6 @@
 package controller;
 
 import dao.ShopSettingDAO;
-import dao.UserDAO;
 import dao.WorkScheduleDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -37,7 +36,6 @@ public class CashierShiftHandoverController extends HttpServlet {
 
     private final WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
     private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
-    private final UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -56,9 +54,11 @@ public class CashierShiftHandoverController extends HttpServlet {
                 int sId = Integer.parseInt(scheduleIdStr.trim());
                 WorkSchedule s = workScheduleDAO.getScheduleById(sId);
                 if (s != null && s.getUserId() == cashier.getId()) {
-                    if ("COMPLETED".equalsIgnoreCase(s.getStatus())) {
+                    if ("COMPLETED".equalsIgnoreCase(s.getStatus())
+                            && s.getEndingCashSystem() != null
+                            && s.getEndingCashActual() != null) {
                         completedShift = s;
-                    } else {
+                    } else if ("PRESENT".equalsIgnoreCase(s.getStatus())) {
                         activeShift = s;
                     }
                 }
@@ -74,17 +74,11 @@ public class CashierShiftHandoverController extends HttpServlet {
                 }
             }
         }
-        if (activeShift == null) {
-            for (WorkSchedule s : recentShifts) {
-                if ("SCHEDULED".equalsIgnoreCase(s.getStatus())) {
-                    activeShift = s;
-                    break;
-                }
-            }
-        }
         if (completedShift == null) {
             for (WorkSchedule s : recentShifts) {
-                if ("COMPLETED".equalsIgnoreCase(s.getStatus()) && s.getEndingCashActual() != null) {
+                if ("COMPLETED".equalsIgnoreCase(s.getStatus())
+                        && s.getEndingCashSystem() != null
+                        && s.getEndingCashActual() != null) {
                     completedShift = s;
                     break;
                 }
@@ -121,8 +115,6 @@ public class CashierShiftHandoverController extends HttpServlet {
         WorkSchedule headerShift = closeMode ? (activeShift != null ? activeShift : completedShift)
                                             : (completedShift != null ? completedShift : activeShift);
 
-        List<User> staffList = userDAO.getStaffEmployees();
-
         request.setAttribute("activeShift", activeShift);
         request.setAttribute("completedShift", completedShift);
         request.setAttribute("headerShift", headerShift);
@@ -130,7 +122,6 @@ public class CashierShiftHandoverController extends HttpServlet {
         request.setAttribute("handoverSummary", handoverSummary);
         request.setAttribute("closeMode", closeMode);
         request.setAttribute("recentShifts", recentShifts);
-        request.setAttribute("staffList", staffList);
         request.setAttribute("currentTime", LocalDateTime.now().format(TIME_FORMATTER));
         request.setAttribute("currentDate", LocalDate.now().format(DATE_FORMATTER));
         request.setAttribute("cashierInitials", initialsOf(cashier.getFullName()));

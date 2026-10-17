@@ -62,12 +62,12 @@
                 <span>Danh sách đơn</span>
             </a>
             <a class="${closeMode ? 'active' : ''}" 
-               href="${ctx}/cashier/handover?mode=close<c:if test='${not empty headerShift}'>&scheduleId=${headerShift.id}</c:if>">
+               href="${ctx}/cashier/handover?mode=close">
                 <span class="material-symbols-outlined">calculate</span>
                 <span>Chốt ca</span>
             </a>
             <a class="${not closeMode ? 'active' : ''}" 
-               href="${ctx}/cashier/handover?mode=handover<c:if test='${not empty headerShift}'>&scheduleId=${headerShift.id}</c:if>">
+               href="${ctx}/cashier/handover?mode=handover">
                 <span class="material-symbols-outlined">assignment_turned_in</span>
                 <span>Bàn giao ca</span>
             </a>
@@ -131,7 +131,7 @@
                             <c:if test="${not empty headerShift.checkInFormatted}">
                                 • Vào ca: ${headerShift.checkInFormatted}
                             </c:if>
-                            • Cashier shift
+                            • ${headerShift.positionDisplayName}
                         </div>
                     </div>
                 </div>
@@ -285,137 +285,48 @@
                                 </div>
                             </div>
 
-                            <!-- RIGHT COLUMN: KIỂM ĐẾM TIỀN MẶT ĐÓNG CA -->
+                            <!-- RIGHT COLUMN: CÁC TRƯỜNG LƯU TRONG WORK_SCHEDULES -->
                             <div class="pos-card">
                                 <div class="pos-card-header">
                                     <h3 class="pos-card-title">
-                                        Kiểm đếm tiền mặt đóng ca
+                                        <span class="material-symbols-outlined">fact_check</span>
+                                        Xác nhận số liệu cuối ca
                                     </h3>
-                                    <button type="button" class="btn-reset-denoms" onclick="resetDenominations()">
-                                        <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
-                                        Nhập lại
-                                    </button>
                                 </div>
 
-                                <!-- Denomination list (9 rows: 500k to 1k) -->
-                                <div class="denomination-list">
-                                    <div class="denom-row" data-denom="500000">
-                                        <div class="denom-label">500.000đ</div>
-                                        <div class="denom-controls">
-                                            <button type="button" class="btn-denom-qty btn-minus">-</button>
-                                            <input type="number" class="denom-input" min="0" max="9999" value="0">
-                                            <button type="button" class="btn-denom-qty btn-plus">+</button>
-                                        </div>
-                                        <div class="denom-subtotal">0đ</div>
-                                    </div>
-
-                                    <div class="denom-row" data-denom="200000">
-                                        <div class="denom-label">200.000đ</div>
-                                        <div class="denom-controls">
-                                            <button type="button" class="btn-denom-qty btn-minus">-</button>
-                                            <input type="number" class="denom-input" min="0" max="9999" value="0">
-                                            <button type="button" class="btn-denom-qty btn-plus">+</button>
-                                        </div>
-                                        <div class="denom-subtotal">0đ</div>
-                                    </div>
-
-                                    <div class="denom-row" data-denom="100000">
-                                        <div class="denom-label">100.000đ</div>
-                                        <div class="denom-controls">
-                                            <button type="button" class="btn-denom-qty btn-minus">-</button>
-                                            <input type="number" class="denom-input" min="0" max="9999" value="0">
-                                            <button type="button" class="btn-denom-qty btn-plus">+</button>
-                                        </div>
-                                        <div class="denom-subtotal">0đ</div>
-                                    </div>
-
-                                    <div class="denom-row" data-denom="50000">
-                                        <div class="denom-label">50.000đ</div>
-                                        <div class="denom-controls">
-                                            <button type="button" class="btn-denom-qty btn-minus">-</button>
-                                            <input type="number" class="denom-input" min="0" max="9999" value="0">
-                                            <button type="button" class="btn-denom-qty btn-plus">+</button>
-                                        </div>
-                                        <div class="denom-subtotal">0đ</div>
-                                    </div>
-
-                                    <div class="denom-row" data-denom="20000">
-                                        <div class="denom-label">20.000đ</div>
-                                        <div class="denom-controls">
-                                            <button type="button" class="btn-denom-qty btn-minus">-</button>
-                                            <input type="number" class="denom-input" min="0" max="9999" value="0">
-                                            <button type="button" class="btn-denom-qty btn-plus">+</button>
-                                        </div>
-                                        <div class="denom-subtotal">0đ</div>
-                                    </div>
-
-                                    <div class="denom-row" data-denom="10000">
-                                        <div class="denom-label">10.000đ</div>
-                                        <div class="denom-controls">
-                                            <button type="button" class="btn-denom-qty btn-minus">-</button>
-                                            <input type="number" class="denom-input" min="0" max="9999" value="0">
-                                            <button type="button" class="btn-denom-qty btn-plus">+</button>
-                                        </div>
-                                        <div class="denom-subtotal">0đ</div>
-                                    </div>
-
-                                    <div class="denom-row" data-denom="5000">
-                                        <div class="denom-label">5.000đ</div>
-                                        <div class="denom-controls">
-                                            <button type="button" class="btn-denom-qty btn-minus">-</button>
-                                            <input type="number" class="denom-input" min="0" max="9999" value="0">
-                                            <button type="button" class="btn-denom-qty btn-plus">+</button>
-                                        </div>
-                                        <div class="denom-subtotal">0đ</div>
-                                    </div>
-
-                                    <div class="denom-row" data-denom="2000">
-                                        <div class="denom-label">2.000đ</div>
-                                        <div class="denom-controls">
-                                            <button type="button" class="btn-denom-qty btn-minus">-</button>
-                                            <input type="number" class="denom-input" min="0" max="9999" value="0">
-                                            <button type="button" class="btn-denom-qty btn-plus">+</button>
-                                        </div>
-                                        <div class="denom-subtotal">0đ</div>
-                                    </div>
-
-                                    <div class="denom-row" data-denom="1000">
-                                        <div class="denom-label">1.000đ</div>
-                                        <div class="denom-controls">
-                                            <button type="button" class="btn-denom-qty btn-minus">-</button>
-                                            <input type="number" class="denom-input" min="0" max="9999" value="0">
-                                            <button type="button" class="btn-denom-qty btn-plus">+</button>
-                                        </div>
-                                        <div class="denom-subtotal">0đ</div>
-                                    </div>
-                                </div>
-
-                                <!-- Total Actual Cash Bar -->
-                                <div class="actual-cash-bar">
-                                    <span class="actual-cash-label">TIỀN THỰC TẾ (ENDING_CASH_ACTUAL)</span>
-                                    <span id="actualCashDisplay" class="actual-cash-amount">0đ</span>
-                                </div>
-
-                                <!-- Dynamic Difference Box -->
-                                <div id="diffBox" class="diff-status-box diff-shortage">
-                                    <span id="diffLabel">Thiếu tiền</span>
-                                    <span id="diffAmount" class="diff-amount">
-                                        -<fmt:formatNumber value="${closePreview.expectedCash}" pattern="#,##0" />đ
-                                    </span>
-                                </div>
-
-                                <!-- Submission Form Linking Chốt ca -> Bàn giao ca -->
                                 <form method="post" action="${ctx}/cashier/handover" id="closeShiftForm">
                                     <input type="hidden" name="action" value="close-shift">
                                     <input type="hidden" name="scheduleId" value="${activeShift.id}">
-                                    <input type="hidden" name="endingCashActual" id="hiddenEndingCashActual" value="0">
 
-                                    <input type="text" name="note" id="handoverNote" class="note-input-field"
-                                           placeholder="Ghi chú chốt ca (lưu vào work_schedules.note)..." maxlength="500">
+                                    <label class="database-field-label" for="endingCashActual">
+                                        Tiền mặt thực tế cuối ca
+                                        <span>work_schedules.ending_cash_actual</span>
+                                    </label>
+                                    <div class="cash-input-wrap">
+                                        <input type="number" name="endingCashActual" id="endingCashActual"
+                                               class="cash-actual-input" min="0" max="9999999999" step="1000"
+                                               value="0" required inputmode="numeric">
+                                        <span>đ</span>
+                                    </div>
+                                    <p class="field-help">Nhập tổng tiền đã kiểm đếm, theo bội số 1.000đ.</p>
+
+                                    <div id="diffBox" class="diff-status-box diff-shortage">
+                                        <span id="diffLabel">Thiếu tiền</span>
+                                        <span id="diffAmount" class="diff-amount">
+                                            -<fmt:formatNumber value="${closePreview.expectedCash}" pattern="#,##0" />đ
+                                        </span>
+                                    </div>
+
+                                    <label class="database-field-label" for="handoverNote">
+                                        Ghi chú bàn giao
+                                        <span>work_schedules.note</span>
+                                    </label>
+                                    <textarea name="note" id="handoverNote" class="note-input-field"
+                                              placeholder="Nhập ghi chú nếu có..." maxlength="500" rows="4"></textarea>
 
                                     <button type="submit" class="btn-submit-close">
                                         <span class="material-symbols-outlined">verified_user</span>
-                                        Chốt ca &amp; chuyển sang bàn giao
+                                        Lưu và hoàn tất bàn giao
                                     </button>
                                 </form>
                             </div>
@@ -442,7 +353,7 @@
                                 <div class="handover-header-title">
                                     <h2>Biên bản bàn giao ca - ${completedShift.shiftDisplayName}</h2>
                                     <p>
-                                        Ngày ${completedShift.workDateFormatted} 
+                                        Ngày ${completedShift.workDateDisplay}
                                         • Giờ vào ca: ${completedShift.checkInFormatted} 
                                         • Giờ ra ca: ${completedShift.checkOutFormatted}
                                         • Trạng thái: <strong>Đã hoàn thành</strong>
@@ -452,9 +363,6 @@
                                     <button type="button" class="btn-action-outline" onclick="window.print()">
                                         <span class="material-symbols-outlined">print</span> In biên bản
                                     </button>
-                                    <a href="${ctx}/cashier/handover?mode=close&scheduleId=${completedShift.id}" class="btn-action-outline" title="Xem lại số liệu kiểm đếm">
-                                        <span class="material-symbols-outlined">calculate</span> Xem chốt két
-                                    </a>
                                     <a href="${ctx}/cashier" class="btn-action-primary">
                                         <span class="material-symbols-outlined">point_of_sale</span> Về POS
                                     </a>
@@ -524,10 +432,7 @@
                                                 </c:choose>
                                             </small>
                                             <strong>
-                                                <c:choose>
-                                                    <c:when test="${handoverSummary.cashDifference > 0}">+</c:when>
-                                                    <c:when test="${handoverSummary.cashDifference < 0}">-</c:when>
-                                                </c:choose>
+                                                <c:if test="${handoverSummary.cashDifference > 0}">+</c:if>
                                                 <fmt:formatNumber value="${handoverSummary.cashDifference}" pattern="#,##0" />đ
                                             </strong>
                                         </div>
@@ -601,11 +506,10 @@
                                     </div>
                                 </div>
 
-                                <!-- Right: Handover Parties & Note -->
+                                <!-- Right: fields backed by work_schedules/users -->
                                 <div class="handover-parties-card">
-                                    <div class="parties-title">THÔNG TIN BÀN GIAO CA</div>
-                                    
-                                    <!-- Giao ca -->
+                                    <div class="parties-title">THÔNG TIN CA ĐÃ LƯU</div>
+
                                     <div class="party-row">
                                         <div class="party-avatar" style="background: var(--aura-maroon); color: #fff;">
                                             ${cashierInitials}
@@ -616,43 +520,20 @@
                                         </div>
                                     </div>
 
-                                    <!-- Nhận ca -->
-                                    <div class="party-row">
-                                        <div class="party-avatar">
-                                            <span class="material-symbols-outlined" style="font-size: 18px;">person</span>
-                                        </div>
-                                        <div class="party-info" style="flex: 1;">
-                                            <div class="party-role">Người tiếp nhận bàn giao</div>
-                                            <select class="form-select form-select-sm mt-1" style="font-size: 13px; font-weight: 600; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; width: 100%;">
-                                                <option value="">-- Chọn nhân viên ca sau / Quản lý --</option>
-                                                <c:forEach items="${staffList}" var="st">
-                                                    <c:if test="${st.id ne completedShift.userId}">
-                                                        <option value="${st.id}"><c:out value="${st.fullName}" /> (${st.position})</option>
-                                                    </c:if>
-                                                </c:forEach>
-                                            </select>
-                                        </div>
+                                    <div class="handover-record-list">
+                                        <div><span>Mã ca</span><strong>#${completedShift.id}</strong></div>
+                                        <div><span>Loại ca</span><strong>${completedShift.shiftDisplayName}</strong></div>
+                                        <div><span>Ngày làm</span><strong>${completedShift.workDateDisplay}</strong></div>
+                                        <div><span>Giờ vào / ra</span><strong>${completedShift.checkInFormatted} – ${completedShift.checkOutFormatted}</strong></div>
+                                        <div><span>Trạng thái</span><strong>${completedShift.statusDisplayName}</strong></div>
                                     </div>
 
-                                    <!-- Ghi chú bàn giao -->
                                     <c:if test="${not empty completedShift.note}">
                                         <div class="handover-note-box">
-                                            <strong>Ghi chú lúc chốt két:</strong>
+                                            <strong>Ghi chú bàn giao:</strong>
                                             <p><c:out value="${completedShift.note}" /></p>
                                         </div>
                                     </c:if>
-                                </div>
-                            </div>
-
-                            <!-- Signatures for Handover Receipt -->
-                            <div class="handover-signatures">
-                                <div class="sig-box">
-                                    <div class="sig-title">BÊN GIAO CA (Ký &amp; ghi rõ họ tên)</div>
-                                    <div class="sig-name"><c:out value="${completedShift.userName}" /></div>
-                                </div>
-                                <div class="sig-box">
-                                    <div class="sig-title">BÊN NHẬN CA (Ký &amp; ghi rõ họ tên)</div>
-                                    <div class="sig-name">Người tiếp nhận</div>
                                 </div>
                             </div>
 
@@ -663,7 +544,7 @@
         </c:choose>
 
         <!-- Bottom Shift History Switcher -->
-        <c:if test="${not empty recentShifts}">
+        <c:if test="${not closeMode and not empty completedShift}">
             <div class="shift-history-toolbar">
                 <div class="shift-history-label">
                     <span class="material-symbols-outlined">history</span>
@@ -671,9 +552,11 @@
                 </div>
                 <select class="shift-history-select" onchange="window.location.href='${ctx}/cashier/handover?mode=${closeMode ? 'close' : 'handover'}&amp;scheduleId=' + this.value">
                     <c:forEach items="${recentShifts}" var="rs">
-                        <option value="${rs.id}" ${headerShift.id == rs.id ? 'selected' : ''}>
-                            ${rs.workDateFormatted} - ${rs.shiftDisplayName} (${rs.status eq 'COMPLETED' ? 'Đã hoàn thành' : (rs.status eq 'PRESENT' ? 'Đang có mặt' : 'Đã xếp lịch')})
-                        </option>
+                        <c:if test="${rs.status eq 'COMPLETED' and not empty rs.endingCashActual and not empty rs.endingCashSystem}">
+                            <option value="${rs.id}" ${headerShift.id == rs.id ? 'selected' : ''}>
+                                ${rs.workDateDisplay} - ${rs.shiftDisplayName} (Đã hoàn thành)
+                            </option>
+                        </c:if>
                     </c:forEach>
                 </select>
             </div>
@@ -702,11 +585,10 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // 2. Denomination Calculation
+        // 2. Reconcile the database-backed ending_cash_actual value.
         const configEl = document.getElementById('handoverConfig');
         const EXPECTED_CASH = configEl ? (parseFloat(configEl.getAttribute('data-expected-cash')) || 0) : 0;
-        const actualDisplay = document.getElementById('actualCashDisplay');
-        const hiddenActualInput = document.getElementById('hiddenEndingCashActual');
+        const actualCashInput = document.getElementById('endingCashActual');
         const diffBox = document.getElementById('diffBox');
         const diffLabel = document.getElementById('diffLabel');
         const diffAmount = document.getElementById('diffAmount');
@@ -714,21 +596,8 @@
         const formatVND = num => num.toLocaleString('vi-VN') + 'đ';
 
         function recalculateCash() {
-            let total = 0;
-            document.querySelectorAll('.denom-row').forEach(row => {
-                const denom = parseInt(row.getAttribute('data-denom'), 10) || 0;
-                const qtyInput = row.querySelector('.denom-input');
-                const qty = parseInt(qtyInput.value, 10) || 0;
-                const subtotal = denom * qty;
-                const subDisplay = row.querySelector('.denom-subtotal');
-                if (subDisplay) subDisplay.textContent = formatVND(subtotal);
-                total += subtotal;
-            });
-
-            if (actualDisplay) actualDisplay.textContent = formatVND(total);
-            if (hiddenActualInput) hiddenActualInput.value = total;
-
-            const diff = total - EXPECTED_CASH;
+            const actual = actualCashInput ? (parseInt(actualCashInput.value, 10) || 0) : 0;
+            const diff = actual - EXPECTED_CASH;
             const absDiff = Math.abs(diff);
 
             if (diffBox && diffLabel && diffAmount) {
@@ -749,61 +618,31 @@
             }
         }
 
-        // Attach listeners to denomination plus/minus and input
-        document.querySelectorAll('.denom-row').forEach(row => {
-            const qtyInput = row.querySelector('.denom-input');
-            const minusBtn = row.querySelector('.btn-minus');
-            const plusBtn = row.querySelector('.btn-plus');
-
-            if (qtyInput) {
-                qtyInput.addEventListener('input', () => {
-                    if (parseInt(qtyInput.value, 10) < 0) qtyInput.value = 0;
-                    recalculateCash();
-                });
-            }
-            if (minusBtn && qtyInput) {
-                minusBtn.addEventListener('click', () => {
-                    const cur = parseInt(qtyInput.value, 10) || 0;
-                    if (cur > 0) qtyInput.value = cur - 1;
-                    recalculateCash();
-                });
-            }
-            if (plusBtn && qtyInput) {
-                plusBtn.addEventListener('click', () => {
-                    const cur = parseInt(qtyInput.value, 10) || 0;
-                    qtyInput.value = cur + 1;
-                    recalculateCash();
-                });
-            }
-        });
-
-        // Reset button
-        window.resetDenominations = function() {
-            document.querySelectorAll('.denom-input').forEach(input => input.value = 0);
+        if (actualCashInput) {
+            actualCashInput.addEventListener('input', () => {
+                if (Number(actualCashInput.value) < 0) actualCashInput.value = 0;
+                recalculateCash();
+            });
             recalculateCash();
-        };
+        }
 
-        // Form Submit Confirmation
         const form = document.getElementById('closeShiftForm');
         if (form) {
             form.addEventListener('submit', e => {
-                const actual = parseInt(hiddenActualInput.value, 10) || 0;
+                const actual = actualCashInput ? (parseInt(actualCashInput.value, 10) || 0) : 0;
                 if (actual === 0 && EXPECTED_CASH > 0) {
-                    if (!confirm('Số tiền kiểm đếm đang là 0đ. Bạn có chắc chắn muốn chốt két và chuyển sang bàn giao ca không?')) {
+                    if (!confirm('Số tiền thực tế đang là 0đ. Bạn có chắc chắn muốn hoàn tất bàn giao không?')) {
                         e.preventDefault();
                         return;
                     }
                 } else {
-                    if (!confirm('Xác nhận chốt két ca làm việc này? Sau khi chốt ca, hệ thống sẽ tự động tạo biên bản bàn giao ca.')) {
+                    if (!confirm('Xác nhận lưu số liệu và hoàn tất ca làm việc này?')) {
                         e.preventDefault();
                         return;
                     }
                 }
             });
         }
-
-        // Initial calculation
-        recalculateCash();
     })();
     </script>
 </body>
