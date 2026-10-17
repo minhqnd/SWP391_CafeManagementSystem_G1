@@ -107,69 +107,6 @@
                         color: var(--primary);
                     }
 
-                    /* Category Filter Pills */
-                    .category-filter-bar {
-                        display: flex;
-                        align-items: center;
-                        gap: 0.6rem;
-                        overflow-x: auto;
-                        padding: 0.5rem 0.25rem 0.75rem 0.25rem;
-                        scrollbar-width: none;
-                    }
-
-                    .category-filter-bar::-webkit-scrollbar {
-                        display: none;
-                    }
-
-                    .filter-pill {
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 0.55rem;
-                        padding: 0.6rem 1.25rem;
-                        border-radius: 999px;
-                        font-size: 0.9rem;
-                        font-weight: 600;
-                        color: #334155;
-                        background: #ffffff;
-                        border: 1.5px solid #e2e8f0;
-                        text-decoration: none;
-                        white-space: nowrap;
-                        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-                        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-                    }
-
-                    .filter-pill .material-symbols-outlined {
-                        font-size: 1.2rem;
-                        color: #64748b;
-                        transition: color 0.2s, transform 0.2s;
-                    }
-
-                    .filter-pill:hover {
-                        color: var(--primary);
-                        background-color: #ffffff;
-                        border-color: rgba(139, 21, 40, 0.35);
-                        transform: translateY(-2px);
-                        box-shadow: 0 6px 16px rgba(139, 21, 40, 0.1);
-                    }
-
-                    .filter-pill:hover .material-symbols-outlined {
-                        color: var(--primary);
-                        transform: scale(1.1);
-                    }
-
-                    .filter-pill.active {
-                        background: linear-gradient(135deg, #8b1528 0%, #a81c31 100%);
-                        color: #ffffff !important;
-                        border-color: transparent;
-                        font-weight: 700;
-                        transform: translateY(-1px);
-                        box-shadow: 0 6px 18px rgba(139, 21, 40, 0.32);
-                    }
-
-                    .filter-pill.active .material-symbols-outlined {
-                        color: #ffffff !important;
-                    }
-
                     /* Minimalist Modern Product Card */
                     .product-card {
                         background: #ffffff;
@@ -423,6 +360,30 @@
                     .qty-control-btn:hover {
                         background-color: #f1f5f9;
                     }
+
+                    /* Compact storefront layout shared with the home page */
+                    .menu-page-shell { max-width: 960px; margin: 0 auto; padding-left: 12px !important; padding-right: 12px !important; }
+                    .menu-breadcrumb { color: #87909c; font-size: 0.72rem; margin: 0 0 14px; }
+                    .menu-page-heading { margin-bottom: 12px !important; }
+                    .menu-page-heading h1 { font-size: 1.35rem !important; font-weight: 600 !important; }
+                    .menu-page-heading p { display: none; }
+                    .menu-search-container { max-width: 270px; }
+                    .product-card { border-radius: 8px; box-shadow: 0 1px 5px rgba(20, 25, 35, .06); }
+                    .product-card:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(20, 25, 35, .10); }
+                    .product-img-box { height: 220px; }
+                    .product-card-body { padding: 10px 11px; }
+                    .product-meta-subtitle { font-size: 0.62rem; margin-bottom: 2px; }
+                    .product-name { font-size: 0.82rem; margin-bottom: 3px; }
+                    .product-brief { font-size: 0.69rem; min-height: 0; margin-bottom: 5px; }
+                    .product-card-footer { padding-top: 4px; }
+                    .product-price { font-size: 0.84rem; }
+                    .btn-add-circle { width: 30px; height: 30px; }
+                    @media (max-width: 767.98px) {
+                        .menu-page-shell { padding-left: 16px !important; padding-right: 16px !important; }
+                        .menu-page-heading { align-items: flex-start !important; }
+                        .menu-search-container { max-width: none; }
+                        .product-img-box { height: 190px; }
+                    }
                 </style>
             </head>
 
@@ -434,10 +395,12 @@
                 </jsp:include>
 
                 <!-- Main Content -->
-                <main class="container-fluid px-4 px-lg-5 py-4 pb-5 mb-5">
+                <main class="container-fluid menu-page-shell py-3 pb-5 mb-5">
+
+                    <div class="menu-breadcrumb">Trang chủ&nbsp; / &nbsp;Menu &amp; Đồ uống</div>
 
                     <!-- Top Title & Search Bar -->
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+                    <div class="menu-page-heading d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
                         <div>
                             <h1 class="h3 fw-bold mb-1" style="color: #0f172a;">
                                 <c:choose>
@@ -487,7 +450,6 @@
                             </form>
                         </div>
                     </div>
-
                     <!-- Active Filter Indicator (if any) -->
                     <c:if test="${not empty currentCategory || not empty currentKeyword}">
                         <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
@@ -522,30 +484,6 @@
                             </a>
                         </div>
                     </c:if>
-
-                    <!-- Minimalist Category Filter Pills Bar -->
-                    <div class="category-filter-bar mb-4">
-                        <!-- All -->
-                        <a href="${pageContext.request.contextPath}/menu${not empty currentKeyword ? '?keyword=' : ''}${currentKeyword}"
-                            class="filter-pill ${empty currentCategory ? 'active' : ''}">
-                            <span class="material-symbols-outlined fs-5">apps</span>
-                            <span>Tất cả</span>
-                        </a>
-
-                        <!-- Dynamic Categories -->
-                        <c:forEach var="cat" items="${categories}">
-                            <c:url var="catUrl" value="/menu">
-                                <c:param name="category" value="${cat.id}" />
-                                <c:if test="${not empty currentKeyword}">
-                                    <c:param name="keyword" value="${currentKeyword}" />
-                                </c:if>
-                            </c:url>
-                            <a href="${catUrl}" class="filter-pill ${currentCategory == cat.id ? 'active' : ''}">
-                                <span class="material-symbols-outlined fs-5">${not empty cat.icon ? cat.icon : 'local_cafe'}</span>
-                                <span>${cat.name}</span>
-                            </a>
-                        </c:forEach>
-                    </div>
 
                     <!-- Products Grid (4 columns desktop, 2 tablet, 1 mobile) -->
                     <c:choose>
@@ -627,6 +565,19 @@
                     }
 
                     var openCartModal = openSelectedItemsModal;
+
+                    const menuCategoryPicker = document.getElementById('menuCategoryDropdown');
+                    const menuCategoryToggle = document.querySelector('.menu-category-toggle');
+                    if (menuCategoryPicker && menuCategoryToggle) {
+                        menuCategoryToggle.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            const isOpen = menuCategoryPicker.classList.toggle('show');
+                            menuCategoryToggle.setAttribute('aria-expanded', String(isOpen));
+                        });
+                    }
+                    if (menuCategoryPicker && window.location.hash === '#menuCategoryDropdown') {
+                        menuCategoryPicker.classList.add('show');
+                    }
                 </script>
             </body>
 
