@@ -33,25 +33,25 @@
         <div class="menu-group-header">BÁN HÀNG</div>
         <ul class="nav flex-column menu-nav">
             <li class="nav-item">
-                <a href="${ctx}/orders" class="nav-link ${param.activeMenu == 'orders' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">receipt_long</span>
                     <span>Đơn hàng</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/menu" class="nav-link ${param.activeMenu == 'categories' ? 'active' : ''}">
+                <a href="${ctx}/admin/categories" class="nav-link ${param.activeMenu == 'categories' ? 'active' : ''}">
                     <span class="material-symbols-outlined">category</span>
                     <span>Danh mục</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/menu" class="nav-link ${param.activeMenu == 'products' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">coffee</span>
                     <span>Sản phẩm</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'bom' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">menu_book</span>
                     <span>Công thức (BOM)</span>
                 </a>
@@ -62,31 +62,31 @@
         <div class="menu-group-header">KHO &amp; NHẬP HÀNG</div>
         <ul class="nav flex-column menu-nav">
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'ingredients' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">inventory_2</span>
                     <span>Nguyên liệu</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'inventory' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">inventory</span>
                     <span>Tồn kho &amp; Xuất nhập</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'purchase_proposal' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">notification_important</span>
                     <span>Đề xuất nhập hàng</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'suppliers' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">local_shipping</span>
                     <span>Nhà cung cấp</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'purchase_orders' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">description</span>
                     <span>Phiếu nhập hàng</span>
                 </a>
@@ -97,7 +97,7 @@
         <div class="menu-group-header">NHÂN SỰ &amp; CA LÀM</div>
         <ul class="nav flex-column menu-nav">
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'employees' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">group</span>
                     <span>Nhân viên</span>
                 </a>
@@ -126,25 +126,35 @@
         <div class="menu-group-header">KHÁCH HÀNG</div>
         <ul class="nav flex-column menu-nav">
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'customers' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">person</span>
                     <span>Khách hàng</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'loyalty' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">loyalty</span>
                     <span>Tích điểm</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp" class="nav-link ${param.activeMenu == 'feedback' ? 'active' : ''}">
+                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
                     <span class="material-symbols-outlined">rate_review</span>
                     <span>Đánh giá &amp; Khiếu nại</span>
                 </a>
             </li>
         </ul>
     </div>
+
+    <div class="menu-group-header">HỆ THỐNG</div>
+    <ul class="nav flex-column menu-nav">
+        <li class="nav-item">
+            <a href="${ctx}/admin/settings" class="nav-link ${param.activeMenu == 'settings' ? 'active' : ''}">
+                <span class="material-symbols-outlined">settings</span>
+                <span>Cài đặt cửa hàng</span>
+            </a>
+        </li>
+    </ul>
 
     <!-- Sidebar Bottom: User & Logout -->
     <div class="sidebar-footer">

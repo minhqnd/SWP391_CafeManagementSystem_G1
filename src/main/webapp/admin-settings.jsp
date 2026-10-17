@@ -23,29 +23,26 @@
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="${ctx}/assets/css/cart.css" rel="stylesheet">
+    <link href="${ctx}/assets/css/admin-schedule.css" rel="stylesheet">
+    <style>
+        .admin-main-wrapper.settings-page { max-width:1280px; }
+        .settings-page .breadcrumb { margin-bottom:12px; }
+        .settings-page > .mb-4 { padding:20px; border:1px solid #e7e5e4; border-radius:16px; background:#fff; }
+        .settings-page .aura-card { border:1px solid #e7e5e4; border-radius:16px; box-shadow:0 1px 2px rgba(28,25,23,.04); }
+        .settings-page .aura-card .section-title { font-weight:800; }
+        .settings-mobile-bar { display:none; }
+        @media(max-width:767.98px) { .settings-mobile-bar { display:flex; align-items:center; justify-content:space-between; padding:10px 15px; background:#fff; border-bottom:1px solid #e7e5e4; } }
+    </style>
 </head>
-<body class="aura-cart-page">
+<body class="admin-body aura-cart-page">
 
-    <!-- Thanh điều hướng Admin -->
-    <nav class="admin-topbar">
-        <div class="container-xl px-3 px-lg-4 d-flex align-items-center justify-content-between gap-3">
-            <a href="${ctx}/admin-dashboard.jsp" class="d-flex align-items-center gap-2 text-decoration-none">
-                <span class="ebill-logo"><span class="material-symbols-outlined">local_cafe</span></span>
-                <span>
-                    <span class="d-block fw-bold text-aura lh-1">Aura Café</span>
-                    <span class="d-block text-muted" style="font-size: 0.72rem;">Trang quản trị</span>
-                </span>
-            </a>
-            <div class="d-flex align-items-center gap-3 small">
-                <span class="text-muted d-none d-sm-inline">Xin chào, <b><c:out value="${sessionScope.user.fullName}" /></b></span>
-                <a href="${ctx}/login?action=logout" class="btn btn-soft btn-sm px-3">
-                    <span class="material-symbols-outlined fs-6">logout</span> Đăng xuất
-                </a>
-            </div>
-        </div>
-    </nav>
+    <div class="settings-mobile-bar">
+        <a href="${ctx}/admin-dashboard.jsp" class="text-decoration-none fw-bold text-danger"><span class="material-symbols-outlined align-middle">local_cafe</span> AURA CAFÉ · ADMIN</a>
+        <a href="${ctx}/login?action=logout" class="btn btn-sm btn-light">Đăng xuất</a>
+    </div>
+    <jsp:include page="/components/admin-sidebar.jsp"><jsp:param name="activeMenu" value="settings" /></jsp:include>
 
-    <main class="container-xl px-3 px-lg-4 py-4" style="max-width: 980px;">
+    <main class="admin-main-wrapper settings-page">
 
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb small mb-2">
