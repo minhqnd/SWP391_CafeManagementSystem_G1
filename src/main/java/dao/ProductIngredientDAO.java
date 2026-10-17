@@ -7,8 +7,8 @@ import model.ProductIngredient;
 
 public class ProductIngredientDAO extends BaseDAO {
 
-    public void saveRecipe(int productId, String variantsConfig, List<ProductIngredient> ingredients) throws Exception {
-        String updateProductSql = "UPDATE products SET variants_config = ? WHERE id = ?";
+    public void saveRecipe(int productId, String instructions, List<ProductIngredient> ingredients) throws Exception {
+        String updateProductSql = "UPDATE products SET variants_config = JSON_SET(COALESCE(variants_config, JSON_OBJECT()), '$.instructions', ?) WHERE id = ?";
         String deleteOldBomSql = "DELETE FROM product_ingredients WHERE product_id = ?";
         String insertBomSql = "INSERT INTO product_ingredients (product_id, ingredient_id, quantity_required) VALUES (?, ?, ?)";
         
@@ -20,8 +20,8 @@ public class ProductIngredientDAO extends BaseDAO {
                  PreparedStatement psDelete = conn.prepareStatement(deleteOldBomSql);
                  PreparedStatement psInsert = conn.prepareStatement(insertBomSql)) {
                 
-                // 1. Update product toggle configurations (online, app) stored in variants_config
-                psUpdate.setString(1, variantsConfig);
+                // 1. Save recipe instructions in the product JSON configuration.
+                psUpdate.setString(1, instructions == null ? "" : instructions);
                 psUpdate.setInt(2, productId);
                 psUpdate.executeUpdate();
                 

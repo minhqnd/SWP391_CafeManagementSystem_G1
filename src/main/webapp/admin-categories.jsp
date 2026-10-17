@@ -91,7 +91,7 @@
                 <div class="table-responsive">
                     <table class="table table-hover category-table mb-0">
                         <thead class="table-light text-uppercase">
-                            <tr><th>ID</th><th>Ảnh</th><th>Tên danh mục</th><th>Mô tả</th><th class="text-end">Số món</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr>
+                            <tr><th>ID</th><th>Ảnh</th><th>Tên danh mục</th><th class="text-end">Số món</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr>
                         </thead>
                         <tbody>
                         <c:forEach var="category" items="${categories}">
@@ -99,7 +99,7 @@
                                 <td class="font-monospace text-muted">#<c:out value="${category.id}" /></td>
                                 <td><c:choose><c:when test="${not empty category.imageUrl}"><img class="category-image" src="${fn:escapeXml(category.imageUrl)}" alt="Ảnh danh mục"></c:when><c:otherwise><div class="category-image-placeholder">Chưa có ảnh</div></c:otherwise></c:choose></td>
                                 <td class="fw-bold text-dark"><c:out value="${category.name}" /></td>
-                                <td class="text-muted small" style="max-width:250px"><div class="text-truncate"><c:out value="${category.description}" /></div></td>
+
                                 <td class="text-end fw-bold font-monospace"><c:out value="${category.productCount}" /></td>
                                 <td><c:choose><c:when test="${category.status eq 'ACTIVE'}"><span class="badge rounded-pill text-bg-success">Hoạt động</span></c:when><c:otherwise><span class="badge rounded-pill text-bg-secondary">Tạm ẩn</span></c:otherwise></c:choose></td>
                                 <td class="text-end text-nowrap">
@@ -115,7 +115,7 @@
                                 </td>
                             </tr>
                         </c:forEach>
-                        <c:if test="${empty categories}"><tr><td colspan="7" class="text-center text-muted py-5">Chưa có danh mục nào trong database.</td></tr></c:if>
+                        <c:if test="${empty categories}"><tr><td colspan="6" class="text-center text-muted py-5">Chưa có danh mục nào trong database.</td></tr></c:if>
                         </tbody>
                     </table>
                 </div>
@@ -132,7 +132,6 @@
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="save">
                     <input type="hidden" name="id" value="${empty selectedCategory ? 0 : selectedCategory.id}">
                     <div class="category-form-field"><label for="name" class="form-label">Tên danh mục *</label><input id="name" name="name" class="form-control" required maxlength="100" value="${fn:escapeXml(selectedCategory.name)}"></div>
-                    <div class="category-form-field"><label for="description" class="form-label">Mô tả</label><textarea id="description" name="description" rows="3" class="form-control"><c:out value="${selectedCategory.description}" /></textarea></div>
                     <div class="category-form-field"><label for="imageUrl" class="form-label">Ảnh đại diện (URL)</label><input id="imageUrl" name="imageUrl" type="url" maxlength="500" class="form-control" value="${fn:escapeXml(selectedCategory.imageUrl)}" placeholder="https://..."></div>
                     <div class="mt-2">
                         <img id="categoryImagePreview" class="category-image-preview" src="${fn:escapeXml(selectedCategory.imageUrl)}" alt="Ảnh danh mục preview" <c:if test="${empty selectedCategory.imageUrl}">hidden</c:if>>

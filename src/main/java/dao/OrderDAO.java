@@ -921,7 +921,7 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
-     * Hủy đơn hàng bởi Thu ngân với lý do và hoàn trả điểm/voucher
+     * Hủy đơn hàng bởi Thu ngân với lý do và hoàn trả điểm
      * Chỉ cho phép hủy khi đơn ở trạng thái PENDING hoặc CONFIRMED (chưa pha chế).
      * Trả về null nếu thành công, hoặc chuỗi thông báo lỗi cụ thể.
      */

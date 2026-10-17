@@ -244,9 +244,6 @@
                             </h2>
                             <div class="text-muted small">
                                 Giá niêm yết: <strong class="text-danger">${p.formattedPrice}</strong>
-                                <c:if test="${not empty p.subtitle}">
-                                    <span class="mx-1">•</span> <span>${p.subtitle}</span>
-                                </c:if>
                             </div>
                         </div>
                     </div>

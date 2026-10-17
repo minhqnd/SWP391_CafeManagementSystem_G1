@@ -22,17 +22,10 @@ public class AdminRecipeController extends HttpServlet {
         try {
             int productId = Integer.parseInt(request.getParameter("productId"));
             
-            boolean isOnline = request.getParameter("isAvailableOnline") != null;
-            
             // Theo SRS, Recipe cần lưu "instructions". Vì DB không có cột này,
             // ta linh hoạt lưu nó vào variants_config (cột JSON) luôn để đúng nghiệp vụ.
             String instructions = request.getParameter("instructions");
             if (instructions == null) instructions = "";
-            
-            // Xử lý Escape chuỗi JSON đơn giản (tránh lỗi ngắt ngoặc kép)
-            instructions = instructions.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
-            
-            String variantsConfig = String.format("{\"isAvailableOnline\": %b, \"instructions\": \"%s\"}", isOnline, instructions);
             
             String[] ingredientIds = request.getParameterValues("ingredientId[]");
             String[] quantities = request.getParameterValues("quantity[]");
@@ -48,7 +41,7 @@ public class AdminRecipeController extends HttpServlet {
                 }
             }
             
-            productIngredientDAO.saveRecipe(productId, variantsConfig, ingredients);
+            productIngredientDAO.saveRecipe(productId, instructions, ingredients);
             
             request.getSession().setAttribute("successMsg", "Đã cập nhật công thức và Hướng dẫn pha chế (SOP) thành công!");
             response.sendRedirect(request.getContextPath() + "/admin-dashboard.jsp"); 

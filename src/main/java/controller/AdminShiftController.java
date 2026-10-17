@@ -90,8 +90,8 @@ public class AdminShiftController extends HttpServlet {
             session.setAttribute("shiftErrorMsg", e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            session.setAttribute("shiftErrorMsg", "Không lưu được giờ ca. Hãy kiểm tra Database đã chạy "
-                    + "database/update_shop_settings.sql (bảng shop_settings) chưa.");
+            session.setAttribute("shiftErrorMsg", "Không lưu được giờ ca. Hãy kiểm tra database aura_cafe_erp "
+                    + "và xác nhận bảng shop_settings tồn tại.");
         }
 
         // PRG: tránh lưu lại khi F5
