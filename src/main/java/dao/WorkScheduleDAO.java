@@ -26,25 +26,46 @@ public class WorkScheduleDAO extends BaseDAO {
      * Lấy thống kê số lượt xếp ca và trạng thái cho 3 ca làm việc (MORNING, AFTERNOON, EVENING)
      */
     public Map<String, ShiftStat> getShiftStats(ShopSettings settings) {
+        return getShiftStats(settings, null, null);
+    }
+
+    /**
+     * Thống kê lượt xếp ca theo ca + trạng thái trong khoảng ngày [fromDate, toDate] (null = không giới hạn),
+     * bằng 1 câu GROUP BY shift_name, status.
+     */
+    public Map<String, ShiftStat> getShiftStats(ShopSettings settings, Date fromDate, Date toDate) {
         Map<String, ShiftStat> stats = new LinkedHashMap<>();
         stats.put("MORNING", new ShiftStat("MORNING", ShopSettings.KEY_SHIFT_MORNING, "Ca sáng", settings.getShiftMorning()));
         stats.put("AFTERNOON", new ShiftStat("AFTERNOON", ShopSettings.KEY_SHIFT_AFTERNOON, "Ca chiều", settings.getShiftAfternoon()));
         stats.put("EVENING", new ShiftStat("EVENING", ShopSettings.KEY_SHIFT_EVENING, "Ca tối", settings.getShiftEvening()));
 
-        String sql = "SELECT shift_name, status, COUNT(*) AS cnt FROM work_schedules GROUP BY shift_name, status";
+        StringBuilder sql = new StringBuilder("SELECT shift_name, status, COUNT(*) AS cnt FROM work_schedules WHERE 1=1 ");
+        List<Date> params = new ArrayList<>();
+        if (fromDate != null) {
+            sql.append("AND work_date >= ? ");
+            params.add(fromDate);
+        }
+        if (toDate != null) {
+            sql.append("AND work_date <= ? ");
+            params.add(toDate);
+        }
+        sql.append("GROUP BY shift_name, status");
 
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setDate(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String shiftName = rs.getString("shift_name");
+                    String status = rs.getString("status");
+                    int count = rs.getInt("cnt");
 
-            while (rs.next()) {
-                String shiftName = rs.getString("shift_name");
-                String status = rs.getString("status");
-                int count = rs.getInt("cnt");
-
-                ShiftStat stat = stats.get(shiftName);
-                if (stat != null) {
-                    stat.incrementStatus(status, count);
+                    ShiftStat stat = stats.get(shiftName);
+                    if (stat != null) {
+                        stat.incrementStatus(status, count);
+                    }
                 }
             }
         } catch (Exception e) {

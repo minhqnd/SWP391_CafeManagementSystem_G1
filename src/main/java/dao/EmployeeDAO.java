@@ -23,7 +23,7 @@ public class EmployeeDAO extends BaseDAO {
     public static final String LAST_ADMIN_MESSAGE = "Phải còn ít nhất một tài khoản Quản trị đang hoạt động.";
 
     private static final String EMPLOYEE_COLUMNS =
-            "id, full_name, phone, email, role, position, status, birthday, address, base_salary, hire_date";
+            "id, full_name, phone, email, role, position, status, birthday, address, hire_date";
 
     /** Danh sách nhân viên, position = null thì lấy tất cả chức vụ */
     public List<User> getEmployees(String position) throws SQLException, ClassNotFoundException {
@@ -53,13 +53,13 @@ public class EmployeeDAO extends BaseDAO {
 
     /**
      * Thống kê trên toàn bộ nhân viên (không tính khách hàng):
-     * total, active, notActive (INACTIVE + LOCKED), salaryFund (tổng lương cơ bản nhân viên ACTIVE)
+     * total, active, notActive (INACTIVE + LOCKED), admins (số tài khoản Quản trị)
      */
     public Map<String, Object> getStats() throws SQLException, ClassNotFoundException {
         String sql = "SELECT COUNT(*) AS total, "
                 + "COALESCE(SUM(status = 'ACTIVE'), 0) AS active, "
                 + "COALESCE(SUM(status <> 'ACTIVE'), 0) AS not_active, "
-                + "COALESCE(SUM(CASE WHEN status = 'ACTIVE' THEN base_salary END), 0) AS salary_fund "
+                + "COALESCE(SUM(role = 'ADMIN'), 0) AS admins "
                 + "FROM users WHERE role IN ('ADMIN', 'STAFF')";
         Map<String, Object> stats = new LinkedHashMap<>();
         try (Connection conn = getConnection();
@@ -69,7 +69,7 @@ public class EmployeeDAO extends BaseDAO {
             stats.put("total", rs.getInt("total"));
             stats.put("active", rs.getInt("active"));
             stats.put("notActive", rs.getInt("not_active"));
-            stats.put("salaryFund", rs.getBigDecimal("salary_fund"));
+            stats.put("admins", rs.getInt("admins"));
         }
         return stats;
     }
@@ -115,7 +115,7 @@ public class EmployeeDAO extends BaseDAO {
      */
     public int createEmployee(User employee, String password) throws SQLException, ClassNotFoundException {
         String sql = "INSERT INTO users (full_name, phone, email, password_hash, birthday, address, role, "
-                + "position, base_salary, hire_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "position, hire_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, employee.getFullName());
@@ -126,9 +126,8 @@ public class EmployeeDAO extends BaseDAO {
             setNullableString(ps, 6, employee.getAddress());
             ps.setString(7, employee.getRole());
             ps.setString(8, employee.getPosition());
-            ps.setBigDecimal(9, employee.getBaseSalary());
-            setNullableDate(ps, 10, employee.getHireDate());
-            ps.setString(11, employee.getStatus());
+            setNullableDate(ps, 9, employee.getHireDate());
+            ps.setString(10, employee.getStatus());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 return keys.next() ? keys.getInt(1) : 0;
@@ -142,7 +141,7 @@ public class EmployeeDAO extends BaseDAO {
      */
     public void updateEmployee(User employee, String newPassword) throws SQLException, ClassNotFoundException {
         String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ?, role = ?, "
-                + "position = ?, base_salary = ?, hire_date = ?, status = ?"
+                + "position = ?, hire_date = ?, status = ?"
                 + (newPassword != null ? ", password_hash = ?" : "")
                 + " WHERE id = ? AND role IN ('ADMIN', 'STAFF')";
         inTransaction(conn -> {
@@ -156,7 +155,6 @@ public class EmployeeDAO extends BaseDAO {
                 setNullableString(ps, i++, employee.getAddress());
                 ps.setString(i++, employee.getRole());
                 ps.setString(i++, employee.getPosition());
-                ps.setBigDecimal(i++, employee.getBaseSalary());
                 setNullableDate(ps, i++, employee.getHireDate());
                 ps.setString(i++, employee.getStatus());
                 if (newPassword != null) {
@@ -243,7 +241,6 @@ public class EmployeeDAO extends BaseDAO {
                 rs.getString("status"),
                 dateText(rs.getDate("birthday")),
                 rs.getString("address"));
-        user.setBaseSalary(rs.getBigDecimal("base_salary"));
         user.setHireDate(dateText(rs.getDate("hire_date")));
         return user;
     }

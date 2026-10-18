@@ -1,10 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:if test="${empty sessionScope.user or sessionScope.user.role ne 'ADMIN'}"><c:redirect url="/?tab=login" /></c:if>
-<fmt:setLocale value="vi_VN" />
 <c:set var="csrf" value="${fn:escapeXml(sessionScope.employeeCsrfToken)}" />
 <%-- Dữ liệu form khi server báo lỗi (không bao giờ chứa mật khẩu); mặc định khi thêm mới --%>
 <c:set var="form" value="${employeeForm}" />
@@ -39,7 +37,7 @@
             <div>
                 <span class="table-ref">Bảng: users (role ADMIN, STAFF)</span>
                 <h1 class="page-title">Quản lý nhân viên</h1>
-                <p class="page-subtitle">Tài khoản nội bộ: vai trò, chức vụ, lương cơ bản và ngày vào làm.</p>
+                <p class="page-subtitle">Tài khoản nội bộ: vai trò, chức vụ, trạng thái và ngày vào làm.</p>
             </div>
             <button type="button" id="employeeAddButton" class="btn btn-aura btn-sm fw-bold text-nowrap"
                     data-bs-toggle="modal" data-bs-target="#employeeModal">
@@ -50,7 +48,7 @@
             <div class="employee-stat"><span>Tổng nhân sự</span><strong><c:out value="${employeeStats.total}" /></strong></div>
             <div class="employee-stat active"><span>Đang làm việc</span><strong><c:out value="${employeeStats.active}" /></strong></div>
             <div class="employee-stat locked"><span>Bị khóa / nghỉ</span><strong><c:out value="${employeeStats.notActive}" /></strong></div>
-            <div class="employee-stat"><span>Quỹ lương cơ bản</span><strong><fmt:formatNumber value="${employeeStats.salaryFund}" pattern="#,##0" />đ</strong></div>
+            <div class="employee-stat"><span>Quản trị viên</span><strong><c:out value="${employeeStats.admins}" /></strong></div>
         </div>
     </header>
 
@@ -80,7 +78,6 @@
                         <th scope="col">SĐT / Email</th>
                         <th scope="col">Vai trò</th>
                         <th scope="col">Chức vụ</th>
-                        <th scope="col" class="text-end">Lương cơ bản</th>
                         <th scope="col">Ngày vào làm</th>
                         <th scope="col">Trạng thái</th>
                         <th scope="col" class="text-end">Thao tác</th>
@@ -105,7 +102,6 @@
                                 <c:otherwise><span class="employee-muted">—</span></c:otherwise>
                             </c:choose>
                         </td>
-                        <td class="text-end font-monospace"><fmt:formatNumber value="${emp.baseSalary}" pattern="#,##0.##" />đ</td>
                         <td>${empty emp.hireDateDisplay ? '—' : emp.hireDateDisplay}</td>
                         <td><span class="status-badge status-${fn:toLowerCase(emp.status)}">${emp.statusDisplayName}</span></td>
                         <td class="text-end text-nowrap">
@@ -117,7 +113,6 @@
                                     data-email="${fn:escapeXml(emp.email)}"
                                     data-role="${emp.role}"
                                     data-position="${emp.position}"
-                                    data-base-salary="${empty emp.baseSalary ? '0' : emp.baseSalary.stripTrailingZeros().toPlainString()}"
                                     data-hire-date="${emp.hireDate}"
                                     data-birthday="${emp.birthday}"
                                     data-status="${emp.status}"
@@ -143,7 +138,7 @@
                     </tr>
                 </c:forEach>
                 <c:if test="${empty employees}">
-                    <tr><td colspan="8" class="text-center text-muted py-5">Không có nhân viên nào phù hợp bộ lọc.</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-5">Không có nhân viên nào phù hợp bộ lọc.</td></tr>
                 </c:if>
                 </tbody>
             </table>
@@ -168,7 +163,11 @@
 
                 <div class="modal-body">
                     <c:if test="${not empty employeeFormError}">
-                        <div class="alert alert-danger py-2" role="alert" id="employeeFormError"><c:out value="${employeeFormError}" /></div>
+                        <div class="alert alert-danger py-2" role="alert" id="employeeFormError">
+                            <c:out value="${employeeFormError}" />
+                            <%-- Mật khẩu không được gửi lại về trình duyệt nên ô mật khẩu luôn trống sau khi báo lỗi --%>
+                            <div class="small mt-1">Vì lý do bảo mật, ô mật khẩu đã được xóa - hãy nhập lại mật khẩu trước khi lưu.</div>
+                        </div>
                     </c:if>
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -211,12 +210,6 @@
                                 <option value="CASHIER" ${fPosition eq 'CASHIER' ? 'selected' : ''}>Thu ngân</option>
                                 <option value="SHIPPER" ${fPosition eq 'SHIPPER' ? 'selected' : ''}>Giao hàng</option>
                             </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="employeeBaseSalary">Lương cơ bản (VNĐ)</label>
-                            <input class="form-control font-monospace" type="number" id="employeeBaseSalary" name="baseSalary"
-                                   min="0" max="9999999999.99" step="any" value="${fn:escapeXml(form.baseSalary)}">
-                            <div class="invalid-feedback">Lương cơ bản không được âm.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="employeeHireDate">Ngày vào làm</label>
@@ -266,7 +259,7 @@
     const fields = {
         id: byId('employeeId'), fullName: byId('employeeFullName'), phone: byId('employeePhone'),
         email: byId('employeeEmail'), password: byId('employeePassword'), role: byId('employeeRole'),
-        position: byId('employeePosition'), baseSalary: byId('employeeBaseSalary'), hireDate: byId('employeeHireDate'),
+        position: byId('employeePosition'), hireDate: byId('employeeHireDate'),
         birthday: byId('employeeBirthday'), status: byId('employeeStatus'), address: byId('employeeAddress')
     };
     const title = byId('employeeModalTitle');
@@ -294,7 +287,7 @@
 
     byId('employeeAddButton').addEventListener('click', () => {
         resetState();
-        fill({ id: '0', fullName: '', phone: '', email: '', role: 'STAFF', position: 'CASHIER', baseSalary: '',
+        fill({ id: '0', fullName: '', phone: '', email: '', role: 'STAFF', position: 'CASHIER',
                hireDate: form.dataset.today, birthday: '', status: 'ACTIVE', address: '' });
         setMode(false);
     });
@@ -304,7 +297,7 @@
             const d = button.dataset;
             resetState();
             fill({ id: d.id, fullName: d.fullName, phone: d.phone, email: d.email, role: d.role,
-                   position: d.position, baseSalary: d.baseSalary, hireDate: d.hireDate, birthday: d.birthday,
+                   position: d.position, hireDate: d.hireDate, birthday: d.birthday,
                    status: d.status, address: d.address });
             setMode(true);
         });

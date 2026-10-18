@@ -734,7 +734,39 @@ VALUES
  'ONLINE', 'DELIVERING', 100000, 0,
  15000, 115000, 'Pham Quang Huy',
  '0900000005', 'Cau Giay, Hanoi', 6,
- NULL, 'Call before delivery', '2026-10-03 10:00:00');
+ NULL, 'Call before delivery', '2026-10-03 10:00:00'),
+
+-- Ca chiều 03/10 của thu ngân Tran Thi Binh (user 3, work_schedules #2):
+-- 6 đơn = 611.000đ, dữ liệu mẫu cho màn Bàn giao ca
+(3, 'ORD-20261003-01', 5, 3,
+ 'DINE_IN', 'COMPLETED', 96000, 0,
+ 0, 96000, NULL, NULL, NULL, NULL,
+ NULL, NULL, '2026-10-03 12:30:00'),
+
+(4, 'ORD-20261003-02', 5, 3,
+ 'TAKEAWAY', 'COMPLETED', 120000, 0,
+ 0, 120000, NULL, NULL, NULL, NULL,
+ NULL, NULL, '2026-10-03 13:45:00'),
+
+(5, 'ORD-20261003-03', 5, 3,
+ 'DINE_IN', 'COMPLETED', 80000, 0,
+ 0, 80000, NULL, NULL, NULL, NULL,
+ NULL, NULL, '2026-10-03 15:15:00'),
+
+(6, 'ORD-20261003-04', 5, 3,
+ 'DINE_IN', 'COMPLETED', 110000, 0,
+ 0, 110000, NULL, NULL, NULL, NULL,
+ NULL, NULL, '2026-10-03 14:10:00'),
+
+(7, 'ORD-20261003-05', 5, 3,
+ 'TAKEAWAY', 'COMPLETED', 105000, 0,
+ 0, 105000, NULL, NULL, NULL, NULL,
+ NULL, NULL, '2026-10-03 14:50:00'),
+
+(8, 'ORD-20261003-06', 5, 3,
+ 'DINE_IN', 'COMPLETED', 100000, 0,
+ 0, 100000, NULL, NULL, NULL, NULL,
+ NULL, NULL, '2026-10-03 16:20:00');
 
 -- 6. ORDER ITEMS
 INSERT INTO order_items
@@ -759,7 +791,26 @@ VALUES
  'SUCCESS', '2026-10-03 09:05:00', 'Paid at counter'),
 
 (2, 'MOMO', 'MOMO-DEMO-002', 115000,
- 'SUCCESS', '2026-10-03 10:05:00', 'Online payment');
+ 'SUCCESS', '2026-10-03 10:05:00', 'Online payment'),
+
+-- Thanh toán 6 đơn ca chiều 03/10 (đơn 3-8)
+(3, 'CASH', 'CSH-1003-01', 96000,
+ 'SUCCESS', '2026-10-03 12:32:00', NULL),
+
+(4, 'CASH', 'CSH-1003-02', 120000,
+ 'SUCCESS', '2026-10-03 13:47:00', NULL),
+
+(5, 'CASH', 'CSH-1003-03', 80000,
+ 'SUCCESS', '2026-10-03 15:16:00', NULL),
+
+(6, 'VNPAY', 'VNP-1003-01', 110000,
+ 'SUCCESS', '2026-10-03 14:12:00', NULL),
+
+(7, 'MOMO', 'MOM-1003-01', 105000,
+ 'SUCCESS', '2026-10-03 14:51:00', NULL),
+
+(8, 'MOMO', 'MOM-1003-02', 100000,
+ 'SUCCESS', '2026-10-03 16:22:00', NULL);
 
 -- 8. LOYALTY TRANSACTIONS
 INSERT INTO loyalty_transactions

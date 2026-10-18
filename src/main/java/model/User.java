@@ -1,7 +1,6 @@
 package model;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 public class User implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -17,7 +16,6 @@ public class User implements Serializable {
     private String address;
     private String tierName;
     private int totalPoints;
-    private BigDecimal baseSalary; // Lương cơ bản (nhân viên)
     private String hireDate;       // Ngày vào làm dạng YYYY-MM-DD
 
     public User() {
@@ -145,14 +143,6 @@ public class User implements Serializable {
 
     public void setTotalPoints(int totalPoints) {
         this.totalPoints = totalPoints;
-    }
-
-    public BigDecimal getBaseSalary() {
-        return baseSalary;
-    }
-
-    public void setBaseSalary(BigDecimal baseSalary) {
-        this.baseSalary = baseSalary;
     }
 
     public String getHireDate() {

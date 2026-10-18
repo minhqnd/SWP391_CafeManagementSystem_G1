@@ -13,15 +13,22 @@ import model.ShopSettings;
 import model.User;
 
 import java.io.IOException;
+import java.sql.Date;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
  * AdminShiftController - Màn hình Khung giờ ca làm việc (chỉ tài khoản ADMIN)
- * GET  /admin/shifts : 3 ca cố định (ENUM work_schedules.shift_name) kèm giờ trong shop_settings
- *                      và thống kê lượt xếp ca theo trạng thái
+ * GET  /admin/shifts?date=yyyy-MM-dd : 3 ca cố định (ENUM work_schedules.shift_name) kèm giờ trong shop_settings
+ *                      và thống kê lượt xếp ca theo trạng thái trong tuần chứa ngày đó (Thứ 2 - Chủ nhật,
+ *                      mặc định tuần hiện tại) - cùng cách tính tuần với màn Lịch phân ca
  * POST /admin/shifts : Sửa giờ 1 ca (shift, start, end) - lưu shop_settings dạng "HH:mm-HH:mm"
  */
 @WebServlet(name = "AdminShiftController", urlPatterns = {"/admin/shifts"})
@@ -37,6 +44,7 @@ public class AdminShiftController extends HttpServlet {
             "AFTERNOON", "Ca chiều",
             "EVENING", "Ca tối");
     private static final Pattern TIME_PATTERN = Pattern.compile("([01]\\d|2[0-3]):[0-5]\\d");
+    private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
     private final WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
@@ -48,16 +56,24 @@ public class AdminShiftController extends HttpServlet {
             return;
         }
 
-        // Thống kê toàn bộ work_schedules bằng 1 câu GROUP BY shift_name, status
-        Map<String, ShiftStat> shiftStats = workScheduleDAO.getShiftStats(new ShopSettings());
+        // Tuần đang xem (Thứ 2 - Chủ nhật) chứa ngày được chọn, giống màn Lịch phân ca
+        LocalDate selectedDate = parseDateOrToday(request.getParameter("date"));
+        LocalDate monday = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate sunday = monday.plusDays(6);
+        LocalDate today = LocalDate.now();
 
+        // Thống kê work_schedules của tuần đó bằng 1 câu GROUP BY shift_name, status.
         // Giờ ca lấy đúng theo shop_settings: ca chưa có dòng cấu hình để trống -> "Chưa cấu hình"
-        Map<String, String> shiftHours = shopSettingDAO.getShiftHours();
-        for (ShiftStat stat : shiftStats.values()) {
-            stat.setTimeRange(shiftHours.get(stat.getShiftKey()));
-        }
+        Map<String, ShiftStat> shiftStats = workScheduleDAO.getShiftStats(shopSettingDAO.getSettings(),
+                Date.valueOf(monday), Date.valueOf(sunday));
 
         request.setAttribute("shiftStats", shiftStats.values());
+        request.setAttribute("selectedDate", selectedDate.toString());
+        request.setAttribute("weekStartDisplay", monday.format(DISPLAY_DATE));
+        request.setAttribute("weekEndDisplay", sunday.format(DISPLAY_DATE));
+        request.setAttribute("prevWeekDate", monday.minusWeeks(1).toString());
+        request.setAttribute("nextWeekDate", monday.plusWeeks(1).toString());
+        request.setAttribute("isCurrentWeek", !today.isBefore(monday) && !today.isAfter(sunday));
 
         HttpSession session = request.getSession();
         CartController.moveFlashMessage(session, request, "shiftSuccessMsg");
@@ -94,8 +110,22 @@ public class AdminShiftController extends HttpServlet {
                     + "và xác nhận bảng shop_settings tồn tại.");
         }
 
-        // PRG: tránh lưu lại khi F5
-        response.sendRedirect(request.getContextPath() + "/admin/shifts");
+        // PRG: tránh lưu lại khi F5, quay lại đúng tuần đang xem
+        String returnDate = request.getParameter("returnDate");
+        String url = request.getContextPath() + "/admin/shifts";
+        if (returnDate != null && !returnDate.isBlank()) {
+            url += "?date=" + parseDateOrToday(returnDate);
+        }
+        response.sendRedirect(url);
+    }
+
+    /** Ngày yyyy-MM-dd; rỗng hoặc sai định dạng thì lấy hôm nay */
+    private LocalDate parseDateOrToday(String rawDate) {
+        try {
+            return rawDate == null || rawDate.isBlank() ? LocalDate.now() : LocalDate.parse(rawDate.trim());
+        } catch (DateTimeParseException e) {
+            return LocalDate.now();
+        }
     }
 
     private String normalizeShift(String rawShift) {

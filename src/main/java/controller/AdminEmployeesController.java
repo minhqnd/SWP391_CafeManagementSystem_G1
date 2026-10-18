@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpSession;
 import model.User;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -36,14 +35,15 @@ public class AdminEmployeesController extends HttpServlet {
     private static final Set<String> POSITIONS = Set.of("MANAGER", "BARISTA", "CASHIER", "SHIPPER");
     private static final Set<String> STATUSES = Set.of("ACTIVE", "INACTIVE", "LOCKED");
     private static final String[] FORM_FIELDS = {"id", "fullName", "phone", "email", "role", "position",
-            "baseSalary", "hireDate", "birthday", "status", "address"};
+            "hireDate", "birthday", "status", "address"};
+    private static final String SESSION_REFRESHED_MESSAGE =
+            "Phiên làm việc đã được làm mới (VD vừa đăng nhập lại). Kiểm tra lại thông tin, nhập lại mật khẩu và bấm lưu lần nữa.";
 
     // Giống quy tắc SĐT của màn đăng ký; SĐT là tên đăng nhập
     private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9]{9,11}$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     private static final int MIN_PASSWORD_LENGTH = 6;
     private static final int MAX_ADDRESS_LENGTH = 500;
-    private static final BigDecimal MAX_SALARY = new BigDecimal("9999999999.99"); // DECIMAL(12,2)
 
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
 
@@ -65,13 +65,22 @@ public class AdminEmployeesController extends HttpServlet {
         if (!isAdmin(request, response)) return;
 
         HttpSession session = request.getSession();
+        String action = request.getParameter("action");
         String expected = (String) session.getAttribute("employeeCsrfToken");
         if (expected == null || !expected.equals(request.getParameter("csrfToken"))) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Phiên làm việc đã hết hạn. Tải lại trang rồi thử lại.");
+            // Token cũ (VD đăng xuất / đăng nhập lại khi trang còn mở): không lưu gì,
+            // hiển thị lại form với dữ liệu đã nhập và token mới thay vì trang lỗi 403
+            if ("save".equals(action)) {
+                request.setAttribute("employeeForm", readForm(request));
+                request.setAttribute("employeeFormError", SESSION_REFRESHED_MESSAGE);
+                showPage(request, response, request.getParameter("returnPosition"));
+            } else {
+                session.setAttribute("employeeError", "Phiên làm việc đã được làm mới. Vui lòng thao tác lại.");
+                redirectToPage(request, response);
+            }
             return;
         }
 
-        String action = request.getParameter("action");
         if ("save".equals(action)) {
             save(request, response, session);
             return;
@@ -95,11 +104,7 @@ public class AdminEmployeesController extends HttpServlet {
     /** Thêm / sửa nhân viên. Lỗi dữ liệu thì hiển thị lại trang, mở lại modal với dữ liệu đã nhập. */
     private void save(HttpServletRequest request, HttpServletResponse response, HttpSession session)
             throws ServletException, IOException {
-        Map<String, String> form = new LinkedHashMap<>();
-        for (String field : FORM_FIELDS) {
-            String value = request.getParameter(field);
-            form.put(field, value == null ? "" : value.trim());
-        }
+        Map<String, String> form = readForm(request);
 
         try {
             User me = (User) session.getAttribute("user");
@@ -138,6 +143,16 @@ public class AdminEmployeesController extends HttpServlet {
         showPage(request, response, request.getParameter("returnPosition"));
     }
 
+    /** Dữ liệu form đã cắt khoảng trắng (không gồm mật khẩu) */
+    private Map<String, String> readForm(HttpServletRequest request) {
+        Map<String, String> form = new LinkedHashMap<>();
+        for (String field : FORM_FIELDS) {
+            String value = request.getParameter(field);
+            form.put(field, value == null ? "" : value.trim());
+        }
+        return form;
+    }
+
     private User validateEmployee(Map<String, String> form, User me) throws SQLException, ClassNotFoundException {
         int id = parseId(form.get("id"), true);
         if (id > 0 && employeeDAO.getEmployeeById(id) == null) {
@@ -170,7 +185,6 @@ public class AdminEmployeesController extends HttpServlet {
         String role = requireAllowed(form.get("role"), ROLES, "Vai trò không hợp lệ.");
         String position = requireAllowed(form.get("position"), POSITIONS, "Chức vụ không hợp lệ.");
         String status = requireAllowed(form.get("status"), STATUSES, "Trạng thái không hợp lệ.");
-        BigDecimal baseSalary = parseSalary(form.get("baseSalary"));
         String hireDate = parseOptionalDate(form.get("hireDate"), "Ngày vào làm không hợp lệ.");
         String birthday = parseOptionalDate(form.get("birthday"), "Ngày sinh không hợp lệ.");
         if (birthday != null && LocalDate.parse(birthday).isAfter(LocalDate.now())) {
@@ -194,7 +208,6 @@ public class AdminEmployeesController extends HttpServlet {
 
         User employee = new User(id, fullName, phone, email.isEmpty() ? null : email, role, position, status,
                 birthday, address.isEmpty() ? null : address);
-        employee.setBaseSalary(baseSalary);
         employee.setHireDate(hireDate);
         return employee;
     }
@@ -281,24 +294,6 @@ public class AdminEmployeesController extends HttpServlet {
     private String requireAllowed(String value, Set<String> allowed, String errorMessage) {
         if (value == null || !allowed.contains(value)) throw new IllegalArgumentException(errorMessage);
         return value;
-    }
-
-    private BigDecimal parseSalary(String rawSalary) {
-        if (rawSalary.isEmpty()) return BigDecimal.ZERO;
-        BigDecimal salary;
-        try {
-            salary = new BigDecimal(rawSalary);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Lương cơ bản phải là số hợp lệ.");
-        }
-        if (salary.signum() < 0) throw new IllegalArgumentException("Lương cơ bản không được âm.");
-        if (salary.compareTo(MAX_SALARY) > 0) {
-            throw new IllegalArgumentException("Lương cơ bản tối đa 9.999.999.999đ.");
-        }
-        if (salary.stripTrailingZeros().scale() > 2) {
-            throw new IllegalArgumentException("Lương cơ bản tối đa 2 chữ số thập phân.");
-        }
-        return salary;
     }
 
     /** Ngày dạng YYYY-MM-DD (input type="date"); rỗng thì trả về null để lưu NULL */

@@ -35,7 +35,8 @@ public class WorkScheduleDAOTest {
         assertNotNull(settings.getShiftAfternoon());
         assertNotNull(settings.getShiftEvening());
 
-        boolean updated = shopSettingDAO.updateShiftHours(ShopSettings.KEY_SHIFT_MORNING, "07:00-12:00");
+        // Ghi lại đúng giờ đang lưu để không làm mất giờ ca Admin đã sửa khi chạy test trên Database thật
+        boolean updated = shopSettingDAO.updateShiftHours(ShopSettings.KEY_SHIFT_MORNING, settings.getShiftMorning());
         assertTrue(updated);
     }
 
