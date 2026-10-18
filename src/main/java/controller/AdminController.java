@@ -14,12 +14,12 @@ public class AdminController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO: Xử lý dashboard thống kê, quản lý nhân viên, thực đơn
+        response.sendRedirect(request.getContextPath() + "/admin-dashboard.jsp");
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO: Xử lý thêm, sửa, xoá tài khoản hoặc thực đơn
+        doGet(request, response);
     }
 }
