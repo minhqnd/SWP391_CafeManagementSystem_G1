@@ -21,7 +21,7 @@ public class CartServiceTest {
     private final CartService cartService = new CartService();
 
     private Product product(String variantsConfig) {
-        return new Product(1, 1, "Cà phê máy", "Cà phê Muối Aura", 55000, null, null,
+        return new Product(1, 1, "Cà phê máy", "Cà phê Muối Aura", 55000, null,
                 variantsConfig, "https://example.com/coffee.jpg", true);
     }
 

@@ -401,12 +401,28 @@ public class WorkScheduleDAO extends BaseDAO {
         Timestamp endTime = schedule.getCheckOutTime() != null
                 ? schedule.getCheckOutTime()
                 : fallbackEndTime;
+        if (endTime == null && schedule.getWorkDate() != null) {
+            endTime = Timestamp.valueOf(schedule.getWorkDate().toLocalDate().atTime(23, 59, 59));
+        }
+        if (schedule.getCheckOutTime() == null && schedule.getWorkDate() != null) {
+            java.time.LocalDate wDate = schedule.getWorkDate().toLocalDate();
+            if (wDate.isBefore(java.time.LocalDate.now())) {
+                endTime = Timestamp.valueOf(wDate.atTime(23, 59, 59));
+            }
+        }
         if (startTime == null || endTime == null) {
             return summary;
         }
 
         String sql = "SELECT COUNT(DISTINCT o.id) AS order_count, " +
+                     "       COALESCE(SUM(CASE WHEN p.payment_method = 'CASH' THEN 1 ELSE 0 END), 0) AS cash_count, " +
                      "       COALESCE(SUM(CASE WHEN p.payment_method = 'CASH' THEN p.amount ELSE 0 END), 0) AS cash_sales, " +
+                     "       COALESCE(SUM(CASE WHEN p.payment_method = 'BANK_TRANSFER' THEN 1 ELSE 0 END), 0) AS bank_count, " +
+                     "       COALESCE(SUM(CASE WHEN p.payment_method = 'BANK_TRANSFER' THEN p.amount ELSE 0 END), 0) AS bank_sales, " +
+                     "       COALESCE(SUM(CASE WHEN p.payment_method = 'VNPAY' THEN 1 ELSE 0 END), 0) AS vnpay_count, " +
+                     "       COALESCE(SUM(CASE WHEN p.payment_method = 'VNPAY' THEN p.amount ELSE 0 END), 0) AS vnpay_sales, " +
+                     "       COALESCE(SUM(CASE WHEN p.payment_method = 'MOMO' THEN 1 ELSE 0 END), 0) AS momo_count, " +
+                     "       COALESCE(SUM(CASE WHEN p.payment_method = 'MOMO' THEN p.amount ELSE 0 END), 0) AS momo_sales, " +
                      "       COALESCE(SUM(CASE WHEN p.payment_method <> 'CASH' THEN p.amount ELSE 0 END), 0) AS non_cash_sales, " +
                      "       COALESCE(SUM(p.amount), 0) AS total_sales " +
                      "FROM orders o " +
@@ -423,7 +439,14 @@ public class WorkScheduleDAO extends BaseDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     summary.setSuccessfulOrderCount(rs.getInt("order_count"));
+                    summary.setCashCount(rs.getInt("cash_count"));
                     summary.setCashSales(rs.getBigDecimal("cash_sales"));
+                    summary.setBankCount(rs.getInt("bank_count"));
+                    summary.setBankSales(rs.getBigDecimal("bank_sales"));
+                    summary.setVnpayCount(rs.getInt("vnpay_count"));
+                    summary.setVnpaySales(rs.getBigDecimal("vnpay_sales"));
+                    summary.setMomoCount(rs.getInt("momo_count"));
+                    summary.setMomoSales(rs.getBigDecimal("momo_sales"));
                     summary.setNonCashSales(rs.getBigDecimal("non_cash_sales"));
                     summary.setTotalSales(rs.getBigDecimal("total_sales"));
                 }
@@ -433,6 +456,31 @@ public class WorkScheduleDAO extends BaseDAO {
         }
 
         return summary;
+    }
+
+    /**
+     * Lấy các ca làm việc gần đây của 1 nhân viên
+     */
+    public List<WorkSchedule> getRecentSchedulesForUser(int userId, int limit) {
+        List<WorkSchedule> list = new java.util.ArrayList<>();
+        String sql = "SELECT ws.*, u.full_name AS user_name, u.phone AS user_phone, u.position AS user_position " +
+                     "FROM work_schedules ws " +
+                     "JOIN users u ON ws.user_id = u.id " +
+                     "WHERE ws.user_id = ? " +
+                     "ORDER BY ws.work_date DESC, ws.id DESC LIMIT ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSet(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     /**
