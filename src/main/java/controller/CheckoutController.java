@@ -132,6 +132,11 @@ public class CheckoutController extends HttpServlet {
         order.setOrderNote(orderNote.isEmpty() ? null : orderNote);
 
         int orderId = orderDAO.placeOrder(order, items, pointsUsed);
+        if (orderId == OrderDAO.NOT_ENOUGH_STOCK) {
+            request.setAttribute("checkoutError", "Có món đã hết hoặc không đủ số lượng. Vui lòng sửa giỏ hàng.");
+            showCheckout(request, response, cart);
+            return;
+        }
         if (orderId == OrderDAO.NOT_ENOUGH_POINTS) {
             // Điểm vừa bị dùng ở đơn khác: đọc lại số điểm và đưa về mốc hợp lệ
             cartService.refreshCart(cart, user.getId());
@@ -170,6 +175,15 @@ public class CheckoutController extends HttpServlet {
                 : "";
 
         request.setAttribute("cart", cart);
+        try {
+            String stockError = orderDAO.getCheckoutStockError(cart.getSelectedItems());
+            request.setAttribute("checkoutStockBlocked", stockError != null);
+            if (stockError != null) request.setAttribute("checkoutError", stockError);
+        } catch (java.sql.SQLException | ClassNotFoundException e) {
+            getServletContext().log("Cannot check checkout stock", e);
+            request.setAttribute("checkoutStockBlocked", true);
+            request.setAttribute("checkoutError", "Chưa kiểm tra được số lượng món. Vui lòng thử lại sau.");
+        }
         request.setAttribute("recipientName", paramOrDefault(request, "recipientName", defaultName));
         request.setAttribute("recipientPhone", paramOrDefault(request, "recipientPhone", defaultPhone));
         request.setAttribute("deliveryAddress", paramOrDefault(request, "deliveryAddress", ""));

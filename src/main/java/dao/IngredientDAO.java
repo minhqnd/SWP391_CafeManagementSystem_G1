@@ -56,13 +56,20 @@ public class IngredientDAO extends BaseDAO {
         return costs;
     }
 
-    /** Latest purchase unit price per ingredient */
+    /** Latest received purchase unit price per ingredient. Draft and ordered POs are not inventory costs. */
     public Map<Integer, BigDecimal> getLatestPurchasePrices() {
         Map<Integer, BigDecimal> prices = new HashMap<>();
         String sql = "SELECT poi.ingredient_id, poi.unit_price " +
                      "FROM purchase_order_items poi " +
-                     "JOIN (SELECT ingredient_id, MAX(id) as max_poi_id FROM purchase_order_items GROUP BY ingredient_id) last_poi " +
-                     "ON poi.id = last_poi.max_poi_id";
+                     "JOIN purchase_orders po ON po.id = poi.po_id " +
+                     "JOIN (" +
+                     "    SELECT poi2.ingredient_id, MAX(poi2.id) AS max_poi_id " +
+                     "    FROM purchase_order_items poi2 " +
+                     "    JOIN purchase_orders po2 ON po2.id = poi2.po_id " +
+                     "    WHERE po2.status = 'RECEIVED' " +
+                     "    GROUP BY poi2.ingredient_id" +
+                     ") last_poi ON poi.id = last_poi.max_poi_id " +
+                     "WHERE po.status = 'RECEIVED'";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

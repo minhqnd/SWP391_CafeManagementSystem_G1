@@ -89,30 +89,36 @@ public class RestockRequestDAO extends BaseDAO {
             }
 
             if (!list.isEmpty()) {
+                boolean filterByStatus = statusFilter != null && !statusFilter.isBlank()
+                        && !"ALL".equalsIgnoreCase(statusFilter);
                 String itemsSql = "SELECT poi.id, poi.po_id, poi.ingredient_id, poi.quantity, poi.unit_price, " +
                                   "i.name AS ingredient_name, i.unit " +
                                   "FROM purchase_order_items poi " +
                                   "JOIN ingredients i ON poi.ingredient_id = i.id " +
                                   "WHERE poi.po_id IN (SELECT id FROM purchase_orders " +
-                                  (statusFilter != null && !statusFilter.isBlank() && !"ALL".equalsIgnoreCase(statusFilter) ? "WHERE status = '" + statusFilter.toUpperCase() + "'" : "") +
+                                  (filterByStatus ? "WHERE status = ? " : "") +
                                   ") ORDER BY poi.id ASC";
 
-                try (PreparedStatement psItems = conn.prepareStatement(itemsSql);
-                     ResultSet rsItems = psItems.executeQuery()) {
-                    while (rsItems.next()) {
-                        int poId = rsItems.getInt("po_id");
-                        RestockRequest req = map.get(poId);
-                        if (req != null) {
-                            RestockItem it = new RestockItem(
-                                rsItems.getInt("ingredient_id"),
-                                rsItems.getString("ingredient_name"),
-                                rsItems.getString("unit"),
-                                rsItems.getBigDecimal("quantity"),
-                                rsItems.getBigDecimal("unit_price")
-                            );
-                            it.setId(rsItems.getInt("id"));
-                            it.setPoId(poId);
-                            req.getItems().add(it);
+                try (PreparedStatement psItems = conn.prepareStatement(itemsSql)) {
+                    if (filterByStatus) {
+                        psItems.setString(1, statusFilter.toUpperCase());
+                    }
+                    try (ResultSet rsItems = psItems.executeQuery()) {
+                        while (rsItems.next()) {
+                            int poId = rsItems.getInt("po_id");
+                            RestockRequest req = map.get(poId);
+                            if (req != null) {
+                                RestockItem it = new RestockItem(
+                                    rsItems.getInt("ingredient_id"),
+                                    rsItems.getString("ingredient_name"),
+                                    rsItems.getString("unit"),
+                                    rsItems.getBigDecimal("quantity"),
+                                    rsItems.getBigDecimal("unit_price")
+                                );
+                                it.setId(rsItems.getInt("id"));
+                                it.setPoId(poId);
+                                req.getItems().add(it);
+                            }
                         }
                     }
                 }
@@ -189,6 +195,47 @@ public class RestockRequestDAO extends BaseDAO {
             ps.setString(1, newStatus);
             ps.setInt(2, poId);
             return ps.executeUpdate() > 0;
+        }
+    }
+
+    /** Receive an ordered PO once, add its quantities to stock, and write matching ledger entries atomically. */
+    public boolean receivePurchaseOrder(int poId) throws SQLException, ClassNotFoundException {
+        try (Connection conn = getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                String status;
+                try (PreparedStatement lock = conn.prepareStatement(
+                        "SELECT status FROM purchase_orders WHERE id = ? FOR UPDATE")) {
+                    lock.setInt(1, poId);
+                    try (ResultSet rs = lock.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return false;
+                        }
+                        status = rs.getString("status");
+                    }
+                }
+                if (!"ORDERED".equals(status)) {
+                    conn.rollback();
+                    return false;
+                }
+
+                InventoryMovementDAO.receivePurchaseOrder(conn, poId);
+                try (PreparedStatement update = conn.prepareStatement(
+                        "UPDATE purchase_orders SET status = 'RECEIVED' WHERE id = ? AND status = 'ORDERED'")) {
+                    update.setInt(1, poId);
+                    boolean updated = update.executeUpdate() == 1;
+                    if (updated) conn.commit(); else conn.rollback();
+                    return updated;
+                }
+            } catch (Exception e) {
+                conn.rollback();
+                if (e instanceof SQLException) throw (SQLException) e;
+                throw new SQLException("Could not receive purchase order", e);
+            } finally {
+                conn.setAutoCommit(autoCommit);
+            }
         }
     }
 

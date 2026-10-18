@@ -16,7 +16,6 @@ import model.User;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,8 +25,6 @@ import java.util.Set;
 import java.util.UUID;
 
 public class AdminRecipeController extends HttpServlet {
-
-    private static final int MAX_INSTRUCTIONS_LENGTH = 5000;
 
     private final ProductDAO productDAO = new ProductDAO();
     private final IngredientDAO ingredientDAO = new IngredientDAO();
@@ -67,12 +64,6 @@ public class AdminRecipeController extends HttpServlet {
                 }
             }
             boolean recipeCostComplete = !recipeIngredients.isEmpty() && missingCostIngredients.isEmpty();
-            BigDecimal foodCostPercent = BigDecimal.ZERO;
-            if (recipeCostComplete && selectedProduct.getBasePrice() > 0) {
-                foodCostPercent = recipeCost.multiply(BigDecimal.valueOf(100))
-                        .divide(BigDecimal.valueOf(selectedProduct.getBasePrice()), 1, RoundingMode.HALF_UP);
-            }
-
             List<RecipeProductSummary> productSummaries = new ArrayList<>();
             int productsWithRecipe = 0;
             int recipeLineCount = 0;
@@ -94,14 +85,8 @@ public class AdminRecipeController extends HttpServlet {
                     }
                 }
 
-                BigDecimal grossMarginPercent = null;
-                if (productCostComplete && product.getBasePrice() > 0) {
-                    grossMarginPercent = BigDecimal.valueOf(product.getBasePrice()).subtract(productCost)
-                            .multiply(BigDecimal.valueOf(100))
-                            .divide(BigDecimal.valueOf(product.getBasePrice()), 1, RoundingMode.HALF_UP);
-                }
                 productSummaries.add(new RecipeProductSummary(
-                        product, costLines, productCost, productCostComplete, grossMarginPercent));
+                        product, costLines, productCost, productCostComplete));
             }
 
             request.setAttribute("products", products);
@@ -113,13 +98,11 @@ public class AdminRecipeController extends HttpServlet {
             request.setAttribute("ingredientUnitCosts", ingredientUnitCosts);
             request.setAttribute("selectedProduct", selectedProduct);
             request.setAttribute("recipeIngredients", recipeIngredients);
-            request.setAttribute("recipeInstructions", selectedProduct == null ? "" : selectedProduct.getRecipeInstructions());
             request.setAttribute("selectedProductId", selectedProductId);
             request.setAttribute("recipeCost", recipeCost);
             request.setAttribute("recipeCostComplete", recipeCostComplete);
             request.setAttribute("recipeHasIngredients", !recipeIngredients.isEmpty());
             request.setAttribute("missingCostIngredients", missingCostIngredients);
-            request.setAttribute("foodCostPercent", foodCostPercent);
             moveFlash(request, "recipeMessage");
             moveFlash(request, "recipeError");
             request.getRequestDispatcher("/admin-recipes.jsp").forward(request, response);
@@ -153,17 +136,11 @@ public class AdminRecipeController extends HttpServlet {
             Product product = productDAO.getProductForAdmin(productId);
             if (product == null) throw new IllegalArgumentException("Không tìm thấy sản phẩm cần cập nhật công thức.");
 
-            String instructions = request.getParameter("instructions");
-            instructions = instructions == null ? "" : instructions.trim();
-            if (instructions.length() > MAX_INSTRUCTIONS_LENGTH) {
-                throw new IllegalArgumentException("Hướng dẫn pha chế không được vượt quá 5.000 ký tự.");
-            }
-
             List<ProductIngredient> recipeIngredients = parseIngredients(
                     productId,
                     request.getParameterValues("ingredientId"),
                     request.getParameterValues("quantity"));
-            productIngredientDAO.saveRecipe(productId, instructions, recipeIngredients);
+            productIngredientDAO.saveRecipe(productId, recipeIngredients);
             session.setAttribute("recipeMessage", "Đã lưu công thức cho món “" + product.getName() + "”.");
         } catch (IllegalArgumentException e) {
             session.setAttribute("recipeError", e.getMessage());

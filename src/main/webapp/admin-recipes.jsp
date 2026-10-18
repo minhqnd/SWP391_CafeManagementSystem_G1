@@ -32,16 +32,13 @@
         .recipe-toolbar h2 { margin:0; color:#292524; font-size:1rem; font-weight:800; }
         .recipe-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
         .recipe-card { display:flex; flex-direction:column; justify-content:space-between; gap:12px; padding:16px; min-width:0; }
-        .recipe-product-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+        .recipe-product-head { display:flex; align-items:flex-start; justify-content:flex-start; gap:12px; }
         .recipe-product-info { display:flex; align-items:center; gap:11px; min-width:0; }
         .recipe-product-image { width:48px; height:48px; flex:none; border-radius:12px; object-fit:cover; background:#f5f5f4; }
         .recipe-product-placeholder { display:grid; place-items:center; color:#900b1a; }
         .recipe-product-id { color:#900b1a; font:700 .68rem ui-monospace,monospace; }
         .recipe-product-name { margin:1px 0; color:#1c1917; font-size:.92rem; font-weight:800; line-height:1.3; }
         .recipe-product-category { color:#a8a29e; font-size:.68rem; }
-        .recipe-margin { text-align:right; white-space:nowrap; }
-        .recipe-margin span { display:block; color:#a8a29e; font-size:.59rem; font-weight:800; text-transform:uppercase; }
-        .recipe-margin strong { color:#047857; font-size:1.05rem; }
         .recipe-financials { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:13px; padding:10px; border-radius:11px; background:#fafaf9; }
         .recipe-financials span { display:block; color:#78716c; font-size:.64rem; }
         .recipe-financials strong { display:block; margin-top:2px; color:#292524; font-size:.83rem; }
@@ -75,7 +72,6 @@
         .recipe-cost-card { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:14px; padding:13px; border:1px solid #ead8da; border-radius:11px; background:#fff8f8; }
         .recipe-cost-card strong { display:block; color:#900b1a; font-size:1.2rem; }
         .recipe-cost-card small { display:block; color:#78716c; font-size:.65rem; }
-        .recipe-cost-percent { color:#57534e; font-size:.7rem; font-weight:700; text-align:right; }
         .btn-aura { color:#fff; background:#900b1a; border-color:#900b1a; }
         .btn-aura:hover { color:#fff; background:#7a121d; border-color:#7a121d; }
         @media(max-width:900px) { .recipe-grid { grid-template-columns:1fr; } }
@@ -140,7 +136,6 @@
                                         <span class="recipe-product-category"><c:out value="${product.categoryName}" /></span>
                                     </div>
                                 </div>
-                                <div class="recipe-margin"><span>Lợi nhuận gộp</span><strong><c:choose><c:when test="${not empty summary.grossMarginPercent}"><fmt:formatNumber value="${summary.grossMarginPercent}" pattern="0.#" />%</c:when><c:otherwise>—</c:otherwise></c:choose></strong></div>
                             </div>
                             <div class="recipe-financials">
                                 <div><span>Giá bán</span><strong><c:out value="${product.formattedPrice}" /></strong></div>
@@ -187,10 +182,6 @@
                         <label class="form-label" for="selectedProductName">Sản phẩm</label>
                         <input class="form-control" id="selectedProductName" value="${fn:escapeXml(selectedProduct.name)}" readonly>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="instructions">Hướng dẫn pha chế</label>
-                        <textarea class="form-control" id="instructions" name="instructions" rows="4" maxlength="5000" placeholder="Nhập các bước pha chế"><c:out value="${recipeInstructions}" /></textarea>
-                    </div>
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                         <div><h3 class="h6 fw-bold mb-1">Nguyên liệu cho một phần</h3><div class="text-muted" style="font-size:.68rem">Nhập số nguyên theo đơn vị hiện dưới ô định lượng.</div></div>
                         <button type="button" class="btn btn-sm btn-outline-danger" id="addIngredient" <c:if test="${empty ingredients}">disabled</c:if>>+ Thêm nguyên liệu</button>
@@ -205,7 +196,8 @@
                                         <c:forEach items="${recipeIngredients}" var="recipeIngredient">
                                             <div class="ingredient-row">
                                                 <div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}" ${ingredient.id eq recipeIngredient.ingredientId ? 'selected' : ''}><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)</option></c:forEach></select><div class="ingredient-unit-cost"></div></div>
-                                                <div class="ingredient-quantity"><input class="form-control" type="number" name="quantity" min="1" max="999999999" step="1" value="${recipeIngredient.quantityRequired}" placeholder="1" aria-label="Định lượng nguyên số"><div class="quantity-unit"></div></div>
+                                                <fmt:formatNumber value="${recipeIngredient.quantityRequired}" pattern="0" var="quantityInputValue" />
+                                                <div class="ingredient-quantity"><input class="form-control" type="number" name="quantity" min="1" max="999999999" step="1" value="${quantityInputValue}" placeholder="1" aria-label="Định lượng nguyên số"><div class="quantity-unit"></div></div>
                                                 <div class="ingredient-line-cost">—</div>
                                                 <button type="button" class="btn btn-sm btn-light text-danger remove-ingredient" aria-label="Xóa nguyên liệu">×</button>
                                             </div>
@@ -224,9 +216,8 @@
                             <template id="ingredientRowTemplate"><div class="ingredient-row"><div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}"><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)</option></c:forEach></select><div class="ingredient-unit-cost"></div></div><div class="ingredient-quantity"><input class="form-control" type="number" name="quantity" min="1" max="999999999" step="1" placeholder="1" aria-label="Định lượng nguyên số"><div class="quantity-unit"></div></div><div class="ingredient-line-cost">—</div><button type="button" class="btn btn-sm btn-light text-danger remove-ingredient" aria-label="Xóa nguyên liệu">×</button></div></template>
                         </c:otherwise>
                     </c:choose>
-                    <div class="recipe-cost-card" id="recipeCostCard" data-selling-price="${selectedProduct.basePriceInputValue}">
+                    <div class="recipe-cost-card" id="recipeCostCard">
                         <div><span class="text-muted small fw-bold">GIÁ VỐN NGUYÊN LIỆU / PHẦN</span><strong id="recipeCostValue"><c:choose><c:when test="${recipeCostComplete}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ</c:when><c:when test="${recipeHasIngredients}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ · thiếu giá</c:when><c:otherwise>Chưa có định lượng</c:otherwise></c:choose></strong><small id="recipeCostNote"><c:choose><c:when test="${not empty missingCostIngredients}">Chưa có giá nhập đã nhận: <c:forEach items="${missingCostIngredients}" var="missingName" varStatus="loop"><c:if test="${loop.index gt 0}">, </c:if><c:out value="${missingName}" /></c:forEach>.</c:when><c:otherwise>Giá nhập bình quân của phiếu đã nhận; chưa gồm bao bì, nhân công, hao hụt.</c:otherwise></c:choose></small></div>
-                        <div class="recipe-cost-percent" id="recipeCostPercent"><c:if test="${recipeCostComplete}">Chiếm <fmt:formatNumber value="${foodCostPercent}" pattern="0.#" />% giá bán</c:if></div>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-3"><a href="${ctx}/admin/recipes" class="btn btn-light">Hủy</a><button type="submit" class="btn btn-aura fw-bold" <c:if test="${empty ingredients}">disabled</c:if>>Lưu công thức</button></div>
                 </form>
@@ -249,8 +240,6 @@
     const template = document.getElementById('ingredientRowTemplate');
     const costValue = document.getElementById('recipeCostValue');
     const costNote = document.getElementById('recipeCostNote');
-    const costPercent = document.getElementById('recipeCostPercent');
-    const sellingPrice = Number(document.getElementById('recipeCostCard')?.dataset.sellingPrice || 0);
     const money = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
 
     function recalculateCost() {
@@ -286,12 +275,10 @@
         if (!hasLine) {
             costValue.textContent = 'Chưa có định lượng';
             costNote.textContent = 'Thêm nguyên liệu và định lượng để ước tính giá vốn.';
-            costPercent.textContent = '';
             return;
         }
         costValue.textContent = complete ? money.format(total) + 'đ' : money.format(total) + 'đ · chưa đủ giá';
         costNote.textContent = complete ? 'Giá nhập bình quân của phiếu đã nhận; chưa gồm bao bì, nhân công, hao hụt.' : 'Có nguyên liệu thiếu định lượng hoặc chưa có phiếu nhập đã nhận; số tiền là phần đã tính được.';
-        costPercent.textContent = complete && sellingPrice > 0 ? 'Chiếm ' + ((total / sellingPrice) * 100).toFixed(1) + '% giá bán' : '';
     }
 
     document.getElementById('addIngredient')?.addEventListener('click', () => { if (rows && template) rows.appendChild(template.content.cloneNode(true)); });

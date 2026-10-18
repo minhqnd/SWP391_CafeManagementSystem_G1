@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:if test="${empty sessionScope.user or sessionScope.user.role ne 'ADMIN'}"><c:redirect url="/?tab=login" /></c:if>
 <!DOCTYPE html>
@@ -212,6 +213,36 @@
                             <td colspan="8" class="text-center py-4 text-muted">Hiện không có đề xuất nào đang chờ duyệt.</td>
                         </tr>
                     </c:if>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="data-card p-4">
+        <h2 class="section-title">Phiếu đã đặt hàng chờ nhận (<c:out value="${fn:length(orderedRequests)}" />)</h2>
+        <div class="table-responsive">
+            <table class="table custom-table table-hover align-middle mb-0">
+                <thead>
+                    <tr><th>Mã phiếu</th><th>Nhà cung cấp</th><th>Nguyên liệu</th><th class="text-end">Tổng tiền</th><th>Người tạo / Ngày</th><th class="text-end">Nhận hàng</th></tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="req" items="${orderedRequests}">
+                        <tr>
+                            <td class="text-danger fw-bold font-monospace">PO-<fmt:formatNumber value="${req.id}" pattern="0000" /></td>
+                            <td><strong><c:out value="${req.supplierName}" /></strong></td>
+                            <td><c:out value="${req.itemsSummary}" /></td>
+                            <td class="text-end fw-bold font-monospace"><fmt:formatNumber value="${req.totalCost}" pattern="#,##0" />đ</td>
+                            <td><div><c:out value="${req.creatorName}" default="Admin" /></div><small class="text-muted"><fmt:formatDate value="${req.createdAt}" pattern="dd/MM/yyyy HH:mm" /></small></td>
+                            <td class="text-end">
+                                <form method="post" action="${ctx}/admin/restock-requests" class="d-inline" onsubmit="return confirm('Xác nhận đã nhận đủ nguyên liệu? Tồn kho sẽ được cộng.');">
+                                    <input type="hidden" name="csrfToken" value="${sessionScope.restockCsrfToken}">
+                                    <input type="hidden" name="action" value="receive">
+                                    <input type="hidden" name="id" value="${req.id}">
+                                    <button type="submit" class="btn-approve">Đã nhận hàng</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                    <c:if test="${empty orderedRequests}"><tr><td colspan="6" class="text-center py-4 text-muted">Không có phiếu nào đang chờ nhận.</td></tr></c:if>
                 </tbody>
             </table>
         </div>
