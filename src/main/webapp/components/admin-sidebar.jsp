@@ -126,7 +126,7 @@
         <div class="menu-group-header">KHÁCH HÀNG</div>
         <ul class="nav flex-column menu-nav">
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
+                <a href="${ctx}/admin/customers" class="nav-link ${param.activeMenu == 'customers' ? 'active' : ''}">
                     <span class="material-symbols-outlined">person</span>
                     <span>Khách hàng</span>
                 </a>
