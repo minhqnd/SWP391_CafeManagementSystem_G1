@@ -1,6 +1,7 @@
 package model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 public class User implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -16,6 +17,8 @@ public class User implements Serializable {
     private String address;
     private String tierName;
     private int totalPoints;
+    private BigDecimal baseSalary; // Lương cơ bản (nhân viên)
+    private String hireDate;       // Ngày vào làm dạng YYYY-MM-DD
 
     public User() {
     }
@@ -142,5 +145,49 @@ public class User implements Serializable {
 
     public void setTotalPoints(int totalPoints) {
         this.totalPoints = totalPoints;
+    }
+
+    public BigDecimal getBaseSalary() {
+        return baseSalary;
+    }
+
+    public void setBaseSalary(BigDecimal baseSalary) {
+        this.baseSalary = baseSalary;
+    }
+
+    public String getHireDate() {
+        return hireDate;
+    }
+
+    public void setHireDate(String hireDate) {
+        this.hireDate = hireDate;
+    }
+
+    // Helper methods hiển thị cho màn Quản lý nhân viên
+    public String getHireDateDisplay() {
+        if (hireDate == null || hireDate.length() < 10) return "";
+        return hireDate.substring(8, 10) + "/" + hireDate.substring(5, 7) + "/" + hireDate.substring(0, 4);
+    }
+
+    public String getRoleDisplayName() {
+        if ("ADMIN".equalsIgnoreCase(role)) return "Quản trị";
+        if ("STAFF".equalsIgnoreCase(role)) return "Nhân viên";
+        if ("CUSTOMER".equalsIgnoreCase(role)) return "Khách hàng";
+        return role != null ? role : "";
+    }
+
+    public String getPositionDisplayName() {
+        if ("MANAGER".equalsIgnoreCase(position)) return "Quản lý";
+        if ("BARISTA".equalsIgnoreCase(position)) return "Pha chế";
+        if ("CASHIER".equalsIgnoreCase(position)) return "Thu ngân";
+        if ("SHIPPER".equalsIgnoreCase(position)) return "Giao hàng";
+        return position != null ? position : "";
+    }
+
+    public String getStatusDisplayName() {
+        if ("ACTIVE".equalsIgnoreCase(status)) return "Hoạt động";
+        if ("INACTIVE".equalsIgnoreCase(status)) return "Ngừng hoạt động";
+        if ("LOCKED".equalsIgnoreCase(status)) return "Đã khóa";
+        return status != null ? status : "";
     }
 }

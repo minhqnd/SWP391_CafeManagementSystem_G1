@@ -1,0 +1,131 @@
+/* Employee Management Screen (Quản lý nhân viên) */
+.admin-main-wrapper { max-width: 1600px; }
+.employees-page { display: flex; flex-direction: column; gap: 18px; }
+
+.employee-overview,
+.employee-card {
+    background: #fff;
+    border: 1px solid #e7e5e4;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(28, 25, 23, .04);
+}
+
+.employee-overview { padding: 20px; }
+.employee-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+
+.table-ref {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f5f5f4;
+    color: #78716c;
+    font: 700 10px/1.5 ui-monospace, monospace;
+}
+
+.page-title { margin: 5px 0 2px; color: #1c1917; font-size: 1.45rem; font-weight: 800; letter-spacing: -.025em; }
+.page-subtitle { margin: 0; color: #78716c; font-size: .82rem; }
+
+.employee-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #f5f5f4;
+}
+
+.employee-stat { padding: 10px 12px; border: 1px solid #e7e5e4; border-radius: 12px; background: #fafaf9; }
+.employee-stat span { display: block; color: #78716c; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.employee-stat strong { display: block; margin-top: 2px; color: #1c1917; font: 800 1.25rem ui-monospace, monospace; }
+.employee-stat.active { background: #ecfdf5; border-color: #a7f3d0; }
+.employee-stat.active strong { color: #047857; }
+.employee-stat.locked { background: #fff1f2; border-color: #fecdd3; }
+.employee-stat.locked strong { color: #be123c; }
+
+.employee-card { overflow: hidden; }
+
+.employee-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f5f5f4;
+}
+
+.employee-card-head h2 { margin: 0; font-size: .88rem; font-weight: 800; }
+.employee-filter .form-select { min-width: 170px; border-color: #e7e5e4; border-radius: 10px; font-size: .8rem; }
+
+/* Bảng cuộn ngang được trên mobile (.table-responsive) */
+.employee-table { min-width: 980px; }
+.employee-table > :not(caption) > * > * { padding: .7rem .6rem; vertical-align: middle; font-size: .82rem; }
+.employee-table thead th { color: #78716c; font-size: 10px; font-weight: 800; letter-spacing: .04em; white-space: nowrap; }
+.employee-table tbody tr:hover { background: #fafaf9; }
+.employee-muted { color: #a8a29e; font-size: .74rem; }
+
+.me-badge {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #fbf0f1;
+    color: #900b1a;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.position-badge,
+.status-badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.position-badge { background: #f5f5f4; color: #57534e; }
+.position-badge.position-manager { background: #fbf0f1; color: #900b1a; }
+.position-badge.position-barista { background: #fef3c7; color: #92400e; }
+.position-badge.position-cashier { background: #e0f2fe; color: #075985; }
+.position-badge.position-shipper { background: #ede9fe; color: #5b21b6; }
+
+.status-badge.status-active { background: #d1fae5; color: #047857; }
+.status-badge.status-inactive { background: #f3f4f6; color: #4b5563; }
+.status-badge.status-locked { background: #fee2e2; color: #b91c1c; }
+
+.btn-aura { color: #fff; background: #900b1a; border-color: #900b1a; }
+.btn-aura:hover { color: #fff; background: #7a121d; border-color: #7a121d; }
+
+/* Modal thêm / sửa nhân viên */
+.employee-modal { border: 0; border-radius: 16px; }
+.employee-modal .modal-header,
+.employee-modal .modal-footer { border-color: #f5f5f4; }
+.employee-modal .modal-title { font-size: 1.05rem; font-weight: 800; }
+.employee-modal .form-label { margin-bottom: 5px; color: #57534e; font-size: .76rem; font-weight: 700; }
+.employee-modal .form-label > span { color: #dc2626; }
+.employee-modal .form-control,
+.employee-modal .form-select { border-color: #e7e5e4; border-radius: 10px; background-color: #fafaf9; font-size: .84rem; }
+.employee-modal .form-control:focus,
+.employee-modal .form-select:focus { border-color: #900b1a; box-shadow: 0 0 0 .18rem rgba(144, 11, 26, .1); }
+
+.mobile-admin-bar { display: none; }
+
+@media (max-width: 991.98px) {
+    .employee-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767.98px) {
+    .mobile-admin-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px;
+        background: #fff;
+        border-bottom: 1px solid #e7e5e4;
+    }
+    .employee-overview { padding: 15px; }
+    .employee-heading { flex-direction: column; gap: 10px; }
+    .page-title { font-size: 1.2rem; }
+    .employee-card-head { flex-direction: column; align-items: stretch; }
+    .employee-filter .form-select { width: 100%; }
+}
