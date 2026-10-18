@@ -24,6 +24,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="${ctx}/assets/css/cart.css" rel="stylesheet">
     <link href="${ctx}/assets/css/admin-schedule.css" rel="stylesheet">
+    <link href="${ctx}/assets/css/admin-settings.css" rel="stylesheet">
     <style>
         .admin-main-wrapper.settings-page { max-width:1280px; }
         .settings-page .breadcrumb { margin-bottom:12px; }
@@ -51,11 +52,18 @@
             </ol>
         </nav>
         <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
             <div class="eyebrow">Cài đặt hệ thống</div>
             <h1 class="h3 fw-bold mb-1">Bán hàng online</h1>
             <div class="text-muted small">
                 Áp dụng cho Giỏ hàng, Xác nhận đơn và Thanh toán của khách. Thay đổi có hiệu lực ngay ở lần tải trang tiếp theo
                 (đơn đã đặt giữ nguyên số tiền lúc đặt).
+            </div>
+                </div>
+                <button type="button" class="btn-add-setting flex-shrink-0" data-bs-toggle="modal" data-bs-target="#addSettingModal">
+                    <span class="material-symbols-outlined">add</span> Thêm khóa cài đặt
+                </button>
             </div>
         </div>
 
@@ -160,9 +168,90 @@
                 </button>
             </div>
         </form>
+
+        <%-- Phần mở rộng: giữ nguyên form bán hàng online phía trên và bổ sung quản lý toàn bộ khóa phía dưới. --%>
+        <section class="all-settings-section mt-5">
+            <div class="mb-3">
+                <div class="eyebrow">SHOP_SETTINGS</div>
+                <h2 class="h5 fw-bold mb-1">Tất cả khóa cài đặt</h2>
+                <p class="text-muted small mb-0">Quản lý giờ ca và các khóa tùy chỉnh đang có trong cơ sở dữ liệu.</p>
+            </div>
+            <form method="post" action="${ctx}/admin/settings">
+                <input type="hidden" name="action" value="saveAllSettings">
+                <div class="settings-grid">
+                    <c:forEach var="group" items="${settingGroups}">
+                        <section class="settings-card">
+                            <div class="settings-card-title">
+                                <span class="group-icon material-symbols-outlined">
+                                    <c:choose>
+                                        <c:when test="${group.key == 'Giao hàng'}">local_shipping</c:when>
+                                        <c:when test="${group.key == 'Tích điểm'}">stars</c:when>
+                                        <c:when test="${group.key == 'Ca làm việc'}">schedule</c:when>
+                                        <c:otherwise>tune</c:otherwise>
+                                    </c:choose>
+                                </span>
+                                <h2><c:out value="${group.key}" /></h2>
+                            </div>
+                            <div class="settings-fields">
+                                <c:forEach var="setting" items="${group.value}">
+                                    <div class="setting-field">
+                                        <label for="setting_${setting.key}"><c:out value="${setting.key}" /></label>
+                                        <input id="setting_${setting.key}" name="setting_${setting.key}" maxlength="255" required
+                                               value="${fn:escapeXml(setting.value)}"
+                                               placeholder="${fn:startsWith(setting.key, 'shift_') ? 'HH:mm-HH:mm' : ''}">
+                                        <div class="field-meta">
+                                            <code><c:out value="${setting.key}" /></code>
+                                            <span>Cập nhật lúc <c:out value="${setting.updatedAtLabel}" /></span>
+                                        </div>
+                                    </div>
+                                </c:forEach>
+                            </div>
+                        </section>
+                    </c:forEach>
+                </div>
+                <div class="settings-actions">
+                    <a href="${ctx}/admin/settings" class="btn-cancel">Hoàn tác</a>
+                    <button type="submit" class="btn-save"><span class="material-symbols-outlined">save</span>Lưu tất cả khóa</button>
+                </div>
+            </form>
+        </section>
     </main>
+
+    <div class="modal fade" id="addSettingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content settings-modal">
+                <form method="post" action="${ctx}/admin/settings">
+                    <input type="hidden" name="action" value="addSetting">
+                    <div class="modal-header">
+                        <div><small>SHOP_SETTINGS</small><h2 class="modal-title">Thêm khóa cài đặt</h2></div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="setting-field mb-3">
+                            <label for="newKey">Khóa cài đặt</label>
+                            <input id="newKey" name="newKey" required maxlength="50" pattern="[a-z0-9_]+"
+                                   value="${fn:escapeXml(newKey)}" placeholder="Ví dụ: tax_rate">
+                            <div class="input-help">Chỉ dùng chữ thường, số và dấu gạch dưới.</div>
+                        </div>
+                        <div class="setting-field">
+                            <label for="newValue">Giá trị</label>
+                            <input id="newValue" name="newValue" required maxlength="255"
+                                   value="${fn:escapeXml(newValue)}" placeholder="Nhập giá trị cài đặt">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn-save"><span class="material-symbols-outlined">add</span>Thêm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <c:if test="${openAddModal}">
+        <script>new bootstrap.Modal(document.getElementById('addSettingModal')).show();</script>
+    </c:if>
 </body>
 </html>

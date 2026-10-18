@@ -1,18 +1,78 @@
 package dao;
 
 import model.ShopSettings;
+import model.ShopSettingEntry;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
  * ShopSettingDAO - Đọc / lưu cấu hình bán hàng online (bảng shop_settings, dạng khoá - giá trị)
  */
 public class ShopSettingDAO extends BaseDAO {
+
+    /** Lấy toàn bộ khóa để hiển thị trên màn hình quản trị. */
+    public List<ShopSettingEntry> findAll() {
+        List<ShopSettingEntry> entries = new ArrayList<>();
+        String sql = "SELECT setting_key, setting_value, updated_at FROM shop_settings ORDER BY setting_key";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                entries.add(new ShopSettingEntry(rs.getString("setting_key"), rs.getString("setting_value"),
+                        rs.getTimestamp("updated_at").toLocalDateTime()));
+            }
+        } catch (Exception e) {
+            System.err.println("[ShopSettingDAO] Không tải được danh sách cài đặt: " + e.getMessage());
+        }
+        return entries;
+    }
+
+    /** Cập nhật nhiều khóa hiện có trong cùng một transaction. */
+    public boolean updateAll(Map<String, String> values) {
+        if (values == null || values.isEmpty()) return true;
+        String sql = "UPDATE shop_settings SET setting_value = ? WHERE setting_key = ?";
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                for (Map.Entry<String, String> entry : values.entrySet()) {
+                    ps.setString(1, entry.getValue());
+                    ps.setString(2, entry.getKey());
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            if (conn != null) try { conn.rollback(); } catch (SQLException ignored) { }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (conn != null) try { conn.close(); } catch (SQLException ignored) { }
+        }
+    }
+
+    /** Thêm khóa mới; trả về false nếu khóa đã tồn tại hoặc database báo lỗi. */
+    public boolean insert(String key, String value) {
+        String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?)";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, key);
+            ps.setString(2, value);
+            return ps.executeUpdate() == 1;
+        } catch (Exception e) {
+            System.err.println("[ShopSettingDAO] Không thêm được khóa " + key + ": " + e.getMessage());
+            return false;
+        }
+    }
 
     /**
      * Cấu hình hiện tại. Khoá nào chưa có trong Database
