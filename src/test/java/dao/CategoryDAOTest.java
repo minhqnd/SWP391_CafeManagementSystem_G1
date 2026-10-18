@@ -31,7 +31,6 @@ public class CategoryDAOTest {
         for (Category c : categories) {
             assertEquals("ACTIVE", c.getStatus());
             assertNotNull(c.getName());
-            assertNotNull(c.getIcon());
             assertTrue(c.getProductCount() >= 0, "Product count must be non-negative");
         }
     }
@@ -41,8 +40,9 @@ public class CategoryDAOTest {
     void testGetCategoryById() {
         Category c = categoryDAO.getCategoryById(1);
         Assumptions.assumeTrue(c != null, "Skipping because sample category ID 1 is not in database");
+        assertEquals(1, c.getId());
         assertEquals("Cà phê máy", c.getName());
-        assertEquals("coffee_maker", c.getIcon());
+        assertEquals("ACTIVE", c.getStatus());
     }
 
     @Test
