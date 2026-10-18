@@ -51,7 +51,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
+                <a href="${ctx}/admin/recipes" class="nav-link ${param.activeMenu == 'recipes' ? 'active' : ''}">
                     <span class="material-symbols-outlined">menu_book</span>
                     <span>Công thức (BOM)</span>
                 </a>
