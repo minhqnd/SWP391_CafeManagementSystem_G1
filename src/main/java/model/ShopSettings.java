@@ -24,9 +24,11 @@ public class ShopSettings implements Serializable {
     private int deliveryMinutes = 30;           // thời gian giao dự kiến kể từ khi thanh toán
     private int pointsStep = 10;                // mốc điểm: khách dùng 10, 20, 30... điểm
     private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm
-    private String shiftMorning = "07:00-12:00";
-    private String shiftAfternoon = "12:00-17:00";
-    private String shiftEvening = "17:00-22:00";
+    // Khung giờ ca "HH:mm-HH:mm" chỉ lấy từ shop_settings (Admin sửa ở /admin/shifts), không có giá trị cố định:
+    // ca chưa có dòng cấu hình trong Database thì để null -> màn hình hiện "Chưa cấu hình"
+    private String shiftMorning;
+    private String shiftAfternoon;
+    private String shiftEvening;
 
     public double getFreeshipThreshold() { return freeshipThreshold; }
     public void setFreeshipThreshold(double freeshipThreshold) { this.freeshipThreshold = freeshipThreshold; }

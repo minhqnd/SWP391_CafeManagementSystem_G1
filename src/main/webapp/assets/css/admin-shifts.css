@@ -27,6 +27,64 @@
     letter-spacing: -0.035em;
 }
 
+/* Thanh chọn tuần thống kê */
+.shift-week-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.shift-week-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    background: #fff;
+    color: #4b5563;
+    text-decoration: none;
+}
+
+.shift-week-step:hover {
+    border-color: #f8d7da;
+    background: #fbf0f1;
+    color: #8b101c;
+}
+
+.shift-week-label {
+    color: #4b5563;
+    font-size: 0.8rem;
+}
+
+.shift-week-label strong {
+    color: #111827;
+}
+
+.shift-week-badge {
+    margin-left: 4px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #ecfdf5;
+    color: #047857;
+    font-size: 0.66rem;
+    font-weight: 700;
+}
+
+.shift-week-today {
+    color: #8b1420;
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.shift-week-today:hover {
+    text-decoration: underline;
+}
+
 .shift-page-header p {
     margin: 3px 0 0;
     color: #6b7280;

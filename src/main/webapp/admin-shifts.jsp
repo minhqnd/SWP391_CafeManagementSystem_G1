@@ -42,6 +42,22 @@
         <header class="shift-page-header">
             <h1>Khung giờ ca làm việc</h1>
             <p>Có 3 ca cố định (MORNING, AFTERNOON, EVENING). Giờ của từng ca được lưu trong shop_settings.</p>
+            <%-- Số lượt xếp ca tính theo tuần, cùng cách tính tuần với màn Lịch phân ca --%>
+            <nav class="shift-week-nav" aria-label="Chọn tuần thống kê">
+                <a class="shift-week-step" href="${ctx}/admin/shifts?date=${prevWeekDate}" title="Tuần trước">
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+                </a>
+                <span class="shift-week-label">
+                    Thống kê tuần <strong>${weekStartDisplay} – ${weekEndDisplay}</strong>
+                    <c:if test="${isCurrentWeek}"><span class="shift-week-badge">Tuần này</span></c:if>
+                </span>
+                <a class="shift-week-step" href="${ctx}/admin/shifts?date=${nextWeekDate}" title="Tuần sau">
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                </a>
+                <c:if test="${not isCurrentWeek}">
+                    <a class="shift-week-today" href="${ctx}/admin/shifts">Về tuần này</a>
+                </c:if>
+            </nav>
         </header>
 
         <section class="shift-card-grid" aria-label="Khung giờ 3 ca làm việc">
@@ -88,7 +104,7 @@
                     </dl>
 
                     <div class="shift-card-footer">
-                        <a href="${ctx}/admin/schedules" class="shift-card-link">
+                        <a href="${ctx}/admin/schedules?date=${selectedDate}" class="shift-card-link">
                             <span>Xem lịch phân ca</span>
                             <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                         </a>
@@ -113,6 +129,7 @@
             <div class="modal-content shift-modal-content">
                 <form id="shiftEditForm" method="post" action="${ctx}/admin/shifts" novalidate>
                     <input type="hidden" name="shift" id="shiftEditShift">
+                    <input type="hidden" name="returnDate" value="${selectedDate}">
 
                     <div class="modal-header shift-modal-header">
                         <h2 class="modal-title" id="shiftEditTitle">Giờ ca</h2>
