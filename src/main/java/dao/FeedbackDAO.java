@@ -21,7 +21,9 @@ public class FeedbackDAO extends BaseDAO {
         Feedback fb = new Feedback();
         int id = rs.getInt("id");
         fb.setId(id);
-        fb.setTicketCode("#CR-" + String.format("%04d", id));
+        String ticketCode = rs.getString("ticket_code");
+        fb.setTicketCode(ticketCode != null && !ticketCode.isBlank()
+                ? ticketCode : "#CR-" + String.format("%04d", id));
         fb.setCustomerId(rs.getInt("customer_id"));
         fb.setOrderId(rs.getInt("order_id"));
 
@@ -55,10 +57,10 @@ public class FeedbackDAO extends BaseDAO {
 
     public List<Feedback> getAllFeedbacks(int limit) {
         List<Feedback> list = new ArrayList<>();
-        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, o.order_code " +
+        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, COALESCE(o.order_code, cr.order_code) AS order_code " +
                      "FROM customer_reviews cr " +
                      "JOIN users u ON cr.customer_id = u.id " +
-                     "JOIN orders o ON cr.order_id = o.id " +
+                     "LEFT JOIN orders o ON cr.order_id = o.id " +
                      "ORDER BY cr.created_at DESC LIMIT ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -76,10 +78,10 @@ public class FeedbackDAO extends BaseDAO {
 
     public List<Feedback> getFeedbacksByCustomerId(int customerId) {
         List<Feedback> list = new ArrayList<>();
-        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, o.order_code " +
+        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, COALESCE(o.order_code, cr.order_code) AS order_code " +
                      "FROM customer_reviews cr " +
                      "JOIN users u ON cr.customer_id = u.id " +
-                     "JOIN orders o ON cr.order_id = o.id " +
+                     "LEFT JOIN orders o ON cr.order_id = o.id " +
                      "WHERE cr.customer_id = ? " +
                      "ORDER BY cr.created_at DESC";
         try (Connection conn = DBContext.getConnection();
@@ -123,10 +125,20 @@ public class FeedbackDAO extends BaseDAO {
 
             int affected = ps.executeUpdate();
             if (affected > 0) {
+                int feedbackId = 0;
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
-                        fb.setId(rs.getInt(1));
-                        fb.setTicketCode("#CR-" + String.format("%04d", fb.getId()));
+                        feedbackId = rs.getInt(1);
+                    }
+                }
+                if (feedbackId > 0) {
+                    fb.setId(feedbackId);
+                    fb.setTicketCode("#CR-" + String.format("%04d", feedbackId));
+                    try (PreparedStatement updateTicket = conn.prepareStatement(
+                            "UPDATE customer_reviews SET ticket_code = ? WHERE id = ?")) {
+                        updateTicket.setString(1, fb.getTicketCode());
+                        updateTicket.setInt(2, feedbackId);
+                        updateTicket.executeUpdate();
                     }
                 }
                 return true;

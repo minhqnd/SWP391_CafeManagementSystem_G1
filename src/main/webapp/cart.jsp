@@ -222,79 +222,6 @@
                             </c:choose>
                         </div>
 
-                        <!-- Dùng điểm Aura: trừ thẳng vào tiền hàng theo các mốc chẵn -->
-                        <div class="aura-card p-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                                <div class="section-title mb-0">
-                                    <span class="material-symbols-outlined" style="color: var(--aura-gold);">stars</span>
-                                    Dùng điểm Aura
-                                </div>
-                                <c:if test="${not empty sessionScope.user}">
-                                    <span class="badge-soft">Bạn có ${cart.availablePoints} điểm</span>
-                                </c:if>
-                            </div>
-                            <div class="text-muted mb-3" style="font-size: 0.78rem;">
-                                Mỗi <b>${shop.pointsStep} điểm</b> giảm <b><fmt:formatNumber value="${shop.pointsStepValue}" pattern="#,##0" />đ</b>,
-                                dùng theo mốc ${shop.pointsStep}, ${2 * shop.pointsStep}, ${3 * shop.pointsStep}... điểm.
-                            </div>
-
-                            <c:choose>
-                                <c:when test="${empty sessionScope.user}">
-                                    <button type="button" class="btn btn-soft w-100 py-2" data-bs-toggle="modal" data-bs-target="#authModal">
-                                        <span class="material-symbols-outlined fs-6">login</span> Đăng nhập để dùng điểm Aura
-                                    </button>
-                                </c:when>
-                                <c:when test="${cart.maxRedeemablePoints <= 0 && cart.pointsUsed == 0}">
-                                    <div class="info-box small py-2 mb-0">
-                                        <c:choose>
-                                            <c:when test="${cart.availablePoints < shop.pointsStep}">
-                                                Cần tối thiểu ${shop.pointsStep} điểm để dùng (còn thiếu ${shop.pointsStep - cart.availablePoints} điểm).
-                                            </c:when>
-                                            <c:otherwise>
-                                                Chọn món từ <fmt:formatNumber value="${shop.pointsStepValue}" pattern="#,##0" />đ trở lên để dùng điểm.
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </div>
-                                </c:when>
-                                <c:otherwise>
-                                    <%-- Thanh kéo chọn số điểm theo mốc (0, 10, 20...), tối đa là số điểm dùng được cho đơn này --%>
-                                    <form method="post" action="${ctx}/cart" class="points-slider" id="pointsForm"
-                                          data-step="${shop.pointsStep}" data-step-value="${shop.pointsStepValue}">
-                                        <input type="hidden" name="action" value="usePoints">
-                                        <div class="d-flex justify-content-between align-items-end gap-2 mb-2">
-                                            <div>
-                                                <div class="points-slider-value"><span id="pointsValue">${cart.pointsUsed}</span> điểm</div>
-                                                <div class="text-muted" style="font-size: 0.72rem;">Kéo để chọn số điểm</div>
-                                            </div>
-                                            <c:choose>
-                                                <c:when test="${cart.pointsUsed > 0}">
-                                                    <div class="fw-bold text-aura text-nowrap" id="pointsDiscount">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</div>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <div class="fw-semibold text-muted small text-nowrap" id="pointsDiscount">Chưa dùng điểm</div>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </div>
-                                        <input type="range" class="points-range" name="points" id="pointsRange"
-                                               min="0" max="${cart.maxRedeemablePoints}" step="${shop.pointsStep}" value="${cart.pointsUsed}"
-                                               aria-label="Số điểm Aura muốn dùng">
-                                        <div class="points-range-scale">
-                                            <span>0</span>
-                                            <span>Tối đa ${cart.maxRedeemablePoints} điểm</span>
-                                        </div>
-                                        <noscript>
-                                            <button type="submit" class="btn btn-soft btn-sm w-100 mt-2">Áp dụng</button>
-                                        </noscript>
-                                    </form>
-                                    <c:if test="${cart.maxRedeemablePoints < cart.availablePoints - cart.availablePoints % shop.pointsStep}">
-                                        <div class="text-muted mt-2" style="font-size: 0.72rem;">
-                                            Đơn này dùng tối đa ${cart.maxRedeemablePoints} điểm vì số tiền giảm không vượt quá tiền hàng.
-                                        </div>
-                                    </c:if>
-                                </c:otherwise>
-                            </c:choose>
-                        </div>
-
                         <!-- Tóm tắt đơn hàng -->
                         <div class="aura-card p-3 p-md-4">
                             <h2 class="h6 fw-bold mb-3">Tóm tắt đơn hàng</h2>
@@ -302,12 +229,6 @@
                                 <span class="label">Tổng tiền hàng (${fn:length(cart.selectedItems)} món)</span>
                                 <span class="fw-semibold"><fmt:formatNumber value="${cart.selectedSubtotal}" pattern="#,##0" />đ</span>
                             </div>
-                            <c:if test="${cart.pointsUsed > 0}">
-                                <div class="summary-row">
-                                    <span class="label">Dùng ${cart.pointsUsed} điểm Aura</span>
-                                    <span class="fw-semibold text-aura">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</span>
-                                </div>
-                            </c:if>
                             <div class="summary-row">
                                 <span class="label">Phí giao hàng</span>
                                 <c:choose>
@@ -332,14 +253,6 @@
                                 </div>
                                 <div class="grand-total"><fmt:formatNumber value="${cart.grandTotal}" pattern="#,##0" />đ</div>
                             </div>
-                            <c:if test="${cart.discount > 0}">
-                                <div class="saving-note mb-3">
-                                    <span class="material-symbols-outlined fs-6">savings</span>
-                                    Dùng ${cart.pointsUsed} điểm Aura giúp bạn tiết kiệm
-                                    <b><fmt:formatNumber value="${cart.discount}" pattern="#,##0" />đ</b>
-                                </div>
-                            </c:if>
-
                             <c:choose>
                                 <c:when test="${empty cart.selectedItems}">
                                     <button type="button" class="btn btn-aura w-100 py-3" disabled>Chọn món để đặt hàng</button>

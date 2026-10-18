@@ -19,8 +19,6 @@ public class CustomerOrder implements Serializable {
     private String customerName;
     private String customerPhone;
     private Integer cashierId;
-    private Integer voucherId;
-    private String voucherCode;
     private String orderType; // DINE_IN, TAKEAWAY, ONLINE
     private String status;    // PENDING, CONFIRMED, PREPARING, READY, DELIVERING, COMPLETED, CANCELLED
     private double totalAmount;
@@ -41,7 +39,7 @@ public class CustomerOrder implements Serializable {
     public CustomerOrder() {
     }
 
-    public CustomerOrder(int id, String orderCode, Integer customerId, Integer cashierId, Integer voucherId,
+    public CustomerOrder(int id, String orderCode, Integer customerId, Integer cashierId,
                          String orderType, String status, double totalAmount, double discountAmount,
                          double deliveryFee, double finalAmount, String recipientName, String recipientPhone,
                          String deliveryAddress, Integer shipperId, String tableNumber, String orderNote,
@@ -50,7 +48,6 @@ public class CustomerOrder implements Serializable {
         this.orderCode = orderCode;
         this.customerId = customerId;
         this.cashierId = cashierId;
-        this.voucherId = voucherId;
         this.orderType = orderType;
         this.status = status;
         this.totalAmount = totalAmount;
@@ -113,22 +110,6 @@ public class CustomerOrder implements Serializable {
 
     public void setCashierId(Integer cashierId) {
         this.cashierId = cashierId;
-    }
-
-    public Integer getVoucherId() {
-        return voucherId;
-    }
-
-    public void setVoucherId(Integer voucherId) {
-        this.voucherId = voucherId;
-    }
-
-    public String getVoucherCode() {
-        return voucherCode;
-    }
-
-    public void setVoucherCode(String voucherCode) {
-        this.voucherCode = voucherCode;
     }
 
     public String getOrderType() {

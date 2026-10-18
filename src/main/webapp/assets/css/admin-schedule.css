@@ -122,6 +122,18 @@ body.admin-body {
     color: var(--aura-primary);
 }
 
+.menu-nav .nav-link.coming-link::after {
+    content: "Đang phát triển";
+    margin-left: auto;
+    color: #a8a29e;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: right;
+    white-space: normal;
+    max-width: 62px;
+}
+
 .menu-nav .nav-link.active {
     background-color: var(--aura-primary) !important;
     color: #ffffff !important;

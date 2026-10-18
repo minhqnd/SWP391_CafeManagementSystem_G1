@@ -15,7 +15,6 @@ public class Order implements Serializable {
     private String orderCode;
     private Integer customerId;
     private Integer cashierId;
-    private Integer voucherId;
     private String orderType;
     private String status;
     private double totalAmount;
@@ -39,7 +38,6 @@ public class Order implements Serializable {
             String orderCode,
             Integer customerId,
             Integer cashierId,
-            Integer voucherId,
             String orderType,
             String status,
             double totalAmount,
@@ -57,7 +55,6 @@ public class Order implements Serializable {
         this.orderCode = orderCode;
         this.customerId = customerId;
         this.cashierId = cashierId;
-        this.voucherId = voucherId;
         this.orderType = orderType;
         this.status = status;
         this.totalAmount = totalAmount;
@@ -103,14 +100,6 @@ public class Order implements Serializable {
 
     public void setCashierId(Integer cashierId) {
         this.cashierId = cashierId;
-    }
-
-    public Integer getVoucherId() {
-        return voucherId;
-    }
-
-    public void setVoucherId(Integer voucherId) {
-        this.voucherId = voucherId;
     }
 
     public String getOrderType() {
