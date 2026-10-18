@@ -178,14 +178,14 @@
                             <a id="orders-link"
                                class="nav-link aura-nav-link ${param.activePage == 'barista-orders' ? 'active-nav' : ''}"
                                href="${pageContext.request.contextPath}/barista">
-                                Đơn pha chế <span class="d-none d-sm-inline">(F1)</span>
+                                Đơn pha chế
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a id="recipes-link"
-                               class="nav-link aura-nav-link ${param.activePage == 'barista-recipes' ? 'active-nav' : ''}"
-                               href="${pageContext.request.contextPath}/barista?action=recipes">
-                                Công thức &amp; Định lượng <span class="d-none d-sm-inline">(F2)</span>
+                            <a id="completed-link"
+                               class="nav-link aura-nav-link ${param.activePage == 'barista-completed' ? 'active-nav' : ''}"
+                               href="${pageContext.request.contextPath}/barista?action=completed">
+                                Đơn đã pha
                             </a>
                         </li>
                     </c:when>
