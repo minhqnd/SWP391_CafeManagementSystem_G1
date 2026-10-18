@@ -82,7 +82,6 @@
                 <h1 class="page-title">Quản lý sản phẩm &amp; giá bán</h1>
                 <p class="page-subtitle">Thêm món, gán vào danh mục, cập nhật ảnh, giá, size, topping và trạng thái bán.</p>
             </div>
-            <a href="#productEditor" class="btn btn-aura btn-sm fw-bold text-nowrap"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm món mới</a>
         </div>
         <div class="product-stats" aria-label="Thống kê sản phẩm">
             <div class="product-stat"><span>Tổng sản phẩm</span><strong><c:out value="${productTotal}" /></strong></div>

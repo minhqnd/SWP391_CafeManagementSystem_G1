@@ -54,20 +54,16 @@ public class ProductIngredientDAOTest {
 
     @Test
     @Order(3)
-    @DisplayName("TC-BOM-03: Cập nhật công thức và định lượng nguyên liệu thành công")
+    @DisplayName("TC-BOM-03: Cập nhật định mức nguyên liệu thành công")
     void testSaveRecipe_HappyPath() {
         Product beforeProduct = productDAO.getProductById(TEST_PRODUCT_ID);
         Assumptions.assumeTrue(beforeProduct != null, "Bỏ qua test nếu DB chưa khởi chạy");
-
-        String instructions = "Bước 1: Chiết xuất espresso.\nBước 2: Thêm nước sôi.";
-        String escapedInstructions = instructions.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
-        String variantsConfig = String.format("{\"isAvailableOnline\": true, \"instructions\": \"%s\"}", escapedInstructions);
 
         List<ProductIngredient> ingredients = new ArrayList<>();
         ingredients.add(new ProductIngredient(TEST_PRODUCT_ID, 1, 18.0, null, null));
 
         assertDoesNotThrow(() -> {
-            productIngredientDAO.saveRecipe(TEST_PRODUCT_ID, variantsConfig, ingredients);
+            productIngredientDAO.saveRecipe(TEST_PRODUCT_ID, ingredients);
         });
 
         List<ProductIngredient> saved = productIngredientDAO.getIngredientsByProductId(TEST_PRODUCT_ID);

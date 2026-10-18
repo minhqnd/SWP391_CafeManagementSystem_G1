@@ -205,7 +205,7 @@
                                 </button>
                             </c:when>
                             <c:otherwise>
-                                <button type="submit" class="btn btn-aura w-100 py-3">
+                                <button type="submit" class="btn btn-aura w-100 py-3" ${checkoutStockBlocked ? 'disabled' : ''}>
                                     Xác nhận đơn &amp; Đến bước Thanh toán
                                     <span class="material-symbols-outlined fs-5">arrow_forward</span>
                                 </button>

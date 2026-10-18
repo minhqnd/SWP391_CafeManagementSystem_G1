@@ -112,10 +112,38 @@ public class OrderDAO extends BaseDAO {
         } else {
             throw new IllegalArgumentException("Unsupported barista status");
         }
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, orderId);
-            return ps.executeUpdate() > 0;
+        try (Connection conn = getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                String currentStatus;
+                try (PreparedStatement lock = conn.prepareStatement("SELECT status FROM orders WHERE id = ? FOR UPDATE")) {
+                    lock.setInt(1, orderId);
+                    try (ResultSet rs = lock.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return false;
+                        }
+                        currentStatus = rs.getString("status");
+                    }
+                }
+                if ("READY".equals(targetStatus)
+                        || ("PREPARING".equals(targetStatus) && "CONFIRMED".equals(currentStatus))) {
+                    InventoryMovementDAO.consumeOrder(conn, orderId);
+                }
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, orderId);
+                    boolean updated = ps.executeUpdate() > 0;
+                    if (updated) conn.commit(); else conn.rollback();
+                    return updated;
+                }
+            } catch (Exception e) {
+                conn.rollback();
+                if (e instanceof SQLException) throw (SQLException) e;
+                throw new SQLException("Could not update order inventory", e);
+            } finally {
+                conn.setAutoCommit(autoCommit);
+            }
         }
     }
 
@@ -265,6 +293,13 @@ public class OrderDAO extends BaseDAO {
 
     /** placeOrder: khách không còn đủ điểm Aura để trừ (VD vừa dùng điểm cho đơn khác) */
     public static final int NOT_ENOUGH_POINTS = -2;
+    public static final int NOT_ENOUGH_STOCK = -3;
+
+    public String getCheckoutStockError(List<CartItem> items) throws SQLException, ClassNotFoundException {
+        try (Connection conn = DBContext.getConnection()) {
+            return InventoryMovementDAO.checkoutStockError(conn, items, false);
+        }
+    }
 
     /**
      * Tạo đơn hàng từ các món đã chọn ở Checkout trong cùng một transaction:
@@ -289,6 +324,10 @@ public class OrderDAO extends BaseDAO {
             conn.setAutoCommit(false);
 
             // 1. Tạo đơn hàng
+            if (InventoryMovementDAO.checkoutStockError(conn, items, true) != null) {
+                conn.rollback();
+                return NOT_ENOUGH_STOCK;
+            }
             int orderId;
             try (PreparedStatement ps = conn.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, order.getOrderCode());

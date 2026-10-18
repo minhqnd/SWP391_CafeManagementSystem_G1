@@ -71,7 +71,6 @@
                 <h1 class="page-title">Quản lý danh mục thực đơn</h1>
                 <p class="page-subtitle">Danh mục hiển thị trên menu khách hàng, POS và KDS.</p>
             </div>
-            <a href="${ctx}/admin/categories" class="btn btn-aura btn-sm fw-bold text-nowrap"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm danh mục</a>
         </div>
         <div class="category-stats" aria-label="Thống kê danh mục">
             <div class="category-stat"><span>Tổng danh mục</span><strong><c:out value="${categoryTotal}" /></strong></div>

@@ -509,6 +509,7 @@
                 let activeGroup = "all";
                 let currentOrders = [];
                 let isUpdating = false;
+                let orderActionError = "";
                 let loadController = null;
                 let refreshTimer = null;
                 let soundEnabled = false;
@@ -639,7 +640,8 @@
                         updateStatistics(data.statistics || {});
                         renderOrders();
                         detectNewOrders();
-                        hideError();
+                        if (orderActionError) showError(orderActionError);
+                        else hideError();
                     } catch (error) {
                         if (error.name !== "AbortError") showError(error.message);
                     } finally {
@@ -767,6 +769,8 @@
                 async function updateOrderStatus(orderId, status) {
                     if (isUpdating) return;
                     isUpdating = true;
+                    orderActionError = "";
+                    hideError();
                     clearTimeout(refreshTimer);
                     renderOrders();
                     try {
@@ -778,7 +782,8 @@
                         await readJson(response);
                         showToast(status === "PREPARING" ? "Đã bắt đầu pha chế đơn" : "Đơn đã hoàn tất và sẵn sàng bàn giao");
                     } catch (error) {
-                        showError(error.message);
+                        orderActionError = error.message;
+                        showError(orderActionError);
                     } finally {
                         isUpdating = false;
                         await loadOrders();
