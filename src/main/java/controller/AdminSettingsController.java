@@ -1,6 +1,7 @@
 package controller;
 
 import dao.ShopSettingDAO;
+import model.ShopSettingEntry;
 import model.ShopSettings;
 import model.User;
 
@@ -13,7 +14,10 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * AdminSettingsController - Admin cài đặt bán hàng online (chỉ tài khoản ADMIN)
@@ -23,6 +27,8 @@ import java.util.Map;
 @WebServlet(name = "AdminSettingsController", urlPatterns = {"/admin/settings"})
 public class AdminSettingsController extends HttpServlet {
 
+    private static final Pattern SETTING_KEY_PATTERN = Pattern.compile("^[a-z0-9_]{1,50}$");
+    private static final Pattern SHIFT_TIME_PATTERN = Pattern.compile("^(?:[01]\\d|2[0-3]):[0-5]\\d-(?:[01]\\d|2[0-3]):[0-5]\\d$");
     private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
 
     @Override
@@ -30,6 +36,17 @@ public class AdminSettingsController extends HttpServlet {
             throws ServletException, IOException {
 
         if (!isAdmin(request, response)) {
+            return;
+        }
+
+        // Các thao tác mở rộng dùng action riêng; form cấu hình bán hàng cũ bên dưới giữ nguyên.
+        String action = request.getParameter("action");
+        if ("addSetting".equals(action)) {
+            addSetting(request, response);
+            return;
+        }
+        if ("saveAllSettings".equals(action)) {
+            saveAllSettings(request, response);
             return;
         }
 
@@ -112,7 +129,93 @@ public class AdminSettingsController extends HttpServlet {
         request.setAttribute("settings", settings);
         request.setAttribute("form", form);
         request.setAttribute("moneyPerPoint", model.Cart.MONEY_PER_POINT);
+        request.setAttribute("settingGroups", groupSettings(shopSettingDAO.findAll()));
+        request.setAttribute("settingsPageLoaded", true);
         request.getRequestDispatcher("/admin-settings.jsp").forward(request, response);
+    }
+
+    /** Bổ sung: lưu màn hình quản lý toàn bộ khóa, tách biệt với form bán hàng online cũ. */
+    private void saveAllSettings(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        List<ShopSettingEntry> entries = shopSettingDAO.findAll();
+        Map<String, String> changed = new LinkedHashMap<>();
+        for (ShopSettingEntry entry : entries) {
+            String value = trim(request.getParameter("setting_" + entry.getKey()));
+            if (value.isEmpty()) {
+                request.setAttribute("settingsError", "Giá trị cài đặt không được để trống.");
+                showSettings(request, response, shopSettingDAO.getSettings(), buildLegacyForm(shopSettingDAO.getSettings()));
+                return;
+            }
+            if (entry.getKey().startsWith("shift_") && !SHIFT_TIME_PATTERN.matcher(value).matches()) {
+                request.setAttribute("settingsError", "Giờ ca phải đúng định dạng HH:mm-HH:mm.");
+                showSettings(request, response, shopSettingDAO.getSettings(), buildLegacyForm(shopSettingDAO.getSettings()));
+                return;
+            }
+            if (!value.equals(entry.getValue())) changed.put(entry.getKey(), value);
+        }
+        if (!shopSettingDAO.updateAll(changed)) {
+            request.setAttribute("settingsError", "Không thể lưu danh sách cài đặt.");
+            showSettings(request, response, shopSettingDAO.getSettings(), buildLegacyForm(shopSettingDAO.getSettings()));
+            return;
+        }
+        request.getSession().setAttribute("settingsMessage",
+                changed.isEmpty() ? "Không có thay đổi nào." : "Đã lưu " + changed.size() + " cài đặt.");
+        response.sendRedirect(request.getContextPath() + "/admin/settings");
+    }
+
+    /** Bổ sung: thêm khóa mới mà không thay đổi cấu trúc hay dữ liệu khởi tạo trong file SQL. */
+    private void addSetting(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String key = trim(request.getParameter("newKey"));
+        String value = trim(request.getParameter("newValue"));
+        request.setAttribute("newKey", key);
+        request.setAttribute("newValue", value);
+        request.setAttribute("openAddModal", true);
+        String error = null;
+        if (!SETTING_KEY_PATTERN.matcher(key).matches()) error = "Khóa chỉ gồm chữ thường, số, gạch dưới và tối đa 50 ký tự.";
+        else if (value.isEmpty()) error = "Giá trị cài đặt không được để trống.";
+        else if (value.length() > 255) error = "Giá trị cài đặt tối đa 255 ký tự.";
+        else if (shopSettingDAO.findAll().stream().anyMatch(item -> item.getKey().equals(key))) error = "Khóa cài đặt đã tồn tại.";
+
+        if (error != null || !shopSettingDAO.insert(key, value)) {
+            request.setAttribute("settingsError", error != null ? error : "Không thể thêm khóa cài đặt.");
+            ShopSettings settings = shopSettingDAO.getSettings();
+            showSettings(request, response, settings, buildLegacyForm(settings));
+            return;
+        }
+        request.getSession().setAttribute("settingsMessage", "Đã thêm cài đặt " + key + ".");
+        response.sendRedirect(request.getContextPath() + "/admin/settings");
+    }
+
+    private Map<String, String> buildLegacyForm(ShopSettings settings) {
+        Map<String, String> form = new LinkedHashMap<>();
+        form.put("freeshipThreshold", String.valueOf(Math.round(settings.getFreeshipThreshold())));
+        form.put("deliveryFee", String.valueOf(Math.round(settings.getDeliveryFee())));
+        form.put("deliveryMinutes", String.valueOf(settings.getDeliveryMinutes()));
+        form.put("pointsStep", String.valueOf(settings.getPointsStep()));
+        form.put("pointsStepValue", String.valueOf(Math.round(settings.getPointsStepValue())));
+        return form;
+    }
+
+    private Map<String, List<ShopSettingEntry>> groupSettings(List<ShopSettingEntry> entries) {
+        Map<String, List<ShopSettingEntry>> groups = new LinkedHashMap<>();
+        groups.put("Giao hàng", new ArrayList<>());
+        groups.put("Tích điểm", new ArrayList<>());
+        groups.put("Ca làm việc", new ArrayList<>());
+        groups.put("Khác", new ArrayList<>());
+        for (ShopSettingEntry entry : entries) {
+            String key = entry.getKey();
+            String group = key.startsWith("delivery_") || key.equals("freeship_threshold") ? "Giao hàng"
+                    : key.startsWith("points_") ? "Tích điểm"
+                    : key.startsWith("shift_") ? "Ca làm việc" : "Khác";
+            groups.get(group).add(entry);
+        }
+        groups.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        return groups;
+    }
+
+    private String trim(String value) {
+        return value == null ? "" : value.trim();
     }
 
     /** Chỉ tài khoản ADMIN được cài đặt; chưa đăng nhập thì mở popup đăng nhập ở trang chủ */
