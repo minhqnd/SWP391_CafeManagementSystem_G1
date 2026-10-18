@@ -33,7 +33,7 @@
         <div class="menu-group-header">BÁN HÀNG</div>
         <ul class="nav flex-column menu-nav">
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
+                <a href="${ctx}/admin/orders" class="nav-link ${param.activeMenu == 'orders' ? 'active' : ''}">
                     <span class="material-symbols-outlined">receipt_long</span>
                     <span>Đơn hàng</span>
                 </a>
