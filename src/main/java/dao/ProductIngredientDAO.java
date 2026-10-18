@@ -72,7 +72,7 @@ public class ProductIngredientDAO extends BaseDAO {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Could not load recipe ingredients", e);
         }
         return list;
     }
