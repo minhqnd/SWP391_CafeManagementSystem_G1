@@ -74,6 +74,10 @@
             <a class="module-card" href="${ctx}/admin/shifts"><span class="module-icon"><span class="material-symbols-outlined">schedule</span></span><div class="module-copy"><h3>Khung giờ ca làm việc</h3><p>Quản lý thời gian các ca sáng, chiều và tối.</p><span class="module-action">Mở khung giờ ca →</span></div></a>
             <a class="module-card" href="${ctx}/admin/schedules"><span class="module-icon"><span class="material-symbols-outlined">calendar_month</span></span><div class="module-copy"><h3>Lịch phân ca nhân viên</h3><p>Xem lịch tuần, phân ca và quản lý lịch làm việc.</p><span class="module-action">Mở lịch phân ca →</span></div></a>
             <a class="module-card" href="${ctx}/admin/attendance"><span class="module-icon"><span class="material-symbols-outlined">badge</span></span><div class="module-copy"><h3>Chấm công nhân viên</h3><p>Theo dõi giờ vào/ra và trạng thái làm việc theo ngày.</p><span class="module-action">Mở chấm công →</span></div></a>
+            <a class="module-card" href="${ctx}/admin/ingredients"><span class="module-icon"><span class="material-symbols-outlined">inventory_2</span></span><div class="module-copy"><h3>Nguyên vật liệu</h3><p>Danh mục nguyên liệu, đơn vị tính, nhà cung cấp và ngưỡng an toàn.</p><span class="module-action">Mở quản lý nguyên liệu →</span></div></a>
+            <a class="module-card" href="${ctx}/admin/inventory"><span class="module-icon"><span class="material-symbols-outlined">inventory</span></span><div class="module-copy"><h3>Tồn kho &amp; Xuất nhập</h3><p>Theo dõi tồn kho thực tế, lịch sử xuất bán và ghi phiếu điều chỉnh.</p><span class="module-action">Mở tồn kho →</span></div></a>
+            <a class="module-card" href="${ctx}/admin/restock-requests"><span class="module-icon"><span class="material-symbols-outlined">notification_important</span></span><div class="module-copy"><h3>Đề xuất nhập hàng</h3><p>Cảnh báo nguyên liệu thiếu hụt và duyệt phiếu đề xuất nhập.</p><span class="module-action">Mở đề xuất nhập hàng →</span></div></a>
+            <a class="module-card" href="${ctx}/admin/suppliers"><span class="module-icon"><span class="material-symbols-outlined">local_shipping</span></span><div class="module-copy"><h3>Nhà cung cấp</h3><p>Quản lý danh sách đối tác cung ứng nguyên vật liệu.</p><span class="module-action">Mở nhà cung cấp →</span></div></a>
         </div>
     </section>
 
@@ -81,8 +85,7 @@
         <div class="section-heading"><div><h2 id="comingSoon">Đang phát triển</h2><p>Các mục này chưa có màn hình quản lý, nên hiện chưa dẫn sang trang khác.</p></div></div>
         <div class="coming-grid">
             <div class="coming-item"><span class="material-symbols-outlined">receipt_long</span><span class="coming-name">Quản lý đơn hàng</span><span class="coming-label">Đang phát triển</span></div>
-            <div class="coming-item"><span class="material-symbols-outlined">inventory_2</span><span class="coming-name">Nguyên liệu và tồn kho</span><span class="coming-label">Đang phát triển</span></div>
-            <div class="coming-item"><span class="material-symbols-outlined">local_shipping</span><span class="coming-name">Nhà cung cấp và phiếu nhập</span><span class="coming-label">Đang phát triển</span></div>
+            <div class="coming-item"><span class="material-symbols-outlined">description</span><span class="coming-name">Phiếu nhập hàng (Purchase Order)</span><span class="coming-label">Đang phát triển</span></div>
             <div class="coming-item"><span class="material-symbols-outlined">group</span><span class="coming-name">Nhân viên và khách hàng</span><span class="coming-label">Đang phát triển</span></div>
             <div class="coming-item"><span class="material-symbols-outlined">loyalty</span><span class="coming-name">Tích điểm thành viên</span><span class="coming-label">Đang phát triển</span></div>
             <div class="coming-item"><span class="material-symbols-outlined">rate_review</span><span class="coming-name">Đánh giá và khiếu nại</span><span class="coming-label">Đang phát triển</span></div>
