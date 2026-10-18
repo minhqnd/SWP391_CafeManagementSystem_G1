@@ -16,6 +16,19 @@
         <url-pattern>/admin/products</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>AdminRecipeController</servlet-name>
+        <servlet-class>controller.AdminRecipeController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminRecipeController</servlet-name>
+        <url-pattern>/admin/recipes</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AdminRecipeController</servlet-name>
+        <url-pattern>/admin/recipe/update</url-pattern>
+    </servlet-mapping>
+
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
