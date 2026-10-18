@@ -360,9 +360,6 @@
                                     </p>
                                 </div>
                                 <div class="handover-actions-top">
-                                    <button type="button" class="btn-action-outline" onclick="window.print()">
-                                        <span class="material-symbols-outlined">print</span> In biên bản
-                                    </button>
                                     <a href="${ctx}/cashier" class="btn-action-primary">
                                         <span class="material-symbols-outlined">point_of_sale</span> Về POS
                                     </a>
