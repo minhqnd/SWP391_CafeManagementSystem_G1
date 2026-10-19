@@ -47,8 +47,41 @@ public class AdminOrderDAO extends BaseDAO {
     }
 
     public boolean updateStatus(int id, String status) throws SQLException, ClassNotFoundException {
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE orders SET status = ? WHERE id = ?")) {
-            ps.setString(1, status); ps.setInt(2, id); return ps.executeUpdate() == 1;
+        try (Connection conn = getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                String currentStatus;
+                try (PreparedStatement lock = conn.prepareStatement("SELECT status FROM orders WHERE id = ? FOR UPDATE")) {
+                    lock.setInt(1, id);
+                    try (ResultSet rs = lock.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return false;
+                        }
+                        currentStatus = rs.getString("status");
+                    }
+                }
+                boolean notYetPrepared = "PENDING".equals(currentStatus) || "CONFIRMED".equals(currentStatus);
+                boolean startsPreparation = "PREPARING".equals(status) || "READY".equals(status)
+                        || "DELIVERING".equals(status) || "COMPLETED".equals(status);
+                if (notYetPrepared && startsPreparation) {
+                    InventoryMovementDAO.consumeOrder(conn, id);
+                }
+                try (PreparedStatement ps = conn.prepareStatement("UPDATE orders SET status = ? WHERE id = ?")) {
+                    ps.setString(1, status);
+                    ps.setInt(2, id);
+                    boolean updated = ps.executeUpdate() == 1;
+                    if (updated) conn.commit(); else conn.rollback();
+                    return updated;
+                }
+            } catch (Exception e) {
+                conn.rollback();
+                if (e instanceof SQLException) throw (SQLException) e;
+                throw new SQLException("Could not update order inventory", e);
+            } finally {
+                conn.setAutoCommit(autoCommit);
+            }
         }
     }
 

@@ -7,8 +7,7 @@ import model.ProductIngredient;
 
 public class ProductIngredientDAO extends BaseDAO {
 
-    public void saveRecipe(int productId, String instructions, List<ProductIngredient> ingredients) throws Exception {
-        String updateProductSql = "UPDATE products SET variants_config = JSON_SET(COALESCE(variants_config, JSON_OBJECT()), '$.instructions', ?) WHERE id = ?";
+    public void saveRecipe(int productId, List<ProductIngredient> ingredients) throws Exception {
         String deleteOldBomSql = "DELETE FROM product_ingredients WHERE product_id = ?";
         String insertBomSql = "INSERT INTO product_ingredients (product_id, ingredient_id, quantity_required) VALUES (?, ?, ?)";
         
@@ -16,20 +15,14 @@ public class ProductIngredientDAO extends BaseDAO {
             // Transaction management
             conn.setAutoCommit(false);
             
-            try (PreparedStatement psUpdate = conn.prepareStatement(updateProductSql);
-                 PreparedStatement psDelete = conn.prepareStatement(deleteOldBomSql);
+            try (PreparedStatement psDelete = conn.prepareStatement(deleteOldBomSql);
                  PreparedStatement psInsert = conn.prepareStatement(insertBomSql)) {
-                
-                // 1. Save recipe instructions in the product JSON configuration.
-                psUpdate.setString(1, instructions == null ? "" : instructions);
-                psUpdate.setInt(2, productId);
-                psUpdate.executeUpdate();
-                
-                // 2. Delete existing BOM to replace with new ones
+
+                // Replace the existing BOM for this product.
                 psDelete.setInt(1, productId);
                 psDelete.executeUpdate();
-                
-                // 3. Insert new ingredients BOM using batch (if any)
+
+                // Insert the new BOM rows, if any.
                 if (ingredients != null && !ingredients.isEmpty()) {
                     for (ProductIngredient pi : ingredients) {
                         psInsert.setInt(1, productId);
@@ -97,7 +90,7 @@ public class ProductIngredientDAO extends BaseDAO {
                 ));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Could not load product recipe ingredients", e);
         }
         return map;
     }

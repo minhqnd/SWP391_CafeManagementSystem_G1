@@ -45,12 +45,14 @@ public class AdminRestockController extends HttpServlet {
         try {
             List<Ingredient> lowStockList = restockRequestDAO.getLowStockIngredients();
             List<RestockRequest> draftRequests = restockRequestDAO.getRestockRequests("DRAFT");
+            List<RestockRequest> orderedRequests = restockRequestDAO.getRestockRequests("ORDERED");
             List<Supplier> activeSuppliers = supplierDAO.getActiveSuppliers();
             List<Ingredient> allIngredients = ingredientDAO.getAllIngredientsWithDetails(null, null);
             Map<String, Object> stats = restockRequestDAO.getRestockStats();
 
             request.setAttribute("lowStockList", lowStockList);
             request.setAttribute("draftRequests", draftRequests);
+            request.setAttribute("orderedRequests", orderedRequests);
             request.setAttribute("activeSuppliers", activeSuppliers);
             request.setAttribute("allIngredients", allIngredients);
             request.setAttribute("stats", stats);
@@ -115,6 +117,16 @@ public class AdminRestockController extends HttpServlet {
                     int poId = Integer.parseInt(request.getParameter("id"));
                     restockRequestDAO.updateStatus(poId, "CANCELLED");
                     session.setAttribute("restockMessage", "Đã từ chối đề xuất PO-" + String.format("%04d", poId) + "!");
+                    break;
+                }
+                case "receive": {
+                    int poId = Integer.parseInt(request.getParameter("id"));
+                    if (restockRequestDAO.receivePurchaseOrder(poId)) {
+                        session.setAttribute("restockMessage", "Đã nhận hàng PO-" + String.format("%04d", poId)
+                                + "; tồn kho đã được cập nhật.");
+                    } else {
+                        session.setAttribute("restockError", "Phiếu nhập không còn ở trạng thái Đã đặt hàng.");
+                    }
                     break;
                 }
                 default:

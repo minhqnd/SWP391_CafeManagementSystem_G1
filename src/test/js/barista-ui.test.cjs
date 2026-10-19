@@ -112,6 +112,19 @@ test("incomplete completion confirms, sends READY, and removes the card only aft
     assert.equal(readOnly.controls().some(n => n.tagName === "img"), false);
 });
 
+test("stock error keeps the order and remains visible after refresh", async () => {
+    const h = harness();
+    h.response(0, { orders: fixture() }); await flush();
+    h.window.confirm = () => true;
+    h.byKey("complete-1").listeners.click();
+    const message = "Không đủ tồn kho để hoàn thành đơn";
+    h.response(1, { message }, 409); await flush();
+    h.response(2, { orders: fixture() }); await flush();
+    assert.ok(h.nodes["order-list"].textContent.includes("ORDER-1"));
+    assert.equal(h.nodes["barista-error"].textContent, message);
+    assert.equal(h.nodes["barista-error"].hidden, false);
+});
+
 test("completed empty state uses the required text", () => {
     const h = harness([], "completed");
     assert.equal(h.nodes["order-list"].textContent, "Chưa có đơn nào đã pha.");
