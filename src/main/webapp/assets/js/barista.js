@@ -71,7 +71,7 @@
     const list = doc.getElementById("order-list");
     const groupList = doc.getElementById("group-list");
     const errorBox = doc.getElementById("barista-error");
-    let orders = [], busy = false, loading = false, revision = 0;
+    let orders = [], busy = false, loading = false, revision = 0, actionError = "";
     try { orders = JSON.parse(doc.getElementById("barista-initial-data").textContent).orders || []; }
     catch (_) { showError("Không đọc được dữ liệu đơn hàng."); }
 
@@ -191,11 +191,13 @@
             if (!Array.isArray(data.orders)) throw new Error("Dữ liệu đơn hàng không hợp lệ.");
             if (!busy && expected === revision) {
                 orders = data.orders;
-                if (clearError) showError("");
+                if (clearError && !actionError) showError("");
                 render();
             }
         } catch (error) {
-            if (!busy && expected === revision) showError(error.message || "Không kết nối được máy chủ.");
+            if (!busy && expected === revision && !actionError) {
+                showError(error.message || "Không kết nối được máy chủ.");
+            }
         } finally { loading = false; }
     }
     async function mutate(parameters, optimistic, onSuccess) {
@@ -203,6 +205,7 @@
         busy = true;
         revision++;
         const previous = JSON.parse(JSON.stringify(orders));
+        actionError = "";
         showError("");
         optimistic();
         render();
@@ -218,7 +221,8 @@
             success = true;
         } catch (error) {
             orders = previous;
-            showError(error.message || "Không lưu được thay đổi. Vui lòng thử lại.");
+            actionError = error.message || "Không lưu được thay đổi. Vui lòng thử lại.";
+            showError(actionError);
         } finally {
             busy = false;
             render();

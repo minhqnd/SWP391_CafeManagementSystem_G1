@@ -142,8 +142,15 @@ public class BaristaController extends HttpServlet {
             }
             writeJson(response, 200, Map.of("success", true));
         } catch (IllegalArgumentException e) {
-            error(response, 400, "Mã đơn, món hoặc trạng thái không hợp lệ.");
-        } catch (SQLException | ClassNotFoundException e) {
+            error(response, 400, "Mã đơn hoặc trạng thái không hợp lệ.");
+        } catch (SQLException e) {
+            getServletContext().log("Cannot update barista order", e);
+            if (e.getMessage() != null && e.getMessage().startsWith("Không đủ tồn kho")) {
+                error(response, 409, e.getMessage());
+                return;
+            }
+            error(response, 500, "Không cập nhật được đơn hàng. Vui lòng tải lại và thử lại.");
+        } catch (ClassNotFoundException e) {
             getServletContext().log("Cannot update barista order", e);
             error(response, 500, "Không cập nhật được đơn hàng. Vui lòng tải lại và thử lại.");
         }
