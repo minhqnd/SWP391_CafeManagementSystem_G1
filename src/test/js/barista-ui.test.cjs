@@ -3,7 +3,8 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
-const source = fs.readFileSync(require.resolve("../../main/webapp/assets/js/barista.js"), "utf8");
+const jsp = fs.readFileSync(require.resolve("../../main/webapp/barista-dashboard.jsp"), "utf8");
+const source = jsp.match(/<script id="barista-script">([\s\S]*?)<\/script>/)[1];
 
 class Element {
     constructor(tag = "div") {

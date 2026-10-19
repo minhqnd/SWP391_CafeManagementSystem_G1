@@ -1,6 +1,12 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const kds = require("../../main/webapp/assets/js/barista.js");
+const fs = require("node:fs");
+const Module = require("node:module");
+const jsp = fs.readFileSync(require.resolve("../../main/webapp/barista-dashboard.jsp"), "utf8");
+const source = jsp.match(/<script id="barista-script">([\s\S]*?)<\/script>/)[1];
+const scriptModule = new Module(__filename);
+scriptModule._compile(source, "barista-inline.js");
+const kds = scriptModule.exports;
 
 function sample() {
     return [

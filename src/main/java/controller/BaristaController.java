@@ -99,8 +99,8 @@ public class BaristaController extends HttpServlet {
             }
             request.setAttribute("baristaInitialError", "Không tải được đơn hàng từ cơ sở dữ liệu.");
         }
-        request.setAttribute(completed ? "baristaCompleted" : "baristaDashboard", true);
-        request.getRequestDispatcher(completed ? "/barista-recipes.jsp" : "/barista-dashboard.jsp")
+        request.setAttribute("baristaView", completed ? "completed" : "active");
+        request.getRequestDispatcher("/barista-dashboard.jsp")
                 .forward(request, response);
     }
 

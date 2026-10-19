@@ -165,13 +165,21 @@ class BaristaControllerTest {
         assertEquals(409, x.status);
     }
 
-    @Test void completedPageReusesOldJspAndInitializesCsrf() throws Exception {
+    @Test void activePageUsesUnifiedJsp() throws Exception {
+        Exchange x = new Exchange();
+        new BaristaController(new FakeDAO()).doGet(x.request, x.response);
+        assertEquals("/barista-dashboard.jsp", x.forwarded);
+        assertEquals("active", x.attributes.get("baristaView"));
+        assertNotNull(x.attributes.get("baristaInitialData"));
+    }
+
+    @Test void completedPageUsesUnifiedJspAndInitializesCsrf() throws Exception {
         Exchange x = new Exchange();
         x.sessionValues.remove("baristaCsrfToken");
         x.params.put("action", "completed");
         new BaristaController(new FakeDAO()).doGet(x.request, x.response);
-        assertEquals("/barista-recipes.jsp", x.forwarded);
-        assertEquals(true, x.attributes.get("baristaCompleted"));
+        assertEquals("/barista-dashboard.jsp", x.forwarded);
+        assertEquals("completed", x.attributes.get("baristaView"));
         assertNotNull(x.sessionValues.get("baristaCsrfToken"));
         x.params.put("action", "recipes");
         new BaristaController(new FakeDAO()).doGet(x.request, x.response);
