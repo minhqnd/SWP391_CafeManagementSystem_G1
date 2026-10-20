@@ -28,6 +28,12 @@ public class Order implements Serializable {
     private String tableNumber;
     private String orderNote;
     private LocalDateTime createdAt;
+    // Transient Barista UI state; not a database column.
+    private LocalDateTime readyAt;
+
+    public LocalDateTime getReadyAt() { return readyAt; }
+
+    public void setReadyAt(LocalDateTime readyAt) { this.readyAt = readyAt; }
 
     private List<OrderDetail> items = new ArrayList<>();
 

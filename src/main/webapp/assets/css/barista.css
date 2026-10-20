@@ -1,0 +1,246 @@
+/* NEW: Shared responsive Barista queue and read-only completed cards. */
+:root {
+    --aura-primary: #900b1a;
+}
+body {
+    margin: 0;
+    background: #f5f5f4;
+    color: #292524;
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+}
+.barista-main {
+    max-width: 1800px;
+    margin: auto;
+    padding: 28px 24px 40px;
+}
+.barista-main h1 {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0 0 24px;
+}
+.barista-main h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 18px;
+}
+.kds-layout {
+    display: grid;
+    grid-template-columns: 330px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+.group-panel {
+    position: sticky;
+    top: 96px;
+    background: #fff;
+    border: 1px solid #e7e5e4;
+    border-radius: 16px;
+    padding: 18px;
+}
+.group-list {
+    max-height: calc(100dvh - 210px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+.group-card {
+    padding: 16px 4px;
+    border-top: 1px solid #eee;
+}
+.group-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 15px;
+}
+.group-quantity {
+    color: #900b1a;
+    font-size: 21px;
+    flex-shrink: 0;
+}
+.group-orders {
+    color: #78716c;
+    font-size: 12px;
+    margin: 8px 0;
+    overflow-wrap: anywhere;
+}
+.order-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: 18px;
+    align-items: start;
+}
+.order-card {
+    min-width: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e7e5e4;
+    border-radius: 16px;
+}
+.order-heading {
+    padding: 18px;
+    border-bottom: 1px solid #eee;
+}
+.order-code {
+    font-size: 19px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    overflow-wrap: anywhere;
+}
+.order-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: #57534e;
+    font-size: 12px;
+}
+.order-type, .ready-badge {
+    border-radius: 6px;
+    background: #f5f5f4;
+    padding: 4px 8px;
+}
+.ready-badge {
+    color: #176344;
+    background: #eaf6ee;
+}
+.order-person {
+    margin: 10px 0 0;
+    color: #57534e;
+    overflow-wrap: anywhere;
+}
+.item-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.order-item {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1efed;
+    transition: background .15s;
+}
+.item-top {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-weight: 600;
+}
+.item-quantity {
+    color: #900b1a;
+    flex-shrink: 0;
+}
+.item-name {
+    overflow-wrap: anywhere;
+}
+.option-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+}
+.option-tag {
+    font-size: 11px;
+    border: 1px solid #e7e5e4;
+    background: #fafaf9;
+    border-radius: 5px;
+    padding: 3px 7px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+}
+.prepared-toggle {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+    min-height: 30px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.prepared-toggle input {
+    width: 18px;
+    height: 18px;
+    accent-color: #900b1a;
+    cursor: pointer;
+}
+.order-item.is-prepared {
+    background: #f7f7f5;
+    color: #78716c;
+}
+.order-item.is-prepared .item-name {
+    text-decoration: line-through;
+    text-decoration-color: #b8b5b0;
+}
+.order-item.is-prepared .item-quantity {
+    color: #78716c;
+}
+.order-note {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin: 14px 18px;
+    padding: 10px;
+    background: #fff8eb;
+    border-radius: 8px;
+}
+.order-actions {
+    padding: 16px 18px;
+}
+.order-progress {
+    font-size: 12px;
+    color: #57534e;
+    margin: 0 0 10px;
+}
+.order-warning {
+    font-size: 12px;
+    color: #8c560b;
+    margin: 0 0 10px;
+}
+.complete-button {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #d7b16c;
+    border-radius: 9px;
+    color: #83510a;
+    background: #fff8eb;
+    font-weight: 700;
+}
+.complete-button.all-prepared {
+    color: white;
+    background: #900b1a;
+    border-color: #900b1a;
+}
+.complete-button:hover {
+    filter: brightness(.95);
+}
+.complete-button:disabled, .prepared-toggle input:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+.barista-main :focus-visible {
+    outline: 3px solid #bc6170;
+    outline-offset: 3px;
+}
+.empty-state {
+    color: #78716c;
+    padding: 30px 16px;
+    background: #fff;
+    border: 1px dashed #d6d3d1;
+    border-radius: 12px;
+    text-align: center;
+    grid-column: 1 / -1;
+}
+/* NEW: Keep grouping above cards on narrow screens, without a fixed footer. */
+@media (max-width: 991px) {
+    .barista-main {
+        padding: 20px 16px 32px;
+    }
+    .kds-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .group-panel {
+        position: static;
+    }
+    .group-list {
+        max-height: 40dvh;
+    }
+}

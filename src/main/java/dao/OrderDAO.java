@@ -27,25 +27,22 @@ import java.util.List;
  */
 public class OrderDAO extends BaseDAO {
 
-    // All channels share orders. No per-item preparation status exists in the schema.
+    // All channels share the paid-order queue; checkbox state is kept outside the database.
     private static final String BARISTA_TYPES =
             "o.order_type IN ('DINE_IN', 'TAKEAWAY', 'ONLINE')";
     private static final String BARISTA_PAID =
             "EXISTS (SELECT 1 FROM payments pay WHERE pay.order_id = o.id AND pay.status = 'SUCCESS')";
 
     public List<Order> getOrdersForBarista() throws SQLException, ClassNotFoundException {
-        // Limit orders BEFORE joining items; multiple successful payments must not duplicate items.
+        // EXISTS avoids duplicating items when an order has multiple successful payments.
         String sql = "WITH eligible_orders AS (SELECT o.* FROM orders o WHERE "
                 + BARISTA_TYPES + " AND " + BARISTA_PAID
                 + " AND o.status IN ('CONFIRMED', 'PREPARING', 'READY') "
-                + "AND EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id)), "
-                + "recent_ready AS (SELECT * FROM eligible_orders WHERE status = 'READY' "
-                + "ORDER BY created_at DESC, id DESC LIMIT 3) "
+                + "AND EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id)) "
                 + "SELECT o.*, i.id AS item_id, i.product_id, i.product_name_at_time, "
                 + "i.unit_price, i.customization, i.quantity, i.subtotal, "
                 + "p.category_id, c.name AS category_name "
-                + "FROM (SELECT * FROM eligible_orders WHERE status IN ('CONFIRMED', 'PREPARING') "
-                + "UNION ALL SELECT * FROM recent_ready) o "
+                + "FROM eligible_orders o "
                 + "JOIN order_items i ON i.order_id = o.id "
                 + "JOIN products p ON p.id = i.product_id "
                 + "JOIN categories c ON c.id = p.category_id "
@@ -82,12 +79,13 @@ public class OrderDAO extends BaseDAO {
                     order.setCreatedAt(rs.getObject("created_at", java.time.LocalDateTime.class));
                     orders.put(id, order);
                 }
-                order.getItems().add(new OrderDetail(
+                OrderDetail item = new OrderDetail(
                         rs.getInt("item_id"), id, rs.getInt("product_id"),
                         rs.getString("product_name_at_time"), rs.getBigDecimal("unit_price"),
                         rs.getString("customization"), rs.getInt("quantity"),
                         rs.getBigDecimal("subtotal"), rs.getInt("category_id"),
-                        rs.getString("category_name")));
+                        rs.getString("category_name"));
+                order.getItems().add(item);
             }
         }
         return new ArrayList<>(orders.values());
