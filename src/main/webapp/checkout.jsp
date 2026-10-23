@@ -4,7 +4,9 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <fmt:setLocale value="vi_VN" />
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
-<c:set var="isGuest" value="${empty sessionScope.user}" />
+<c:set var="isCustomer" value="${not empty sessionScope.user and fn:toUpperCase(sessionScope.user.role) eq 'CUSTOMER'}" />
+<c:set var="isGuest" value="${not isCustomer}" />
+<c:set var="isInternalAccount" value="${not empty sessionScope.user and not isCustomer}" />
 <c:set var="shop" value="${cart.settings}" />
 <!DOCTYPE html>
 <html lang="vi">
@@ -53,13 +55,25 @@
             <div class="aura-card login-required p-3 mb-4 d-flex flex-column flex-md-row align-items-md-center gap-3">
                 <span class="section-icon"><span class="material-symbols-outlined">lock</span></span>
                 <div class="flex-grow-1">
-                    <div class="fw-bold">Đăng nhập để tiếp tục đặt hàng</div>
+                    <div class="fw-bold">
+                        <c:choose>
+                            <c:when test="${isInternalAccount}">Cần tài khoản khách hàng để đặt món</c:when>
+                            <c:otherwise>Đăng nhập để tiếp tục đặt hàng</c:otherwise>
+                        </c:choose>
+                    </div>
                     <div class="text-muted small">
-                        Bạn cần đăng nhập để nhập địa chỉ giao hàng, dùng điểm Aura và chuyển sang bước thanh toán.
+                        <c:choose>
+                            <c:when test="${isInternalAccount}">
+                                Tài khoản <c:out value="${sessionScope.user.role}" /> hiện tại chỉ dùng cho nghiệp vụ nội bộ. Hãy đăng nhập bằng tài khoản CUSTOMER.
+                            </c:when>
+                            <c:otherwise>
+                                Bạn cần đăng nhập bằng tài khoản khách hàng để nhập địa chỉ giao hàng, dùng điểm Aura và chuyển sang bước thanh toán.
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
                 <button type="button" class="btn btn-aura px-4 py-2 text-nowrap" data-bs-toggle="modal" data-bs-target="#authModal">
-                    <span class="material-symbols-outlined fs-5">login</span> Đăng nhập / Đăng ký
+                    <span class="material-symbols-outlined fs-5">login</span> Đăng nhập tài khoản khách hàng
                 </button>
             </div>
         </c:if>
@@ -201,7 +215,7 @@
                         <c:choose>
                             <c:when test="${isGuest}">
                                 <button type="button" class="btn btn-aura w-100 py-3" data-bs-toggle="modal" data-bs-target="#authModal">
-                                    <span class="material-symbols-outlined fs-5">login</span> Đăng nhập để tiếp tục
+                                    <span class="material-symbols-outlined fs-5">login</span> Đăng nhập tài khoản khách hàng
                                 </button>
                             </c:when>
                             <c:otherwise>

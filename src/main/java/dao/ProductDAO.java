@@ -2,6 +2,7 @@ package dao;
 
 import context.DBContext;
 import model.Product;
+import model.ProductImage;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,7 +20,7 @@ public class ProductDAO extends BaseDAO {
     /** All products for the admin catalog, including temporarily unavailable items. */
     public List<Product> getProductsForAdmin(Integer categoryId, String keyword) throws SQLException, ClassNotFoundException {
         List<Product> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE 1 = 1");
+        StringBuilder sql = new StringBuilder("SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE 1 = 1");
         List<Object> params = new ArrayList<>();
         if (categoryId != null && categoryId > 0) {
             sql.append(" AND p.category_id = ?");
@@ -52,7 +53,7 @@ public class ProductDAO extends BaseDAO {
     }
 
     public Product getProductForAdmin(int id) throws SQLException, ClassNotFoundException {
-        String sql = "SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?";
+        String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?";
         try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -62,11 +63,44 @@ public class ProductDAO extends BaseDAO {
     }
 
     public boolean saveProduct(Product product) throws SQLException, ClassNotFoundException {
+        return saveProduct(product, null, null, null, false);
+    }
+
+    public boolean saveProduct(Product product, byte[] imageData, String contentType,
+                               String fileName, boolean removeImage)
+            throws SQLException, ClassNotFoundException {
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                boolean saved = saveProduct(conn, product);
+                if (!saved) {
+                    conn.rollback();
+                    return false;
+                }
+                if (imageData != null) {
+                    saveImage(conn, product.getId(), imageData, contentType, fileName);
+                    clearLegacyImageUrl(conn, product.getId());
+                } else if (removeImage) {
+                    deleteImage(conn, product.getId());
+                    clearLegacyImageUrl(conn, product.getId());
+                }
+                conn.commit();
+                return true;
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
+    private boolean saveProduct(Connection conn, Product product) throws SQLException {
         if (product.getId() > 0) {
-            String sql = "UPDATE products SET category_id = ?, name = ?, base_price = ?, variants_config = ?, description = ?, image_url = ?, is_available = ? WHERE id = ?";
-            try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            String sql = "UPDATE products SET category_id = ?, name = ?, base_price = ?, variants_config = ?, description = ?, is_available = ? WHERE id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 bindProduct(ps, product);
-                ps.setInt(8, product.getId());
+                ps.setInt(7, product.getId());
                 if (ps.executeUpdate() > 0) return true;
                 try (PreparedStatement exists = conn.prepareStatement("SELECT 1 FROM products WHERE id = ?")) {
                     exists.setInt(1, product.getId());
@@ -74,8 +108,8 @@ public class ProductDAO extends BaseDAO {
                 }
             }
         }
-        String sql = "INSERT INTO products (category_id, name, base_price, variants_config, description, image_url, is_available) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        String sql = "INSERT INTO products (category_id, name, base_price, variants_config, description, is_available) VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bindProduct(ps, product);
             if (ps.executeUpdate() == 0) return false;
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -91,8 +125,35 @@ public class ProductDAO extends BaseDAO {
         ps.setDouble(3, product.getBasePrice());
         ps.setString(4, product.getVariantsConfig());
         ps.setString(5, product.getDescription());
-        ps.setString(6, product.getImageUrl());
-        ps.setBoolean(7, product.isAvailable());
+        ps.setBoolean(6, product.isAvailable());
+    }
+
+    private void saveImage(Connection conn, int productId, byte[] data, String contentType, String fileName)
+            throws SQLException {
+        String sql = "INSERT INTO product_images (product_id, image_data, content_type, file_name) VALUES (?, ?, ?, ?) "
+                + "ON DUPLICATE KEY UPDATE image_data=VALUES(image_data), content_type=VALUES(content_type), "
+                + "file_name=VALUES(file_name), updated_at=CURRENT_TIMESTAMP";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            ps.setBytes(2, data);
+            ps.setString(3, contentType);
+            ps.setString(4, fileName);
+            ps.executeUpdate();
+        }
+    }
+
+    private void deleteImage(Connection conn, int productId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM product_images WHERE product_id = ?")) {
+            ps.setInt(1, productId);
+            ps.executeUpdate();
+        }
+    }
+
+    private void clearLegacyImageUrl(Connection conn, int productId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("UPDATE products SET image_url = NULL WHERE id = ?")) {
+            ps.setInt(1, productId);
+            ps.executeUpdate();
+        }
     }
 
     public boolean updateProductAvailability(int id, boolean available) throws SQLException, ClassNotFoundException {
@@ -118,7 +179,7 @@ public class ProductDAO extends BaseDAO {
     private Product mapResultSetToProduct(ResultSet rs) throws SQLException {
         String desc = hasColumn(rs, "description") ? rs.getString("description") : null;
         
-        return new Product(
+        Product product = new Product(
                 rs.getInt("id"),
                 rs.getInt("category_id"),
                 hasColumn(rs, "category_name") ? rs.getString("category_name") : null,
@@ -129,6 +190,21 @@ public class ProductDAO extends BaseDAO {
                 rs.getString("image_url"),
                 rs.getBoolean("is_available")
         );
+        product.setStoredImage(hasColumn(rs, "has_stored_image") && rs.getBoolean("has_stored_image"));
+        return product;
+    }
+
+    public ProductImage getProductImage(int productId) {
+        String sql = "SELECT image_data, content_type FROM product_images WHERE product_id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return new ProductImage(rs.getBytes("image_data"), rs.getString("content_type"));
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not load product image", e);
+        }
+        return null;
     }
 
     /**
@@ -136,7 +212,7 @@ public class ProductDAO extends BaseDAO {
      */
     public List<Product> getAllProducts() {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT p.*, c.name AS category_name " +
+        String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                      "FROM products p " +
                      "LEFT JOIN categories c ON p.category_id = c.id " +
                      "WHERE p.is_available = 1 " +
@@ -160,7 +236,7 @@ public class ProductDAO extends BaseDAO {
      */
     public List<Product> getAllAvailableProducts() {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT p.*, c.name AS category_name " +
+        String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                      "FROM products p " +
                      "JOIN categories c ON p.category_id = c.id " +
                      "WHERE p.is_available = 1 " +
@@ -181,7 +257,7 @@ public class ProductDAO extends BaseDAO {
 
     public List<Product> getProductsByCategory(int categoryId) {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT p.*, c.name AS category_name " +
+        String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                      "FROM products p " +
                      "JOIN categories c ON p.category_id = c.id " +
                      "WHERE p.is_available = 1 AND p.category_id = ? " +
@@ -204,7 +280,7 @@ public class ProductDAO extends BaseDAO {
 
     public List<Product> searchProducts(String keyword) {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT p.*, c.name AS category_name " +
+        String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                      "FROM products p " +
                      "JOIN categories c ON p.category_id = c.id " +
                      "WHERE p.is_available = 1 " +
@@ -233,7 +309,7 @@ public class ProductDAO extends BaseDAO {
     public List<Product> filterProducts(Integer categoryId, String keyword) {
         List<Product> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-                "SELECT p.*, c.name AS category_name " +
+                "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                 "FROM products p " +
                 "JOIN categories c ON p.category_id = c.id " +
                 "WHERE p.is_available = 1 "
@@ -274,7 +350,7 @@ public class ProductDAO extends BaseDAO {
     }
 
     public Product getProductById(int id) {
-        String sql = "SELECT p.*, c.name AS category_name " +
+        String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                      "FROM products p " +
                      "JOIN categories c ON p.category_id = c.id " +
                      "WHERE p.id = ?";
@@ -313,7 +389,7 @@ public class ProductDAO extends BaseDAO {
      */
     public List<Product> getRelatedProducts(int categoryId, int excludeProductId, int limit) {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT p.*, c.name AS category_name " +
+        String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                      "FROM products p " +
                      "JOIN categories c ON p.category_id = c.id " +
                      "WHERE p.is_available = 1 AND p.category_id = ? AND p.id != ? " +
@@ -340,7 +416,7 @@ public class ProductDAO extends BaseDAO {
 
     public List<Product> getBestSellingProducts(int limit) {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT p.*, c.name AS category_name, COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity ELSE 0 END), 0) as total_sold " +
+        String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image, COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity ELSE 0 END), 0) as total_sold " +
                      "FROM products p " +
                      "JOIN categories c ON p.category_id = c.id " +
                      "LEFT JOIN order_items oi ON p.id = oi.product_id " +

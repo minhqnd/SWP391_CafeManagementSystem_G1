@@ -17,6 +17,7 @@ import model.User;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,16 +92,17 @@ public class AdminRestockController extends HttpServlet {
                     int supplierId = Integer.parseInt(request.getParameter("supplierId"));
                     int ingredientId = Integer.parseInt(request.getParameter("ingredientId"));
                     String qtyStr = request.getParameter("quantity");
-                    String priceStr = request.getParameter("unitPrice");
+                    String priceStr = request.getParameter("totalPrice");
 
                     if (qtyStr == null || qtyStr.isBlank() || priceStr == null || priceStr.isBlank()) {
-                        session.setAttribute("restockError", "Vui lòng nhập đầy đủ số lượng và đơn giá dự kiến.");
+                        session.setAttribute("restockError", "Vui lòng nhập đầy đủ số lượng và tổng tiền lô nhập.");
                     } else {
                         BigDecimal qty = new BigDecimal(qtyStr.trim());
-                        BigDecimal price = new BigDecimal(priceStr.trim());
+                        BigDecimal totalPrice = new BigDecimal(priceStr.trim());
+                        BigDecimal unitPrice = calculateUnitPrice(qty, totalPrice);
 
                         List<RestockItem> items = new ArrayList<>();
-                        items.add(new RestockItem(ingredientId, "", "", qty, price));
+                        items.add(new RestockItem(ingredientId, "", "", qty, unitPrice));
 
                         restockRequestDAO.createRestockRequest(supplierId, user.getId(), items);
                         session.setAttribute("restockMessage", "Tạo đề xuất nhập hàng thành công!");
@@ -133,12 +135,19 @@ public class AdminRestockController extends HttpServlet {
                     session.setAttribute("restockError", "Thao tác không được hỗ trợ.");
                     break;
             }
-        } catch (SQLException | ClassNotFoundException | NumberFormatException e) {
+        } catch (SQLException | ClassNotFoundException | IllegalArgumentException e) {
             getServletContext().log("Restock action error", e);
             session.setAttribute("restockError", e.getMessage());
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/restock-requests");
+    }
+
+    static BigDecimal calculateUnitPrice(BigDecimal quantity, BigDecimal totalPrice) {
+        if (quantity == null || totalPrice == null || quantity.signum() <= 0 || totalPrice.signum() < 0) {
+            throw new IllegalArgumentException("Số lượng phải lớn hơn 0 và tổng tiền không được âm.");
+        }
+        return totalPrice.divide(quantity, 2, RoundingMode.HALF_UP);
     }
 
     private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {

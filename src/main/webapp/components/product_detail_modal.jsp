@@ -380,18 +380,23 @@
                 }
                 var sizes = config.sizes;
                 if (!sizes || typeof sizes !== 'object' || Object.keys(sizes).length === 0) {
-                    sizes = { "M": 0, "L": 10000 };
+                    sizes = { "Tiêu chuẩn": 0 };
                 }
                 var toppings = Array.isArray(config.toppings) ? config.toppings : [];
 
                 // Sizes
                 var sizeListHtml = '';
                 var sizeKeys = Object.keys(sizes);
+                var defaultSizeName = sizeKeys.find(function (name) {
+                    return Number(sizes[name]) === 0;
+                }) || sizeKeys.reduce(function (cheapest, name) {
+                    return Number(sizes[name]) < Number(sizes[cheapest]) ? name : cheapest;
+                });
                 sizeKeys.forEach(function (sName, index) {
-                    var extraPrice = sizes[sName] || 0;
-                    var isFirst = index === 0;
-                    if (isFirst) selectedSizePrice = extraPrice;
-                    sizeListHtml += '<div class="option-chip ' + (isFirst ? 'selected' : '') + '" data-size="' + sName.replace(/"/g, '&quot;') + '" onclick="selectSize(this, ' + extraPrice + ')">'
+                    var extraPrice = Number(sizes[sName]) || 0;
+                    var isDefault = sName === defaultSizeName;
+                    if (isDefault) selectedSizePrice = extraPrice;
+                    sizeListHtml += '<div class="option-chip ' + (isDefault ? 'selected' : '') + '" data-size="' + sName.replace(/"/g, '&quot;') + '" onclick="selectSize(this, ' + extraPrice + ')">'
                         + sName + (extraPrice > 0 ? ' (+' + extraPrice.toLocaleString('vi-VN') + 'đ)' : '')
                         + '</div>';
                 });

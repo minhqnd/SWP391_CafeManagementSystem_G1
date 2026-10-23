@@ -690,8 +690,9 @@ public class OrderDAO extends BaseDAO {
             return;
         }
         StringBuilder sql = new StringBuilder(
-                "SELECT oi.*, p.image_url FROM order_items oi " +
-                "LEFT JOIN products p ON p.id = oi.product_id WHERE oi.order_id IN (");
+                "SELECT oi.*, CASE WHEN pi.product_id IS NOT NULL THEN CONCAT('product-image?id=', p.id) ELSE p.image_url END AS image_url FROM order_items oi " +
+                "LEFT JOIN products p ON p.id = oi.product_id " +
+                "LEFT JOIN product_images pi ON pi.product_id = p.id WHERE oi.order_id IN (");
         int index = 0;
         for (int i = 0; i < orders.size(); i++) {
             sql.append(i > 0 ? ", ?" : "?");

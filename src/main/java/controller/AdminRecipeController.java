@@ -52,7 +52,7 @@ public class AdminRecipeController extends HttpServlet {
             List<ProductIngredient> recipeIngredients = selectedProduct == null
                     ? List.of()
                     : allRecipeIngredients.getOrDefault(selectedProductId, List.of());
-            Map<Integer, BigDecimal> ingredientUnitCosts = ingredientDAO.getAverageReceivedUnitCosts();
+            Map<Integer, BigDecimal> ingredientUnitCosts = ingredientDAO.getLatestPurchasePrices();
             BigDecimal recipeCost = BigDecimal.ZERO;
             List<String> missingCostIngredients = new ArrayList<>();
             for (ProductIngredient recipeIngredient : recipeIngredients) {

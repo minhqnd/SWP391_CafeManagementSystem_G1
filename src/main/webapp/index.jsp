@@ -290,7 +290,8 @@
                     <div class="home-category-list" id="homeCategoryList">
                         <c:forEach var="cat" items="${landingCategories}">
                             <a class="home-category-link" href="${pageContext.request.contextPath}/menu?category=${cat.id}">
-                                <img class="home-category-image" src="${not empty cat.imageUrl ? cat.imageUrl : 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=160&h=120&fit=crop'}" alt="${cat.name}" loading="lazy" />
+                                <c:url var="storedCategoryImage" value="/category-image"><c:param name="id" value="${cat.id}" /></c:url>
+                                <img class="home-category-image" src="${cat.storedImage ? storedCategoryImage : (not empty cat.imageUrl ? cat.imageUrl : 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=160&h=120&fit=crop')}" alt="${cat.name}" loading="lazy" />
                                 <span>${cat.name}</span>
                                 <span class="home-category-count">${cat.productCount}</span>
                             </a>
@@ -304,7 +305,7 @@
             <div class="col-md-9 col-lg-10">
                 <section class="home-banner" id="auraHomeBanner" aria-label="Món nổi bật Aura">
                     <c:forEach var="bannerProduct" items="${bestSellerProducts}" varStatus="slide">
-                        <div class="home-banner-slide ${slide.first ? 'active' : ''}" style="background-image:url('${bannerProduct.imageUrl}')" aria-hidden="${!slide.first}">
+                        <div class="home-banner-slide ${slide.first ? 'active' : ''}" style="background-image:url('${bannerProduct.displayImageUrl}')" aria-hidden="${!slide.first}">
                             <div class="home-banner-copy">
                                 <span class="eyebrow">${slide.first ? 'Hương vị đặc trưng Aura' : 'Được khách hàng yêu thích'}</span>
                                 <h1>${bannerProduct.name}</h1>

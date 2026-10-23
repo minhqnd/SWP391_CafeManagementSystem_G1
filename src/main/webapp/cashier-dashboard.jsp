@@ -1955,10 +1955,10 @@
                          data-name="<c:out value="${p.name}"/>" 
                          data-price="${p.basePrice}" 
                          data-cat-id="${p.categoryId}"
-                         data-image="${p.imageUrl}"
-                         onclick="openProductCustomization(${p.id}, '<c:out value="${p.name}"/>', ${p.basePrice}, '${p.imageUrl}')">
+                         data-image="${p.displayImageUrl}"
+                         onclick="openProductCustomization(${p.id}, '<c:out value="${p.name}"/>', ${p.basePrice}, '${p.displayImageUrl}')">
                         <div class="product-img-box">
-                            <img src="${p.imageUrl}" alt="${p.name}" class="product-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';">
+                            <img src="${p.displayImageUrl}" alt="${p.name}" class="product-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';">
                         </div>
                         <div class="product-name" title="${p.name}">${p.name}</div>
                         <div class="product-category-sub">${p.categoryName}</div>
@@ -2364,16 +2364,7 @@
                 <div class="modal-body">
                     <!-- Size -->
                     <div class="opt-group-title">Chọn Size</div>
-                    <div class="opt-chips-grid">
-                        <label>
-                            <input type="radio" name="optSize" value="M" checked class="d-none">
-                            <span class="opt-radio-label">Size M (Tiêu chuẩn)</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="optSize" value="L" class="d-none">
-                            <span class="opt-radio-label">Size L (+8.000đ)</span>
-                        </label>
-                    </div>
+                    <div class="opt-chips-grid" id="cashierSizeOptions"></div>
 
                     <!-- Sugar & Ice -->
                     <div class="row">
@@ -2401,25 +2392,8 @@
                     </div>
 
                     <!-- Toppings -->
-                    <div class="opt-group-title mt-3">Topping thêm (+10.000đ)</div>
-                    <div class="opt-chips-grid">
-                        <label>
-                            <input type="checkbox" name="optTopping" value="Trân châu đen" class="d-none">
-                            <span class="opt-radio-label">Trân châu đen</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="optTopping" value="Trân châu trắng" class="d-none">
-                            <span class="opt-radio-label">Trân châu trắng</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="optTopping" value="Kem cheese" class="d-none">
-                            <span class="opt-radio-label">Kem Cheese Macchiato</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="optTopping" value="Thạch sương sáo" class="d-none">
-                            <span class="opt-radio-label">Thạch sương sáo</span>
-                        </label>
-                    </div>
+                    <div class="opt-group-title mt-3" id="cashierToppingTitle">Topping thêm</div>
+                    <div class="opt-chips-grid" id="cashierToppingOptions"></div>
 
                     <!-- Custom Note -->
                     <div class="opt-group-title mt-2">Ghi chú riêng cho món này</div>
@@ -2582,7 +2556,9 @@
             id: null,
             name: '',
             basePrice: 0,
-            imageUrl: ''
+            imageUrl: '',
+            sizes: {},
+            toppings: []
         };
 
         // Bootstrap Modals
@@ -2602,11 +2578,6 @@
                 const el = document.getElementById('clockDisplay');
                 if (el) el.textContent = hours + ':' + mins + ':' + secs;
             }, 1000);
-
-            // Listeners for Customizer live price
-            document.querySelectorAll('input[name="optSize"], input[name="optTopping"]').forEach(el => {
-                el.addEventListener('change', updateCustomizerPrice);
-            });
 
             // Cho phép các màn Cashier khác quay lại đúng tab danh sách đơn.
             const requestedTab = new URLSearchParams(window.location.search).get('tab');
@@ -2680,15 +2651,28 @@
         }
 
         // 4. Customization Modal
-        function openProductCustomization(id, name, basePrice, imageUrl) {
-            tempItem = { id, name, basePrice, imageUrl };
+        async function openProductCustomization(id, name, basePrice, imageUrl) {
+            let config = {};
+            try {
+                const response = await fetch(CONTEXT_PATH + '/menu?action=detail&id=' + encodeURIComponent(id));
+                if (response.ok) {
+                    const product = await response.json();
+                    config = product.variantsConfig || {};
+                    if (typeof config === 'string') config = JSON.parse(config);
+                }
+            } catch (error) {
+                console.error('Không thể tải tùy chọn món:', error);
+            }
+
+            const sizes = config.sizes && typeof config.sizes === 'object' && Object.keys(config.sizes).length
+                ? config.sizes : { 'Tiêu chuẩn': 0 };
+            const toppings = Array.isArray(config.toppings) ? config.toppings : [];
+            tempItem = { id, name, basePrice, imageUrl, sizes, toppings };
             document.getElementById('custModalItemName').textContent = name;
             document.getElementById('custModalBasePrice').textContent = formatCurrency(basePrice);
             document.getElementById('custModalNote').value = '';
 
-            // Reset options
-            document.querySelector('input[name="optSize"][value="M"]').checked = true;
-            document.querySelectorAll('input[name="optTopping"]').forEach(cb => cb.checked = false);
+            renderCustomizerOptions(sizes, toppings);
             document.getElementById('optSugar').value = '100% đường';
             document.getElementById('optIce').value = '100% đá';
 
@@ -2696,13 +2680,59 @@
             customModalInstance.show();
         }
 
+        function renderCustomizerOptions(sizes, toppings) {
+            const sizeContainer = document.getElementById('cashierSizeOptions');
+            sizeContainer.innerHTML = '';
+            const entries = Object.entries(sizes);
+            const defaultEntry = entries.find(([, delta]) => Number(delta) === 0)
+                || entries.reduce((cheapest, entry) => Number(entry[1]) < Number(cheapest[1]) ? entry : cheapest);
+            entries.forEach(([name, delta]) => {
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'optSize';
+                input.value = name;
+                input.dataset.price = String(Number(delta) || 0);
+                input.className = 'd-none';
+                input.checked = name === defaultEntry[0];
+                input.addEventListener('change', updateCustomizerPrice);
+                const text = document.createElement('span');
+                text.className = 'opt-radio-label';
+                text.textContent = name + (Number(delta) > 0 ? ' (+' + formatCurrency(Number(delta)) + ')' : ' (Giá cơ bản)');
+                label.append(input, text);
+                sizeContainer.appendChild(label);
+            });
+
+            const toppingContainer = document.getElementById('cashierToppingOptions');
+            toppingContainer.innerHTML = '';
+            document.getElementById('cashierToppingTitle').style.display = toppings.length ? '' : 'none';
+            toppings.forEach(topping => {
+                const name = typeof topping === 'string' ? topping : topping.name;
+                const price = typeof topping === 'object' ? Number(topping.price) || 0 : 8000;
+                if (!name) return;
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = 'optTopping';
+                input.value = name;
+                input.dataset.price = String(price);
+                input.className = 'd-none';
+                input.addEventListener('change', updateCustomizerPrice);
+                const text = document.createElement('span');
+                text.className = 'opt-radio-label';
+                text.textContent = name + (price > 0 ? ' (+' + formatCurrency(price) + ')' : '');
+                label.append(input, text);
+                toppingContainer.appendChild(label);
+            });
+        }
+
         function calculateCustomItemPrice() {
             let price = tempItem.basePrice;
-            const size = document.querySelector('input[name="optSize"]:checked')?.value || 'M';
-            if (size === 'L') price += 8000;
+            const size = document.querySelector('input[name="optSize"]:checked');
+            price += Number(size?.dataset.price) || 0;
 
             const toppings = document.querySelectorAll('input[name="optTopping"]:checked');
-            price += (toppings.length * 10000);
+            toppings.forEach(topping => price += Number(topping.dataset.price) || 0);
             return price;
         }
 
@@ -2712,7 +2742,7 @@
         }
 
         function confirmAddToCart() {
-            const size = document.querySelector('input[name="optSize"]:checked')?.value || 'M';
+            const size = document.querySelector('input[name="optSize"]:checked')?.value || 'Tiêu chuẩn';
             const sugar = document.getElementById('optSugar').value;
             const ice = document.getElementById('optIce').value;
             const note = document.getElementById('custModalNote').value.trim();

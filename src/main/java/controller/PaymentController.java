@@ -43,7 +43,7 @@ public class PaymentController extends HttpServlet {
 
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
-        if (user == null) {
+        if (!CartController.isCustomer(user)) {
             response.sendRedirect(request.getContextPath() + "/?login=true");
             return;
         }
@@ -77,7 +77,7 @@ public class PaymentController extends HttpServlet {
 
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
-        if (user == null) {
+        if (!CartController.isCustomer(user)) {
             response.sendRedirect(request.getContextPath() + "/?login=true");
             return;
         }
