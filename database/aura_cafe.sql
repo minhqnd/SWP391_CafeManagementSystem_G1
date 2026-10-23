@@ -1,6 +1,6 @@
 -- =====================================================
 -- AURA CAFE ERP - DATABASE SCRIPT
--- TOTAL: 16 TABLES
+-- TOTAL: 18 TABLES
 -- MySQL 8.0.16+
 -- =====================================================
 SET NAMES utf8mb4;
@@ -30,7 +30,9 @@ DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
 
+DROP TABLE IF EXISTS product_images;
 DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS category_images;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS work_schedules;
 DROP TABLE IF EXISTS users;
@@ -143,6 +145,20 @@ CREATE TABLE categories (
         NOT NULL DEFAULT 'ACTIVE'
 ) ENGINE=InnoDB;
 
+-- Category image binaries are separated so category list queries stay lightweight.
+CREATE TABLE category_images (
+    category_id INT PRIMARY KEY,
+    image_data MEDIUMBLOB NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    file_name VARCHAR(255) NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_category_image_category
+        FOREIGN KEY (category_id)
+        REFERENCES categories(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- 4. PRODUCTS
 CREATE TABLE products (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -166,6 +182,20 @@ CREATE TABLE products (
         CHECK (base_price >= 0),
 
     INDEX idx_products_category (category_id)
+) ENGINE=InnoDB;
+
+-- Product image binaries are separated so product list queries stay lightweight.
+CREATE TABLE product_images (
+    product_id INT PRIMARY KEY,
+    image_data MEDIUMBLOB NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    file_name VARCHAR(255) NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_product_image_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
+        ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 

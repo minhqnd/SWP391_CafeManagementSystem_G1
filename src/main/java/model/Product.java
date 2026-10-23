@@ -17,6 +17,7 @@ public class Product implements Serializable {
     private String description;
     private String variantsConfig;
     private String imageUrl;
+    private boolean storedImage;
     private boolean isAvailable;
 
     public Product() {
@@ -114,6 +115,18 @@ public class Product implements Serializable {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public boolean isStoredImage() {
+        return storedImage;
+    }
+
+    public void setStoredImage(boolean storedImage) {
+        this.storedImage = storedImage;
+    }
+
+    public String getDisplayImageUrl() {
+        return storedImage ? "product-image?id=" + id : imageUrl;
     }
 
     public boolean isAvailable() {

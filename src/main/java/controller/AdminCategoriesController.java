@@ -2,11 +2,13 @@ package controller;
 
 import dao.CategoryDAO;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import model.Category;
 import model.User;
 
@@ -16,7 +18,10 @@ import java.util.List;
 import java.util.UUID;
 
 @WebServlet(name = "AdminCategoriesController", urlPatterns = {"/admin/categories"})
+@MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 6 * 1024 * 1024)
 public class AdminCategoriesController extends HttpServlet {
+
+    private static final long MAX_IMAGE_SIZE = 5L * 1024 * 1024;
 
     private final CategoryDAO categoryDAO = new CategoryDAO();
 
@@ -89,6 +94,9 @@ public class AdminCategoriesController extends HttpServlet {
             }
         } catch (ClassNotFoundException | IllegalArgumentException e) {
             session.setAttribute("categoryError", e.getMessage() == null ? "Dữ liệu danh mục không hợp lệ." : e.getMessage());
+        } catch (IllegalStateException e) {
+            getServletContext().log("Category upload exceeded the configured limit", e);
+            session.setAttribute("categoryError", "Ảnh danh mục không được lớn hơn 5 MB.");
         } catch (RuntimeException e) {
             getServletContext().log("Category operation failed", e);
             session.setAttribute("categoryError", "Không thể hoàn tất thao tác danh mục.");
@@ -96,22 +104,41 @@ public class AdminCategoriesController extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/admin/categories");
     }
 
-    private void save(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
+    private void save(HttpServletRequest request, HttpSession session)
+            throws SQLException, ClassNotFoundException, ServletException, IOException {
         int id = parseId(request.getParameter("id"), true);
         String name = trimToNull(request.getParameter("name"));
-        String imageUrl = trimToNull(request.getParameter("imageUrl"));
         String status = request.getParameter("status");
+        boolean removeImage = "true".equals(request.getParameter("removeImage"));
+        Part imagePart = request.getPart("imageFile");
+        byte[] imageData = null;
+        String imageType = null;
+        String imageName = null;
 
         if (name == null || name.length() > 100) throw new IllegalArgumentException("Tên danh mục bắt buộc và tối đa 100 ký tự.");
-        if (imageUrl != null && imageUrl.length() > 500) throw new IllegalArgumentException("Đường dẫn ảnh tối đa 500 ký tự.");
-        if (imageUrl != null && !(imageUrl.startsWith("https://") || imageUrl.startsWith("http://"))) {
-            throw new IllegalArgumentException("Đường dẫn ảnh phải bắt đầu bằng http:// hoặc https://.");
+        if (imagePart != null && imagePart.getSize() > 0) {
+            if (imagePart.getSize() > MAX_IMAGE_SIZE) {
+                throw new IllegalArgumentException("Ảnh danh mục không được lớn hơn 5 MB.");
+            }
+            imageType = normalizeImageType(imagePart.getContentType());
+            if (imageType == null) {
+                throw new IllegalArgumentException("Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WebP.");
+            }
+            imageData = imagePart.getInputStream().readAllBytes();
+            if (!matchesImageSignature(imageData, imageType)) {
+                throw new IllegalArgumentException("Nội dung tệp không đúng định dạng ảnh đã chọn.");
+            }
+            imageName = trimToNull(imagePart.getSubmittedFileName());
+            if (imageName != null && imageName.length() > 255) imageName = imageName.substring(imageName.length() - 255);
+            removeImage = false;
         }
         if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) throw new IllegalArgumentException("Trạng thái không hợp lệ.");
         if (categoryDAO.categoryNameExists(name, id)) throw new IllegalArgumentException("Tên danh mục đã tồn tại.");
 
-        Category category = new Category(id, name, status, imageUrl, 0);
-        if (!categoryDAO.saveCategory(category)) throw new IllegalArgumentException("Không tìm thấy danh mục cần cập nhật.");
+        Category category = new Category(id, name, status, null, 0);
+        if (!categoryDAO.saveCategory(category, imageData, imageType, imageName, removeImage)) {
+            throw new IllegalArgumentException("Không tìm thấy danh mục cần cập nhật.");
+        }
         session.setAttribute("categoryMessage", id > 0 ? "Đã cập nhật danh mục '" + name + "'." : "Đã tạo danh mục '" + name + "'.");
     }
 
@@ -148,6 +175,31 @@ public class AdminCategoriesController extends HttpServlet {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeImageType(String contentType) {
+        if (contentType == null) return null;
+        return switch (contentType.toLowerCase()) {
+            case "image/jpeg", "image/png", "image/gif", "image/webp" -> contentType.toLowerCase();
+            default -> null;
+        };
+    }
+
+    private boolean matchesImageSignature(byte[] data, String contentType) {
+        if (data == null) return false;
+        return switch (contentType) {
+            case "image/jpeg" -> data.length >= 3 && (data[0] & 0xff) == 0xff
+                    && (data[1] & 0xff) == 0xd8 && (data[2] & 0xff) == 0xff;
+            case "image/png" -> data.length >= 8 && (data[0] & 0xff) == 0x89
+                    && data[1] == 0x50 && data[2] == 0x4e && data[3] == 0x47
+                    && data[4] == 0x0d && data[5] == 0x0a && data[6] == 0x1a && data[7] == 0x0a;
+            case "image/gif" -> data.length >= 6 && data[0] == 'G' && data[1] == 'I'
+                    && data[2] == 'F' && data[3] == '8' && (data[4] == '7' || data[4] == '9') && data[5] == 'a';
+            case "image/webp" -> data.length >= 12 && data[0] == 'R' && data[1] == 'I'
+                    && data[2] == 'F' && data[3] == 'F' && data[8] == 'W'
+                    && data[9] == 'E' && data[10] == 'B' && data[11] == 'P';
+            default -> false;
+        };
     }
 
     private void moveFlash(HttpSession session, HttpServletRequest request, String name) {
