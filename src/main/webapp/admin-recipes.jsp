@@ -127,6 +127,7 @@
                             <div class="recipe-product-head">
                                 <div class="recipe-product-info">
                                     <c:choose>
+                                        <c:when test="${product.storedImage}"><img class="recipe-product-image" src="${pageContext.request.contextPath}/product-image?id=${product.id}" alt=""></c:when>
                                         <c:when test="${not empty product.imageUrl}"><img class="recipe-product-image" src="<c:out value='${product.imageUrl}' />" alt=""></c:when>
                                         <c:otherwise><div class="recipe-product-image recipe-product-placeholder"><span class="material-symbols-outlined">local_cafe</span></div></c:otherwise>
                                     </c:choose>
@@ -217,7 +218,7 @@
                         </c:otherwise>
                     </c:choose>
                     <div class="recipe-cost-card" id="recipeCostCard">
-                        <div><span class="text-muted small fw-bold">GIÁ VỐN NGUYÊN LIỆU / PHẦN</span><strong id="recipeCostValue"><c:choose><c:when test="${recipeCostComplete}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ</c:when><c:when test="${recipeHasIngredients}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ · thiếu giá</c:when><c:otherwise>Chưa có định lượng</c:otherwise></c:choose></strong><small id="recipeCostNote"><c:choose><c:when test="${not empty missingCostIngredients}">Chưa có giá nhập đã nhận: <c:forEach items="${missingCostIngredients}" var="missingName" varStatus="loop"><c:if test="${loop.index gt 0}">, </c:if><c:out value="${missingName}" /></c:forEach>.</c:when><c:otherwise>Giá nhập bình quân của phiếu đã nhận; chưa gồm bao bì, nhân công, hao hụt.</c:otherwise></c:choose></small></div>
+                            <div><span class="text-muted small fw-bold">GIÁ VỐN NGUYÊN LIỆU / PHẦN</span><strong id="recipeCostValue"><c:choose><c:when test="${recipeCostComplete}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ</c:when><c:when test="${recipeHasIngredients}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ · thiếu giá</c:when><c:otherwise>Chưa có định lượng</c:otherwise></c:choose></strong><small id="recipeCostNote"><c:choose><c:when test="${not empty missingCostIngredients}">Chưa có giá nhập đã nhận: <c:forEach items="${missingCostIngredients}" var="missingName" varStatus="loop"><c:if test="${loop.index gt 0}">, </c:if><c:out value="${missingName}" /></c:forEach>.</c:when><c:otherwise>Đơn giá của lần nhập đã nhận gần nhất; chưa gồm bao bì, nhân công, hao hụt.</c:otherwise></c:choose></small></div>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-3"><a href="${ctx}/admin/recipes" class="btn btn-light">Hủy</a><button type="submit" class="btn btn-aura fw-bold" <c:if test="${empty ingredients}">disabled</c:if>>Lưu công thức</button></div>
                 </form>
@@ -260,7 +261,7 @@
             const quantityUnitLabel = row.querySelector('.quantity-unit');
             const lineCostLabel = row.querySelector('.ingredient-line-cost');
             if (quantityUnitLabel) quantityUnitLabel.textContent = hasSelection ? 'Đơn vị: ' + unit : '';
-            if (unitCostLabel) unitCostLabel.textContent = hasSelection ? (Number.isFinite(unitCost) ? 'Giá TB: ' + money.format(unitCost) + 'đ/' + unit : 'Chưa có giá nhập đã nhận') : '';
+            if (unitCostLabel) unitCostLabel.textContent = hasSelection ? (Number.isFinite(unitCost) ? 'Giá nhập mới nhất: ' + money.format(unitCost) + 'đ/' + unit : 'Chưa có giá nhập đã nhận') : '';
             if (!hasSelection && !rawQuantity) { if (lineCostLabel) lineCostLabel.textContent = '—'; return; }
             hasLine = true;
             if (!hasSelection || !rawQuantity || !Number.isFinite(amount) || amount <= 0 || !Number.isFinite(unitCost)) {
@@ -278,7 +279,7 @@
             return;
         }
         costValue.textContent = complete ? money.format(total) + 'đ' : money.format(total) + 'đ · chưa đủ giá';
-        costNote.textContent = complete ? 'Giá nhập bình quân của phiếu đã nhận; chưa gồm bao bì, nhân công, hao hụt.' : 'Có nguyên liệu thiếu định lượng hoặc chưa có phiếu nhập đã nhận; số tiền là phần đã tính được.';
+        costNote.textContent = complete ? 'Đơn giá của lần nhập đã nhận gần nhất; chưa gồm bao bì, nhân công, hao hụt.' : 'Có nguyên liệu thiếu định lượng hoặc chưa có phiếu nhập đã nhận; số tiền là phần đã tính được.';
     }
 
     document.getElementById('addIngredient')?.addEventListener('click', () => { if (rows && template) rows.appendChild(template.content.cloneNode(true)); });

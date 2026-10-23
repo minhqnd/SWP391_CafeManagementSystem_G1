@@ -77,11 +77,14 @@ public class CheckoutController extends HttpServlet {
             return;
         }
 
-        // Bắt buộc đăng nhập mới được đặt hàng
+        // Chỉ tài khoản khách hàng được tạo đơn online. ADMIN/STAFF không được
+        // dùng ID nội bộ làm customer_id của đơn hàng.
         User user = (User) session.getAttribute("user");
-        if (user == null) {
-            session.setAttribute("errorMsg", "Vui lòng đăng nhập để tiếp tục đặt hàng.");
-            response.sendRedirect(request.getContextPath() + "/checkout");
+        if (!CartController.isCustomer(user)) {
+            request.setAttribute("checkoutError", user == null
+                    ? "Vui lòng đăng nhập bằng tài khoản khách hàng để tiếp tục đặt hàng."
+                    : "Tài khoản quản trị/nhân viên không thể đặt hàng online. Vui lòng đăng nhập bằng tài khoản khách hàng.");
+            showCheckout(request, response, cart);
             return;
         }
 
@@ -165,7 +168,8 @@ public class CheckoutController extends HttpServlet {
     private void showCheckout(HttpServletRequest request, HttpServletResponse response, Cart cart)
             throws ServletException, IOException {
 
-        User user = (User) request.getSession().getAttribute("user");
+        User sessionUser = (User) request.getSession().getAttribute("user");
+        User user = CartController.isCustomer(sessionUser) ? sessionUser : null;
 
         // Lần đầu mở trang: điền sẵn thông tin từ tài khoản; khi gửi lại form: giữ
         // nguyên dữ liệu khách đã nhập

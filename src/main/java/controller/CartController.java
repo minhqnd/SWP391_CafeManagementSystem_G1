@@ -199,7 +199,11 @@ public class CartController extends HttpServlet {
     /** Khách đang đăng nhập (null nếu chưa) - chỉ khách đăng nhập mới dùng được điểm Aura */
     static Integer getCustomerId(HttpSession session) {
         User user = (User) session.getAttribute("user");
-        return user != null ? user.getId() : null;
+        return isCustomer(user) ? user.getId() : null;
+    }
+
+    static boolean isCustomer(User user) {
+        return user != null && "CUSTOMER".equalsIgnoreCase(user.getRole());
     }
 
     /** Chuyển thông báo 1 lần (flash) từ session sang request sau khi redirect */

@@ -275,7 +275,7 @@
                         <select name="ingredientId" id="restockIngredient" class="form-select" required>
                             <option value="">-- Chọn nguyên liệu --</option>
                             <c:forEach var="ing" items="${allIngredients}">
-                                <option value="${ing.id}" data-supplier="${ing.supplierId}">
+                                <option value="${ing.id}" data-supplier="${ing.supplierId}" data-unit="${fn:escapeXml(ing.unit)}">
                                     <c:out value="${ing.name}" /> (ĐVT: ${ing.unit})
                                 </option>
                             </c:forEach>
@@ -283,14 +283,15 @@
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label fw-bold small text-secondary">Số lượng đề xuất <span class="text-danger">*</span></label>
-                            <input type="number" step="0.001" name="quantity" id="restockQuantity" class="form-control" required placeholder="Ví dụ: 10, 20...">
+                            <label class="form-label fw-bold small text-secondary">Số lượng nhập <span id="restockUnitLabel"></span> <span class="text-danger">*</span></label>
+                            <input type="number" min="0.001" step="0.001" name="quantity" id="restockQuantity" class="form-control" required placeholder="Ví dụ: 1000 ml">
                         </div>
                         <div class="col-6">
-                            <label class="form-label fw-bold small text-secondary">Đơn giá dự kiến (VNĐ) <span class="text-danger">*</span></label>
-                            <input type="number" step="100" name="unitPrice" id="restockPrice" class="form-control" required placeholder="Ví dụ: 40000">
+                            <label class="form-label fw-bold small text-secondary">Tổng tiền lô nhập (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" min="0" step="100" name="totalPrice" id="restockPrice" class="form-control" required placeholder="Ví dụ: 100000">
                         </div>
                     </div>
+                    <div id="restockUnitPricePreview" class="small text-muted mb-3">Hệ thống sẽ tự tính đơn giá theo đơn vị kho.</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
@@ -312,7 +313,23 @@
             document.getElementById('restockQuantity').value = diffQty;
         }
         new bootstrap.Modal(document.getElementById('restockModal')).show();
+        updateRestockUnitPrice();
     }
+
+    function updateRestockUnitPrice() {
+        const ingredient = document.getElementById('restockIngredient');
+        const quantity = Number(document.getElementById('restockQuantity').value);
+        const total = Number(document.getElementById('restockPrice').value);
+        const unit = ingredient.selectedOptions[0]?.dataset.unit || '';
+        document.getElementById('restockUnitLabel').textContent = unit ? '(' + unit + ')' : '';
+        const preview = document.getElementById('restockUnitPricePreview');
+        preview.textContent = quantity > 0 && Number.isFinite(total)
+            ? 'Đơn giá được lưu: ' + (total / quantity).toLocaleString('vi-VN', {maximumFractionDigits: 2}) + 'đ/' + unit
+            : 'Hệ thống sẽ lấy tổng tiền chia số lượng để tính đơn giá theo đơn vị kho.';
+    }
+    document.getElementById('restockIngredient').addEventListener('change', updateRestockUnitPrice);
+    document.getElementById('restockQuantity').addEventListener('input', updateRestockUnitPrice);
+    document.getElementById('restockPrice').addEventListener('input', updateRestockUnitPrice);
 </script>
 </body>
 </html>

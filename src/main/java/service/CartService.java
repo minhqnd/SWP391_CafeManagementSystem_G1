@@ -112,7 +112,7 @@ public class CartService {
 
         item.setProductName(product.getName());
         item.setCategoryName(product.getCategoryName());
-        item.setImageUrl(product.getImageUrl());
+        item.setImageUrl(product.getDisplayImageUrl());
         item.setSize(size);
         item.setToppings(toppings);
         item.setUnitPrice(unitPrice);
