@@ -14,12 +14,13 @@ public class DeliveryController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO: Xử lý hiển thị danh sách đơn hàng cần giao
+        request.getRequestDispatcher("/delivery-dashboard.jsp").forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO: Xử lý nhận đơn giao, cập nhật tiến trình vận chuyển (đang giao, giao thành công)
+        // UI only: nghiệp vụ giao hàng chưa nối database.
+        doGet(request, response);
     }
 }
