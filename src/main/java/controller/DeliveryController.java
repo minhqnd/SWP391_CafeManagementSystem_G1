@@ -14,6 +14,10 @@ public class DeliveryController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        if (!ScaffoldAccess.requireStaff(request, response)) {
+            return;
+        }
+        // TODO: verify position=SHIPPER, load DeliveryDAO data, incidents and COD summary.
         request.getRequestDispatcher("/delivery-dashboard.jsp").forward(request, response);
     }
 
