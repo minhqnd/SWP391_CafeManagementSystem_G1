@@ -154,8 +154,12 @@
                                         <label for="district" class="form-label small fw-semibold mb-1">Quận / Huyện *</label>
                                         <select id="district" name="district" class="form-select aura-input bg-white" data-required-for="DELIVERY">
                                             <option value="">Chọn quận / huyện</option>
-                                            <c:forEach var="d" items="${hanoiDistricts}">
-                                                <option value="${d}" ${d eq district ? 'selected' : ''}>${d}</option>
+                                            <%-- Mỗi quận một mức phí giao cố định (bảng delivery_areas, Admin chỉnh) --%>
+                                            <c:forEach var="area" items="${deliveryAreas}">
+                                                <option value="${fn:escapeXml(area.district)}" ${area.district eq district ? 'selected' : ''}
+                                                        data-fee="${area.deliveryFee}">
+                                                    <c:out value="${area.district}" /> (<fmt:formatNumber value="${area.deliveryFee}" pattern="#,##0" />đ)
+                                                </option>
                                             </c:forEach>
                                         </select>
                                     </div>
@@ -254,10 +258,11 @@
                             <span class="label">Tổng tiền món (${fn:length(cart.selectedItems)} món):</span>
                             <span class="fw-semibold"><fmt:formatNumber value="${cart.selectedSubtotal}" pattern="#,##0" />đ</span>
                         </div>
-                        <%-- Phí giao tính theo cài đặt Admin; chỉ áp dụng khi Giao tận nơi (JS đổi hiển thị khi đổi hình thức) --%>
-                        <c:set var="shippingFee" value="${cart.freeshipReached ? 0 : shop.deliveryFee}" />
-                        <div class="summary-row" id="deliveryFeeRow" data-shipping-fee="${shippingFee}" data-base-total="${cart.total}">
-                            <span class="label">Phí giao hàng:</span>
+                        <%-- Phí giao = phí của quận khách chọn; chỉ khi Giao tận nơi, miễn phí khi đạt mức freeship.
+                             JS đổi hiển thị khi đổi hình thức / quận, server tính lại khi đặt hàng --%>
+                        <div class="summary-row" id="deliveryFeeRow" data-base-total="${cart.total}"
+                             data-freeship="${cart.freeshipReached}" data-default-fee="${shop.deliveryFee}">
+                            <span class="label">Phí giao hàng<span id="deliveryAreaText"></span>:</span>
                             <span class="fw-semibold" id="deliveryFeeText">
                                 <c:choose>
                                     <c:when test="${cart.deliveryFee == 0}"><span class="text-success">Miễn phí</span></c:when>
@@ -325,6 +330,8 @@
         (() => {
             const radios = document.querySelectorAll('input[name="fulfillment"]');
             const feeRow = document.getElementById('deliveryFeeRow');
+            const districtSelect = document.getElementById('district');
+            const areaText = document.getElementById('deliveryAreaText');
             const feeText = document.getElementById('deliveryFeeText');
             const totalText = document.getElementById('grandTotalText');
             const timeInput = document.getElementById('scheduledTime');
@@ -340,7 +347,16 @@
                 document.querySelectorAll('[data-required-for]').forEach((el) => {
                     el.required = el.dataset.requiredFor === mode;
                 });
-                const fee = mode === 'DELIVERY' ? Number(feeRow.dataset.shippingFee) : 0;
+                // Phí giao = phí của quận đang chọn (chưa chọn quận thì tạm tính phí mặc định)
+                const area = districtSelect.selectedOptions[0];
+                const hasArea = area && area.dataset.fee;
+                let fee = 0;
+                areaText.textContent = '';
+                if (mode === 'DELIVERY') {
+                    if (hasArea) areaText.textContent = ' (' + area.value + ')';
+                    fee = feeRow.dataset.freeship === 'true' ? 0
+                        : Number(hasArea ? area.dataset.fee : feeRow.dataset.defaultFee);
+                }
                 feeText.innerHTML = fee === 0 ? '<span class="text-success">Miễn phí</span>' : money(fee);
                 totalText.textContent = money(Number(feeRow.dataset.baseTotal) + fee);
             };
@@ -353,6 +369,7 @@
             };
 
             radios.forEach((radio) => radio.addEventListener('change', apply));
+            districtSelect.addEventListener('change', apply);
             document.querySelectorAll('input[name="timeOption"]').forEach((r) => r.addEventListener('change', applyTime));
             apply();
             applyTime();

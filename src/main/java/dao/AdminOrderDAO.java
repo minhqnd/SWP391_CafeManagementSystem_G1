@@ -85,12 +85,74 @@ public class AdminOrderDAO extends BaseDAO {
         }
     }
 
+    /**
+     * Gán / bỏ gán shipper cho đơn giao tận nơi, đồng thời tạo bản ghi giao hàng (deliveries, ASSIGNED)
+     * để shipper thấy đơn ở màn Giao hàng. Không đổi được khi shipper đã lấy hàng hoặc đơn đã xong / huỷ.
+     * cod_amount = tiền shipper phải thu hộ (0 nếu khách đã thanh toán online).
+     */
     public boolean assignShipper(int id, Integer shipperId) throws SQLException, ClassNotFoundException {
-        String sql = "UPDATE orders SET shipper_id = ? WHERE id = ? AND order_type = 'ONLINE'";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            if (shipperId == null) ps.setNull(1, Types.INTEGER); else ps.setInt(1, shipperId);
-            ps.setInt(2, id);
-            return ps.executeUpdate() == 1;
+        String lockOrderSql = "SELECT o.status, o.final_amount, " +
+                "EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.id AND p.status = 'SUCCESS') AS paid " +
+                "FROM orders o WHERE o.id = ? AND o.order_type = 'ONLINE' AND o.delivery_address IS NOT NULL FOR UPDATE";
+        String lockDeliverySql = "SELECT status FROM deliveries WHERE order_id = ? FOR UPDATE";
+        String updateOrderSql = "UPDATE orders SET shipper_id = ? WHERE id = ?";
+        String deleteDeliverySql = "DELETE FROM deliveries WHERE order_id = ?";
+        String upsertDeliverySql = "INSERT INTO deliveries (order_id, shipper_id, status, cod_amount, assigned_at) " +
+                "VALUES (?, ?, 'ASSIGNED', ?, NOW()) " +
+                "ON DUPLICATE KEY UPDATE shipper_id = VALUES(shipper_id), status = 'ASSIGNED', " +
+                "cod_amount = VALUES(cod_amount), assigned_at = NOW(), accepted_at = NULL";
+        try (Connection conn = getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                double codAmount;
+                try (PreparedStatement ps = conn.prepareStatement(lockOrderSql)) {
+                    ps.setInt(1, id);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next() || "COMPLETED".equals(rs.getString("status"))
+                                || "CANCELLED".equals(rs.getString("status"))) {
+                            conn.rollback();
+                            return false;
+                        }
+                        codAmount = rs.getBoolean("paid") ? 0 : rs.getDouble("final_amount");
+                    }
+                }
+                try (PreparedStatement ps = conn.prepareStatement(lockDeliverySql)) {
+                    ps.setInt(1, id);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next() && ("DELIVERING".equals(rs.getString("status"))
+                                || "DELIVERED".equals(rs.getString("status")))) {
+                            conn.rollback();
+                            return false;
+                        }
+                    }
+                }
+                try (PreparedStatement ps = conn.prepareStatement(updateOrderSql)) {
+                    if (shipperId == null) ps.setNull(1, Types.INTEGER); else ps.setInt(1, shipperId);
+                    ps.setInt(2, id);
+                    ps.executeUpdate();
+                }
+                if (shipperId == null) {
+                    try (PreparedStatement ps = conn.prepareStatement(deleteDeliverySql)) {
+                        ps.setInt(1, id);
+                        ps.executeUpdate();
+                    }
+                } else {
+                    try (PreparedStatement ps = conn.prepareStatement(upsertDeliverySql)) {
+                        ps.setInt(1, id);
+                        ps.setInt(2, shipperId);
+                        ps.setDouble(3, codAmount);
+                        ps.executeUpdate();
+                    }
+                }
+                conn.commit();
+                return true;
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(autoCommit);
+            }
         }
     }
 }

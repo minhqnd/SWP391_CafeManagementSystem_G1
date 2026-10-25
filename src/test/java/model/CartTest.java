@@ -132,10 +132,14 @@ public class CartTest {
     @DisplayName("Phí giao hàng & mức Freeship theo cấu hình Admin")
     void testDeliveryFee() {
         cart.addItem(item(1, "M", 50000, 2));
-        assertEquals(18000, cart.getDeliveryFee());
+        assertEquals(15000, cart.getDeliveryFee());
         assertEquals(50000, cart.getFreeshipRemaining());
         assertEquals(66, cart.getFreeshipPercent());
-        assertEquals(118000, cart.getGrandTotal());
+        assertEquals(115000, cart.getGrandTotal());
+        // Đã chọn quận: phí giao = phí cố định của quận đó
+        cart.setAreaDeliveryFee(25000.0);
+        assertEquals(25000, cart.getDeliveryFee());
+        cart.setAreaDeliveryFee(null);
 
         cart.addItem(item(2, "M", 50000, 1));
         assertTrue(cart.isFreeshipReached());
@@ -177,8 +181,8 @@ public class CartTest {
 
         assertEquals(Cart.FULFILLMENT_DELIVERY, cart.getFulfillment());
         assertEquals("ONLINE", cart.getOrderType());
-        assertEquals(18000, cart.getDeliveryFee());
-        assertEquals(63000, cart.getGrandTotal());
+        assertEquals(15000, cart.getDeliveryFee());
+        assertEquals(60000, cart.getGrandTotal());
 
         cart.setFulfillment(Cart.FULFILLMENT_PICKUP);
         assertEquals("TAKEAWAY", cart.getOrderType());
