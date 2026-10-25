@@ -62,7 +62,7 @@
                 <label for="positionFilter" class="visually-hidden">Lọc theo chức vụ</label>
                 <select id="positionFilter" name="position" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="ALL">Tất cả chức vụ</option>
-                    <option value="MANAGER" ${positionFilter eq 'MANAGER' ? 'selected' : ''}>Quản lý</option>
+                    <option value="MANAGER" ${positionFilter eq 'MANAGER' ? 'selected' : ''}>Quản lý nhân viên</option>
                     <option value="BARISTA" ${positionFilter eq 'BARISTA' ? 'selected' : ''}>Pha chế</option>
                     <option value="CASHIER" ${positionFilter eq 'CASHIER' ? 'selected' : ''}>Thu ngân</option>
                     <option value="SHIPPER" ${positionFilter eq 'SHIPPER' ? 'selected' : ''}>Giao hàng</option>
@@ -205,7 +205,7 @@
                         <div class="col-md-6">
                             <label class="form-label" for="employeePosition">Chức vụ</label>
                             <select class="form-select" id="employeePosition" name="position">
-                                <option value="MANAGER" ${fPosition eq 'MANAGER' ? 'selected' : ''}>Quản lý</option>
+                                <option value="MANAGER" ${fPosition eq 'MANAGER' ? 'selected' : ''}>Quản lý nhân viên</option>
                                 <option value="BARISTA" ${fPosition eq 'BARISTA' ? 'selected' : ''}>Pha chế</option>
                                 <option value="CASHIER" ${fPosition eq 'CASHIER' ? 'selected' : ''}>Thu ngân</option>
                                 <option value="SHIPPER" ${fPosition eq 'SHIPPER' ? 'selected' : ''}>Giao hàng</option>

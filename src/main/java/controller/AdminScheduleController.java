@@ -1,11 +1,11 @@
 package controller;
 
-import dao.ShopSettingDAO;
 import dao.UserDAO;
 import dao.WorkScheduleDAO;
-import model.ShopSettings;
+import dao.WorkShiftDAO;
 import model.User;
 import model.WorkSchedule;
+import model.WorkShift;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -37,10 +37,10 @@ public class AdminScheduleController extends HttpServlet {
 
     private final WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
     private final UserDAO userDAO = new UserDAO();
-    private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
+    private final WorkShiftDAO workShiftDAO = new WorkShiftDAO();
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final Set<String> VALID_SHIFTS = Set.of("MORNING", "AFTERNOON", "EVENING");
+    private static final DateTimeFormatter DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final Set<String> VALID_STATUSES = Set.of("SCHEDULED", "PRESENT", "ABSENT", "COMPLETED");
     private static final int MAX_NOTE_LENGTH = 500;
     private static final BigDecimal MAX_CASH_AMOUNT = new BigDecimal("9999999999");
@@ -84,8 +84,13 @@ public class AdminScheduleController extends HttpServlet {
             weekDays.add(monday.plusDays(i));
         }
 
-        // Bộ lọc bổ sung
-        String shiftFilter = request.getParameter("shift");
+        // Bộ lọc bổ sung (shift = id ca của tuần)
+        Integer shiftFilter = null;
+        try {
+            String shiftParam = request.getParameter("shift");
+            if (shiftParam != null && !shiftParam.isBlank()) shiftFilter = Integer.valueOf(shiftParam.trim());
+        } catch (NumberFormatException ignored) {
+        }
         String positionFilter = request.getParameter("position");
         String statusFilter = request.getParameter("status");
         String staffIdParam = request.getParameter("staffId");
@@ -122,15 +127,21 @@ public class AdminScheduleController extends HttpServlet {
             else if (ws.getStartingCash() != null) totalCashHandover += ws.getStartingCash();
         }
 
-        // Tổ chức map theo dạng: dateStr + "_" + shiftName -> List<WorkSchedule> để render nhanh trên Calendar Grid
+        // Tổ chức map theo dạng: dateStr + "_" + shiftId -> List<WorkSchedule> để render nhanh trên Calendar Grid
         Map<String, List<WorkSchedule>> calendarSlotMap = new HashMap<>();
         for (WorkSchedule ws : scheduleList) {
-            String key = ws.getWorkDateFormatted() + "_" + ws.getShiftName().toUpperCase();
+            String key = ws.getWorkDateFormatted() + "_" + ws.getShiftId();
             calendarSlotMap.computeIfAbsent(key, k -> new ArrayList<>()).add(ws);
         }
 
-        // Dữ liệu hỗ trợ giao diện
-        ShopSettings settings = shopSettingDAO.getSettings();
+        // Các ca của tuần đang xem (work_shifts) - mỗi tuần có bộ ca riêng
+        List<WorkShift> weekShifts;
+        try {
+            weekShifts = workShiftDAO.getShiftsByWeek(monday);
+        } catch (Exception e) {
+            e.printStackTrace();
+            weekShifts = new ArrayList<>();
+        }
         List<User> staffList = userDAO.getStaffEmployees();
 
         // Gán thuộc tính vào request
@@ -144,7 +155,9 @@ public class AdminScheduleController extends HttpServlet {
         request.setAttribute("scheduleList", scheduleList);
         request.setAttribute("calendarSlotMap", calendarSlotMap);
         request.setAttribute("staffList", staffList);
-        request.setAttribute("settings", settings);
+        request.setAttribute("weekShifts", weekShifts);
+        request.setAttribute("weekStartLabel", monday.format(DISPLAY_FORMATTER));
+        request.setAttribute("weekEndLabel", sunday.format(DISPLAY_FORMATTER));
         request.setAttribute("shiftFilter", shiftFilter != null ? shiftFilter : "ALL");
         request.setAttribute("positionFilter", positionFilter != null ? positionFilter : "ALL");
         request.setAttribute("statusFilter", statusFilter != null ? statusFilter : "ALL");
@@ -194,20 +207,19 @@ public class AdminScheduleController extends HttpServlet {
                 int userId = parsePositiveId(request.getParameter("userId"), "Vui lòng chọn nhân viên.");
                 User staff = requireActiveStaff(userId);
                 Date workDate = parseWorkDate(request.getParameter("workDate"));
-                String shiftName = requireAllowedValue(request.getParameter("shiftName"), VALID_SHIFTS,
-                        "Ca làm việc không hợp lệ.");
+                WorkShift shift = requireShiftOfWeek(request.getParameter("shiftId"), workDate);
                 String note = validateNote(request.getParameter("note"));
                 Double startingCash = parseCashAmount(request.getParameter("startingCash"), "Tiền két đầu ca");
                 validateCashierCash(staff, startingCash, null);
 
-                if (workScheduleDAO.isShiftExists(userId, workDate, shiftName, null)) {
+                if (workScheduleDAO.isShiftExists(userId, workDate, shift.getId(), null)) {
                     throw new IllegalArgumentException("Nhân viên đã được xếp vào ca này trong ngày đã chọn.");
                 }
 
                 WorkSchedule ws = new WorkSchedule();
                 ws.setUserId(userId);
                 ws.setWorkDate(workDate);
-                ws.setShiftName(shiftName);
+                ws.setShiftId(shift.getId());
                 ws.setStatus("SCHEDULED");
                 ws.setNote(note);
                 ws.setStartingCash(startingCash);
@@ -234,8 +246,7 @@ public class AdminScheduleController extends HttpServlet {
                 int userId = parsePositiveId(request.getParameter("userId"), "Vui lòng chọn nhân viên.");
                 User staff = requireActiveStaff(userId);
                 Date workDate = parseWorkDate(request.getParameter("workDate"));
-                String shiftName = requireAllowedValue(request.getParameter("shiftName"), VALID_SHIFTS,
-                        "Ca làm việc không hợp lệ.");
+                WorkShift shift = requireShiftOfWeek(request.getParameter("shiftId"), workDate);
                 String status = requireAllowedValue(request.getParameter("status"), VALID_STATUSES,
                         "Trạng thái ca làm việc không hợp lệ.");
                 String note = validateNote(request.getParameter("note"));
@@ -243,7 +254,7 @@ public class AdminScheduleController extends HttpServlet {
                 Double endingCashActual = parseCashAmount(request.getParameter("endingCashActual"), "Tiền két cuối ca");
                 validateCashierCash(staff, startingCash, endingCashActual);
 
-                if (workScheduleDAO.isShiftExists(userId, workDate, shiftName, id)) {
+                if (workScheduleDAO.isShiftExists(userId, workDate, shift.getId(), id)) {
                     throw new IllegalArgumentException("Nhân viên đã được xếp vào ca này trong ngày đã chọn.");
                 }
 
@@ -251,7 +262,7 @@ public class AdminScheduleController extends HttpServlet {
                 ws.setId(id);
                 ws.setUserId(userId);
                 ws.setWorkDate(workDate);
-                ws.setShiftName(shiftName);
+                ws.setShiftId(shift.getId());
                 ws.setStatus(status);
                 ws.setNote(note);
                 ws.setStartingCash(startingCash);
@@ -354,6 +365,18 @@ public class AdminScheduleController extends HttpServlet {
             throw new IllegalArgumentException("Nhân viên không tồn tại, đã ngừng hoạt động hoặc chưa có vị trí làm việc.");
         }
         return staff;
+    }
+
+    /** Ca được chọn phải thuộc đúng tuần (Thứ 2 - Chủ nhật) chứa ngày làm việc */
+    private WorkShift requireShiftOfWeek(String rawShiftId, Date workDate) throws Exception {
+        int shiftId = parsePositiveId(rawShiftId, "Vui lòng chọn ca làm việc.");
+        WorkShift shift = workShiftDAO.getById(shiftId);
+        LocalDate weekStart = workDate.toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        if (shift == null || !shift.getWeekStart().equals(weekStart)) {
+            throw new IllegalArgumentException("Ca làm việc không thuộc tuần của ngày đã chọn. "
+                    + "Hãy tạo khung ca cho tuần " + weekStart.format(DISPLAY_FORMATTER) + " ở màn Khung giờ ca.");
+        }
+        return shift;
     }
 
     private Date parseWorkDate(String rawValue) {

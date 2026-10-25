@@ -1,0 +1,43 @@
+@startuml 03-work-shift-weekly-activity
+' UC55 Manage Work Shifts - redesigned per teacher feedback:
+'  - "+" button to add shifts (no longer fixed 3 shifts)
+'  - shift hours stored PER WEEK: editing this week does not affect previous weeks
+'  - no present / completed statistics (belongs to payroll)
+title Manage Weekly Work Shifts
+
+|Admin|
+start
+:Open "Work Shifts", choose a week (Monday - Sunday);
+
+|System|
+if (Week already has shifts in DB?) then (yes)
+  :Show shifts of the week (work_shifts WHERE week_start = ?);
+else (no)
+  :Show empty state + "Copy from previous week" suggestion;
+endif
+
+|Admin|
+split
+  :Click "+" to add shift: enter shift name, start time, end time;
+split again
+  :Click "Edit" on a shift: change name / hours;
+split again
+  :Click "Delete" on a shift;
+split again
+  :Click "Copy from previous week";
+end split
+
+|System|
+if (Selected week is in the past (week_start < current week)?) then (yes)
+  :Reject: "Cannot change shifts of a past week";
+  stop
+endif
+:Validate: shift name required, unique within the week,\ntime in HH:mm, end time after start time,\nno overlap with other shifts of the same week;
+if (Deleting a shift that already has staff assigned (work_schedules)?) then (yes)
+  :Reject: "Shift has schedules, remove them first";
+  stop
+endif
+:Save to work_shifts only for the selected week_start\n(other weeks unchanged);
+:Show success message, reload shifts of the week;
+stop
+@enduml
