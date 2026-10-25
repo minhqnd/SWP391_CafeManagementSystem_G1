@@ -44,7 +44,7 @@ public class Feedback implements Serializable {
     // Core database field: content TEXT NOT NULL
     private String content;
     
-    // Core database field: status ENUM('PENDING', 'RESOLVED', 'REJECTED')
+    // Core database field: status ENUM('PENDING', 'PROCESSING', 'RESOLVED', 'REJECTED')
     private String status = "PENDING";
     
     // Core database field: admin_response TEXT NULL
@@ -68,7 +68,7 @@ public class Feedback implements Serializable {
         if (ticketCode != null && !ticketCode.trim().isEmpty()) {
             return ticketCode;
         }
-        return "#CR-" + String.format("%04d", id);
+        return "#" + id;
     }
 
     public void setTicketCode(String ticketCode) {
@@ -111,7 +111,7 @@ public class Feedback implements Serializable {
         if (orderCode != null && !orderCode.trim().isEmpty()) {
             return orderCode;
         }
-        return orderId > 0 ? ("AURA-00" + orderId) : "";
+        return orderId > 0 ? String.format("AURA-%03d", orderId) : "—";
     }
 
     public void setOrderCode(String orderCode) {
@@ -124,6 +124,13 @@ public class Feedback implements Serializable {
 
     public void setIssueType(String issueType) {
         this.issueType = issueType;
+    }
+
+    public String getIssueTypeLabel() {
+        if ("RATING".equalsIgnoreCase(issueType)) {
+            return "Đánh giá";
+        }
+        return "Khiếu nại";
     }
 
     public int getRating() {
@@ -153,10 +160,20 @@ public class Feedback implements Serializable {
     public String getStatusLabel() {
         if ("RESOLVED".equalsIgnoreCase(status)) {
             return "Đã giải quyết";
+        } else if ("PROCESSING".equalsIgnoreCase(status)) {
+            return "Đang xử lý";
         } else if ("REJECTED".equalsIgnoreCase(status)) {
             return "Từ chối";
         }
-        return "Đang chờ xử lý";
+        return "Chờ xử lý";
+    }
+
+    public String getFormattedDate() {
+        if (createdAt == null) {
+            return "";
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        return sdf.format(createdAt);
     }
 
     public String getAdminResponse() {
@@ -185,6 +202,14 @@ public class Feedback implements Serializable {
 
     public boolean isRejected() {
         return "REJECTED".equalsIgnoreCase(status);
+    }
+
+    public boolean isTerminal() {
+        try {
+            return FeedbackStatus.from(status).isTerminal();
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     public String getFormattedCreatedAt() {
