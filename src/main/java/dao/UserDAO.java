@@ -274,6 +274,20 @@ public class UserDAO extends BaseDAO {
         return null;
     }
 
+    public model.User getActiveCustomerById(int id) {
+        String sql = "SELECT id,full_name,phone,email,role,position,status,total_points FROM users " +
+                "WHERE id=? AND role='CUSTOMER' AND status='ACTIVE'";
+        try (Connection conn=DBContext.getConnection(); PreparedStatement ps=conn.prepareStatement(sql)) {
+            ps.setInt(1,id);
+            try(ResultSet rs=ps.executeQuery()){
+                if(rs.next()) return new model.User(rs.getInt("id"),rs.getString("full_name"),rs.getString("phone"),
+                        rs.getString("email"),rs.getString("role"),rs.getString("position"),rs.getString("status"),
+                        "","","",rs.getInt("total_points"));
+            }
+        } catch(Exception e){e.printStackTrace();}
+        return null;
+    }
+
     /**
      * Lấy danh sách nhân viên phục vụ việc xếp lịch làm việc (STAFF và ADMIN active)
      */

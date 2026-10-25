@@ -1,6 +1,5 @@
 package dao;
 
-import model.Cart;
 import model.Delivery;
 import model.DeliveryIssue;
 
@@ -148,9 +147,6 @@ public class DeliveryDAO extends BaseDAO {
                          "WHERE d.id = ? AND d.shipper_id = ? FOR UPDATE";
         String payCodSql = "UPDATE payments SET status = 'SUCCESS', paid_at = NOW() " +
                            "WHERE order_id = ? AND status = 'PENDING' AND transaction_code LIKE 'COD-%'";
-        String earnPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) " +
-                               "VALUES (?, ?, ?, 'EARN')";
-        String addUserPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";
         String deliveredSql = "UPDATE deliveries SET status = 'DELIVERED', delivered_at = NOW(), cod_collected = ?, " +
                               "delivery_note = ? WHERE id = ?";
         String completeOrderSql = "UPDATE orders SET status = 'COMPLETED' WHERE id = ? AND status = 'DELIVERING'";
@@ -161,7 +157,7 @@ public class DeliveryDAO extends BaseDAO {
                 int orderId;
                 Integer customerId;
                 BigDecimal codAmount;
-                int points;
+                BigDecimal goods;
                 try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
                     ps.setInt(1, id);
                     ps.setInt(2, shipperId);
@@ -173,8 +169,7 @@ public class DeliveryDAO extends BaseDAO {
                         orderId = rs.getInt("order_id");
                         customerId = rs.getObject("customer_id", Integer.class);
                         codAmount = rs.getBigDecimal("cod_amount");
-                        double goods = rs.getDouble("total_amount") - rs.getDouble("discount_amount");
-                        points = (int) Math.floor(goods / Cart.MONEY_PER_POINT);
+                        goods = rs.getBigDecimal("total_amount").subtract(rs.getBigDecimal("discount_amount"));
                     }
                 }
 
@@ -188,19 +183,10 @@ public class DeliveryDAO extends BaseDAO {
                         ps.setInt(1, orderId);
                         ps.executeUpdate();
                     }
-                    // Đơn COD chưa được cộng điểm lúc đặt -> cộng khi khách đã trả tiền
-                    if (customerId != null && points > 0) {
-                        try (PreparedStatement ps = conn.prepareStatement(earnPointsSql)) {
-                            ps.setInt(1, customerId);
-                            ps.setInt(2, orderId);
-                            ps.setInt(3, points);
-                            ps.executeUpdate();
-                        }
-                        try (PreparedStatement ps = conn.prepareStatement(addUserPointsSql)) {
-                            ps.setInt(1, points);
-                            ps.setInt(2, customerId);
-                            ps.executeUpdate();
-                        }
+                    // Đơn COD chưa được cộng điểm lúc đặt -> cộng khi khách đã trả tiền (không cộng trùng)
+                    if (customerId != null) {
+                        PaymentDAO.earnPointsOnce(conn, customerId, orderId, goods,
+                                new ShopSettingDAO().getSettings().getPointsEarnUnit());
                     }
                 }
 

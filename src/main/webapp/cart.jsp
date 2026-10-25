@@ -222,6 +222,24 @@
                             </c:choose>
                         </div>
 
+                        <c:if test="${sessionScope.user.role == 'CUSTOMER'}">
+                            <div class="aura-card p-3 mb-3">
+                                <form id="pointsForm" method="post" action="${ctx}/cart"
+                                      data-step="${shop.pointsStep}" data-step-value="${shop.pointsStepValue}">
+                                    <input type="hidden" name="action" value="usePoints">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold">Dùng điểm Aura</span>
+                                        <span id="pointsDiscount" class="${cart.pointsUsed > 0 ? 'fw-bold text-aura text-nowrap' : 'fw-semibold text-muted small text-nowrap'}">
+                                            <c:choose><c:when test="${cart.pointsUsed > 0}">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0"/>đ</c:when><c:otherwise>Chưa dùng điểm</c:otherwise></c:choose>
+                                        </span>
+                                    </div>
+                                    <input id="pointsRange" name="pointsUsed" class="form-range" type="range"
+                                           min="0" max="${cart.maxRedeemablePoints}" step="${shop.pointsStep}" value="${cart.pointsUsed}">
+                                    <div class="small text-muted">Đang dùng <b id="pointsValue">${cart.pointsUsed}</b> / ${cart.availablePoints} điểm.</div>
+                                </form>
+                            </div>
+                        </c:if>
+
                         <!-- Tóm tắt đơn hàng -->
                         <div class="aura-card p-3 p-md-4">
                             <h2 class="h6 fw-bold mb-3">Tóm tắt đơn hàng</h2>

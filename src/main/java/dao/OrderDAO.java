@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import model.Order;
 import model.OrderDetail;
+import model.ShopSettings;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,8 +34,8 @@ public class OrderDAO extends BaseDAO {
             "o.order_type IN ('DINE_IN', 'TAKEAWAY', 'ONLINE')";
     // Đơn đã thanh toán, hoặc đơn giao tận nơi trả tiền mặt khi nhận hàng (COD, shipper thu sau)
     private static final String BARISTA_PAID =
-            "EXISTS (SELECT 1 FROM payments pay WHERE pay.order_id = o.id AND (pay.status = 'SUCCESS' "
-            + "OR (pay.status = 'PENDING' AND pay.transaction_code LIKE 'COD-%')))";
+            "EXISTS (SELECT 1 FROM payments pay WHERE pay.order_id = o.id AND (" +
+            "pay.status = 'SUCCESS' OR (o.order_type = 'ONLINE' AND pay.payment_method = 'CASH' AND pay.status = 'PENDING')))";
 
     public List<Order> getOrdersForBarista() throws SQLException, ClassNotFoundException {
         // EXISTS avoids duplicating items when an order has multiple successful payments.
@@ -417,10 +418,12 @@ public class OrderDAO extends BaseDAO {
     private static final String CUSTOMER_ORDER_SELECT =
             "SELECT o.*, pay.payment_method, pay.paid_at, " +
             "       (SELECT COALESCE(-SUM(lt.points_change), 0) FROM loyalty_transactions lt " +
-            "        WHERE lt.order_id = o.id AND lt.transaction_type = 'REDEEM') AS points_used " +
+            "        WHERE lt.order_id = o.id AND lt.transaction_type = 'REDEEM') AS points_used, " +
+            "       (SELECT COALESCE(SUM(lt.points_change), 0) FROM loyalty_transactions lt " +
+            "        WHERE lt.order_id = o.id AND lt.transaction_type = 'EARN') AS earned_points " +
             "FROM orders o " +
             "LEFT JOIN payments pay ON pay.id = (SELECT MAX(p2.id) FROM payments p2 " +
-            "                                    WHERE p2.order_id = o.id AND p2.status = 'SUCCESS') ";
+            "                                    WHERE p2.order_id = o.id) ";
 
     /**
      * Lấy 1 đơn kèm các món theo orderId (cho màn Bill, Payment)
@@ -576,8 +579,8 @@ public class OrderDAO extends BaseDAO {
         String usedPointsSql = "SELECT COALESCE(-SUM(points_change), 0) FROM loyalty_transactions " +
                                "WHERE order_id = ? AND customer_id = ? AND transaction_type = 'REDEEM'";
         String refundPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";
-        String deleteRedeemSql = "DELETE FROM loyalty_transactions " +
-                                 "WHERE order_id = ? AND customer_id = ? AND transaction_type = 'REDEEM'";
+        String insertRefundSql = "INSERT INTO loyalty_transactions(customer_id,order_id,points_change,transaction_type) " +
+                                 "VALUES(?,?,?,'REFUND')";
 
         Connection conn = null;
         try {
@@ -609,11 +612,18 @@ public class OrderDAO extends BaseDAO {
                     ps.setInt(2, customerId);
                     ps.executeUpdate();
                 }
-                try (PreparedStatement ps = conn.prepareStatement(deleteRedeemSql)) {
-                    ps.setInt(1, orderId);
-                    ps.setInt(2, customerId);
+                try (PreparedStatement ps = conn.prepareStatement(insertRefundSql)) {
+                    ps.setInt(1, customerId);
+                    ps.setInt(2, orderId);
+                    ps.setInt(3, usedPoints);
                     ps.executeUpdate();
                 }
+            }
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE payments SET status='FAILED',payment_note=CONCAT(COALESCE(payment_note,''),' [Order cancelled]') " +
+                    "WHERE order_id=? AND status='PENDING'")) {
+                ps.setInt(1,orderId);
+                ps.executeUpdate();
             }
 
             conn.commit();
@@ -685,6 +695,7 @@ public class OrderDAO extends BaseDAO {
         order.setScheduledAt(rs.getObject("scheduled_at", LocalDateTime.class));
         order.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
         order.setPointsUsed(rs.getInt("points_used"));
+        order.setRewardPoints(rs.getInt("earned_points"));
         order.setPaymentMethod(rs.getString("payment_method"));
         order.setPaidAt(rs.getObject("paid_at", LocalDateTime.class));
         return order;
@@ -811,17 +822,26 @@ public class OrderDAO extends BaseDAO {
      */
     public int createCounterOrder(Order order, List<OrderDetail> items, String paymentMethod,
                                   int pointsUsed, String paymentNote) {
+        return createCounterOrder(order, items, paymentMethod, pointsUsed, paymentNote,
+                new ShopSettingDAO().getSettings());
+    }
+
+    public int createCounterOrder(Order order, List<OrderDetail> items, String paymentMethod,
+                                  int pointsUsed, String paymentNote, ShopSettings settings) {
+        boolean bankTransfer = "BANK_TRANSFER".equalsIgnoreCase(paymentMethod);
+        String orderStatus = bankTransfer ? "PENDING" : "CONFIRMED";
+        String paymentStatus = bankTransfer ? "PENDING" : "SUCCESS";
         String insertOrderSql = "INSERT INTO orders (order_code, customer_id, cashier_id, " +
                 "order_type, status, total_amount, discount_amount, delivery_fee, final_amount, " +
                 "recipient_name, recipient_phone, table_number, order_note, created_at) " +
-                "VALUES (?, ?, ?, ?, 'CONFIRMED', ?, ?, 0, ?, ?, ?, ?, ?, NOW())";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW())";
 
         String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, " +
                 "unit_price, quantity, subtotal, customization) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         String insertPaymentSql = "INSERT INTO payments (order_id, payment_method, transaction_code, amount, status, paid_at, payment_note) " +
-                "VALUES (?, ?, ?, ?, 'SUCCESS', NOW(), ?)";
+                "VALUES (?, ?, ?, ?, ?, CASE WHEN ?='SUCCESS' THEN NOW() ELSE NULL END, ?)";
 
         String redeemPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) " +
                 "VALUES (?, ?, ?, 'REDEEM')";
@@ -836,19 +856,35 @@ public class OrderDAO extends BaseDAO {
             conn = DBContext.getConnection();
             conn.setAutoCommit(false);
 
+            if (order.getCustomerId() != null && pointsUsed > 0) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT total_points FROM users WHERE id=? AND role='CUSTOMER' AND status='ACTIVE' FOR UPDATE")) {
+                    ps.setInt(1, order.getCustomerId());
+                    try (ResultSet rs=ps.executeQuery()) {
+                        if (!rs.next() || rs.getInt(1) < pointsUsed
+                                || pointsUsed % settings.getPointsStep() != 0
+                                || settings.getPointsDiscount(pointsUsed) > order.getTotalAmount()) {
+                            conn.rollback();
+                            return -1;
+                        }
+                    }
+                }
+            }
+
             int orderId = 0;
             try (PreparedStatement ps = conn.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, order.getOrderCode());
                 ps.setObject(2, order.getCustomerId(), Types.INTEGER);
                 ps.setObject(3, order.getCashierId(), Types.INTEGER);
                 ps.setString(4, order.getOrderType());
-                ps.setDouble(5, order.getTotalAmount());
-                ps.setDouble(6, order.getDiscountAmount());
-                ps.setDouble(7, order.getFinalAmount());
-                ps.setString(8, order.getRecipientName());
-                ps.setString(9, order.getRecipientPhone());
-                ps.setString(10, order.getTableNumber());
-                ps.setString(11, order.getOrderNote());
+                ps.setString(5, orderStatus);
+                ps.setDouble(6, order.getTotalAmount());
+                ps.setDouble(7, order.getDiscountAmount());
+                ps.setDouble(8, order.getFinalAmount());
+                ps.setString(9, order.getRecipientName());
+                ps.setString(10, order.getRecipientPhone());
+                ps.setString(11, order.getTableNumber());
+                ps.setString(12, order.getOrderNote());
                 ps.executeUpdate();
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -885,9 +921,11 @@ public class OrderDAO extends BaseDAO {
             try (PreparedStatement ps = conn.prepareStatement(insertPaymentSql)) {
                 ps.setInt(1, orderId);
                 ps.setString(2, paymentMethod != null ? paymentMethod : "CASH");
-                ps.setString(3, "POS-" + order.getOrderCode());
+                ps.setString(3, (bankTransfer ? "QR-" : "POS-") + order.getOrderCode());
                 ps.setDouble(4, order.getFinalAmount());
-                ps.setString(5, paymentNote);
+                ps.setString(5, paymentStatus);
+                ps.setString(6, paymentStatus);
+                ps.setString(7, paymentNote);
                 ps.executeUpdate();
             }
 
@@ -902,11 +940,15 @@ public class OrderDAO extends BaseDAO {
                     try (PreparedStatement ps = conn.prepareStatement(deductUserPointsSql)) {
                         ps.setInt(1, pointsUsed);
                         ps.setInt(2, order.getCustomerId());
-                        ps.executeUpdate();
+                        if (ps.executeUpdate() != 1) {
+                            conn.rollback();
+                            return -1;
+                        }
                     }
                 }
 
-                int earnedPoints = (int) Math.floor((order.getTotalAmount() - order.getDiscountAmount()) / Cart.MONEY_PER_POINT);
+                int earnedPoints = bankTransfer ? 0
+                        : settings.calculateEarnedPoints(order.getTotalAmount() - order.getDiscountAmount());
                 if (earnedPoints > 0) {
                     try (PreparedStatement ps = conn.prepareStatement(earnPointsSql)) {
                         ps.setInt(1, order.getCustomerId());
@@ -943,7 +985,7 @@ public class OrderDAO extends BaseDAO {
     public List<Order> getCounterOrdersToday() {
         String sql = CUSTOMER_ORDER_SELECT + 
                      "WHERE DATE(o.created_at) = CURDATE() " +
-                     "  AND (o.cashier_id IS NOT NULL OR o.order_type IN ('DINE_IN', 'TAKEAWAY', 'ONLINE')) " +
+                     "  AND o.cashier_id IS NOT NULL AND o.order_type IN ('DINE_IN', 'TAKEAWAY') " +
                      "ORDER BY o.created_at DESC, o.id DESC";
 
         Map<Integer, Order> orders = new LinkedHashMap<>();
@@ -1124,7 +1166,8 @@ public class OrderDAO extends BaseDAO {
      * Chỉ cho phép hoàn tất khi Barista đã làm xong (READY) hoặc đơn đang giao (DELIVERING).
      */
     public boolean completeCounterOrder(int orderId) {
-        String sql = "UPDATE orders SET status = 'COMPLETED' WHERE id = ? AND status IN ('READY', 'DELIVERING')";
+        String sql = "UPDATE orders SET status = 'COMPLETED' WHERE id = ? AND status = 'READY' " +
+                "AND order_type IN ('DINE_IN','TAKEAWAY')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderId);

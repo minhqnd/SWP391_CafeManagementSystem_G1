@@ -28,7 +28,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-reports.jsp" class="nav-link ${param.activeMenu == 'reports' ? 'active' : ''}">
+                <a href="${ctx}/admin/reports" class="nav-link ${param.activeMenu == 'reports' ? 'active' : ''}">
                     <span class="material-symbols-outlined">analytics</span>
                     <span>Báo cáo chi tiết</span>
                 </a>
@@ -92,7 +92,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-purchases.jsp" class="nav-link ${param.activeMenu == 'purchases' ? 'active' : ''}">
+                <a href="${ctx}/admin/purchases" class="nav-link ${param.activeMenu == 'purchases' ? 'active' : ''}">
                     <span class="material-symbols-outlined">description</span>
                     <span>Phiếu nhập hàng</span>
                 </a>
@@ -144,13 +144,13 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-loyalty.jsp" class="nav-link ${param.activeMenu == 'loyalty' ? 'active' : ''}">
+                <a href="${ctx}/admin/loyalty" class="nav-link ${param.activeMenu == 'loyalty' ? 'active' : ''}">
                     <span class="material-symbols-outlined">loyalty</span>
                     <span>Tích điểm</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-feedback.jsp" class="nav-link ${param.activeMenu == 'feedback' ? 'active' : ''}">
+                <a href="${ctx}/admin/feedback" class="nav-link ${param.activeMenu == 'feedback' ? 'active' : ''}">
                     <span class="material-symbols-outlined">rate_review</span>
                     <span>Đánh giá &amp; Khiếu nại</span>
                 </a>
