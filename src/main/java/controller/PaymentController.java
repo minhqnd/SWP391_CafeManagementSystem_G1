@@ -73,6 +73,8 @@ public class PaymentController extends HttpServlet {
         String action=trim(request.getParameter("action"));
         if("cod".equals(action)){
             if(paymentDAO.acceptCod(orderId,user.getId())){
+                // Đơn đã chốt COD: lúc này mới bỏ các món khỏi giỏ hàng
+                CheckoutController.removePaidItems(session,orderId);
                 session.setAttribute("ordersMessage","Đã xác nhận thanh toán COD cho đơn #"+order.getOrderCode()+". Điểm sẽ được cộng sau khi giao hàng và thu tiền.");
                 response.sendRedirect(request.getContextPath()+"/bill?orderId="+orderId);
             }else{
@@ -101,6 +103,8 @@ public class PaymentController extends HttpServlet {
             response.sendRedirect(request.getContextPath()+"/payment?orderId="+orderId);
             return;
         }
+        // Đơn đã thanh toán: lúc này mới bỏ các món khỏi giỏ hàng
+        CheckoutController.removePaidItems(session,orderId);
         user.setTotalPoints(userDAO.getTotalPoints(user.getId()));
         session.setAttribute("ordersMessage","Thanh toán thành công đơn #"+order.getOrderCode()
                 +(result.earnedPoints()>0?". Bạn được cộng "+result.earnedPoints()+" điểm Aura.":"."));

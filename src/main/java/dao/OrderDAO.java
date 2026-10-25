@@ -32,6 +32,7 @@ public class OrderDAO extends BaseDAO {
     // All channels share the paid-order queue; checkbox state is kept outside the database.
     private static final String BARISTA_TYPES =
             "o.order_type IN ('DINE_IN', 'TAKEAWAY', 'ONLINE')";
+    // Đơn đã thanh toán, hoặc đơn giao tận nơi trả tiền mặt khi nhận hàng (COD, shipper thu sau)
     private static final String BARISTA_PAID =
             "EXISTS (SELECT 1 FROM payments pay WHERE pay.order_id = o.id AND (" +
             "pay.status = 'SUCCESS' OR (o.order_type = 'ONLINE' AND pay.payment_method = 'CASH' AND pay.status = 'PENDING')))";

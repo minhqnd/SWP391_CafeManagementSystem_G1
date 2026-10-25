@@ -1,6 +1,7 @@
 package controller;
 
 import dao.AdminOrderDAO;
+import dao.DeliveryDAO;
 import dao.OrderDAO;
 import dao.PaymentDAO;
 import dao.UserDAO;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.AdminOrderSummary;
+import model.Delivery;
 import model.Order;
 import model.User;
 
@@ -28,6 +30,7 @@ public class AdminOrdersController extends HttpServlet {
     private final OrderDAO orderDAO = new OrderDAO();
     private final PaymentDAO paymentDAO = new PaymentDAO();
     private final UserDAO userDAO = new UserDAO();
+    private final DeliveryDAO deliveryDAO = new DeliveryDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -53,6 +56,10 @@ public class AdminOrdersController extends HttpServlet {
                     request.setAttribute("detailOrder", detail);
                     request.setAttribute("detailSummary", orders.stream().filter(o -> o.getId() == detailId).findFirst().orElse(null));
                     request.setAttribute("detailPayment", paymentDAO.getPaymentByOrderId(detailId));
+                    // Tiến độ giao hàng + sự cố shipper báo (màn Giao hàng - Screen 14)
+                    Delivery delivery = deliveryDAO.getByOrderId(detailId);
+                    if (delivery != null) delivery.setIssues(deliveryDAO.getIssues(delivery.getId()));
+                    request.setAttribute("detailDelivery", delivery);
                 }
             }
             request.getRequestDispatcher("/admin-orders.jsp").forward(request, response);
@@ -98,7 +105,7 @@ public class AdminOrdersController extends HttpServlet {
             User shipper = userDAO.getActiveStaffById(shipperId);
             if (shipper == null || !"SHIPPER".equals(shipper.getPosition())) throw new IllegalArgumentException("Shipper không hợp lệ.");
         }
-        if (!adminOrderDAO.assignShipper(id, shipperId)) throw new IllegalArgumentException("Chỉ đơn ONLINE mới có thể gán shipper.");
+        if (!adminOrderDAO.assignShipper(id, shipperId)) throw new IllegalArgumentException("Chỉ gán shipper cho đơn giao tận nơi chưa hoàn thành / huỷ và shipper chưa lấy hàng.");
         session.setAttribute("orderAdminMessage", "Đã cập nhật shipper.");
     }
 
