@@ -266,6 +266,22 @@ public class Order implements Serializable {
     private int rewardPoints;       // điểm EARN thực tế đã ghi cho đơn
     private String paymentMethod;   // phương thức của lần thanh toán thành công
     private LocalDateTime paidAt;   // null = chưa thanh toán
+    private LocalDateTime scheduledAt; // giờ khách hẹn nhận; null = càng sớm càng tốt
+
+    public LocalDateTime getScheduledAt() { return scheduledAt; }
+    public void setScheduledAt(LocalDateTime scheduledAt) { this.scheduledAt = scheduledAt; }
+
+    public String getScheduledAtDisplay() {
+        return scheduledAt == null ? "Càng sớm càng tốt" : scheduledAt.format(TIME_FORMAT) + " " + scheduledAt.format(DATE_FORMAT);
+    }
+
+    /** Hình thức nhận hàng: ONLINE = giao tận nơi, TAKEAWAY = tự đến lấy / mang đi, DINE_IN = dùng tại quán */
+    public String getFulfillmentLabel() {
+        if ("ONLINE".equals(orderType)) return "Giao tận nơi";
+        if ("TAKEAWAY".equals(orderType)) return customerId != null && cashierId == null ? "Tự đến lấy" : "Mang đi";
+        if ("DINE_IN".equals(orderType)) return "Dùng tại quán";
+        return orderType != null ? orderType : "";
+    }
 
     public int getPointsUsed() { return pointsUsed; }
     public void setPointsUsed(int pointsUsed) { this.pointsUsed = pointsUsed; }

@@ -22,9 +22,7 @@ public class ShopSettings implements Serializable {
     public static final String KEY_PAYMENT_BANK_NAME = "payment_bank_name";
     public static final String KEY_PAYMENT_ACCOUNT_NO = "payment_account_no";
     public static final String KEY_PAYMENT_ACCOUNT_NAME = "payment_account_name";
-    public static final String KEY_SHIFT_MORNING = "shift_morning";
-    public static final String KEY_SHIFT_AFTERNOON = "shift_afternoon";
-    public static final String KEY_SHIFT_EVENING = "shift_evening";
+    // Khung giờ ca không còn lưu ở đây: mỗi tuần có bộ ca riêng trong bảng work_shifts (/admin/shifts)
 
     private double freeshipThreshold = 150000;  // tiền hàng tối thiểu để miễn phí giao hàng (0 = mọi đơn)
     private double deliveryFee = 18000;         // phí giao hàng khi chưa đủ mức freeship
@@ -38,11 +36,6 @@ public class ShopSettings implements Serializable {
     private String paymentBankName = "Vietcombank";
     private String paymentAccountNo = "9888823456";
     private String paymentAccountName = "CONG TY TNHH AURA CAFE";
-    // Khung giờ ca "HH:mm-HH:mm" chỉ lấy từ shop_settings (Admin sửa ở /admin/shifts), không có giá trị cố định:
-    // ca chưa có dòng cấu hình trong Database thì để null -> màn hình hiện "Chưa cấu hình"
-    private String shiftMorning;
-    private String shiftAfternoon;
-    private String shiftEvening;
 
     public double getFreeshipThreshold() { return freeshipThreshold; }
     public void setFreeshipThreshold(double freeshipThreshold) { this.freeshipThreshold = freeshipThreshold; }
@@ -80,16 +73,6 @@ public class ShopSettings implements Serializable {
         if (goodsAmountAfterDiscount <= 0 || pointsEarnUnit <= 0) return 0;
         return (int) Math.floor(goodsAmountAfterDiscount / pointsEarnUnit);
     }
-
-    public String getShiftMorning() { return shiftMorning; }
-    public void setShiftMorning(String shiftMorning) { this.shiftMorning = shiftMorning; }
-
-    public String getShiftAfternoon() { return shiftAfternoon; }
-    public void setShiftAfternoon(String shiftAfternoon) { this.shiftAfternoon = shiftAfternoon; }
-
-    public String getShiftEvening() { return shiftEvening; }
-    public void setShiftEvening(String shiftEvening) { this.shiftEvening = shiftEvening; }
-
     /** Số tiền giảm khi dùng số điểm này - chỉ tính các mốc trọn vẹn (VD mốc 50: 120 điểm = 2 mốc) */
     public double getPointsDiscount(int points) {
         if (points <= 0 || pointsStep <= 0) {

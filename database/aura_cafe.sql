@@ -1,6 +1,6 @@
 -- =====================================================
 -- AURA CAFE ERP - DATABASE SCRIPT
--- TOTAL: 18 TABLES
+-- TOTAL: 20 TABLES
 -- MySQL 8.0.16+
 -- =====================================================
 SET NAMES utf8mb4;
@@ -37,7 +37,9 @@ DROP TABLE IF EXISTS product_images;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS category_images;
 DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS shift_handovers;
 DROP TABLE IF EXISTS work_schedules;
+DROP TABLE IF EXISTS work_shifts;
 DROP TABLE IF EXISTS users;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -88,17 +90,36 @@ CREATE TABLE users (
         CHECK (total_points >= 0)
 ) ENGINE=InnoDB;
 
--- 2. WORK SCHEDULES
+-- 2A. WORK SHIFTS (khung giờ ca theo từng tuần)
+-- Mỗi tuần (week_start = Thứ 2) có bộ ca riêng: Admin thêm / sửa / xoá ca của tuần nào
+-- thì chỉ tuần đó thay đổi, các tuần khác giữ nguyên giờ đã dùng.
+CREATE TABLE work_shifts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    week_start DATE NOT NULL,
+    shift_name VARCHAR(50) NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_shift_week_name
+        UNIQUE (week_start, shift_name),
+
+    CONSTRAINT chk_shift_time
+        CHECK (end_time > start_time),
+
+    INDEX idx_shift_week (week_start)
+) ENGINE=InnoDB;
+
+-- 2B. WORK SCHEDULES
 CREATE TABLE work_schedules (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     work_date DATE NOT NULL,
 
-    shift_name ENUM(
-        'MORNING',
-        'AFTERNOON',
-        'EVENING'
-    ) NOT NULL,
+    -- Ca thuộc tuần chứa work_date (kiểm tra ở tầng ứng dụng)
+    shift_id INT NOT NULL,
 
     -- Attendance
     check_in_time DATETIME NULL,
@@ -123,8 +144,12 @@ CREATE TABLE work_schedules (
         REFERENCES users(id)
         ON DELETE CASCADE,
 
+    CONSTRAINT fk_schedule_shift
+        FOREIGN KEY (shift_id)
+        REFERENCES work_shifts(id),
+
     CONSTRAINT uq_user_work_shift
-        UNIQUE (user_id, work_date, shift_name),
+        UNIQUE (user_id, work_date, shift_id),
 
     CONSTRAINT chk_schedule_cash
         CHECK (
@@ -132,6 +157,59 @@ CREATE TABLE work_schedules (
             AND (ending_cash_system IS NULL OR ending_cash_system >= 0)
             AND (ending_cash_actual IS NULL OR ending_cash_actual >= 0)
         )
+) ENGINE=InnoDB;
+
+-- 2C. SHIFT HANDOVERS (biên bản bàn giao ca của Thu ngân - SRS 2.5, UC60)
+-- Thu ngân chốt ca -> SUBMITTED; Admin xem lại -> CONFIRMED hoặc REJECTED (kèm lý do);
+-- bị từ chối thì Thu ngân giải trình và gửi lại (SUBMITTED).
+CREATE TABLE shift_handovers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    schedule_id INT NOT NULL,
+    cashier_id INT NOT NULL,
+
+    opening_cash DECIMAL(12,2) NOT NULL DEFAULT 0,   -- tiền két đầu ca
+    cash_sales DECIMAL(12,2) NOT NULL DEFAULT 0,     -- tiền mặt bán được trong ca
+    expected_cash DECIMAL(12,2) NOT NULL,            -- hệ thống tính = đầu ca + tiền mặt bán
+    actual_cash DECIMAL(12,2) NOT NULL,              -- thu ngân đếm thực tế
+    difference DECIMAL(12,2) NOT NULL,               -- thực tế - hệ thống
+    note TEXT NULL,                                  -- bắt buộc khi có chênh lệch
+
+    status ENUM(
+        'SUBMITTED',
+        'CONFIRMED',
+        'REJECTED'
+    ) NOT NULL DEFAULT 'SUBMITTED',
+
+    reviewed_by INT NULL,
+    review_note TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at DATETIME NULL,
+
+    CONSTRAINT uq_handover_schedule
+        UNIQUE (schedule_id),
+
+    CONSTRAINT fk_handover_schedule
+        FOREIGN KEY (schedule_id)
+        REFERENCES work_schedules(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_handover_cashier
+        FOREIGN KEY (cashier_id)
+        REFERENCES users(id),
+
+    CONSTRAINT fk_handover_reviewer
+        FOREIGN KEY (reviewed_by)
+        REFERENCES users(id),
+
+    CONSTRAINT chk_handover_cash
+        CHECK (
+            opening_cash >= 0
+            AND cash_sales >= 0
+            AND expected_cash >= 0
+            AND actual_cash >= 0
+        ),
+
+    INDEX idx_handover_status (status)
 ) ENGINE=InnoDB;
 
 -- =====================================================
@@ -242,6 +320,9 @@ CREATE TABLE orders (
     table_number VARCHAR(20) NULL,
 
     order_note TEXT NULL,
+
+    -- Đơn online: thời gian khách hẹn nhận (giao / đến lấy); NULL = càng sớm càng tốt
+    scheduled_at DATETIME NULL,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -678,7 +759,7 @@ CREATE TABLE shop_settings (
 
 -- =====================================================
 -- END OF SCRIPT
--- TOTAL: 16 TABLES
+-- TOTAL: 20 TABLES
 -- =====================================================
 USE aura_cafe_erp;
 
@@ -711,29 +792,43 @@ VALUES
  'demo_hash', 'STAFF', 'ACTIVE', 'SHIPPER', 7500000,
  '2025-03-01', 0);
 
--- 2. WORK SCHEDULES
+-- 2A. WORK SHIFTS (mỗi tuần một bộ ca; tuần 26/10 đổi giờ Ca chiều để minh hoạ giờ ca lưu riêng theo tuần)
+INSERT INTO work_shifts
+(id, week_start, shift_name, start_time, end_time)
+VALUES
+(1, '2026-09-28', 'Ca sáng', '07:00:00', '12:00:00'),
+(2, '2026-09-28', 'Ca chiều', '12:00:00', '17:00:00'),
+(3, '2026-09-28', 'Ca tối', '17:00:00', '22:00:00'),
+(4, '2026-10-19', 'Ca sáng', '07:00:00', '12:00:00'),
+(5, '2026-10-19', 'Ca chiều', '12:00:00', '17:00:00'),
+(6, '2026-10-19', 'Ca tối', '17:00:00', '22:00:00'),
+(7, '2026-10-26', 'Ca sáng', '07:00:00', '12:00:00'),
+(8, '2026-10-26', 'Ca chiều', '12:30:00', '17:30:00'),
+(9, '2026-10-26', 'Ca tối', '17:30:00', '22:00:00');
+
+-- 2B. WORK SCHEDULES (shift_id 1-3 = Ca sáng / chiều / tối của tuần 28/09)
 INSERT INTO work_schedules
-(user_id, work_date, shift_name, check_in_time,
+(user_id, work_date, shift_id, check_in_time,
  check_out_time, status, starting_cash,
  ending_cash_system, ending_cash_actual, note)
 VALUES
-(2, '2026-10-03', 'MORNING',
+(2, '2026-10-03', 1,
  '2026-10-03 08:00:00', '2026-10-03 12:00:00',
  'COMPLETED', NULL, NULL, NULL, 'Ca sáng pha chế'),
 
-(3, '2026-10-03', 'AFTERNOON',
+(3, '2026-10-03', 2,
  '2026-10-03 12:00:00', NULL,
  'PRESENT', 500000, NULL, NULL, 'Ca chiều thu ngân'),
 
-(2, '2026-10-04', 'AFTERNOON',
+(2, '2026-10-04', 2,
  '2026-10-04 12:05:00', NULL,
  'PRESENT', NULL, NULL, NULL, 'Ca chiều pha chế'),
 
-(6, '2026-10-03', 'EVENING',
+(6, '2026-10-03', 3,
  NULL, NULL, 'SCHEDULED', NULL, NULL, NULL,
  'Ca tối giao hàng'),
 
-(3, '2026-10-04', 'EVENING',
+(3, '2026-10-04', 3,
  NULL, NULL, 'SCHEDULED', 500000, NULL, NULL,
  'Ca tối thu ngân');
 
@@ -1029,10 +1124,7 @@ INSERT INTO shop_settings (setting_key, setting_value) VALUES
 ('payment_bank_id', 'VCB'),
 ('payment_bank_name', 'Vietcombank'),
 ('payment_account_no', '9888823456'),
-('payment_account_name', 'CONG TY TNHH AURA CAFE'),
-('shift_morning', '07:00-12:00'),
-('shift_afternoon', '12:00-17:00'),
-('shift_evening', '17:00-22:00');
+('payment_account_name', 'CONG TY TNHH AURA CAFE');
 
 -- FEEDBACK SAMPLE DATA (stored with customer ratings and complaints)
 INSERT INTO customer_reviews
@@ -1059,7 +1151,9 @@ VALUES
 -- =====================================================
 
 SELECT 'users' AS table_name, COUNT(*) AS total FROM users
+UNION ALL SELECT 'work_shifts', COUNT(*) FROM work_shifts
 UNION ALL SELECT 'work_schedules', COUNT(*) FROM work_schedules
+UNION ALL SELECT 'shift_handovers', COUNT(*) FROM shift_handovers
 UNION ALL SELECT 'categories', COUNT(*) FROM categories
 UNION ALL SELECT 'products', COUNT(*) FROM products
 UNION ALL SELECT 'orders', COUNT(*) FROM orders

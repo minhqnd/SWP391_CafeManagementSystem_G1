@@ -1,6 +1,6 @@
 package controller;
 
-import dao.ShopSettingDAO;
+import dao.ShiftHandoverDAO;
 import dao.WorkScheduleDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import model.ShiftHandover;
 import model.ShiftHandoverSummary;
-import model.ShopSettings;
 import model.User;
 import model.WorkSchedule;
 
@@ -22,8 +22,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Màn hình chốt két và bàn giao ca dành riêng cho Thu ngân.
+ * Màn hình chốt két và bàn giao ca dành riêng cho Thu ngân (SRS 2.5 / UC60).
  * URL: /cashier/handover, dùng mode=close để mở bước kiểm đếm/chốt ca.
+ * Chốt ca sẽ lập biên bản shift_handovers (SUBMITTED) chờ Admin xác nhận / từ chối;
+ * biên bản bị từ chối thì Thu ngân giải trình và gửi lại (action=resubmit).
  */
 @WebServlet(name = "CashierShiftHandoverController", urlPatterns = {"/cashier/handover"})
 public class CashierShiftHandoverController extends HttpServlet {
@@ -35,7 +37,7 @@ public class CashierShiftHandoverController extends HttpServlet {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
-    private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
+    private final ShiftHandoverDAO shiftHandoverDAO = new ShiftHandoverDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -85,9 +87,7 @@ public class CashierShiftHandoverController extends HttpServlet {
             }
         }
 
-        ShopSettings settings = shopSettingDAO.getSettings();
-        applyShiftTime(activeShift, settings);
-        applyShiftTime(completedShift, settings);
+        // Giờ ca (shiftTime) đã được WorkScheduleDAO lấy từ work_shifts của đúng tuần làm việc
 
         String modeParam = request.getParameter("mode");
         boolean closeMode;
@@ -112,6 +112,15 @@ public class CashierShiftHandoverController extends HttpServlet {
                 ? workScheduleDAO.getShiftHandoverSummary(completedShift, completedShift.getCheckOutTime())
                 : null;
 
+        ShiftHandover handoverRecord = null;
+        if (completedShift != null) {
+            try {
+                handoverRecord = shiftHandoverDAO.getBySchedule(completedShift.getId());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         WorkSchedule headerShift = closeMode ? (activeShift != null ? activeShift : completedShift)
                                             : (completedShift != null ? completedShift : activeShift);
 
@@ -120,6 +129,7 @@ public class CashierShiftHandoverController extends HttpServlet {
         request.setAttribute("headerShift", headerShift);
         request.setAttribute("closePreview", closePreview);
         request.setAttribute("handoverSummary", handoverSummary);
+        request.setAttribute("handoverRecord", handoverRecord);
         request.setAttribute("closeMode", closeMode);
         request.setAttribute("recentShifts", recentShifts);
         request.setAttribute("currentTime", LocalDateTime.now().format(TIME_FORMATTER));
@@ -141,8 +151,13 @@ public class CashierShiftHandoverController extends HttpServlet {
         }
 
         HttpSession session = request.getSession();
+        String action = request.getParameter("action");
+        if ("resubmit".equalsIgnoreCase(action)) {
+            handleResubmit(request, response, session, cashier);
+            return;
+        }
         try {
-            if (!"close-shift".equalsIgnoreCase(request.getParameter("action"))) {
+            if (!"close-shift".equalsIgnoreCase(action)) {
                 throw new IllegalArgumentException("Thao tác bàn giao ca không hợp lệ.");
             }
 
@@ -155,14 +170,18 @@ public class CashierShiftHandoverController extends HttpServlet {
             Timestamp closingTime = Timestamp.valueOf(LocalDateTime.now());
             ShiftHandoverSummary preview = workScheduleDAO.getShiftHandoverSummary(schedule, closingTime);
             BigDecimal expectedCash = preview.getStartingCash().add(preview.getCashSales());
+            // Lệch két (thừa / thiếu) thì bắt buộc giải trình để Admin xem lại
+            if (actualCash.compareTo(expectedCash) != 0 && note.isEmpty()) {
+                throw new IllegalArgumentException("Tiền két thực tế lệch so với hệ thống, vui lòng nhập ghi chú giải trình.");
+            }
 
-            boolean closed = workScheduleDAO.closeCashierShift(
-                    schedule.getId(), cashier.getId(), actualCash, expectedCash, note);
-            if (!closed) {
+            int handoverId = shiftHandoverDAO.submitHandover(schedule.getId(), cashier.getId(),
+                    preview.getStartingCash(), preview.getCashSales(), actualCash, note);
+            if (handoverId == 0) {
                 throw new IllegalStateException("Ca đã được chốt hoặc trạng thái ca vừa thay đổi. Vui lòng tải lại trang.");
             }
 
-            session.setAttribute("handoverSuccessMsg", "Đã chốt két và hoàn tất bàn giao ca thành công! Dưới đây là biên bản bàn giao.");
+            session.setAttribute("handoverSuccessMsg", "Đã chốt két và gửi biên bản bàn giao ca. Biên bản đang chờ Admin xác nhận.");
             response.sendRedirect(request.getContextPath() + "/cashier/handover?scheduleId=" + schedule.getId() + "&mode=handover");
         } catch (IllegalArgumentException | IllegalStateException e) {
             session.setAttribute("handoverErrorMsg", e.getMessage());
@@ -172,6 +191,34 @@ public class CashierShiftHandoverController extends HttpServlet {
             session.setAttribute("handoverErrorMsg", "Không thể chốt ca do lỗi hệ thống. Vui lòng thử lại.");
             response.sendRedirect(request.getContextPath() + "/cashier/handover?mode=close");
         }
+    }
+
+    /** Giải trình lại biên bản bị Admin từ chối, đưa về trạng thái chờ duyệt */
+    private void handleResubmit(HttpServletRequest request, HttpServletResponse response,
+                                HttpSession session, User cashier) throws IOException {
+        String scheduleParam = "";
+        try {
+            int handoverId = parsePositiveId(request.getParameter("handoverId"));
+            ShiftHandover handover = shiftHandoverDAO.getById(handoverId);
+            if (handover == null || handover.getCashierId() != cashier.getId()) {
+                throw new IllegalArgumentException("Biên bản bàn giao không tồn tại hoặc không thuộc tài khoản này.");
+            }
+            scheduleParam = "&scheduleId=" + handover.getScheduleId();
+            String explanation = normalizeNote(request.getParameter("explanation"));
+            if (explanation.isEmpty()) {
+                throw new IllegalArgumentException("Vui lòng nhập nội dung giải trình trước khi gửi lại.");
+            }
+            if (!shiftHandoverDAO.resubmit(handoverId, cashier.getId(), explanation)) {
+                throw new IllegalStateException("Chỉ biên bản bị từ chối mới có thể gửi lại.");
+            }
+            session.setAttribute("handoverSuccessMsg", "Đã gửi lại biên bản bàn giao, đang chờ Admin xác nhận.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            session.setAttribute("handoverErrorMsg", e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            session.setAttribute("handoverErrorMsg", "Không thể gửi lại biên bản do lỗi hệ thống. Vui lòng thử lại.");
+        }
+        response.sendRedirect(request.getContextPath() + "/cashier/handover?mode=handover" + scheduleParam);
     }
 
     private User getAuthorizedCashier(HttpServletRequest request, HttpServletResponse response)
@@ -190,19 +237,6 @@ public class CashierShiftHandoverController extends HttpServlet {
             return null;
         }
         return user;
-    }
-
-    private void applyShiftTime(WorkSchedule schedule, ShopSettings settings) {
-        if (schedule == null) {
-            return;
-        }
-        if ("MORNING".equalsIgnoreCase(schedule.getShiftName())) {
-            schedule.setShiftTime(settings.getShiftMorning());
-        } else if ("AFTERNOON".equalsIgnoreCase(schedule.getShiftName())) {
-            schedule.setShiftTime(settings.getShiftAfternoon());
-        } else if ("EVENING".equalsIgnoreCase(schedule.getShiftName())) {
-            schedule.setShiftTime(settings.getShiftEvening());
-        }
     }
 
     private void validateOwnedActiveShift(WorkSchedule schedule, User cashier) {

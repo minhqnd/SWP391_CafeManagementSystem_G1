@@ -92,38 +92,113 @@
                 <div class="col-lg-7">
                     <fieldset class="${isGuest ? 'checkout-locked' : ''}" ${isGuest ? 'disabled' : ''}>
 
-                        <!-- Địa chỉ giao hàng -->
+                        <!-- Hình thức nhận hàng (SRS 2.3.2) -->
                         <div class="aura-card p-3 p-md-4 mb-4">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="section-title">
-                                    <span class="section-icon"><span class="material-symbols-outlined">location_on</span></span>
-                                    Địa chỉ giao hàng
+                                    <span class="section-icon"><span class="material-symbols-outlined">storefront</span></span>
+                                    Hình thức nhận hàng
                                 </div>
                                 <span class="badge-step mb-3">Bước 2 / 3</span>
                             </div>
+                            <div class="fulfillment-options" role="radiogroup" aria-label="Hình thức nhận hàng">
+                                <label class="fulfillment-option">
+                                    <input type="radio" name="fulfillment" value="DELIVERY" ${cart.fulfillment eq 'DELIVERY' ? 'checked' : ''}>
+                                    <span class="material-symbols-outlined">delivery_dining</span>
+                                    <span><b>Giao tận nơi</b><small>Khoảng ${deliveryMinutes} phút</small></span>
+                                </label>
+                                <label class="fulfillment-option">
+                                    <input type="radio" name="fulfillment" value="PICKUP" ${cart.fulfillment eq 'PICKUP' ? 'checked' : ''}>
+                                    <span class="material-symbols-outlined">shopping_bag</span>
+                                    <span><b>Tự đến lấy</b><small>Miễn phí giao hàng</small></span>
+                                </label>
+                                <label class="fulfillment-option">
+                                    <input type="radio" name="fulfillment" value="DINE_IN" ${cart.fulfillment eq 'DINE_IN' ? 'checked' : ''}>
+                                    <span class="material-symbols-outlined">local_cafe</span>
+                                    <span><b>Dùng tại quán</b><small>Phục vụ tại bàn</small></span>
+                                </label>
+                            </div>
+                            <p class="text-muted small mb-0 mt-2 d-flex align-items-center gap-1" data-show-for="PICKUP DINE_IN">
+                                <span class="material-symbols-outlined fs-6">location_on</span>
+                                Địa chỉ quán: <c:out value="${storeAddress}" />
+                            </p>
+                        </div>
 
+                        <!-- Thông tin người nhận & địa chỉ (SRS 2.3.3) -->
+                        <div class="aura-card p-3 p-md-4 mb-4">
+                            <div class="section-title">
+                                <span class="section-icon"><span class="material-symbols-outlined">person</span></span>
+                                Thông tin người nhận
+                            </div>
                             <div class="info-box mb-3">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label for="recipientName" class="form-label small fw-semibold mb-1">Họ tên người nhận</label>
+                                        <label for="recipientName" class="form-label small fw-semibold mb-1">Họ tên người nhận *</label>
                                         <input type="text" id="recipientName" name="recipientName" class="form-control aura-input bg-white"
                                                maxlength="100" required placeholder="Nguyễn Văn An"
                                                value="${fn:escapeXml(recipientName)}">
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="recipientPhone" class="form-label small fw-semibold mb-1">Số điện thoại</label>
+                                        <label for="recipientPhone" class="form-label small fw-semibold mb-1">Số điện thoại *</label>
                                         <input type="tel" id="recipientPhone" name="recipientPhone" class="form-control aura-input bg-white"
                                                maxlength="15" required placeholder="0908 123 456"
                                                value="${fn:escapeXml(recipientPhone)}">
                                     </div>
-                                    <div class="col-12">
-                                        <label for="deliveryAddress" class="form-label small fw-semibold mb-1">Địa chỉ nhận hàng</label>
-                                        <input type="text" id="deliveryAddress" name="deliveryAddress" class="form-control aura-input bg-white"
-                                               minlength="10" maxlength="255" required
-                                               placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
-                                               value="${fn:escapeXml(deliveryAddress)}">
+
+                                    <%-- Chỉ khi Giao tận nơi --%>
+                                    <div class="col-md-4" data-show-for="DELIVERY">
+                                        <label for="city" class="form-label small fw-semibold mb-1">Tỉnh / Thành phố</label>
+                                        <input type="text" id="city" class="form-control aura-input bg-white" value="${city}" readonly>
+                                    </div>
+                                    <div class="col-md-4" data-show-for="DELIVERY">
+                                        <label for="district" class="form-label small fw-semibold mb-1">Quận / Huyện *</label>
+                                        <select id="district" name="district" class="form-select aura-input bg-white" data-required-for="DELIVERY">
+                                            <option value="">Chọn quận / huyện</option>
+                                            <c:forEach var="d" items="${hanoiDistricts}">
+                                                <option value="${d}" ${d eq district ? 'selected' : ''}>${d}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4" data-show-for="DELIVERY">
+                                        <label for="ward" class="form-label small fw-semibold mb-1">Phường / Xã *</label>
+                                        <input type="text" id="ward" name="ward" class="form-control aura-input bg-white"
+                                               maxlength="100" placeholder="VD: Tràng Tiền" data-required-for="DELIVERY"
+                                               value="${fn:escapeXml(ward)}">
+                                    </div>
+                                    <div class="col-12" data-show-for="DELIVERY">
+                                        <label for="addressDetail" class="form-label small fw-semibold mb-1">Địa chỉ chi tiết *</label>
+                                        <input type="text" id="addressDetail" name="addressDetail" class="form-control aura-input bg-white"
+                                               minlength="5" maxlength="150" data-required-for="DELIVERY"
+                                               placeholder="Số nhà, tên đường, toà nhà, tầng / phòng"
+                                               value="${fn:escapeXml(addressDetail)}">
+                                    </div>
+
+                                    <%-- Chỉ khi Dùng tại quán --%>
+                                    <div class="col-md-6" data-show-for="DINE_IN">
+                                        <label for="tableNumber" class="form-label small fw-semibold mb-1">Số bàn (nếu đã ngồi tại quán)</label>
+                                        <input type="text" id="tableNumber" name="tableNumber" class="form-control aura-input bg-white"
+                                               maxlength="20" placeholder="VD: T05" value="${fn:escapeXml(tableNumber)}">
                                     </div>
                                 </div>
+                            </div>
+
+                            <%-- Thời gian nhận: giao hàng / đến lấy --%>
+                            <div data-show-for="DELIVERY PICKUP">
+                                <div class="form-label small fw-semibold mb-1">Thời gian nhận</div>
+                                <div class="d-flex flex-wrap gap-3 align-items-center">
+                                    <label class="d-flex align-items-center gap-2 small">
+                                        <input type="radio" name="timeOption" value="ASAP" ${timeOption ne 'SCHEDULED' ? 'checked' : ''}>
+                                        Càng sớm càng tốt
+                                    </label>
+                                    <label class="d-flex align-items-center gap-2 small">
+                                        <input type="radio" name="timeOption" value="SCHEDULED" ${timeOption eq 'SCHEDULED' ? 'checked' : ''}>
+                                        Hẹn giờ hôm nay
+                                    </label>
+                                    <input type="time" id="scheduledTime" name="scheduledTime" class="form-control aura-input bg-white"
+                                           style="max-width: 140px;" min="${openTime}" max="${lastOrderTime}" step="300"
+                                           value="${fn:escapeXml(scheduledTime)}" aria-label="Giờ hẹn nhận">
+                                </div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Hẹn trong khoảng ${openTime} - ${lastOrderTime}, sau thời điểm đặt ít nhất 30 phút.</div>
                             </div>
                         </div>
 
@@ -131,7 +206,7 @@
                         <div class="aura-card p-3 p-md-4">
                             <div class="section-title">
                                 <span class="section-icon"><span class="material-symbols-outlined">edit_note</span></span>
-                                Ghi chú giao hàng
+                                Ghi chú cho quán &amp; shipper
                             </div>
                             <textarea name="orderNote" class="form-control aura-input" rows="3" maxlength="500"
                                       placeholder="VD: Ít đá, gửi bảo vệ tầng hầm B1, gọi điện thoại trước khi giao."><c:out value="${orderNote}" /></textarea>
@@ -179,12 +254,16 @@
                             <span class="label">Tổng tiền món (${fn:length(cart.selectedItems)} món):</span>
                             <span class="fw-semibold"><fmt:formatNumber value="${cart.selectedSubtotal}" pattern="#,##0" />đ</span>
                         </div>
-                        <div class="summary-row">
+                        <%-- Phí giao tính theo cài đặt Admin; chỉ áp dụng khi Giao tận nơi (JS đổi hiển thị khi đổi hình thức) --%>
+                        <c:set var="shippingFee" value="${cart.freeshipReached ? 0 : shop.deliveryFee}" />
+                        <div class="summary-row" id="deliveryFeeRow" data-shipping-fee="${shippingFee}" data-base-total="${cart.total}">
                             <span class="label">Phí giao hàng:</span>
-                            <c:choose>
-                                <c:when test="${cart.deliveryFee == 0}"><span class="fw-semibold text-success">Miễn phí</span></c:when>
-                                <c:otherwise><span class="fw-semibold"><fmt:formatNumber value="${cart.deliveryFee}" pattern="#,##0" />đ</span></c:otherwise>
-                            </c:choose>
+                            <span class="fw-semibold" id="deliveryFeeText">
+                                <c:choose>
+                                    <c:when test="${cart.deliveryFee == 0}"><span class="text-success">Miễn phí</span></c:when>
+                                    <c:otherwise><fmt:formatNumber value="${cart.deliveryFee}" pattern="#,##0" />đ</c:otherwise>
+                                </c:choose>
+                            </span>
                         </div>
                         <c:if test="${cart.pointsUsed > 0}">
                             <div class="summary-row">
@@ -200,7 +279,7 @@
 
                         <div class="d-flex justify-content-between align-items-end gap-2 mb-3">
                             <div class="fw-bold fs-5">Tổng thanh toán</div>
-                            <div class="grand-total"><fmt:formatNumber value="${cart.grandTotal}" pattern="#,##0" />đ</div>
+                            <div class="grand-total" id="grandTotalText"><fmt:formatNumber value="${cart.grandTotal}" pattern="#,##0" />đ</div>
                         </div>
                         <div class="info-box small mb-3 d-flex align-items-center gap-2">
                             <span class="material-symbols-outlined fs-5 text-aura">qr_code_2</span>
@@ -241,5 +320,43 @@
 
     <!-- Bootstrap 5 JS Bundle (modal, dropdown, menu mobile) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Đổi hình thức nhận: hiện đúng trường cần nhập, cập nhật phí giao & tổng tiền (server tính lại khi đặt)
+        (() => {
+            const radios = document.querySelectorAll('input[name="fulfillment"]');
+            const feeRow = document.getElementById('deliveryFeeRow');
+            const feeText = document.getElementById('deliveryFeeText');
+            const totalText = document.getElementById('grandTotalText');
+            const timeInput = document.getElementById('scheduledTime');
+            const money = (v) => Math.round(v).toLocaleString('vi-VN') + 'đ';
+
+            const apply = () => {
+                const checked = document.querySelector('input[name="fulfillment"]:checked');
+                const mode = checked ? checked.value : 'DELIVERY';
+                radios.forEach((radio) => radio.closest('.fulfillment-option').classList.toggle('is-selected', radio.checked));
+                document.querySelectorAll('[data-show-for]').forEach((el) => {
+                    el.hidden = !el.dataset.showFor.split(' ').includes(mode);
+                });
+                document.querySelectorAll('[data-required-for]').forEach((el) => {
+                    el.required = el.dataset.requiredFor === mode;
+                });
+                const fee = mode === 'DELIVERY' ? Number(feeRow.dataset.shippingFee) : 0;
+                feeText.innerHTML = fee === 0 ? '<span class="text-success">Miễn phí</span>' : money(fee);
+                totalText.textContent = money(Number(feeRow.dataset.baseTotal) + fee);
+            };
+
+            const applyTime = () => {
+                const scheduled = document.querySelector('input[name="timeOption"]:checked');
+                const isScheduled = scheduled && scheduled.value === 'SCHEDULED';
+                timeInput.disabled = !isScheduled;
+                timeInput.required = isScheduled;
+            };
+
+            radios.forEach((radio) => radio.addEventListener('change', apply));
+            document.querySelectorAll('input[name="timeOption"]').forEach((r) => r.addEventListener('change', applyTime));
+            apply();
+            applyTime();
+        })();
+    </script>
 </body>
 </html>

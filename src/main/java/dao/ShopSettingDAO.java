@@ -74,8 +74,8 @@ public class ShopSettingDAO extends BaseDAO {
     }
 
     /**
-     * Cấu hình hiện tại. Khoá nào chưa có trong Database thì dùng giá trị mặc định của ShopSettings,
-     * riêng khung giờ ca không có mặc định (để null = "Chưa cấu hình").
+     * Cấu hình hiện tại. Khoá nào chưa có trong Database thì dùng giá trị mặc định của ShopSettings.
+     * (Khung giờ ca theo tuần nằm ở bảng work_shifts - xem WorkShiftDAO.)
      */
     public ShopSettings getSettings() {
         ShopSettings settings = new ShopSettings();
@@ -178,39 +178,11 @@ public class ShopSettingDAO extends BaseDAO {
                 case ShopSettings.KEY_PAYMENT_ACCOUNT_NAME:
                     settings.setPaymentAccountName(value.trim());
                     break;
-                case ShopSettings.KEY_SHIFT_MORNING:
-                    settings.setShiftMorning(value.trim());
-                    break;
-                case ShopSettings.KEY_SHIFT_AFTERNOON:
-                    settings.setShiftAfternoon(value.trim());
-                    break;
-                case ShopSettings.KEY_SHIFT_EVENING:
-                    settings.setShiftEvening(value.trim());
-                    break;
                 default:
                     break;
             }
         } catch (Exception e) {
             System.err.println("[ShopSettingDAO] Giá trị cấu hình không hợp lệ " + key + " = " + value);
-        }
-    }
-
-    /** Cập nhật khung giờ ca làm việc theo key (shift_morning, shift_afternoon, shift_evening) */
-    public boolean updateShiftHours(String shiftKey, String timeRange) {
-        if (shiftKey == null || timeRange == null || timeRange.trim().isEmpty()) {
-            return false;
-        }
-        String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) "
-                + "ON DUPLICATE KEY UPDATE setting_value = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, shiftKey.trim());
-            ps.setString(2, timeRange.trim());
-            ps.setString(3, timeRange.trim());
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
         }
     }
 }
