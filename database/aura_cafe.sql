@@ -20,9 +20,12 @@ DROP TABLE IF EXISTS reward_items;
 DROP TABLE IF EXISTS customer_reviews;
 DROP TABLE IF EXISTS loyalty_transactions;
 DROP TABLE IF EXISTS shop_settings;
+DROP TABLE IF EXISTS delivery_incidents;
 DROP TABLE IF EXISTS inventory_transactions;
 DROP TABLE IF EXISTS purchase_order_items;
 DROP TABLE IF EXISTS purchase_orders;
+DROP TABLE IF EXISTS restock_request_items;
+DROP TABLE IF EXISTS restock_requests;
 DROP TABLE IF EXISTS product_ingredients;
 DROP TABLE IF EXISTS ingredients;
 DROP TABLE IF EXISTS suppliers;
@@ -417,6 +420,9 @@ CREATE TABLE payments (
 
     paid_at DATETIME NULL,
     payment_note TEXT NULL,
+    gateway_reference VARCHAR(150) NULL,
+    callback_payload JSON NULL,
+    callback_received_at DATETIME NULL,
 
     CONSTRAINT fk_payment_order
         FOREIGN KEY (order_id)
@@ -427,6 +433,7 @@ CREATE TABLE payments (
         CHECK (amount >= 0),
 
     INDEX idx_payments_order (order_id)
+    ,UNIQUE KEY uq_payment_transaction_code (transaction_code)
 ) ENGINE=InnoDB;
 
 -- 8. LOYALTY TRANSACTIONS
@@ -574,7 +581,7 @@ CREATE TABLE product_ingredients (
     ingredient_id INT NOT NULL,
 
     -- BOM quantity required for one product
-    quantity_required INT UNSIGNED NOT NULL,
+    quantity_required DECIMAL(12,3) UNSIGNED NOT NULL,
 
     CONSTRAINT fk_bom_product
         FOREIGN KEY (product_id)
@@ -593,11 +600,40 @@ CREATE TABLE product_ingredients (
         CHECK (quantity_required > 0)
 ) ENGINE=InnoDB;
 
--- 13. PURCHASE ORDERS
+-- 13. RESTOCK REQUESTS (internal proposal; no supplier price or receiving here)
+CREATE TABLE restock_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    requester_id INT NOT NULL,
+    reviewer_id INT NULL,
+    status ENUM('DRAFT','PENDING_APPROVAL','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'DRAFT',
+    reason VARCHAR(500) NULL,
+    note VARCHAR(500) NULL,
+    review_note VARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at DATETIME NULL,
+    CONSTRAINT fk_restock_requester FOREIGN KEY (requester_id) REFERENCES users(id),
+    CONSTRAINT fk_restock_reviewer FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_restock_status (status)
+) ENGINE=InnoDB;
+
+CREATE TABLE restock_request_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    request_id INT NOT NULL,
+    ingredient_id INT NOT NULL,
+    quantity DECIMAL(12,3) NOT NULL,
+    item_note VARCHAR(255) NULL,
+    CONSTRAINT fk_restock_item_request FOREIGN KEY (request_id) REFERENCES restock_requests(id) ON DELETE CASCADE,
+    CONSTRAINT fk_restock_item_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients(id),
+    CONSTRAINT chk_restock_quantity CHECK (quantity > 0),
+    UNIQUE KEY uq_restock_request_ingredient (request_id, ingredient_id)
+) ENGINE=InnoDB;
+
+-- 15. PURCHASE ORDERS
 CREATE TABLE purchase_orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     supplier_id INT NOT NULL,
     creator_id INT NOT NULL,
+    restock_request_id INT NULL,
 
     total_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
 
@@ -607,8 +643,10 @@ CREATE TABLE purchase_orders (
         'RECEIVED',
         'CANCELLED'
     ) NOT NULL DEFAULT 'DRAFT',
-
+    note VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ordered_at DATETIME NULL,
+    received_at DATETIME NULL,
 
     CONSTRAINT fk_po_supplier
         FOREIGN KEY (supplier_id)
@@ -618,10 +656,16 @@ CREATE TABLE purchase_orders (
         FOREIGN KEY (creator_id)
         REFERENCES users(id),
 
+    CONSTRAINT fk_po_restock_request
+        FOREIGN KEY (restock_request_id)
+        REFERENCES restock_requests(id)
+        ON DELETE SET NULL,
+
     CONSTRAINT chk_po_total
         CHECK (total_cost >= 0),
 
-    INDEX idx_po_supplier (supplier_id)
+    INDEX idx_po_supplier (supplier_id),
+    UNIQUE KEY uq_po_restock_request (restock_request_id)
 ) ENGINE=InnoDB;
 
 -- 14. PURCHASE ORDER ITEMS
@@ -673,6 +717,7 @@ CREATE TABLE inventory_transactions (
     ) NOT NULL DEFAULT 'ADJUSTMENT',
 
     reference_id INT NULL,
+    reason VARCHAR(500) NULL,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -685,6 +730,23 @@ CREATE TABLE inventory_transactions (
 
     INDEX idx_inventory_ingredient (ingredient_id),
     INDEX idx_inventory_reference (reference_type, reference_id)
+) ENGINE=InnoDB;
+
+-- Delivery incident history belongs to the delivery process, not order notes.
+CREATE TABLE delivery_incidents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    shipper_id INT NOT NULL,
+    incident_type ENUM('CUSTOMER_UNAVAILABLE','WRONG_ADDRESS','DAMAGED','PAYMENT_PROBLEM','OTHER') NOT NULL,
+    description VARCHAR(1000) NOT NULL,
+    status ENUM('OPEN','PROCESSING','RESOLVED','REJECTED') NOT NULL DEFAULT 'OPEN',
+    admin_note VARCHAR(1000) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    resolved_at DATETIME NULL,
+    CONSTRAINT fk_incident_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    CONSTRAINT fk_incident_shipper FOREIGN KEY (shipper_id) REFERENCES users(id),
+    INDEX idx_incident_order (order_id),
+    INDEX idx_incident_status (status)
 ) ENGINE=InnoDB;
 
 -- GROUP E: SHOP SETTINGS (1 TABLE)
@@ -1055,7 +1117,14 @@ INSERT INTO shop_settings (setting_key, setting_value) VALUES
 ('delivery_fee', '18000'),
 ('delivery_minutes', '30'),
 ('points_step', '10'),
-('points_step_value', '2000');
+('points_step_value', '2000'),
+('points_earn_unit', '10000'),
+('payment_test_mode', 'true'),
+('payment_callback_secret', 'AURA-LOCAL-DEMO-SECRET'),
+('payment_bank_id', 'VCB'),
+('payment_bank_name', 'Vietcombank'),
+('payment_account_no', '9888823456'),
+('payment_account_name', 'CONG TY TNHH AURA CAFE');
 
 -- FEEDBACK SAMPLE DATA (stored with customer ratings and complaints)
 INSERT INTO customer_reviews

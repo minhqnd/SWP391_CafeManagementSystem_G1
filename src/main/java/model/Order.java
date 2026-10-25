@@ -263,6 +263,7 @@ public class Order implements Serializable {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private int pointsUsed;         // điểm Aura khách đã dùng để giảm giá đơn này
+    private int rewardPoints;       // điểm EARN thực tế đã ghi cho đơn
     private String paymentMethod;   // phương thức của lần thanh toán thành công
     private LocalDateTime paidAt;   // null = chưa thanh toán
     private LocalDateTime scheduledAt; // giờ khách hẹn nhận; null = càng sớm càng tốt
@@ -378,10 +379,11 @@ public class Order implements Serializable {
         }
     }
 
-    /** Điểm Aura khách nhận khi thanh toán: mỗi 10.000đ tiền hàng sau giảm giá = 1 điểm (không tính phí ship) */
     public int getRewardPoints() {
-        return (int) Math.floor((totalAmount - discountAmount) / Cart.MONEY_PER_POINT);
+        return rewardPoints > 0 ? rewardPoints
+                : new ShopSettings().calculateEarnedPoints(totalAmount - discountAmount);
     }
+    public void setRewardPoints(int rewardPoints) { this.rewardPoints = rewardPoints; }
 
     /**
      * Giờ nhận dự kiến (HH:mm) = lúc thanh toán (chưa thanh toán thì lúc đặt) + thời gian giao Admin cài đặt.

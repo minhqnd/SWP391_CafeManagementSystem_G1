@@ -41,7 +41,6 @@ public class CartController extends HttpServlet {
         }
 
         // Cập nhật giá & trạng thái món, cấu hình freeship / mốc điểm và số điểm hiện có theo Database
-        cart.setPointsUsed(0); // Điểm chỉ đổi tại quầy bằng số điện thoại.
         if (!cartService.refreshCart(cart, getCustomerId(session))) {
             session.setAttribute("cartError", pointsAdjustedMessage(cart));
         }
@@ -90,6 +89,17 @@ public class CartController extends HttpServlet {
             cart.getItems().clear();
         } else if ("removeSelected".equals(action)) {
             cart.removeSelectedItems();
+        } else if ("usePoints".equals(action)) {
+            Integer customerId = getCustomerId(session);
+            if (customerId == null) {
+                session.setAttribute("cartError", "Vui lòng đăng nhập bằng tài khoản khách hàng để dùng điểm Aura.");
+            } else {
+                cartService.refreshCart(cart, customerId);
+                cart.setPointsUsed(parseInt(request.getParameter("pointsUsed"), 0));
+                if (!cartService.refreshCart(cart, customerId)) {
+                    session.setAttribute("cartError", pointsAdjustedMessage(cart));
+                }
+            }
         }
 
         if ("/cart/api".equals(request.getServletPath()) || "json".equals(request.getParameter("format"))) {

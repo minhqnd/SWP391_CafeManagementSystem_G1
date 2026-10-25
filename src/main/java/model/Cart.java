@@ -12,6 +12,7 @@ public class Cart implements Serializable {
     private static final long serialVersionUID = 2L;
 
     public static final String SESSION_KEY = "cart";
+    /** Legacy default only; runtime earning uses ShopSettings.pointsEarnUnit. */
     public static final double MONEY_PER_POINT = 10000;
     public static final int MAX_QUANTITY = 99;
 
@@ -187,7 +188,7 @@ public class Cart implements Serializable {
 
     /** Mỗi 10.000đ chi tiêu tương đương 1 điểm Aura */
     public int getRewardPoints() {
-        return (int) Math.floor(getTotal() / MONEY_PER_POINT);
+        return settings.calculateEarnedPoints(getTotal());
     }
 
     /** Freeship tính trên tiền các món đã chọn (trước khi trừ điểm) */
