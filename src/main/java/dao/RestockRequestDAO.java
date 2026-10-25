@@ -46,6 +46,6 @@ public class RestockRequestDAO extends BaseDAO{
         }
     }
     public Map<String,Object> getRestockStats(){
-        Map<String,Object> m=new HashMap<>();try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement("SELECT (SELECT COUNT(*) FROM ingredients WHERE current_stock<=min_stock_level) low_stock,(SELECT COUNT(*) FROM restock_requests WHERE status='PENDING_APPROVAL') pending_count,(SELECT COUNT(*) FROM restock_requests WHERE status='APPROVED') approved_count");ResultSet rs=ps.executeQuery()){if(rs.next()){m.put("lowStock",rs.getInt(1));m.put("pendingCount",rs.getInt(2));m.put("approvedCount",rs.getInt(3));}}catch(Exception e){throw new IllegalStateException(e);}return m;
+        Map<String,Object> m=new HashMap<>();try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement("SELECT (SELECT COUNT(*) FROM ingredients WHERE current_stock<=min_stock_level) low_stock,(SELECT COUNT(*) FROM restock_requests WHERE status='PENDING_APPROVAL') pending_count,(SELECT COUNT(*) FROM restock_requests WHERE status='APPROVED') approved_count,(SELECT COUNT(*) FROM restock_requests WHERE status='DRAFT') draft_count");ResultSet rs=ps.executeQuery()){if(rs.next()){m.put("lowStock",rs.getInt(1));m.put("pendingCount",rs.getInt(2));m.put("approvedCount",rs.getInt(3));m.put("draftCount",rs.getInt(4));}}catch(Exception e){throw new IllegalStateException(e);}return m;
     }
 }

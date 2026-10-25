@@ -1112,7 +1112,7 @@ VALUES
  'Delivery took longer than expected',
  'PENDING', NULL, '2026-10-03 10:41:00'),
 
-(4, 3, 'RATING', 4,
+(5, 3, 'RATING', 4,
  'Good taste, but a little too sweet',
  'PENDING', NULL, '2026-10-03 11:20:00');
 

@@ -586,10 +586,11 @@
                                                                         </span>
                                                                     </c:when>
                                                                     <c:otherwise>
+                                                                        <%-- PENDING: Chờ xử lý, PROCESSING: Đang xử lý (Admin đã tiếp nhận) --%>
                                                                         <span class="status-badge-pending">
                                                                             <span class="material-symbols-outlined"
-                                                                                style="font-size: 13px;">schedule</span>
-                                                                            Đang chờ xử lý
+                                                                                style="font-size: 13px;">${fb.status eq 'PROCESSING' ? 'autorenew' : 'schedule'}</span>
+                                                                            ${fb.statusLabel}
                                                                         </span>
                                                                     </c:otherwise>
                                                                 </c:choose>
@@ -612,7 +613,7 @@
                                                         <!-- Nội dung phản hồi: content -->
                                                         <p class="text-secondary small mb-2"
                                                             style="font-size: 0.825rem; line-height: 1.5; white-space: pre-line;">
-                                                            ${fb.content}</p>
+                                                            <c:out value="${fb.content}" /></p>
 
                                                         <!-- Phản hồi từ quản trị viên: admin_response (nếu có) -->
                                                         <c:if test="${not empty fb.adminResponse}">
@@ -624,7 +625,7 @@
                                                                     Phản hồi từ Quản trị viên:
                                                                 </div>
                                                                 <p class="mb-0" style="line-height: 1.45;">
-                                                                    ${fb.adminResponse}</p>
+                                                                    <c:out value="${fb.adminResponse}" /></p>
                                                             </div>
                                                         </c:if>
 
@@ -633,7 +634,7 @@
                                                             style="font-size: 0.72rem;">
                                                             <span>Thời gian: ${fb.formattedCreatedAt}</span>
                                                             <c:if test="${not empty fb.customerName}">
-                                                                <span class="text-secondary">${fb.customerName}</span>
+                                                                <span class="text-secondary"><c:out value="${fb.customerName}" /></span>
                                                             </c:if>
                                                         </div>
                                                     </div>
