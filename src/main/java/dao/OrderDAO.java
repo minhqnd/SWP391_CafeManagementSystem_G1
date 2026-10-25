@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -307,8 +308,8 @@ public class OrderDAO extends BaseDAO {
     public int placeOrder(Order order, List<CartItem> items, int pointsUsed) {
         String insertOrderSql = "INSERT INTO orders (order_code, customer_id, order_type, status, " +
                                 "total_amount, discount_amount, delivery_fee, final_amount, " +
-                                "recipient_name, recipient_phone, delivery_address, order_note) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                                "recipient_name, recipient_phone, delivery_address, order_note, table_number, scheduled_at) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String insertItemSql = "INSERT INTO order_items (order_id, product_id, product_name_at_time, unit_price, " +
                                "customization, quantity, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)";
         // Chỉ trừ khi còn đủ điểm (tránh 2 đơn đặt cùng lúc dùng chung số điểm)
@@ -340,6 +341,8 @@ public class OrderDAO extends BaseDAO {
                 ps.setString(10, order.getRecipientPhone());
                 ps.setString(11, order.getDeliveryAddress());
                 ps.setString(12, order.getOrderNote());
+                ps.setString(13, order.getTableNumber());
+                ps.setTimestamp(14, order.getScheduledAt() == null ? null : Timestamp.valueOf(order.getScheduledAt()));
                 ps.executeUpdate();
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -677,6 +680,7 @@ public class OrderDAO extends BaseDAO {
         order.setDeliveryAddress(rs.getString("delivery_address"));
         order.setTableNumber(rs.getString("table_number"));
         order.setOrderNote(rs.getString("order_note"));
+        order.setScheduledAt(rs.getObject("scheduled_at", LocalDateTime.class));
         order.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
         order.setPointsUsed(rs.getInt("points_used"));
         order.setPaymentMethod(rs.getString("payment_method"));

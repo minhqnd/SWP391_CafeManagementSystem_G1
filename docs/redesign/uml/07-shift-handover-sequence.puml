@@ -1,0 +1,63 @@
+@startuml 07-shift-handover-sequence
+title Sequence - Shift Handover with Admin Review (UC60)
+autonumber
+actor Cashier
+actor Admin
+boundary "cashier-shift-handover.jsp" as CUI
+boundary "admin-handovers.jsp" as AUI
+control "CashierShiftHandoverController\n/cashier/handover" as CCtl
+control "AdminHandoverController\n/admin/handovers" as ACtl
+entity "WorkScheduleDAO" as WDAO
+entity "ShiftHandoverDAO" as HDAO
+database "MySQL" as DB
+
+== Close shift ==
+Cashier -> CUI : Open "Close shift"
+CUI -> CCtl : GET /cashier/handover?mode=close
+CCtl -> WDAO : getRecentSchedulesForUser(cashierId) -> PRESENT shift
+CCtl -> WDAO : getShiftHandoverSummary(shift, now)
+WDAO -> DB : SELECT SUM of SUCCESS payments by method\n(handled by Cashier, from check-in to now)
+CCtl --> CUI : opening cash, cash sales, expected cash
+Cashier -> CUI : Enter actual cash + note\n(JS: difference -> note required)
+CUI -> CCtl : POST action=close-shift (scheduleId, endingCashActual, note)
+CCtl -> CCtl : own shift, PRESENT, not a future date,\namount 0..9,999,999,999 and multiple of 1,000, note <= 500
+CCtl -> WDAO : getShiftHandoverSummary(shift, now) - recalculated on server
+alt actual differs from expected and no note
+  CCtl --> CUI : "please enter an explanation note"
+else valid
+  CCtl -> HDAO : submitHandover(scheduleId, cashierId,\nopeningCash, cashSales, actualCash, note)
+  HDAO -> DB : [transaction] UPDATE work_schedules SET COMPLETED ...\nWHERE id = ? AND user_id = ? AND status = 'PRESENT'
+  alt 0 rows (already closed / double submit)
+    HDAO -> DB : ROLLBACK
+    CCtl --> CUI : "Shift already closed ..."
+  else
+    HDAO -> DB : INSERT shift_handovers (..., status SUBMITTED)\nCOMMIT
+    CCtl --> CUI : redirect ?mode=handover -> "Waiting for Admin review"
+  end
+end
+
+== Admin review ==
+Admin -> AUI : Open "Shift Handovers"
+AUI -> ACtl : GET /admin/handovers?status=SUBMITTED
+ACtl -> HDAO : getHandovers(status), countByStatus()
+HDAO -> DB : SELECT h.*, shift, date, cashier name, reviewer\nFROM shift_handovers JOIN work_schedules JOIN work_shifts JOIN users
+ACtl --> AUI : handover table + counts per status
+Admin -> AUI : Click "Confirm" / "Reject" (enter reason)
+AUI -> ACtl : POST action=confirm|reject (id, reviewNote, csrfToken)
+ACtl -> ACtl : check CSRF; reason required when rejecting
+ACtl -> HDAO : review(id, adminId, confirm, reviewNote)
+HDAO -> DB : UPDATE shift_handovers SET status, reviewed_by,\nreview_note, reviewed_at = NOW()\nWHERE id = ? AND status = 'SUBMITTED'
+alt already reviewed
+  ACtl --> AUI : "Record has already been processed"
+else
+  ACtl --> AUI : "Handover confirmed / rejected ..."
+end
+
+== Cashier resubmits after rejection ==
+Cashier -> CUI : View record: "Rejected" + reason
+Cashier -> CUI : Enter explanation, click "Resubmit"
+CUI -> CCtl : POST action=resubmit (handoverId, explanation)
+CCtl -> HDAO : resubmit(id, cashierId, explanation)
+HDAO -> DB : UPDATE shift_handovers SET status = 'SUBMITTED', note = ?,\nreviewed_by = NULL, reviewed_at = NULL\nWHERE id = ? AND cashier_id = ? AND status = 'REJECTED'
+CCtl --> CUI : "Handover resubmitted, waiting for Admin review"
+@enduml

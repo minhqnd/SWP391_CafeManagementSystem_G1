@@ -164,9 +164,16 @@
                         <div>
                             <div class="bank-label">Hình thức nhận</div>
                             <div class="fw-semibold">
+                                ${order.fulfillmentLabel}<c:if test="${not empty order.tableNumber}"> · Bàn <c:out value="${order.tableNumber}" /></c:if>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="bank-label">Thời gian nhận</div>
+                            <div class="fw-semibold">
                                 <c:choose>
+                                    <c:when test="${not empty order.scheduledAt}">Hẹn ${order.scheduledAtDisplay}</c:when>
                                     <c:when test="${order.delivery}">Giao trong khoảng ${deliveryMinutes} phút</c:when>
-                                    <c:otherwise>Tự đến lấy tại quầy</c:otherwise>
+                                    <c:otherwise>Càng sớm càng tốt</c:otherwise>
                                 </c:choose>
                             </div>
                         </div>
@@ -179,7 +186,7 @@
                             <div class="fw-semibold"><c:out value="${order.recipientPhone}" /></div>
                         </div>
                         <div class="ebill-info-full">
-                            <div class="bank-label">${order.delivery ? 'Địa chỉ giao hàng' : 'Nhận tại quầy'}</div>
+                            <div class="bank-label">${order.delivery ? 'Địa chỉ giao hàng' : 'Địa chỉ quán'}</div>
                             <div class="fw-semibold"><c:out value="${order.delivery ? order.deliveryAddress : storeAddress}" /></div>
                         </div>
                         <c:if test="${not empty order.orderNote}">

@@ -300,7 +300,7 @@
 
                                     <label class="database-field-label" for="endingCashActual">
                                         Tiền mặt thực tế cuối ca
-                                        <span>work_schedules.ending_cash_actual</span>
+                                        <span>shift_handovers.actual_cash</span>
                                     </label>
                                     <div class="cash-input-wrap">
                                         <input type="number" name="endingCashActual" id="endingCashActual"
@@ -319,14 +319,15 @@
 
                                     <label class="database-field-label" for="handoverNote">
                                         Ghi chú bàn giao
-                                        <span>work_schedules.note</span>
+                                        <span>shift_handovers.note</span>
                                     </label>
                                     <textarea name="note" id="handoverNote" class="note-input-field"
                                               placeholder="Nhập ghi chú nếu có..." maxlength="500" rows="4"></textarea>
+                                    <p class="field-help" id="noteRequiredHelp" hidden>Két đang lệch so với hệ thống, bắt buộc ghi chú giải trình.</p>
 
                                     <button type="submit" class="btn-submit-close">
                                         <span class="material-symbols-outlined">verified_user</span>
-                                        Lưu và hoàn tất bàn giao
+                                        Chốt ca và gửi biên bản cho Admin
                                     </button>
                                 </form>
                             </div>
@@ -356,7 +357,7 @@
                                         Ngày ${completedShift.workDateDisplay}
                                         • Giờ vào ca: ${completedShift.checkInFormatted} 
                                         • Giờ ra ca: ${completedShift.checkOutFormatted}
-                                        • Trạng thái: <strong>Đã hoàn thành</strong>
+                                        • Biên bản: <strong>${not empty handoverRecord ? handoverRecord.statusLabel : 'Chưa lập biên bản'}</strong>
                                     </p>
                                 </div>
                                 <div class="handover-actions-top">
@@ -365,6 +366,46 @@
                                     </a>
                                 </div>
                             </div>
+
+                            <!-- Trạng thái duyệt biên bản (shift_handovers.status) -->
+                            <c:if test="${not empty handoverRecord}">
+                                <div class="handover-review-box review-${handoverRecord.status}">
+                                    <div class="handover-review-head">
+                                        <span class="material-symbols-outlined">
+                                            <c:choose>
+                                                <c:when test="${handoverRecord.status eq 'CONFIRMED'}">verified</c:when>
+                                                <c:when test="${handoverRecord.status eq 'REJECTED'}">cancel</c:when>
+                                                <c:otherwise>hourglass_top</c:otherwise>
+                                            </c:choose>
+                                        </span>
+                                        <strong>${handoverRecord.statusLabel}</strong>
+                                        <span class="handover-review-meta">
+                                            Gửi lúc ${handoverRecord.createdAtDisplay}
+                                            <c:if test="${not empty handoverRecord.reviewerName}">
+                                                • Người duyệt: <c:out value="${handoverRecord.reviewerName}" /> (${handoverRecord.reviewedAtDisplay})
+                                            </c:if>
+                                        </span>
+                                    </div>
+                                    <c:if test="${not empty handoverRecord.reviewNote}">
+                                        <p class="handover-review-note">
+                                            <strong>${handoverRecord.rejected ? 'Lý do từ chối' : 'Ý kiến Admin'}:</strong>
+                                            <c:out value="${handoverRecord.reviewNote}" />
+                                        </p>
+                                    </c:if>
+                                    <c:if test="${handoverRecord.rejected}">
+                                        <form method="post" action="${ctx}/cashier/handover" class="handover-resubmit-form">
+                                            <input type="hidden" name="action" value="resubmit">
+                                            <input type="hidden" name="handoverId" value="${handoverRecord.id}">
+                                            <label for="explanation">Giải trình và gửi lại cho Admin</label>
+                                            <textarea name="explanation" id="explanation" class="note-input-field" rows="3"
+                                                      maxlength="500" required placeholder="Nhập giải trình về khoản chênh lệch..."><c:out value="${handoverRecord.note}" /></textarea>
+                                            <button type="submit" class="btn-action-primary">
+                                                <span class="material-symbols-outlined">send</span> Gửi lại biên bản
+                                            </button>
+                                        </form>
+                                    </c:if>
+                                </div>
+                            </c:if>
 
                             <!-- 5 Handover Metrics Strip -->
                             <div class="handover-summary-strip">
@@ -525,10 +566,12 @@
                                         <div><span>Trạng thái</span><strong>${completedShift.statusDisplayName}</strong></div>
                                     </div>
 
-                                    <c:if test="${not empty completedShift.note}">
+                                    <%-- Ưu tiên ghi chú/giải trình mới nhất trong biên bản (shift_handovers.note) --%>
+                                    <c:set var="handoverNoteText" value="${not empty handoverRecord ? handoverRecord.note : completedShift.note}" />
+                                    <c:if test="${not empty handoverNoteText}">
                                         <div class="handover-note-box">
                                             <strong>Ghi chú bàn giao:</strong>
-                                            <p><c:out value="${completedShift.note}" /></p>
+                                            <p><c:out value="${handoverNoteText}" /></p>
                                         </div>
                                     </c:if>
                                 </div>
@@ -592,10 +635,17 @@
 
         const formatVND = num => num.toLocaleString('vi-VN') + 'đ';
 
+        const noteInput = document.getElementById('handoverNote');
+        const noteRequiredHelp = document.getElementById('noteRequiredHelp');
+
         function recalculateCash() {
             const actual = actualCashInput ? (parseInt(actualCashInput.value, 10) || 0) : 0;
             const diff = actual - EXPECTED_CASH;
             const absDiff = Math.abs(diff);
+
+            // Lệch két thì bắt buộc ghi chú (server cũng kiểm tra lại)
+            if (noteInput) noteInput.required = diff !== 0;
+            if (noteRequiredHelp) noteRequiredHelp.hidden = diff === 0;
 
             if (diffBox && diffLabel && diffAmount) {
                 diffBox.className = 'diff-status-box';
@@ -633,7 +683,7 @@
                         return;
                     }
                 } else {
-                    if (!confirm('Xác nhận lưu số liệu và hoàn tất ca làm việc này?')) {
+                    if (!confirm('Xác nhận chốt ca và gửi biên bản bàn giao cho Admin duyệt?')) {
                         e.preventDefault();
                         return;
                     }

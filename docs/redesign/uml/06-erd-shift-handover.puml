@@ -1,0 +1,62 @@
+@startuml 06-erd-shift-handover
+title ERD - Weekly Work Shifts + Work Schedules + Shift Handovers
+hide circle
+skinparam linetype ortho
+
+entity users {
+  * id : INT <<PK>>
+  --
+  full_name, phone, email
+  role : ADMIN | STAFF | CUSTOMER
+  position : MANAGER (Staff Manager) | BARISTA | CASHIER | SHIPPER
+  status
+}
+
+entity work_shifts <<NEW>> {
+  * id : INT <<PK>>
+  --
+  * week_start : DATE (Monday of the week)
+  * shift_name : VARCHAR(50)
+  * start_time : TIME
+  * end_time : TIME
+  created_at, updated_at
+  UNIQUE (week_start, shift_name)
+  CHECK end_time > start_time
+}
+
+entity work_schedules <<MODIFIED>> {
+  * id : INT <<PK>>
+  --
+  * user_id : INT <<FK>>
+  * shift_id : INT <<FK>> (replaces ENUM shift_name)
+  * work_date : DATE
+  check_in_time, check_out_time
+  starting_cash, ending_cash_system, ending_cash_actual
+  status : SCHEDULED | PRESENT | ABSENT | COMPLETED
+  note
+  UNIQUE (user_id, work_date, shift_id)
+}
+
+entity shift_handovers <<NEW>> {
+  * id : INT <<PK>>
+  --
+  * schedule_id : INT <<FK>> UNIQUE (ON DELETE CASCADE)
+  * cashier_id : INT <<FK>>
+  * opening_cash : DECIMAL(12,2)
+  * cash_sales : DECIMAL(12,2)
+  * expected_cash : DECIMAL(12,2)
+  * actual_cash : DECIMAL(12,2)
+  * difference : DECIMAL(12,2)
+  note : TEXT
+  * status : SUBMITTED | CONFIRMED | REJECTED
+  reviewed_by : INT <<FK>> (NULL)
+  review_note : TEXT (NULL)
+  created_at, reviewed_at
+}
+
+users ||--o{ work_schedules : "is assigned"
+work_shifts ||--o{ work_schedules : "belongs to shift"
+work_schedules ||--o| shift_handovers : "closed by"
+users ||--o{ shift_handovers : "Cashier submits"
+users |o--o{ shift_handovers : "Admin reviews"
+@enduml

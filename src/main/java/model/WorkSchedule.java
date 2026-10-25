@@ -17,7 +17,9 @@ public class WorkSchedule implements Serializable {
     private String userPhone;
     private String userPosition;
     private Date workDate;
-    private String shiftName; // MORNING, AFTERNOON, EVENING
+    private int shiftId;      // work_shifts.id - ca thuộc tuần chứa workDate
+    private String shiftName; // Tên ca lấy từ work_shifts (VD "Ca sáng")
+    private java.time.LocalTime shiftStart; // Giờ bắt đầu ca của đúng tuần đó (tính đi muộn)
     private Timestamp checkInTime;
     private Timestamp checkOutTime;
     private Double startingCash;
@@ -25,7 +27,7 @@ public class WorkSchedule implements Serializable {
     private Double endingCashActual;
     private String status; // SCHEDULED, PRESENT, ABSENT, COMPLETED
     private String note;
-    private String shiftTime; // e.g. "07:00-12:00" from shop_settings
+    private String shiftTime; // VD "07:00-12:00" lấy từ work_shifts của tuần đó
     private boolean late;
     private int lateMinutes;
 
@@ -70,8 +72,14 @@ public class WorkSchedule implements Serializable {
     public Date getWorkDate() { return workDate; }
     public void setWorkDate(Date workDate) { this.workDate = workDate; }
 
+    public int getShiftId() { return shiftId; }
+    public void setShiftId(int shiftId) { this.shiftId = shiftId; }
+
     public String getShiftName() { return shiftName; }
     public void setShiftName(String shiftName) { this.shiftName = shiftName; }
+
+    public java.time.LocalTime getShiftStart() { return shiftStart; }
+    public void setShiftStart(java.time.LocalTime shiftStart) { this.shiftStart = shiftStart; }
 
     public Timestamp getCheckInTime() { return checkInTime; }
     public void setCheckInTime(Timestamp checkInTime) { this.checkInTime = checkInTime; }
@@ -105,9 +113,6 @@ public class WorkSchedule implements Serializable {
 
     // Helper methods
     public String getShiftDisplayName() {
-        if ("MORNING".equalsIgnoreCase(shiftName)) return "Ca sáng";
-        if ("AFTERNOON".equalsIgnoreCase(shiftName)) return "Ca chiều";
-        if ("EVENING".equalsIgnoreCase(shiftName)) return "Ca tối";
         return shiftName != null ? shiftName : "";
     }
 
@@ -131,7 +136,7 @@ public class WorkSchedule implements Serializable {
         if ("BARISTA".equalsIgnoreCase(userPosition)) return "Pha chế";
         if ("CASHIER".equalsIgnoreCase(userPosition)) return "Thu ngân";
         if ("SHIPPER".equalsIgnoreCase(userPosition)) return "Giao hàng";
-        if ("MANAGER".equalsIgnoreCase(userPosition)) return "Quản lý";
+        if ("MANAGER".equalsIgnoreCase(userPosition)) return "Quản lý nhân viên";
         return userPosition != null ? userPosition : "Nhân viên";
     }
 

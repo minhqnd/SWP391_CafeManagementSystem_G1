@@ -126,6 +126,12 @@
                     <span>Chấm công</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="${ctx}/admin/handovers" class="nav-link ${param.activeMenu == 'handovers' ? 'active' : ''}">
+                    <span class="material-symbols-outlined">assignment_turned_in</span>
+                    <span>Bàn giao ca</span>
+                </a>
+            </li>
         </ul>
 
         <!-- GROUP: KHÁCH HÀNG -->
