@@ -14,62 +14,138 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="${ctx}/assets/css/admin-schedule.css" rel="stylesheet">
     <style>
-        .feedback-page { max-width: 1280px; color: #292524; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .feedback-head, .feedback-table { background: #fff; border: 1px solid #e7e5e4; border-radius: 16px; box-shadow: 0 1px 3px rgba(28, 25, 23, 0.04); }
-        .feedback-head { padding: 22px; }
-        .table-ref { padding: 4px 10px; border-radius: 6px; background: #f5f5f4; color: #78716c; font: 700 11px ui-monospace, monospace; display: inline-block; }
-        .feedback-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.025em; margin: 8px 0 4px; color: #1c1917; }
-        .feedback-head p { font-size: 13px; color: #78716c; margin: 0; }
-        .filter-select { height: 38px; padding: 0 34px 0 14px; border: 1px solid #e7e5e4; border-radius: 12px; background: #fafaf9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center; appearance: none; -webkit-appearance: none; font-size: 12.5px; font-weight: 600; color: #44403c; cursor: pointer; transition: all 0.15s; }
-        .filter-select:focus { outline: none; border-color: #a51225; box-shadow: 0 0 0 3px rgba(165, 18, 37, 0.1); }
-        .feedback-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding-top: 16px; margin-top: 16px; border-top: 1px solid #f5f5f4; }
-        .stat-box { padding: 14px 16px; border: 1px solid #e7e5e4; border-radius: 12px; background: #fafaf9; }
+        .feedback-page { max-width: 1320px; color: #1e293b; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .feedback-head, .feedback-table { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 6px 16px rgba(0, 0, 0, 0.02); }
+        .feedback-head { padding: 22px 24px; }
+        .table-ref { padding: 4px 10px; border-radius: 6px; background: #f1f5f9; color: #64748b; font: 700 11px ui-monospace, monospace; display: inline-block; }
+        .feedback-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.025em; margin: 8px 0 4px; color: #0f172a; }
+        .feedback-head p { font-size: 13px; color: #64748b; margin: 0; }
+        
+        .filter-select { height: 38px; padding: 0 34px 0 14px; border: 1px solid #cbd5e1; border-radius: 12px; background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center; appearance: none; -webkit-appearance: none; font-size: 12.5px; font-weight: 600; color: #334155; cursor: pointer; transition: all 0.2s; }
+        .filter-select:focus { outline: none; border-color: #be123c; box-shadow: 0 0 0 3px rgba(190, 18, 60, 0.12); background-color: #fff; }
+        
+        .feedback-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding-top: 16px; margin-top: 16px; border-top: 1px solid #f1f5f9; }
+        .stat-box { padding: 14px 18px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; transition: all 0.2s; }
+        .stat-box:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04); }
         .stat-box.danger { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
         .stat-box.primary { background: #fff7f7; border-color: #fecdd3; color: #a51225; }
-        .stat-box span { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.76; }
-        .stat-box strong { display: block; margin-top: 4px; font: 900 22px ui-monospace, monospace; }
-        .feedback-table { overflow: hidden; }
-        .feedback-table table { font-size: 12.5px; margin: 0; }
-        .feedback-table th { padding: 16px 18px; background: #fafaf9; color: #78716c; font-weight: 700; border-bottom: 1px solid #f5f5f4; white-space: nowrap; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
-        .feedback-table td { padding: 16px 18px; border-color: #f5f5f4; vertical-align: top; }
+        .stat-box span { display: block; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; }
+        .stat-box strong { display: block; margin-top: 4px; font: 900 23px ui-monospace, monospace; }
+        
+        .feedback-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .feedback-table table { font-size: 12.5px; margin: 0; min-width: 1050px; width: 100%; border-collapse: separate; border-spacing: 0; }
+        .feedback-table th { padding: 15px 16px; background: #f8fafc; color: #64748b; font-weight: 700; border-bottom: 1px solid #e2e8f0; white-space: nowrap; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .feedback-table td { padding: 16px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
         .feedback-table tbody tr { transition: background 0.15s; }
-        .feedback-table tbody tr:hover { background: #fafaf980; }
+        .feedback-table tbody tr:hover { background: #f8fafc; }
+        
         .code { font-family: ui-monospace, monospace; font-weight: 700; }
-        .order-code { color: #a51225; font-size: 12px; }
-        .customer-phone, .created { font-size: 11px; color: #a8a29e; }
-        .stars { color: #f59e0b; font-size: 14px; white-space: nowrap; letter-spacing: 2px; }
-        .pill { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-        .pill-blue { background: #dbeafe; color: #1e40af; }
-        .pill-amber { background: #fef3c7; color: #92400e; }
-        .pill-pending { background: #fff1f2; color: #be123c; }
-        .pill-resolved { background: #dcfce7; color: #166534; }
-        .pill-rejected { background: #f3f4f6; color: #4b5563; }
-        .reply-btn { border: 0; border-radius: 8px; padding: 6px 12px; background: #fff1f2; color: #a51225; font-size: 11.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer; transition: all 0.2s; }
-        .reply-btn:hover { background: #a51225; color: #fff; }
-        .reply-btn .material-symbols-outlined { font-size: 15px; }
-        .modal-content { border: 0; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-        .modal-header { background: #fafaf9; border-color: #f5f5f4; padding: 18px 24px; }
-        .modal-title { font-size: 15px; font-weight: 800; color: #1c1917; }
-        .review-quote { padding: 14px 16px; background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 12px; font-size: 12.5px; }
-        .review-quote small { display: block; color: #78716c; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-        .review-quote p { margin: 4px 0 0; font-style: italic; color: #292524; line-height: 1.45; }
-        .form-label { font-size: 12px; font-weight: 700; color: #57534e; }
-        .db-column { float: right; font: 400 10.5px ui-monospace, monospace; color: #a8a29e; }
-        .form-control, .form-select { border-radius: 12px; background: #fafaf9; border-color: #e7e5e4; font-size: 13px; padding: 10px 14px; }
-        .form-control:focus, .form-select:focus { border-color: #a51225; box-shadow: 0 0 0 3px rgba(165, 18, 37, 0.1); background: #fff; }
-        .btn-aura { background: #a51225; color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 12px; border: none; padding: 10px 18px; transition: all 0.2s; }
-        .btn-aura:hover { background: #880e1f; color: #fff; }
-        .btn-soft { background: #f5f5f4; color: #44403c; font-size: 12.5px; font-weight: 700; border-radius: 12px; border: none; padding: 10px 18px; transition: all 0.2s; }
-        .btn-soft:hover { background: #e7e5e4; color: #1c1917; }
-        .review-content { font-size: 12.5px; color: #292524; line-height: 1.45; }
-        .admin-reply-text { font-size: 12px; color: #44403c; line-height: 1.4; display: inline-block; background: #fdf2f4; border-left: 3px solid #a51225; padding: 6px 10px; border-radius: 0 6px 6px 0; }
-        .alert-banner { border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .order-code { color: #be123c; font-size: 12px; letter-spacing: 0.02em; }
+        .customer-name { font-size: 13px; font-weight: 700; color: #0f172a; }
+        .customer-phone { font-size: 11px; color: #64748b; font-family: ui-monospace, monospace; margin-top: 2px; }
+        .created { font-size: 11px; color: #94a3b8; }
+        .stars { color: #f59e0b; font-size: 14.5px; white-space: nowrap; letter-spacing: 2px; }
+        
+        /* Pills & Badges */
+        .pill { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+        .pill-blue { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+        .pill-amber { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+        .pill-pending { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+        .pill-processing { background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; }
+        .pill-resolved { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+        .pill-rejected { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        
+        /* Content & Reply columns */
+        .review-content { font-size: 12.5px; color: #1e293b; line-height: 1.45; font-weight: 500; }
+        .admin-reply-box { font-size: 12px; color: #1e293b; line-height: 1.45; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #10b981; padding: 6px 10px; border-radius: 0 8px 8px 0; display: inline-block; max-width: 100%; word-break: break-word; }
+        
+        /* Modern Action Column & Buttons */
+        .th-action { width: 150px; min-width: 150px; text-align: center !important; }
+        .td-action { width: 150px; min-width: 150px; text-align: center !important; }
+        
+        /* Nút Xử lý (Nổi bật - Hành động ngay) */
+        .btn-action-process {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 7px 16px;
+            background: linear-gradient(135deg, #be123c 0%, #9f1239 100%);
+            color: #ffffff !important;
+            border: 1px solid #9f1239;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            box-shadow: 0 2px 5px rgba(190, 18, 60, 0.22);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+        .btn-action-process:hover {
+            background: linear-gradient(135deg, #9f1239 0%, #881337 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(190, 18, 60, 0.32);
+        }
+        .btn-action-process:active {
+            transform: translateY(0);
+        }
+        
+        /* Nút Sửa phản hồi (Thanh lịch - Trang nhã) */
+        .btn-action-edit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 6px 14px;
+            background: #ffffff;
+            color: #475569 !important;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+        .btn-action-edit:hover {
+            background: #f8fafc;
+            color: #0f172a !important;
+            border-color: #94a3b8;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        }
+        .btn-action-edit:active {
+            transform: translateY(0);
+        }
+        
+        /* Modal & Dialog */
+        .modal-content { border: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.04); }
+        .modal-header { background: #f8fafc; border-color: #e2e8f0; padding: 18px 24px; }
+        .modal-title { font-size: 15px; font-weight: 800; color: #0f172a; }
+        .review-quote { padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 12.5px; }
+        .review-quote small { display: block; color: #64748b; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .review-quote p { margin: 4px 0 0; font-style: italic; color: #1e293b; line-height: 1.45; }
+        .form-label { font-size: 12px; font-weight: 700; color: #475569; }
+        .db-column { float: right; font: 400 10.5px ui-monospace, monospace; color: #94a3b8; }
+        .form-control, .form-select { border-radius: 12px; background: #f8fafc; border-color: #cbd5e1; font-size: 13px; padding: 10px 14px; }
+        .form-control:focus, .form-select:focus { border-color: #be123c; box-shadow: 0 0 0 3px rgba(190, 18, 60, 0.12); background: #ffffff; }
+        .btn-aura { background: linear-gradient(135deg, #be123c 0%, #9f1239 100%); color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 12px; border: none; padding: 10px 18px; transition: all 0.2s; }
+        .btn-aura:hover { background: linear-gradient(135deg, #9f1239 0%, #881337 100%); color: #fff; box-shadow: 0 4px 12px rgba(190, 18, 60, 0.3); }
+        .btn-soft { background: #f1f5f9; color: #475569; font-size: 12.5px; font-weight: 700; border-radius: 12px; border: none; padding: 10px 18px; transition: all 0.2s; }
+        .btn-soft:hover { background: #e2e8f0; color: #0f172a; }
+        
+        /* Alert Notification */
+        .alert-banner { border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02); }
         .alert-success-aura { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
         .alert-error-aura { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; }
+        
         @media (max-width: 900px) {
             .feedback-stats { grid-template-columns: repeat(2, 1fr); }
         }
@@ -147,27 +223,27 @@
             <table class="table align-middle" id="feedbackTable">
                 <thead>
                     <tr>
-                        <th>Mã</th>
-                        <th>Đơn hàng</th>
-                        <th>Khách hàng</th>
-                        <th>Loại</th>
-                        <th>Đánh giá</th>
-                        <th>Nội dung</th>
-                        <th>Phản hồi</th>
-                        <th>Trạng thái</th>
-                        <th class="text-end">Thao tác</th>
+                        <th style="width: 50px; text-align: center;">Mã</th>
+                        <th style="width: 120px;">Đơn hàng</th>
+                        <th style="width: 160px;">Khách hàng</th>
+                        <th style="width: 110px; text-align: center;">Loại</th>
+                        <th style="width: 110px; text-align: center;">Đánh giá</th>
+                        <th style="min-width: 220px;">Nội dung</th>
+                        <th style="min-width: 180px;">Phản hồi</th>
+                        <th style="width: 120px; text-align: center;">Trạng thái</th>
+                        <th class="th-action">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody id="feedbackTableBody">
                     <c:forEach var="fb" items="${feedbacks}">
                         <tr class="feedback-row" data-type="${fb.issueType}" data-status="${fb.status}">
-                            <td class="code">#${fb.id}</td>
+                            <td class="code text-center">#${fb.id}</td>
                             <td class="code order-code">${fb.orderCode}</td>
                             <td>
-                                <strong><c:out value="${fb.customerName}" /></strong><br>
-                                <span class="customer-phone code"><c:out value="${fb.customerPhone}" /></span>
+                                <div class="customer-name"><c:out value="${fb.customerName}" /></div>
+                                <div class="customer-phone"><c:out value="${fb.customerPhone}" /></div>
                             </td>
-                            <td>
+                            <td class="text-center">
                                 <c:choose>
                                     <c:when test="${fb.issueType == 'RATING'}">
                                         <span class="pill pill-blue">Đánh giá</span>
@@ -177,7 +253,7 @@
                                     </c:otherwise>
                                 </c:choose>
                             </td>
-                            <td>
+                            <td class="text-center">
                                 <c:choose>
                                     <c:when test="${fb.rating > 0}">
                                         <span class="stars" title="${fb.rating}/5 sao">
@@ -189,27 +265,27 @@
                                     </c:otherwise>
                                 </c:choose>
                             </td>
-                            <td style="min-width: 220px; max-width: 320px;">
+                            <td>
                                 <div class="review-content"><c:out value="${fb.content}" /></div>
                                 <span class="created d-block mt-1">${fb.formattedDate}</span>
                             </td>
-                            <td style="min-width: 180px; max-width: 260px;">
+                            <td>
                                 <c:choose>
                                     <c:when test="${not empty fb.adminResponse}">
-                                        <span class="admin-reply-text"><c:out value="${fb.adminResponse}" /></span>
+                                        <div class="admin-reply-box"><c:out value="${fb.adminResponse}" /></div>
                                     </c:when>
                                     <c:otherwise>
                                         <span class="text-muted">—</span>
                                     </c:otherwise>
                                 </c:choose>
                             </td>
-                            <td>
+                            <td class="text-center">
                                 <c:choose>
                                     <c:when test="${fb.status == 'PENDING'}">
                                         <span class="pill pill-pending">Chờ xử lý</span>
                                     </c:when>
                                     <c:when test="${fb.status == 'PROCESSING'}">
-                                        <span class="pill pill-blue">Đang xử lý</span>
+                                        <span class="pill pill-processing">Đang xử lý</span>
                                     </c:when>
                                     <c:when test="${fb.status == 'RESOLVED'}">
                                         <span class="pill pill-resolved">Đã giải quyết</span>
@@ -219,25 +295,35 @@
                                     </c:otherwise>
                                 </c:choose>
                             </td>
-                            <td class="text-end">
-                                <button type="button" class="reply-btn btn-open-reply"
-                                        data-id="${fb.id}"
-                                        data-type="${fb.issueType}"
-                                        data-type-label="${fb.issueTypeLabel}"
-                                        data-content="<c:out value="${fb.content}" />"
-                                        data-status="${fb.status}"
-                                        data-response="<c:out value="${fb.adminResponse}" />"
-                                        data-bs-toggle="modal" data-bs-target="#replyModal">
-                                    <span class="material-symbols-outlined">reply</span>
-                                    <c:choose>
-                                        <c:when test="${empty fb.adminResponse and (fb.status == 'PENDING' or fb.status == 'PROCESSING')}">
-                                            Xử lý
-                                        </c:when>
-                                        <c:otherwise>
-                                            Sửa phản hồi
-                                        </c:otherwise>
-                                    </c:choose>
-                                </button>
+                            <td class="td-action">
+                                <c:choose>
+                                    <c:when test="${empty fb.adminResponse and (fb.status == 'PENDING' or fb.status == 'PROCESSING')}">
+                                        <button type="button" class="btn-action-process btn-open-reply"
+                                                data-id="${fb.id}"
+                                                data-type="${fb.issueType}"
+                                                data-type-label="${fb.issueTypeLabel}"
+                                                data-content="<c:out value="${fb.content}" />"
+                                                data-status="${fb.status}"
+                                                data-response="<c:out value="${fb.adminResponse}" />"
+                                                data-bs-toggle="modal" data-bs-target="#replyModal">
+                                            <span class="material-symbols-outlined" style="font-size: 15px;">reply</span>
+                                            <span>Xử lý</span>
+                                        </button>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <button type="button" class="btn-action-edit btn-open-reply"
+                                                data-id="${fb.id}"
+                                                data-type="${fb.issueType}"
+                                                data-type-label="${fb.issueTypeLabel}"
+                                                data-content="<c:out value="${fb.content}" />"
+                                                data-status="${fb.status}"
+                                                data-response="<c:out value="${fb.adminResponse}" />"
+                                                data-bs-toggle="modal" data-bs-target="#replyModal">
+                                            <span class="material-symbols-outlined" style="font-size: 15px;">edit_note</span>
+                                            <span>Sửa phản hồi</span>
+                                        </button>
+                                    </c:otherwise>
+                                </c:choose>
                             </td>
                         </tr>
                     </c:forEach>

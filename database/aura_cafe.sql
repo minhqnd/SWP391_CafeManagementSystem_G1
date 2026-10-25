@@ -947,15 +947,19 @@ VALUES
 -- 9. CUSTOMER REVIEWS
 INSERT INTO customer_reviews
 (customer_id, order_id, issue_type, rating,
- content, status, admin_response)
+ content, status, admin_response, created_at)
 VALUES
 (4, 1, 'RATING', 5,
  'Good coffee and friendly service',
- 'RESOLVED', 'Thank you for your feedback'),
+ 'RESOLVED', 'Thank you for your feedback', '2026-10-04 09:30:00'),
 
 (5, 2, 'COMPLAINT', NULL,
  'Delivery took longer than expected',
- 'PENDING', NULL);
+ 'PENDING', NULL, '2026-10-03 10:41:00'),
+
+(4, 3, 'RATING', 4,
+ 'Good taste, but a little too sweet',
+ 'PENDING', NULL, '2026-10-03 11:20:00');
 
 -- 10. SUPPLIERS
 INSERT INTO suppliers
