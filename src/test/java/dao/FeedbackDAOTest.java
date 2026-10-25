@@ -33,6 +33,44 @@ class FeedbackDAOTest {
         }
     }
 
+    @Test
+    @DisplayName("Admin can retrieve all feedbacks with customer and order details")
+    void testGetAdminFeedbacks() throws Exception {
+        try (Connection conn = openDatabaseOrSkip()) {
+            List<model.Feedback> list = feedbackDAO.getAdminFeedbacks(null, null);
+            org.junit.jupiter.api.Assertions.assertNotNull(list);
+            if (!list.isEmpty()) {
+                model.Feedback first = list.get(0);
+                org.junit.jupiter.api.Assertions.assertTrue(first.getId() > 0);
+                org.junit.jupiter.api.Assertions.assertNotNull(first.getIssueType());
+            }
+
+            List<model.Feedback> ratings = feedbackDAO.getAdminFeedbacks("RATING", null);
+            for (model.Feedback fb : ratings) {
+                assertEquals("RATING", fb.getIssueType());
+            }
+
+            List<model.Feedback> complaints = feedbackDAO.getAdminFeedbacks("COMPLAINT", null);
+            for (model.Feedback fb : complaints) {
+                assertEquals("COMPLAINT", fb.getIssueType());
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Admin can update feedback response and status")
+    void testUpdateFeedbackResponse() throws Exception {
+        try (Connection conn = openDatabaseOrSkip()) {
+            List<model.Feedback> list = feedbackDAO.getAdminFeedbacks(null, null);
+            Assumptions.assumeTrue(!list.isEmpty(), "No reviews available in test database");
+            model.Feedback target = list.get(0);
+
+            String testResponse = "Test automated response " + System.currentTimeMillis();
+            boolean updated = feedbackDAO.updateFeedbackResponse(target.getId(), "RESOLVED", testResponse);
+            org.junit.jupiter.api.Assertions.assertTrue(updated);
+        }
+    }
+
     private Connection openDatabaseOrSkip() throws Exception {
         try {
             return DBContext.getConnection();

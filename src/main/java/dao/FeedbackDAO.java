@@ -21,9 +21,13 @@ public class FeedbackDAO extends BaseDAO {
         Feedback fb = new Feedback();
         int id = rs.getInt("id");
         fb.setId(id);
-        String ticketCode = rs.getString("ticket_code");
-        fb.setTicketCode(ticketCode != null && !ticketCode.isBlank()
-                ? ticketCode : "#CR-" + String.format("%04d", id));
+        try {
+            String ticketCode = rs.getString("ticket_code");
+            fb.setTicketCode(ticketCode != null && !ticketCode.isBlank()
+                    ? ticketCode : "#" + id);
+        } catch (Exception e) {
+            fb.setTicketCode("#" + id);
+        }
         fb.setCustomerId(rs.getInt("customer_id"));
         fb.setOrderId(rs.getInt("order_id"));
 
@@ -57,11 +61,11 @@ public class FeedbackDAO extends BaseDAO {
 
     public List<Feedback> getAllFeedbacks(int limit) {
         List<Feedback> list = new ArrayList<>();
-        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, COALESCE(o.order_code, cr.order_code) AS order_code " +
+        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, o.order_code AS order_code " +
                      "FROM customer_reviews cr " +
                      "JOIN users u ON cr.customer_id = u.id " +
                      "LEFT JOIN orders o ON cr.order_id = o.id " +
-                     "ORDER BY cr.created_at DESC LIMIT ?";
+                     "ORDER BY cr.created_at DESC, cr.id DESC LIMIT ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, limit > 0 ? limit : 20);
@@ -76,14 +80,60 @@ public class FeedbackDAO extends BaseDAO {
         return list;
     }
 
+    public List<Feedback> getAdminFeedbacks(String issueType, String status) throws Exception {
+        List<Feedback> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT cr.*, " +
+                "u.full_name AS customer_name, u.phone AS customer_phone, o.order_code AS order_code " +
+                "FROM customer_reviews cr " +
+                "JOIN users u ON cr.customer_id = u.id " +
+                "LEFT JOIN orders o ON cr.order_id = o.id " +
+                "WHERE 1=1 ");
+
+        List<Object> params = new ArrayList<>();
+        if (issueType != null && !issueType.isBlank() && !"ALL".equalsIgnoreCase(issueType)) {
+            sql.append("AND cr.issue_type = ? ");
+            params.add(issueType.trim().toUpperCase());
+        }
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            sql.append("AND cr.status = ? ");
+            params.add(status.trim().toUpperCase());
+        }
+        sql.append("ORDER BY cr.created_at DESC, cr.id DESC");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToFeedback(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    public boolean updateFeedbackResponse(int id, String status, String adminResponse) throws Exception {
+        String sql = "UPDATE customer_reviews SET status = ?, admin_response = ? WHERE id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setString(2, adminResponse);
+            ps.setInt(3, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     public List<Feedback> getFeedbacksByCustomerId(int customerId) {
         List<Feedback> list = new ArrayList<>();
-        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, COALESCE(o.order_code, cr.order_code) AS order_code " +
+        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, o.order_code AS order_code " +
                      "FROM customer_reviews cr " +
                      "JOIN users u ON cr.customer_id = u.id " +
                      "LEFT JOIN orders o ON cr.order_id = o.id " +
                      "WHERE cr.customer_id = ? " +
-                     "ORDER BY cr.created_at DESC";
+                     "ORDER BY cr.created_at DESC, cr.id DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, customerId);

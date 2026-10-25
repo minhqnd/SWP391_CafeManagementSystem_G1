@@ -150,7 +150,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-feedback.jsp" class="nav-link ${param.activeMenu == 'feedback' ? 'active' : ''}">
+                <a href="${ctx}/admin/feedback" class="nav-link ${param.activeMenu == 'feedback' ? 'active' : ''}">
                     <span class="material-symbols-outlined">rate_review</span>
                     <span>Đánh giá &amp; Khiếu nại</span>
                 </a>
