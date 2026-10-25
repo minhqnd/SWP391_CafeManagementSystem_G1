@@ -107,6 +107,7 @@ public class ShopSettingDAO extends BaseDAO {
                 addValue(ps, ShopSettings.KEY_DELIVERY_MINUTES, settings.getDeliveryMinutes());
                 addValue(ps, ShopSettings.KEY_POINTS_STEP, settings.getPointsStep());
                 addValue(ps, ShopSettings.KEY_POINTS_STEP_VALUE, Math.round(settings.getPointsStepValue()));
+                addValue(ps, ShopSettings.KEY_POINTS_EARN_UNIT, Math.round(settings.getPointsEarnUnit()));
                 ps.executeBatch();
             }
             conn.commit();
@@ -155,6 +156,27 @@ public class ShopSettingDAO extends BaseDAO {
                     break;
                 case ShopSettings.KEY_POINTS_STEP_VALUE:
                     settings.setPointsStepValue(Double.parseDouble(value.trim()));
+                    break;
+                case ShopSettings.KEY_POINTS_EARN_UNIT:
+                    settings.setPointsEarnUnit(Double.parseDouble(value.trim()));
+                    break;
+                case ShopSettings.KEY_PAYMENT_TEST_MODE:
+                    settings.setPaymentTestMode(Boolean.parseBoolean(value.trim()));
+                    break;
+                case ShopSettings.KEY_PAYMENT_CALLBACK_SECRET:
+                    settings.setPaymentCallbackSecret(value.trim());
+                    break;
+                case ShopSettings.KEY_PAYMENT_BANK_ID:
+                    settings.setPaymentBankId(value.trim());
+                    break;
+                case ShopSettings.KEY_PAYMENT_BANK_NAME:
+                    settings.setPaymentBankName(value.trim());
+                    break;
+                case ShopSettings.KEY_PAYMENT_ACCOUNT_NO:
+                    settings.setPaymentAccountNo(value.trim());
+                    break;
+                case ShopSettings.KEY_PAYMENT_ACCOUNT_NAME:
+                    settings.setPaymentAccountName(value.trim());
                     break;
                 case ShopSettings.KEY_SHIFT_MORNING:
                     settings.setShiftMorning(value.trim());

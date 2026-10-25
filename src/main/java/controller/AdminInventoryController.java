@@ -99,7 +99,11 @@ public class AdminInventoryController extends HttpServlet {
                         session.setAttribute("inventoryError", "Số lượng phải lớn hơn 0.");
                     } else {
                         boolean isIncrease = "INCREASE".equalsIgnoreCase(direction) && !"SPOILAGE".equalsIgnoreCase(txType);
-                        inventoryDAO.recordStockAdjustment(ingredientId, txType, quantity, isIncrease, "ADJUSTMENT", null);
+                        if (reason == null || reason.trim().length() < 3 || reason.trim().length() > 500) {
+                            throw new IllegalArgumentException("Vui lòng nhập lý do điều chỉnh từ 3 đến 500 ký tự.");
+                        }
+                        inventoryDAO.recordStockAdjustment(ingredientId, txType, quantity, isIncrease,
+                                "ADJUSTMENT", null, reason.trim());
                         session.setAttribute("inventoryMessage", "Ghi nhận phiếu điều chỉnh tồn kho thành công!");
                     }
                 }

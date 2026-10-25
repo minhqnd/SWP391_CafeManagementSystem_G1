@@ -57,6 +57,7 @@ public class AdminSettingsController extends HttpServlet {
         form.put("deliveryMinutes", String.valueOf(settings.getDeliveryMinutes()));
         form.put("pointsStep", String.valueOf(settings.getPointsStep()));
         form.put("pointsStepValue", String.valueOf(Math.round(settings.getPointsStepValue())));
+        form.put("pointsEarnUnit", String.valueOf(Math.round(settings.getPointsEarnUnit())));
 
         CartController.moveFlashMessage(request.getSession(), request, "settingsMessage");
         showSettings(request, response, settings, form);
@@ -73,7 +74,7 @@ public class AdminSettingsController extends HttpServlet {
 
         // Giữ nguyên dữ liệu Admin vừa nhập nếu có lỗi
         Map<String, String> form = new LinkedHashMap<>();
-        for (String name : new String[]{"freeshipThreshold", "deliveryFee", "deliveryMinutes", "pointsStep", "pointsStepValue"}) {
+        for (String name : new String[]{"freeshipThreshold", "deliveryFee", "deliveryMinutes", "pointsStep", "pointsStepValue", "pointsEarnUnit"}) {
             String value = request.getParameter(name);
             form.put(name, value != null ? value.trim() : "");
         }
@@ -83,6 +84,7 @@ public class AdminSettingsController extends HttpServlet {
         long deliveryMinutes = parseNumber(form.get("deliveryMinutes"));
         long pointsStep = parseNumber(form.get("pointsStep"));
         long pointsStepValue = parseNumber(form.get("pointsStepValue"));
+        long pointsEarnUnit = parseNumber(form.get("pointsEarnUnit"));
 
         String error = null;
         if (freeshipThreshold < 0 || freeshipThreshold > 100_000_000) {
@@ -95,6 +97,8 @@ public class AdminSettingsController extends HttpServlet {
             error = "Mốc điểm phải từ 1 đến 100.000 điểm.";
         } else if (pointsStepValue < 1_000 || pointsStepValue > 10_000_000) {
             error = "Số tiền giảm cho mỗi mốc điểm phải từ 1.000đ đến 10.000.000đ.";
+        } else if (pointsEarnUnit < 1_000 || pointsEarnUnit > 100_000_000) {
+            error = "Mức chi tiêu để nhận 1 điểm phải từ 1.000đ đến 100.000.000đ.";
         }
 
         if (error != null) {
@@ -109,6 +113,7 @@ public class AdminSettingsController extends HttpServlet {
         settings.setDeliveryMinutes((int) deliveryMinutes);
         settings.setPointsStep((int) pointsStep);
         settings.setPointsStepValue(pointsStepValue);
+        settings.setPointsEarnUnit(pointsEarnUnit);
 
         if (!shopSettingDAO.saveSettings(settings)) {
             request.setAttribute("settingsError", "Không lưu được cấu hình. Hãy kiểm tra database aura_cafe_erp "
@@ -128,7 +133,7 @@ public class AdminSettingsController extends HttpServlet {
             throws ServletException, IOException {
         request.setAttribute("settings", settings);
         request.setAttribute("form", form);
-        request.setAttribute("moneyPerPoint", model.Cart.MONEY_PER_POINT);
+        request.setAttribute("moneyPerPoint", settings.getPointsEarnUnit());
         request.setAttribute("settingGroups", groupSettings(shopSettingDAO.findAll()));
         request.setAttribute("settingsPageLoaded", true);
         request.getRequestDispatcher("/admin-settings.jsp").forward(request, response);
@@ -194,6 +199,7 @@ public class AdminSettingsController extends HttpServlet {
         form.put("deliveryMinutes", String.valueOf(settings.getDeliveryMinutes()));
         form.put("pointsStep", String.valueOf(settings.getPointsStep()));
         form.put("pointsStepValue", String.valueOf(Math.round(settings.getPointsStepValue())));
+        form.put("pointsEarnUnit", String.valueOf(Math.round(settings.getPointsEarnUnit())));
         return form;
     }
 

@@ -1,10 +1,31 @@
 package dao;
-import model.PurchaseOrder; import model.PurchaseOrderItem; import java.sql.SQLException; import java.util.List;
-/** Persistence contract for purchase_orders and purchase_order_items. */
-public class PurchaseOrderDAO {
- public List<PurchaseOrder> findAll(String status)throws SQLException{throw new UnsupportedOperationException("TODO");}
- public List<PurchaseOrderItem> findItems(int poId)throws SQLException{throw new UnsupportedOperationException("TODO");}
- public int create(PurchaseOrder order,List<PurchaseOrderItem> items)throws SQLException{throw new UnsupportedOperationException("TODO");}
- public boolean updateStatus(int id,String status)throws SQLException{throw new UnsupportedOperationException("TODO");}
- public boolean receiveIntoInventory(int id)throws SQLException{throw new UnsupportedOperationException("TODO: transaction");}
+import model.PurchaseOrder;import model.PurchaseOrderItem;import java.math.BigDecimal;import java.sql.*;import java.util.*;
+public class PurchaseOrderDAO extends BaseDAO{
+ public List<PurchaseOrder> findAll(String status)throws SQLException{
+  List<PurchaseOrder> list=new ArrayList<>();Map<Integer,PurchaseOrder> map=new LinkedHashMap<>();String f=status==null||status.isBlank()?"ALL":status.toUpperCase();
+  try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement("SELECT po.*,s.name supplier_name,u.full_name creator_name FROM purchase_orders po JOIN suppliers s ON s.id=po.supplier_id JOIN users u ON u.id=po.creator_id WHERE (?='ALL' OR po.status=?) ORDER BY po.created_at DESC")){
+   ps.setString(1,f);ps.setString(2,f);try(ResultSet rs=ps.executeQuery()){while(rs.next()){PurchaseOrder o=map(rs);list.add(o);map.put(o.getId(),o);}}
+   try(PreparedStatement ip=c.prepareStatement("SELECT pi.*,i.name ingredient_name,i.unit FROM purchase_order_items pi JOIN ingredients i ON i.id=pi.ingredient_id ORDER BY pi.id");ResultSet rs=ip.executeQuery()){while(rs.next()){PurchaseOrder o=map.get(rs.getInt("po_id"));if(o!=null)o.getItems().add(mapItem(rs));}}
+  }catch(ClassNotFoundException e){throw new SQLException(e);}return list;
+ }
+ public List<PurchaseOrderItem> findItems(int poId)throws SQLException{List<PurchaseOrderItem> l=new ArrayList<>();try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement("SELECT pi.*,i.name ingredient_name,i.unit FROM purchase_order_items pi JOIN ingredients i ON i.id=pi.ingredient_id WHERE po_id=?")){ps.setInt(1,poId);try(ResultSet rs=ps.executeQuery()){while(rs.next())l.add(mapItem(rs));}}catch(ClassNotFoundException e){throw new SQLException(e);}return l;}
+ public int create(PurchaseOrder order,List<PurchaseOrderItem> items)throws SQLException{
+  if(items==null||items.isEmpty())throw new IllegalArgumentException("Phiếu nhập phải có nguyên liệu.");BigDecimal total=items.stream().map(PurchaseOrderItem::getSubtotal).reduce(BigDecimal.ZERO,BigDecimal::add);
+  try(Connection c=getConnection()){c.setAutoCommit(false);try{int id;
+   if(order.getRestockRequestId()!=null){try(PreparedStatement check=c.prepareStatement("SELECT status FROM restock_requests WHERE id=? FOR UPDATE")){check.setInt(1,order.getRestockRequestId());try(ResultSet rs=check.executeQuery()){if(!rs.next()||!"APPROVED".equals(rs.getString(1)))throw new IllegalArgumentException("Chỉ đề xuất đã duyệt mới được chuyển thành phiếu nhập.");}}}
+   try(PreparedStatement ps=c.prepareStatement("INSERT INTO purchase_orders(supplier_id,creator_id,restock_request_id,total_cost,status,note) VALUES(?,?,?,?,'DRAFT',?)",Statement.RETURN_GENERATED_KEYS)){ps.setInt(1,order.getSupplierId());ps.setInt(2,order.getCreatorId());if(order.getRestockRequestId()==null)ps.setNull(3,Types.INTEGER);else ps.setInt(3,order.getRestockRequestId());ps.setBigDecimal(4,total);ps.setString(5,order.getNote());ps.executeUpdate();try(ResultSet rs=ps.getGeneratedKeys()){if(!rs.next())throw new SQLException("Không tạo được phiếu nhập.");id=rs.getInt(1);}}
+   try(PreparedStatement ps=c.prepareStatement("INSERT INTO purchase_order_items(po_id,ingredient_id,quantity,unit_price) VALUES(?,?,?,?)")){for(PurchaseOrderItem i:items){if(i.getQuantity().signum()<=0||i.getUnitPrice().signum()<0)throw new IllegalArgumentException("Số lượng hoặc đơn giá không hợp lệ.");ps.setInt(1,id);ps.setInt(2,i.getIngredientId());ps.setBigDecimal(3,i.getQuantity());ps.setBigDecimal(4,i.getUnitPrice());ps.addBatch();}ps.executeBatch();}c.commit();return id;
+  }catch(Exception e){c.rollback();if(e instanceof SQLException)throw(SQLException)e;if(e instanceof RuntimeException)throw(RuntimeException)e;throw new SQLException(e);}}
+  catch(ClassNotFoundException e){throw new SQLException(e);}
+ }
+ public boolean updateStatus(int id,String status)throws SQLException{
+  String sql;if("ORDERED".equals(status))sql="UPDATE purchase_orders SET status='ORDERED',ordered_at=NOW() WHERE id=? AND status='DRAFT'";else if("CANCELLED".equals(status))sql="UPDATE purchase_orders SET status='CANCELLED' WHERE id=? AND status IN('DRAFT','ORDERED')";else throw new IllegalArgumentException("Trạng thái phiếu nhập không hợp lệ.");
+  try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){ps.setInt(1,id);return ps.executeUpdate()==1;}catch(ClassNotFoundException e){throw new SQLException(e);}
+ }
+ public boolean receiveIntoInventory(int id)throws SQLException{
+  try(Connection c=getConnection()){c.setAutoCommit(false);try{String status;try(PreparedStatement ps=c.prepareStatement("SELECT status FROM purchase_orders WHERE id=? FOR UPDATE")){ps.setInt(1,id);try(ResultSet rs=ps.executeQuery()){if(!rs.next()){c.rollback();return false;}status=rs.getString(1);}}if(!"ORDERED".equals(status)){c.rollback();return false;}InventoryMovementDAO.receivePurchaseOrder(c,id);try(PreparedStatement ps=c.prepareStatement("UPDATE purchase_orders SET status='RECEIVED',received_at=NOW() WHERE id=? AND status='ORDERED'")){ps.setInt(1,id);if(ps.executeUpdate()!=1){c.rollback();return false;}}c.commit();return true;}catch(Exception e){c.rollback();if(e instanceof SQLException)throw(SQLException)e;throw new SQLException(e);}}
+  catch(ClassNotFoundException e){throw new SQLException(e);}
+ }
+ private PurchaseOrder map(ResultSet rs)throws SQLException{PurchaseOrder o=new PurchaseOrder();o.setId(rs.getInt("id"));o.setSupplierId(rs.getInt("supplier_id"));o.setCreatorId(rs.getInt("creator_id"));o.setRestockRequestId((Integer)rs.getObject("restock_request_id"));o.setSupplierName(rs.getString("supplier_name"));o.setCreatorName(rs.getString("creator_name"));o.setTotalCost(rs.getBigDecimal("total_cost"));o.setStatus(rs.getString("status"));o.setNote(rs.getString("note"));o.setCreatedAt(rs.getTimestamp("created_at"));o.setOrderedAt(rs.getTimestamp("ordered_at"));o.setReceivedAt(rs.getTimestamp("received_at"));return o;}
+ private PurchaseOrderItem mapItem(ResultSet rs)throws SQLException{PurchaseOrderItem i=new PurchaseOrderItem();i.setId(rs.getInt("id"));i.setPoId(rs.getInt("po_id"));i.setIngredientId(rs.getInt("ingredient_id"));i.setIngredientName(rs.getString("ingredient_name"));i.setUnit(rs.getString("unit"));i.setQuantity(rs.getBigDecimal("quantity"));i.setUnitPrice(rs.getBigDecimal("unit_price"));return i;}
 }

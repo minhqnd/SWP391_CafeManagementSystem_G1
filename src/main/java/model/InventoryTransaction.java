@@ -15,6 +15,7 @@ public class InventoryTransaction implements Serializable {
     private BigDecimal quantity;
     private String referenceType;   // 'ORDER', 'PURCHASE_ORDER', 'ADJUSTMENT'
     private Integer referenceId;
+    private String reason;
     private Timestamp createdAt;
 
     public InventoryTransaction() {}
@@ -94,6 +95,8 @@ public class InventoryTransaction implements Serializable {
     public void setReferenceId(Integer referenceId) {
         this.referenceId = referenceId;
     }
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
 
     public Timestamp getCreatedAt() {
         return createdAt;
