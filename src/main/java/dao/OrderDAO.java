@@ -1007,6 +1007,32 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
+     * Đơn tại quầy (DINE_IN / TAKEAWAY do Thu ngân tạo) của một ngày, mới nhất trước - màn Danh sách đơn tại quầy (UC20)
+     */
+    public List<Order> getCounterOrdersByDate(LocalDate date) throws SQLException, ClassNotFoundException {
+        String sql = CUSTOMER_ORDER_SELECT +
+                     "WHERE o.created_at >= ? AND o.created_at < ? " +
+                     "  AND o.cashier_id IS NOT NULL AND o.order_type IN ('DINE_IN', 'TAKEAWAY') " +
+                     "ORDER BY o.created_at DESC, o.id DESC";
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        List<Order> list = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, Timestamp.valueOf(date.atStartOfDay()));
+            ps.setTimestamp(2, Timestamp.valueOf(date.plusDays(1).atStartOfDay()));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
+                    list.add(order);
+                }
+            }
+            loadOrderItems(conn, orders);
+        }
+        return list;
+    }
+
+    /**
      * Hủy đơn hàng bởi Thu ngân với lý do và hoàn trả điểm
      * Chỉ cho phép hủy khi đơn ở trạng thái PENDING hoặc CONFIRMED (chưa pha chế).
      * Trả về null nếu thành công, hoặc chuỗi thông báo lỗi cụ thể.

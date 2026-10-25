@@ -244,3 +244,30 @@ body {
         max-height: 40dvh;
     }
 }
+
+/* Gom món: chi tiết từng cốc trong nhóm, đơn đặt sớm trước (tránh pha nhầm đường / đá / size) */
+.group-lines {
+    list-style: none;
+    margin: 10px 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+.group-line {
+    padding: 8px 10px;
+    background: #fafaf9;
+    border: 1px solid #eee;
+    border-radius: 10px;
+}
+.group-line-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-weight: 700;
+}
+.group-line-order {
+    color: #78716c;
+    font-size: 12px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}

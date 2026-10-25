@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:if test="${empty sessionScope.user}">
@@ -9,7 +9,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura CafÃ© - Thu NgÃ¢n POS</title>
+    <title>Aura Café - Thu Ngân POS</title>
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1877,28 +1877,33 @@
         <div class="brand-area">
             <a href="${pageContext.request.contextPath}/cashier" class="brand-title">
                 <span class="material-symbols-outlined">coffee</span>
-                <span>AURA CAFÃ‰</span>
+                <span>AURA CAFÉ</span>
             </a>
-            <span class="pos-badge">POS THU NGÃ‚N</span>
+            <span class="pos-badge">POS THU NGÂN</span>
         </div>
 
         <!-- Center Tabs Switcher -->
         <div class="nav-tabs-pos">
             <button class="nav-tab-btn active" id="tabBtnPos" onclick="switchMainTab('pos')">
                 <span class="material-symbols-outlined">point_of_sale</span>
-                <span>Táº¡o Ä‘Æ¡n táº¡i quáº§y</span>
+                <span>Tạo đơn tại quầy</span>
             </button>
             <button class="nav-tab-btn" id="tabBtnOrders" onclick="switchMainTab('orders')">
                 <span class="material-symbols-outlined">receipt_long</span>
-                <span>ÄÆ¡n hÃ´m nay (<span id="todayOrderCount">${counterOrders.size()}</span>)</span>
+                <span>Đơn hôm nay (<span id="todayOrderCount">${counterOrders.size()}</span>)</span>
             </button>
+            <%-- Danh sách đơn tại quầy theo ngày / trạng thái (Screen 12, UC20) --%>
+            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/counter-orders">
+                <span class="material-symbols-outlined">list_alt</span>
+                <span>Đơn tại quầy</span>
+            </a>
             <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover?mode=close">
                 <span class="material-symbols-outlined">calculate</span>
-                <span>Chá»‘t ca</span>
+                <span>Chốt ca</span>
             </a>
             <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover">
                 <span class="material-symbols-outlined">assignment_turned_in</span>
-                <span>BÃ n giao ca</span>
+                <span>Bàn giao ca</span>
             </a>
         </div>
 
@@ -1914,9 +1919,9 @@
                 <span class="material-symbols-outlined text-muted">account_circle</span>
                 <span>${sessionScope.user.fullName}</span>
             </div>
-            <a href="${pageContext.request.contextPath}/login?action=logout" class="btn-link-action" title="ÄÄƒng xuáº¥t khá»i há»‡ thá»‘ng">
+            <a href="${pageContext.request.contextPath}/login?action=logout" class="btn-link-action" title="Đăng xuất khỏi hệ thống">
                 <span class="material-symbols-outlined">logout</span>
-                <span>ÄÄƒng xuáº¥t</span>
+                <span>Đăng xuất</span>
             </a>
         </div>
     </header>
@@ -1931,13 +1936,13 @@
                 <div class="search-row">
                     <div class="search-box-wrapper">
                         <span class="material-symbols-outlined">search</span>
-                        <input type="text" id="searchInput" class="search-input" placeholder="TÃ¬m theo tÃªn mÃ³n hoáº·c mÃ£ SKU..." oninput="handleSearch(this.value)">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Tìm theo tên món hoặc mã SKU..." oninput="handleSearch(this.value)">
                     </div>
                 </div>
                 
                 <div class="category-scroller">
                     <button class="category-chip active" data-cat-id="all" onclick="filterCategory('all', this)">
-                        Táº¥t cáº£ (${products.size()})
+                        Tất cả (${products.size()})
                     </button>
                     <c:forEach var="cat" items="${categories}">
                         <button class="category-chip" data-cat-id="${cat.id}" onclick="filterCategory('${cat.id}', this)">
@@ -1964,7 +1969,7 @@
                         <div class="product-category-sub">${p.categoryName}</div>
                         <div class="product-price-row">
                             <span class="product-price">${p.formattedPrice}</span>
-                            <div class="btn-add-quick" title="ThÃªm mÃ³n">
+                            <div class="btn-add-quick" title="Thêm món">
                                 <span class="material-symbols-outlined">add</span>
                             </div>
                         </div>
@@ -1980,33 +1985,33 @@
                 <div class="order-type-switch">
                     <button class="order-type-btn active" id="btnTypeDineIn" onclick="setOrderType('DINE_IN')">
                         <span class="material-symbols-outlined">table_restaurant</span>
-                        <span>Táº¡i quÃ¡n</span>
+                        <span>Tại quán</span>
                     </button>
                     <button class="order-type-btn" id="btnTypeTakeaway" onclick="setOrderType('TAKEAWAY')">
                         <span class="material-symbols-outlined">shopping_bag</span>
-                        <span>Mang vá»</span>
+                        <span>Mang về</span>
                     </button>
                 </div>
 
                 <!-- Customer Search / Loyalty -->
                 <div class="customer-loyalty-section">
                     <div class="cust-input-group" id="custSearchBox">
-                        <input type="text" id="custPhoneInput" class="cust-input" placeholder="Nháº­p SÄT khÃ¡ch há»™i viÃªn..." onkeydown="if(event.key==='Enter') searchCustomer()">
-                        <button class="cust-btn-search" onclick="searchCustomer()">TÃ¬m</button>
+                        <input type="text" id="custPhoneInput" class="cust-input" placeholder="Nhập SĐT khách hội viên..." onkeydown="if(event.key==='Enter') searchCustomer()">
+                        <button class="cust-btn-search" onclick="searchCustomer()">Tìm</button>
                     </div>
                     <div id="custInfoBox" style="display: none;">
                         <div class="cust-info-badge">
                             <div>
-                                <span class="fw-bold" id="custNameDisplay">Nguyá»…n VÄƒn A</span>
+                                <span class="fw-bold" id="custNameDisplay">Nguyễn Văn A</span>
                             </div>
-                            <button class="cust-remove-btn" onclick="clearCustomer()" title="XÃ³a thÃ´ng tin khÃ¡ch">
+                            <button class="cust-remove-btn" onclick="clearCustomer()" title="Xóa thông tin khách">
                                 <span class="material-symbols-outlined">close</span>
                             </button>
                         </div>
                         <div class="points-redeem-row mt-1">
                             <input type="checkbox" id="chkUsePoints" onchange="toggleUsePoints()">
                             <label for="chkUsePoints" class="cursor-pointer">
-                                DÃ¹ng Ä‘iá»ƒm: <span class="cust-points" id="custPointsDisplay">0</span> pts (-<span id="custDiscountDisplay">0Ä‘</span>)
+                                Dùng điểm: <span class="cust-points" id="custPointsDisplay">0</span> pts (-<span id="custDiscountDisplay">0đ</span>)
                             </label>
                         </div>
                     </div>
@@ -2017,40 +2022,40 @@
             <div class="cart-items-container" id="cartItemsList">
                 <div class="empty-cart-state" id="emptyCartMessage">
                     <span class="material-symbols-outlined empty-cart-icon">shopping_cart</span>
-                    <div>ChÆ°a cÃ³ mÃ³n nÃ o trong Ä‘Æ¡n</div>
-                    <div class="small">Vui lÃ²ng chá»n mÃ³n tá»« menu bÃªn trÃ¡i</div>
+                    <div>Chưa có món nào trong đơn</div>
+                    <div class="small">Vui lòng chọn món từ menu bên trái</div>
                 </div>
             </div>
 
             <!-- Order Note -->
             <div class="cart-note-box">
-                <input type="text" id="orderNoteInput" class="cart-note-input" placeholder="Ghi chÃº chung cho toÃ n bá»™ Ä‘Æ¡n (náº¿u cÃ³)...">
+                <input type="text" id="orderNoteInput" class="cart-note-input" placeholder="Ghi chú chung cho toàn bộ đơn (nếu có)...">
             </div>
 
             <!-- Cart Footer / Summary -->
             <div class="cart-footer">
                 <div class="summary-row">
-                    <span>Táº¡m tÃ­nh (<span id="cartCountTotal">0</span> mÃ³n)</span>
-                    <span id="lblSubtotal">0Ä‘</span>
+                    <span>Tạm tính (<span id="cartCountTotal">0</span> món)</span>
+                    <span id="lblSubtotal">0đ</span>
                 </div>
                 <div class="summary-row" id="rowDiscount" style="display: none;">
-                    <span>Giáº£m giÃ¡ há»™i viÃªn</span>
-                    <span class="text-danger" id="lblDiscount">-0Ä‘</span>
+                    <span>Giảm giá hội viên</span>
+                    <span class="text-danger" id="lblDiscount">-0đ</span>
                 </div>
-                <div class="summary-row" style="display:none"><span>Phá»¥ phÃ­</span><span id="lblVat">0Ä‘</span></div>
+                <div class="summary-row" style="display:none"><span>Phụ phí</span><span id="lblVat">0đ</span></div>
                 <div class="summary-row total-row">
-                    <span>Tá»•ng thanh toÃ¡n</span>
-                    <span class="summary-total-price" id="lblFinalTotal">0Ä‘</span>
+                    <span>Tổng thanh toán</span>
+                    <span class="summary-total-price" id="lblFinalTotal">0đ</span>
                 </div>
 
                 <div class="cart-action-buttons">
                     <button class="btn-reset-cart" onclick="resetCart()">
                         <span class="material-symbols-outlined">refresh</span>
-                        <span>LÃ m má»›i</span>
+                        <span>Làm mới</span>
                     </button>
                     <button class="btn-checkout-primary" id="btnCheckout" onclick="openPaymentModal()" disabled>
                         <span class="material-symbols-outlined">payments</span>
-                        <span>Thanh toÃ¡n</span>
+                        <span>Thanh toán</span>
                     </button>
                 </div>
             </div>
@@ -2065,16 +2070,16 @@
                 <div>
                     <h2 class="orders-view-title">
                         <span class="material-symbols-outlined text-primary" style="font-size: 28px;">receipt_long</span>
-                        <span>Danh sÃ¡ch Ä‘Æ¡n hÃ ng táº¡i quáº§y hÃ´m nay</span>
+                        <span>Danh sách đơn hàng tại quầy hôm nay</span>
                     </h2>
                     <div class="orders-view-subtitle">
-                        Theo dÃµi thá»i gian thá»±c cÃ¡c Ä‘Æ¡n bÃ¡n táº¡i quáº§y â€¢ Tá»± Ä‘á»™ng Ä‘á»“ng bá»™ vá»›i mÃ n hÃ¬nh Barista KDS
+                        Theo dõi thời gian thực các đơn bán tại quầy • Tự động đồng bộ với màn hình Barista KDS
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn-reload-orders" onclick="window.location.reload()" title="Táº£i láº¡i danh sÃ¡ch Ä‘Æ¡n má»›i nháº¥t">
+                    <button type="button" class="btn-reload-orders" onclick="window.location.reload()" title="Tải lại danh sách đơn mới nhất">
                         <span class="material-symbols-outlined" style="font-size: 18px;">sync</span>
-                        <span>Táº£i láº¡i dá»¯ liá»‡u</span>
+                        <span>Tải lại dữ liệu</span>
                     </button>
                 </div>
             </div>
@@ -2086,7 +2091,7 @@
                     <div class="search-input-wrapper">
                         <span class="material-symbols-outlined search-icon">search</span>
                         <input type="text" id="orderSearchInput" class="orders-search-input" 
-                               placeholder="TÃ¬m nhanh theo mÃ£ Ä‘Æ¡n (ORD-...), tÃªn khÃ¡ch, sá»‘ Ä‘iá»‡n thoáº¡i, mÃ³n..." 
+                               placeholder="Tìm nhanh theo mã đơn (ORD-...), tên khách, số điện thoại, món..." 
                                oninput="applyOrderFilters()">
                     </div>
 
@@ -2094,52 +2099,52 @@
                     <div class="filter-type-group">
                         <button type="button" class="btn-filter-type active" data-type="ALL" onclick="setOrderTypeFilter('ALL', this)">
                             <span class="material-symbols-outlined" style="font-size: 16px;">filter_list</span>
-                            <span>Táº¥t cáº£</span>
+                            <span>Tất cả</span>
                         </button>
                         <button type="button" class="btn-filter-type" data-type="DINE_IN" onclick="setOrderTypeFilter('DINE_IN', this)">
                             <span class="material-symbols-outlined" style="font-size: 16px;">storefront</span>
-                            <span>Táº¡i quÃ¡n</span>
+                            <span>Tại quán</span>
                         </button>
                         <button type="button" class="btn-filter-type" data-type="TAKEAWAY" onclick="setOrderTypeFilter('TAKEAWAY', this)">
                             <span class="material-symbols-outlined" style="font-size: 16px;">takeout_dining</span>
-                            <span>Mang vá»</span>
+                            <span>Mang về</span>
                         </button>
                         <button type="button" class="btn-filter-type" data-type="ONLINE" onclick="setOrderTypeFilter('ONLINE', this)">
                             <span class="material-symbols-outlined" style="font-size: 16px;">delivery_dining</span>
-                            <span>Giao hÃ ng</span>
+                            <span>Giao hàng</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Status Filter Pills -->
                 <div class="filter-status-pills">
-                    <span class="text-xs fw-bold text-muted me-1 text-uppercase" style="letter-spacing: 0.5px;">Tráº¡ng thÃ¡i:</span>
+                    <span class="text-xs fw-bold text-muted me-1 text-uppercase" style="letter-spacing: 0.5px;">Trạng thái:</span>
                     <button type="button" class="btn-status-pill active" data-status="ALL" onclick="setOrderStatusFilter('ALL', this)">
-                        <span>Táº¥t cáº£ (<span id="statusCountAll">${todayCount}</span>)</span>
+                        <span>Tất cả (<span id="statusCountAll">${todayCount}</span>)</span>
                     </button>
                     <button type="button" class="btn-status-pill" data-status="CONFIRMED" onclick="setOrderStatusFilter('CONFIRMED', this)">
                         <span class="status-dot" style="background: #10b981;"></span>
-                        <span>ÄÃ£ thanh toÃ¡n</span>
+                        <span>Đã thanh toán</span>
                     </button>
                     <button type="button" class="btn-status-pill" data-status="PREPARING" onclick="setOrderStatusFilter('PREPARING', this)">
                         <span class="status-dot" style="background: #3b82f6;"></span>
-                        <span>Äang pha cháº¿</span>
+                        <span>Đang pha chế</span>
                     </button>
                     <button type="button" class="btn-status-pill" data-status="READY" onclick="setOrderStatusFilter('READY', this)">
                         <span class="status-dot" style="background: #f59e0b;"></span>
-                        <span>Sáºµn sÃ ng</span>
+                        <span>Sẵn sàng</span>
                     </button>
                     <button type="button" class="btn-status-pill" data-status="DELIVERING" onclick="setOrderStatusFilter('DELIVERING', this)">
                         <span class="status-dot" style="background: #d946ef;"></span>
-                        <span>Äang giao</span>
+                        <span>Đang giao</span>
                     </button>
                     <button type="button" class="btn-status-pill" data-status="COMPLETED" onclick="setOrderStatusFilter('COMPLETED', this)">
                         <span class="status-dot" style="background: #64748b;"></span>
-                        <span>HoÃ n thÃ nh</span>
+                        <span>Hoàn thành</span>
                     </button>
                     <button type="button" class="btn-status-pill" data-status="CANCELLED" onclick="setOrderStatusFilter('CANCELLED', this)">
                         <span class="status-dot" style="background: #f43f5e;"></span>
-                        <span>ÄÃ£ há»§y</span>
+                        <span>Đã hủy</span>
                     </button>
                 </div>
             </div>
@@ -2150,15 +2155,15 @@
                     <table class="pos-table" id="ordersTable">
                         <thead>
                             <tr>
-                                <th style="width: 160px; white-space: nowrap;">MÃ£ Ä‘Æ¡n</th>
-                                <th style="width: 95px; white-space: nowrap;">Thá»i gian</th>
-                                <th style="width: 110px; white-space: nowrap;">Loáº¡i Ä‘Æ¡n</th>
-                                <th style="width: 150px; white-space: nowrap;">KhÃ¡ch hÃ ng</th>
-                                <th>MÃ³n Ä‘Ã£ gá»i</th>
-                                <th class="text-end" style="width: 120px; white-space: nowrap;">Tá»•ng tiá»n</th>
-                                <th style="width: 110px; white-space: nowrap;">HÃ¬nh thá»©c</th>
-                                <th style="width: 140px; white-space: nowrap;">Tráº¡ng thÃ¡i</th>
-                                <th class="col-actions">Thao tÃ¡c</th>
+                                <th style="width: 160px; white-space: nowrap;">Mã đơn</th>
+                                <th style="width: 95px; white-space: nowrap;">Thời gian</th>
+                                <th style="width: 110px; white-space: nowrap;">Loại đơn</th>
+                                <th style="width: 150px; white-space: nowrap;">Khách hàng</th>
+                                <th>Món đã gọi</th>
+                                <th class="text-end" style="width: 120px; white-space: nowrap;">Tổng tiền</th>
+                                <th style="width: 110px; white-space: nowrap;">Hình thức</th>
+                                <th style="width: 140px; white-space: nowrap;">Trạng thái</th>
+                                <th class="col-actions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="ordersTableBody">
@@ -2170,33 +2175,33 @@
                                         data-status="${o.status}" 
                                         data-search="${o.orderCode} ${o.recipientName} ${o.recipientPhone} ${o.itemSummary} ${o.deliveryAddress}">
                                         <td>
-                                            <span class="order-code-badge" onclick="copyOrderCode('${o.orderCode}')" title="Báº¥m Ä‘á»ƒ sao chÃ©p mÃ£" style="cursor: pointer;">
+                                            <span class="order-code-badge" onclick="copyOrderCode('${o.orderCode}')" title="Bấm để sao chép mã" style="cursor: pointer;">
                                                 <span class="material-symbols-outlined" style="font-size: 14px; color: var(--slate-500);">tag</span>
                                                 <span>${o.orderCode}</span>
                                             </span>
                                         </td>
                                         <td>
                                             <div class="fw-semibold text-slate-800">${o.createdTimeText}</div>
-                                            <div style="font-size: 11px; color: var(--slate-400);">HÃ´m nay</div>
+                                            <div style="font-size: 11px; color: var(--slate-400);">Hôm nay</div>
                                         </td>
                                         <td>
                                             <c:choose>
                                                 <c:when test="${o.orderType eq 'ONLINE'}">
                                                     <span class="badge-type delivery">
                                                         <span class="material-symbols-outlined" style="font-size: 14px;">delivery_dining</span>
-                                                        <span>Giao hÃ ng</span>
+                                                        <span>Giao hàng</span>
                                                     </span>
                                                 </c:when>
                                                 <c:when test="${o.orderType eq 'TAKEAWAY'}">
                                                     <span class="badge-type takeaway">
                                                         <span class="material-symbols-outlined" style="font-size: 14px;">takeout_dining</span>
-                                                        <span>Mang vá»</span>
+                                                        <span>Mang về</span>
                                                     </span>
                                                 </c:when>
                                                 <c:otherwise>
                                                     <span class="badge-type dine-in">
                                                         <span class="material-symbols-outlined" style="font-size: 14px;">storefront</span>
-                                                        <span>Táº¡i quÃ¡n<c:if test="${not empty o.tableNumber}"> (BÃ n ${o.tableNumber})</c:if></span>
+                                                        <span>Tại quán<c:if test="${not empty o.tableNumber}"> (Bàn ${o.tableNumber})</c:if></span>
                                                     </span>
                                                 </c:otherwise>
                                             </c:choose>
@@ -2204,8 +2209,8 @@
                                         <td>
                                             <div class="fw-semibold text-slate-800 d-flex align-items-center gap-1">
                                                 <span class="material-symbols-outlined text-slate-400" style="font-size: 16px;">person</span>
-                                                <span class="text-truncate" style="max-width: 130px;" title="${empty o.recipientName ? 'KhÃ¡ch táº¡i quáº§y' : o.recipientName}">
-                                                    ${empty o.recipientName ? 'KhÃ¡ch táº¡i quáº§y' : o.recipientName}
+                                                <span class="text-truncate" style="max-width: 130px;" title="${empty o.recipientName ? 'Khách tại quầy' : o.recipientName}">
+                                                    ${empty o.recipientName ? 'Khách tại quầy' : o.recipientName}
                                                 </span>
                                             </div>
                                             <c:if test="${not empty o.recipientPhone}">
@@ -2218,7 +2223,7 @@
                                         <td>
                                             <div class="order-items-snippet" title="${o.itemSummary}">
                                                 <div class="order-items-text">${o.itemSummary}</div>
-                                                <div class="order-items-qty">${o.itemCount} mÃ³n</div>
+                                                <div class="order-items-qty">${o.itemCount} món</div>
                                             </div>
                                         </td>
                                         <td class="text-end">
@@ -2235,7 +2240,7 @@
                                                 <c:otherwise>
                                                     <span class="badge-payment cash">
                                                         <span class="material-symbols-outlined" style="font-size: 14px;">payments</span>
-                                                        <span>Tiá»n máº·t</span>
+                                                        <span>Tiền mặt</span>
                                                     </span>
                                                 </c:otherwise>
                                             </c:choose>
@@ -2245,43 +2250,43 @@
                                                 <c:when test="${o.status eq 'CONFIRMED'}">
                                                     <span class="badge-status confirmed">
                                                         <span class="status-dot"></span>
-                                                        <span>ÄÃ£ thanh toÃ¡n</span>
+                                                        <span>Đã thanh toán</span>
                                                     </span>
                                                 </c:when>
                                                 <c:when test="${o.status eq 'PREPARING'}">
                                                     <span class="badge-status preparing">
                                                         <span class="status-dot"></span>
-                                                        <span>Äang pha cháº¿</span>
+                                                        <span>Đang pha chế</span>
                                                     </span>
                                                 </c:when>
                                                 <c:when test="${o.status eq 'READY'}">
                                                     <span class="badge-status ready">
                                                         <span class="status-dot"></span>
-                                                        <span>Sáºµn sÃ ng</span>
+                                                        <span>Sẵn sàng</span>
                                                     </span>
                                                 </c:when>
                                                 <c:when test="${o.status eq 'DELIVERING'}">
                                                     <span class="badge-status delivering">
                                                         <span class="status-dot"></span>
-                                                        <span>Äang giao</span>
+                                                        <span>Đang giao</span>
                                                     </span>
                                                 </c:when>
                                                 <c:when test="${o.status eq 'COMPLETED'}">
                                                     <span class="badge-status completed">
                                                         <span class="status-dot"></span>
-                                                        <span>HoÃ n thÃ nh</span>
+                                                        <span>Hoàn thành</span>
                                                     </span>
                                                 </c:when>
                                                 <c:when test="${o.status eq 'CANCELLED'}">
                                                     <span class="badge-status cancelled">
                                                         <span class="status-dot"></span>
-                                                        <span>ÄÃ£ há»§y</span>
+                                                        <span>Đã hủy</span>
                                                     </span>
                                                 </c:when>
                                                 <c:when test="${o.status eq 'PENDING'}">
                                                     <span class="badge-status" style="background:#fef9c3;color:#854d0e;border:1px solid #fef08a;">
                                                         <span class="status-dot" style="background:#eab308;"></span>
-                                                        <span>Chá» thanh toÃ¡n</span>
+                                                        <span>Chờ thanh toán</span>
                                                     </span>
                                                 </c:when>
                                                 <c:otherwise>
@@ -2291,20 +2296,20 @@
                                         </td>
                                         <td class="col-actions">
                                             <div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">
-                                                <a href="${pageContext.request.contextPath}/bill?orderId=${o.id}" target="_blank" class="btn-action-bill" title="Má»Ÿ xem vÃ  in hÃ³a Ä‘Æ¡n">
+                                                <a href="${pageContext.request.contextPath}/bill?orderId=${o.id}" target="_blank" class="btn-action-bill" title="Mở xem và in hóa đơn">
                                                     <span class="material-symbols-outlined" style="font-size: 15px;">receipt_long</span>
-                                                    <span>HÃ³a Ä‘Æ¡n</span>
+                                                    <span>Hóa đơn</span>
                                                 </a>
                                                 <c:if test="${(o.orderType eq 'DINE_IN' || o.orderType eq 'TAKEAWAY') && o.status eq 'READY'}">
-                                                    <button type="button" class="btn-action-complete-order" onclick="completeOrder(${o.id})" title="ÄÃ¡nh dáº¥u hoÃ n táº¥t">
+                                                    <button type="button" class="btn-action-complete-order" onclick="completeOrder(${o.id})" title="Đánh dấu hoàn tất">
                                                         <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
-                                                        <span>HoÃ n táº¥t</span>
+                                                        <span>Hoàn tất</span>
                                                     </button>
                                                 </c:if>
                                                 <c:if test="${o.status eq 'PENDING' || o.status eq 'CONFIRMED'}">
-                                                    <button type="button" class="btn-action-cancel-order" onclick="cancelOrder(${o.id})" title="Há»§y Ä‘Æ¡n hÃ ng nÃ y">
+                                                    <button type="button" class="btn-action-cancel-order" onclick="cancelOrder(${o.id})" title="Hủy đơn hàng này">
                                                         <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
-                                                        <span>Há»§y</span>
+                                                        <span>Hủy</span>
                                                     </button>
                                                 </c:if>
                                             </div>
@@ -2315,8 +2320,8 @@
                                         <td colspan="9" class="text-center py-5">
                                             <div class="d-flex flex-column align-items-center justify-content-center text-muted">
                                                 <span class="material-symbols-outlined mb-2" style="font-size: 40px; color: var(--slate-300);">search_off</span>
-                                                <div class="fw-bold fs-6 text-slate-700">KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n hÃ ng nÃ o phÃ¹ há»£p</div>
-                                                <div class="small text-slate-400 mt-1">Thá»­ thay Ä‘á»•i tá»« khÃ³a hoáº·c bá»™ lá»c tráº¡ng thÃ¡i</div>
+                                                <div class="fw-bold fs-6 text-slate-700">Không tìm thấy đơn hàng nào phù hợp</div>
+                                                <div class="small text-slate-400 mt-1">Thử thay đổi từ khóa hoặc bộ lọc trạng thái</div>
                                             </div>
                                         </td>
                                     </tr>
@@ -2326,8 +2331,8 @@
                                         <td colspan="9" class="text-center py-5">
                                             <div class="d-flex flex-column align-items-center justify-content-center text-muted">
                                                 <span class="material-symbols-outlined mb-2" style="font-size: 48px; color: var(--slate-300);">inbox</span>
-                                                <div class="fw-bold fs-6 text-slate-700">ChÆ°a cÃ³ Ä‘Æ¡n hÃ ng nÃ o táº¡i quáº§y hÃ´m nay</div>
-                                                <div class="small text-slate-400 mt-1">CÃ¡c Ä‘Æ¡n hÃ ng phÃ¡t sinh trong ca lÃ m viá»‡c sáº½ hiá»ƒn thá»‹ táº¡i Ä‘Ã¢y</div>
+                                                <div class="fw-bold fs-6 text-slate-700">Chưa có đơn hàng nào tại quầy hôm nay</div>
+                                                <div class="small text-slate-400 mt-1">Các đơn hàng phát sinh trong ca làm việc sẽ hiển thị tại đây</div>
                                             </div>
                                         </td>
                                     </tr>
@@ -2347,53 +2352,53 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <div>
-                        <div class="modal-title" id="custModalItemName">TÃªn mÃ³n</div>
-                        <div class="text-muted small" id="custModalBasePrice">0Ä‘</div>
+                        <div class="modal-title" id="custModalItemName">Tên món</div>
+                        <div class="text-muted small" id="custModalBasePrice">0đ</div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <!-- Size -->
-                    <div class="opt-group-title">Chá»n Size</div>
+                    <div class="opt-group-title">Chọn Size</div>
                     <div class="opt-chips-grid" id="cashierSizeOptions"></div>
 
                     <!-- Sugar & Ice -->
                     <div class="row">
                         <div class="col-6">
-                            <div class="opt-group-title">Má»©c Ä‘Æ°á»ng</div>
+                            <div class="opt-group-title">Mức đường</div>
                             <select id="optSugar" class="form-select form-select-sm">
-                                <option value="100% Ä‘Æ°á»ng">100% ÄÆ°á»ng (Chuáº©n)</option>
-                                <option value="70% Ä‘Æ°á»ng">70% ÄÆ°á»ng</option>
-                                <option value="50% Ä‘Æ°á»ng">50% ÄÆ°á»ng</option>
-                                <option value="30% Ä‘Æ°á»ng">30% ÄÆ°á»ng</option>
-                                <option value="KhÃ´ng Ä‘Æ°á»ng">KhÃ´ng Ä‘Æ°á»ng</option>
+                                <option value="100% đường">100% Đường (Chuẩn)</option>
+                                <option value="70% đường">70% Đường</option>
+                                <option value="50% đường">50% Đường</option>
+                                <option value="30% đường">30% Đường</option>
+                                <option value="Không đường">Không đường</option>
                             </select>
                         </div>
                         <div class="col-6">
-                            <div class="opt-group-title">Má»©c Ä‘Ã¡</div>
+                            <div class="opt-group-title">Mức đá</div>
                             <select id="optIce" class="form-select form-select-sm">
-                                <option value="100% Ä‘Ã¡">100% ÄÃ¡ (Chuáº©n)</option>
-                                <option value="70% Ä‘Ã¡">70% ÄÃ¡</option>
-                                <option value="50% Ä‘Ã¡">50% ÄÃ¡</option>
-                                <option value="Ãt Ä‘Ã¡">Ãt Ä‘Ã¡</option>
-                                <option value="KhÃ´ng Ä‘Ã¡">KhÃ´ng Ä‘Ã¡</option>
-                                <option value="NÃ³ng">Uá»‘ng NÃ³ng</option>
+                                <option value="100% đá">100% Đá (Chuẩn)</option>
+                                <option value="70% đá">70% Đá</option>
+                                <option value="50% đá">50% Đá</option>
+                                <option value="Ít đá">Ít đá</option>
+                                <option value="Không đá">Không đá</option>
+                                <option value="Nóng">Uống Nóng</option>
                             </select>
                         </div>
                     </div>
 
                     <!-- Toppings -->
-                    <div class="opt-group-title mt-3" id="cashierToppingTitle">Topping thÃªm</div>
+                    <div class="opt-group-title mt-3" id="cashierToppingTitle">Topping thêm</div>
                     <div class="opt-chips-grid" id="cashierToppingOptions"></div>
 
                     <!-- Custom Note -->
-                    <div class="opt-group-title mt-2">Ghi chÃº riÃªng cho mÃ³n nÃ y</div>
-                    <input type="text" id="custModalNote" class="form-control form-control-sm" placeholder="VÃ­ dá»¥: Mang ly cÃ¡ nhÃ¢n, sá»¯a Ã­t bÃ©o...">
+                    <div class="opt-group-title mt-2">Ghi chú riêng cho món này</div>
+                    <input type="text" id="custModalNote" class="form-control form-control-sm" placeholder="Ví dụ: Mang ly cá nhân, sữa ít béo...">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Há»§y</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
                     <button type="button" class="btn btn-primary" style="background-color: var(--aura-primary); border-color: var(--aura-primary);" onclick="confirmAddToCart()">
-                        ThÃªm vÃ o Ä‘Æ¡n (<span id="custModalFinalPrice">0Ä‘</span>)
+                        Thêm vào đơn (<span id="custModalFinalPrice">0đ</span>)
                     </button>
                 </div>
             </div>
@@ -2410,8 +2415,8 @@
                             <span class="material-symbols-outlined" style="font-size: 20px;">payments</span>
                         </div>
                         <div>
-                            <div class="fw-bold text-dark" style="font-size: 15px; line-height: 1.2;">XÃ¡c nháº­n thanh toÃ¡n táº¡i quáº§y</div>
-                            <div class="text-muted" style="font-size: 11.5px; font-weight: 500;">BÃ¡n hÃ ng trá»±c tiáº¿p & thu ngÃ¢n</div>
+                            <div class="fw-bold text-dark" style="font-size: 15px; line-height: 1.2;">Xác nhận thanh toán tại quầy</div>
+                            <div class="text-muted" style="font-size: 11.5px; font-weight: 500;">Bán hàng trực tiếp & thu ngân</div>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -2420,12 +2425,12 @@
                     <!-- Banner Total -->
                     <div class="pay-total-banner">
                         <div>
-                            <div class="pay-total-label">Tá»”NG TIá»€N PHáº¢I THU</div>
-                            <div class="pay-total-value" id="payModalTotalDisplay">0Ä‘</div>
+                            <div class="pay-total-label">TỔNG TIỀN PHẢI THU</div>
+                            <div class="pay-total-value" id="payModalTotalDisplay">0đ</div>
                         </div>
                         <div class="pay-order-badge" id="payModalSummaryDesc">
                             <span class="material-symbols-outlined" style="font-size: 14px;">storefront</span>
-                            <span>DÃ¹ng táº¡i quÃ¡n</span>
+                            <span>Dùng tại quán</span>
                         </div>
                     </div>
 
@@ -2433,11 +2438,11 @@
                     <div class="pay-method-tabs">
                         <button type="button" class="pay-method-btn active" id="btnMethodCash" onclick="selectPaymentMethod('CASH')">
                             <span class="material-symbols-outlined" style="font-size: 18px;">payments</span>
-                            <span>Tiá»n máº·t</span>
+                            <span>Tiền mặt</span>
                         </button>
                         <button type="button" class="pay-method-btn" id="btnMethodQR" onclick="selectPaymentMethod('BANK_TRANSFER')">
                             <span class="material-symbols-outlined" style="font-size: 18px;">qr_code_2</span>
-                            <span>VietQR QuÃ©t mÃ£</span>
+                            <span>VietQR Quét mã</span>
                         </button>
                     </div>
 
@@ -2445,34 +2450,34 @@
                     <div id="panelCashPayment">
                         <div class="mb-2">
                             <label class="form-label d-flex justify-content-between align-items-center mb-1">
-                                <span class="small fw-bold text-secondary">KhÃ¡ch Ä‘Æ°a (VNÄ):</span>
-                                <span class="small text-muted">Chá»n nhanh hoáº·c nháº­p sá»‘</span>
+                                <span class="small fw-bold text-secondary">Khách đưa (VNĐ):</span>
+                                <span class="small text-muted">Chọn nhanh hoặc nhập số</span>
                             </label>
                             <div class="input-cash-wrapper">
                                 <span class="material-symbols-outlined cash-input-icon">attach_money</span>
                                 <input type="number" id="inputCashGiven" class="input-cash-field" placeholder="0" oninput="calculateChange()">
-                                <span class="cash-currency-tag">VNÄ</span>
+                                <span class="cash-currency-tag">VNĐ</span>
                             </div>
                         </div>
                         
                         <div class="quick-cash-row">
-                            <button type="button" class="btn-quick-cash exact-cash" onclick="addQuickCash(0)">ÄÃºng sá»‘ tiá»n</button>
-                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(50000)">50.000Ä‘</button>
-                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(100000)">100.000Ä‘</button>
-                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(200000)">200.000Ä‘</button>
-                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(500000)">500.000Ä‘</button>
-                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(1000000)">1.000.000Ä‘</button>
+                            <button type="button" class="btn-quick-cash exact-cash" onclick="addQuickCash(0)">Đúng số tiền</button>
+                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(50000)">50.000đ</button>
+                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(100000)">100.000đ</button>
+                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(200000)">200.000đ</button>
+                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(500000)">500.000đ</button>
+                            <button type="button" class="btn-quick-cash" onclick="setCashAmount(1000000)">1.000.000đ</button>
                         </div>
 
                         <div class="cash-change-card" id="boxCashChange">
                             <div class="d-flex align-items-center gap-2">
                                 <span class="material-symbols-outlined text-success" id="iconCashChange" style="font-size: 22px;">change_circle</span>
                                 <div>
-                                    <div class="cash-change-title" id="titleCashChange">Tiá»n thá»«a tráº£ khÃ¡ch</div>
-                                    <div class="cash-change-sub" id="subCashChange">KhÃ¡ch Ä‘Æ°a vá»«a Ä‘á»§</div>
+                                    <div class="cash-change-title" id="titleCashChange">Tiền thừa trả khách</div>
+                                    <div class="cash-change-sub" id="subCashChange">Khách đưa vừa đủ</div>
                                 </div>
                             </div>
-                            <div class="cash-change-amount text-success" id="lblCashChange">0Ä‘</div>
+                            <div class="cash-change-amount text-success" id="lblCashChange">0đ</div>
                         </div>
                     </div>
 
@@ -2480,7 +2485,7 @@
                     <div id="panelQRPayment" style="display: none;" class="qr-payment-panel">
                         <div class="qr-status-pill">
                             <span class="qr-pulse-dot"></span>
-                            <span>Äang chá» khÃ¡ch quÃ©t mÃ£ thanh toÃ¡n</span>
+                            <span>Đang chờ khách quét mã thanh toán</span>
                         </div>
 
                         <div class="qr-card-wrapper">
@@ -2490,36 +2495,36 @@
                             </div>
                             <div class="qr-scan-guide">
                                 <span class="material-symbols-outlined" style="font-size: 15px;">qr_code_scanner</span>
-                                <span>Má»Ÿ á»©ng dá»¥ng NgÃ¢n hÃ ng hoáº·c VÃ­ Ä‘iá»‡n tá»­ Ä‘á»ƒ quÃ©t</span>
+                                <span>Mở ứng dụng Ngân hàng hoặc Ví điện tử để quét</span>
                             </div>
                         </div>
 
                         <div class="bank-details-card">
                             <div class="bank-row">
-                                <span class="bank-label">NgÃ¢n hÃ ng thá»¥ hÆ°á»Ÿng:</span>
+                                <span class="bank-label">Ngân hàng thụ hưởng:</span>
                                 <span class="bank-val"><c:out value="${shopSettings.paymentBankName}"/></span>
                             </div>
                             <div class="bank-row">
-                                <span class="bank-label">Sá»‘ tÃ i khoáº£n:</span>
+                                <span class="bank-label">Số tài khoản:</span>
                                 <div class="d-flex align-items-center gap-1">
                                     <span class="bank-val font-monospace fw-bold" id="bankStk"><c:out value="${shopSettings.paymentAccountNo}"/></span>
-                                    <button type="button" class="btn-copy-stk" onclick="copyBankSTK()" title="Sao chÃ©p sá»‘ tÃ i khoáº£n">
+                                    <button type="button" class="btn-copy-stk" onclick="copyBankSTK()" title="Sao chép số tài khoản">
                                         <span class="material-symbols-outlined" style="font-size: 15px;">content_copy</span>
                                     </button>
                                 </div>
                             </div>
                             <div class="bank-row">
-                                <span class="bank-label">Chá»§ tÃ i khoáº£n:</span>
+                                <span class="bank-label">Chủ tài khoản:</span>
                                 <span class="bank-val fw-bold" id="bankAccountName" style="color: var(--aura-primary);"><c:out value="${shopSettings.paymentAccountName}"/></span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer pay-modal-footer">
-                    <button type="button" class="btn-pay-cancel" data-bs-dismiss="modal">ÄÃ³ng</button>
+                    <button type="button" class="btn-pay-cancel" data-bs-dismiss="modal">Đóng</button>
                     <button type="button" class="btn-pay-submit" id="btnSubmitOrder" onclick="submitCounterOrder()">
                         <span class="material-symbols-outlined" style="font-size: 18px;">receipt</span>
-                        <span>HoÃ n táº¥t & In hÃ³a Ä‘Æ¡n</span>
+                        <span>Hoàn tất & In hóa đơn</span>
                     </button>
                 </div>
             </div>
@@ -2573,7 +2578,7 @@
                 if (el) el.textContent = hours + ':' + mins + ':' + secs;
             }, 1000);
 
-            // Cho phÃ©p cÃ¡c mÃ n Cashier khÃ¡c quay láº¡i Ä‘Ãºng tab danh sÃ¡ch Ä‘Æ¡n.
+            // Cho phép các màn Cashier khác quay lại đúng tab danh sách đơn.
             const requestedTab = new URLSearchParams(window.location.search).get('tab');
             if (requestedTab === 'orders') {
                 switchMainTab('orders');
@@ -2655,11 +2660,11 @@
                     if (typeof config === 'string') config = JSON.parse(config);
                 }
             } catch (error) {
-                console.error('KhÃ´ng thá»ƒ táº£i tÃ¹y chá»n mÃ³n:', error);
+                console.error('Không thể tải tùy chọn món:', error);
             }
 
             const sizes = config.sizes && typeof config.sizes === 'object' && Object.keys(config.sizes).length
-                ? config.sizes : { 'TiÃªu chuáº©n': 0 };
+                ? config.sizes : { 'Tiêu chuẩn': 0 };
             const toppings = Array.isArray(config.toppings) ? config.toppings : [];
             tempItem = { id, name, basePrice, imageUrl, sizes, toppings };
             document.getElementById('custModalItemName').textContent = name;
@@ -2667,8 +2672,8 @@
             document.getElementById('custModalNote').value = '';
 
             renderCustomizerOptions(sizes, toppings);
-            document.getElementById('optSugar').value = '100% Ä‘Æ°á»ng';
-            document.getElementById('optIce').value = '100% Ä‘Ã¡';
+            document.getElementById('optSugar').value = '100% đường';
+            document.getElementById('optIce').value = '100% đá';
 
             updateCustomizerPrice();
             customModalInstance.show();
@@ -2692,7 +2697,7 @@
                 input.addEventListener('change', updateCustomizerPrice);
                 const text = document.createElement('span');
                 text.className = 'opt-radio-label';
-                text.textContent = name + (Number(delta) > 0 ? ' (+' + formatCurrency(Number(delta)) + ')' : ' (GiÃ¡ cÆ¡ báº£n)');
+                text.textContent = name + (Number(delta) > 0 ? ' (+' + formatCurrency(Number(delta)) + ')' : ' (Giá cơ bản)');
                 label.append(input, text);
                 sizeContainer.appendChild(label);
             });
@@ -2736,7 +2741,7 @@
         }
 
         function confirmAddToCart() {
-            const size = document.querySelector('input[name="optSize"]:checked')?.value || 'TiÃªu chuáº©n';
+            const size = document.querySelector('input[name="optSize"]:checked')?.value || 'Tiêu chuẩn';
             const sugar = document.getElementById('optSugar').value;
             const ice = document.getElementById('optIce').value;
             const note = document.getElementById('custModalNote').value.trim();
@@ -2749,10 +2754,11 @@
             // Build customization description string
             const parts = [];
             parts.push('Size ' + size);
-            if (sugar !== '100% Ä‘Æ°á»ng') parts.push(sugar);
-            if (ice !== '100% Ä‘Ã¡') parts.push(ice);
+            // Luôn ghi rõ mức đường / đá (kể cả mức chuẩn) để Barista thấy chi tiết từng cốc, tránh pha nhầm
+            parts.push(sugar);
+            parts.push(ice);
             if (toppingsArr.length > 0) parts.push('+ ' + toppingsArr.join(', '));
-            if (note) parts.push('LÆ°u Ã½: ' + note);
+            if (note) parts.push('Lưu ý: ' + note);
 
             const customStr = parts.join(' | ');
             const unitPrice = calculateCustomItemPrice();
@@ -2775,7 +2781,7 @@
 
             customModalInstance.hide();
             renderCart();
-            showToast('ÄÃ£ thÃªm mÃ³n ' + tempItem.name);
+            showToast('Đã thêm món ' + tempItem.name);
         }
 
         // 5. Cart Management
@@ -2787,8 +2793,8 @@
                 listEl.innerHTML = `
                     <div class="empty-cart-state" id="emptyCartMessage">
                         <span class="material-symbols-outlined empty-cart-icon">shopping_cart</span>
-                        <div>ChÆ°a cÃ³ mÃ³n nÃ o trong Ä‘Æ¡n</div>
-                        <div class="small">Vui lÃ²ng chá»n mÃ³n tá»« menu bÃªn trÃ¡i</div>
+                        <div>Chưa có món nào trong đơn</div>
+                        <div class="small">Vui lòng chọn món từ menu bên trái</div>
                     </div>
                 `;
                 btnCheckout.disabled = true;
@@ -2824,7 +2830,7 @@
                                     <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
                                 </button>
                             </div>
-                            <button type="button" class="btn-remove-item" onclick="removeItem(\${index})" title="XÃ³a mÃ³n">
+                            <button type="button" class="btn-remove-item" onclick="removeItem(\${index})" title="Xóa món">
                                 <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
                             </button>
                         </div>
@@ -2854,7 +2860,7 @@
         }
 
         function resetCart() {
-            if (cartItems.length > 0 && !confirm('Báº¡n cÃ³ cháº¯c muá»‘n lÃ m má»›i Ä‘Æ¡n hÃ ng hiá»‡n táº¡i?')) {
+            if (cartItems.length > 0 && !confirm('Bạn có chắc muốn làm mới đơn hàng hiện tại?')) {
                 return;
             }
             cartItems = [];
@@ -2894,7 +2900,7 @@
         async function searchCustomer() {
             const phone = document.getElementById('custPhoneInput').value.trim();
             if (!phone) {
-                alert('Vui lÃ²ng nháº­p sá»‘ Ä‘iá»‡n thoáº¡i hoáº·c email khÃ¡ch hÃ ng.');
+                alert('Vui lòng nhập số điện thoại hoặc email khách hàng.');
                 return;
             }
 
@@ -2903,7 +2909,7 @@
                     headers: { 'Accept': 'application/json' }
                 });
                 if (resp.status === 401) {
-                    alert('PhiÃªn lÃ m viá»‡c Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.');
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
                     window.location.href = `\${CONTEXT_PATH}/login`;
                     return;
                 }
@@ -2916,14 +2922,14 @@
                     document.getElementById('custPointsDisplay').textContent = currentCustomer.totalPoints;
                     const usable = Math.floor(currentCustomer.totalPoints / LOYALTY_STEP) * LOYALTY_STEP;
                     document.getElementById('custDiscountDisplay').textContent = formatCurrency((usable / LOYALTY_STEP) * LOYALTY_STEP_VALUE);
-                    showToast('ÄÃ£ nháº­n diá»‡n há»™i viÃªn: ' + currentCustomer.fullName);
+                    showToast('Đã nhận diện hội viên: ' + currentCustomer.fullName);
                     renderCart();
                 } else {
-                    alert(data.error || 'KhÃ´ng tÃ¬m tháº¥y khÃ¡ch hÃ ng vá»›i thÃ´ng tin nÃ y.');
+                    alert(data.error || 'Không tìm thấy khách hàng với thông tin này.');
                 }
             } catch (e) {
                 console.error(e);
-                alert('Lá»—i káº¿t ná»‘i khi tÃ¬m kiáº¿m khÃ¡ch hÃ ng.');
+                alert('Lỗi kết nối khi tìm kiếm khách hàng.');
             }
         }
 
@@ -2952,7 +2958,7 @@
             document.getElementById('payModalTotalDisplay').textContent = formatCurrency(finalTotal);
             const summaryDescEl = document.getElementById('payModalSummaryDesc');
             if (summaryDescEl) {
-                summaryDescEl.innerHTML = `<span class="material-symbols-outlined" style="font-size: 14px;">\${orderType === 'DINE_IN' ? 'storefront' : 'shopping_bag'}</span><span>\${orderType === 'DINE_IN' ? 'DÃ¹ng táº¡i quÃ¡n' : 'Mang vá»'}</span>`;
+                summaryDescEl.innerHTML = `<span class="material-symbols-outlined" style="font-size: 14px;">\${orderType === 'DINE_IN' ? 'storefront' : 'shopping_bag'}</span><span>\${orderType === 'DINE_IN' ? 'Dùng tại quán' : 'Mang về'}</span>`;
             }
 
             selectPaymentMethod('CASH');
@@ -2963,7 +2969,7 @@
         function copyBankSTK() {
             const accountNo = document.getElementById('bankStk').textContent.trim();
             navigator.clipboard.writeText(accountNo).then(() => {
-                showToast('ÄÃ£ sao chÃ©p STK: ' + accountNo);
+                showToast('Đã sao chép STK: ' + accountNo);
             }).catch(() => {
                 showToast('STK: ' + accountNo);
             });
@@ -3030,8 +3036,8 @@
                 const change = given - finalTotal;
                 changeEl.textContent = formatCurrency(change);
                 changeEl.className = 'cash-change-amount text-success';
-                if (titleEl) titleEl.textContent = 'Tiá»n thá»«a tráº£ khÃ¡ch';
-                if (subEl) subEl.textContent = (change === 0) ? 'KhÃ¡ch Ä‘Æ°a vá»«a Ä‘á»§' : 'Thá»‘i láº¡i tiá»n máº·t';
+                if (titleEl) titleEl.textContent = 'Tiền thừa trả khách';
+                if (subEl) subEl.textContent = (change === 0) ? 'Khách đưa vừa đủ' : 'Thối lại tiền mặt';
                 if (iconEl) {
                     iconEl.textContent = 'check_circle';
                     iconEl.className = 'material-symbols-outlined text-success';
@@ -3044,8 +3050,8 @@
                 const missing = finalTotal - given;
                 changeEl.textContent = '-' + formatCurrency(missing);
                 changeEl.className = 'cash-change-amount text-danger';
-                if (titleEl) titleEl.textContent = 'CÃ²n thiáº¿u';
-                if (subEl) subEl.textContent = 'KhÃ¡ch Ä‘Æ°a chÆ°a Ä‘á»§ tiá»n';
+                if (titleEl) titleEl.textContent = 'Còn thiếu';
+                if (subEl) subEl.textContent = 'Khách đưa chưa đủ tiền';
                 if (iconEl) {
                     iconEl.textContent = 'error';
                     iconEl.className = 'material-symbols-outlined text-danger';
@@ -3061,7 +3067,7 @@
         async function submitCounterOrder() {
             const btnSubmit = document.getElementById('btnSubmitOrder');
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">hourglass_empty</span><span>Äang xá»­ lÃ½...</span>`;
+            btnSubmit.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">hourglass_empty</span><span>Đang xử lý...</span>`;
 
             const sub = cartItems.reduce((acc, it) => acc + it.subtotal, 0);
             const { discount, finalTotal } = updateSummary(sub);
@@ -3072,7 +3078,7 @@
                 orderType: orderType,
                 tableNumber: '',
                 customerId: currentCustomer ? currentCustomer.id : null,
-                recipientName: currentCustomer ? currentCustomer.fullName : (orderType === 'DINE_IN' ? 'KhÃ¡ch táº¡i quÃ¡n' : 'KhÃ¡ch mang vá»'),
+                recipientName: currentCustomer ? currentCustomer.fullName : (orderType === 'DINE_IN' ? 'Khách tại quán' : 'Khách mang về'),
                 recipientPhone: currentCustomer ? currentCustomer.phone : '',
                 orderNote: orderNote,
                 paymentMethod: selectedPaymentMethod,
@@ -3102,7 +3108,7 @@
                 });
 
                 if (response.status === 401) {
-                    alert('PhiÃªn lÃ m viá»‡c Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.');
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
                     window.location.href = `\${CONTEXT_PATH}/login`;
                     return;
                 }
@@ -3110,16 +3116,16 @@
                 res = await response.json();
             } catch (err) {
                 console.error(err);
-                alert('Lá»—i káº¿t ná»‘i mÃ¡y chá»§.');
+                alert('Lỗi kết nối máy chủ.');
                 return;
             } finally {
                 btnSubmit.disabled = false;
-                btnSubmit.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">receipt</span><span>HoÃ n táº¥t & In hÃ³a Ä‘Æ¡n</span>`;
+                btnSubmit.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">receipt</span><span>Hoàn tất & In hóa đơn</span>`;
             }
 
             if (res && res.success) {
                 paymentModalInstance.hide();
-                showToast('Táº¡o Ä‘Æ¡n thÃ nh cÃ´ng! MÃ£ Ä‘Æ¡n: ' + res.orderCode);
+                showToast('Tạo đơn thành công! Mã đơn: ' + res.orderCode);
                 
                 // Reset cart
                 cartItems = [];
@@ -3129,20 +3135,20 @@
 
                 // Offer to open e-Bill
                 setTimeout(() => {
-                    if (confirm(`ÄÆ¡n hÃ ng \${res.orderCode} Ä‘Ã£ Ä‘Æ°á»£c táº¡o thÃ nh cÃ´ng!\nBáº¡n cÃ³ muá»‘n má»Ÿ xem / in hÃ³a Ä‘Æ¡n ngay khÃ´ng?`)) {
+                    if (confirm(`Đơn hàng \${res.orderCode} đã được tạo thành công!\nBạn có muốn mở xem / in hóa đơn ngay không?`)) {
                         window.open(`\${CONTEXT_PATH}/bill?orderId=\${res.orderId}`, '_blank');
                     }
                     window.location.reload();
                 }, 400);
             } else if (res) {
-                alert(res.error || 'CÃ³ lá»—i xáº£y ra khi táº¡o Ä‘Æ¡n.');
+                alert(res.error || 'Có lỗi xảy ra khi tạo đơn.');
             }
         }
 
         // 10. Order Actions & Realtime Sync
 
         async function completeOrder(orderId) {
-            if (!confirm(`XÃ¡c nháº­n hoÃ n táº¥t Ä‘Æ¡n hÃ ng #\${orderId}?`)) {
+            if (!confirm(`Xác nhận hoàn tất đơn hàng #\${orderId}?`)) {
                 return;
             }
 
@@ -3152,25 +3158,25 @@
                     headers: { 'Accept': 'application/json' }
                 });
                 if (resp.status === 401) {
-                    alert('PhiÃªn lÃ m viá»‡c Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.');
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
                     window.location.href = `\${CONTEXT_PATH}/login`;
                     return;
                 }
                 const res = await resp.json();
                 if (res.success) {
-                    showToast(res.message || 'ÄÃ£ hoÃ n táº¥t Ä‘Æ¡n hÃ ng.');
+                    showToast(res.message || 'Đã hoàn tất đơn hàng.');
                     refreshOrdersList();
                 } else {
-                    alert(res.error || 'KhÃ´ng thá»ƒ hoÃ n táº¥t Ä‘Æ¡n hÃ ng.');
+                    alert(res.error || 'Không thể hoàn tất đơn hàng.');
                 }
             } catch (e) {
                 console.error(e);
-                alert('Lá»—i káº¿t ná»‘i mÃ¡y chá»§.');
+                alert('Lỗi kết nối máy chủ.');
             }
         }
 
         async function cancelOrder(orderId) {
-            if (!confirm(`Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n há»§y Ä‘Æ¡n hÃ ng #\${orderId}?`)) {
+            if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng #\${orderId}?`)) {
                 return;
             }
 
@@ -3180,20 +3186,20 @@
                     headers: { 'Accept': 'application/json' }
                 });
                 if (resp.status === 401) {
-                    alert('PhiÃªn lÃ m viá»‡c Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.');
+                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
                     window.location.href = `\${CONTEXT_PATH}/login`;
                     return;
                 }
                 const res = await resp.json();
                 if (res.success) {
-                    showToast(res.message || 'ÄÃ£ há»§y Ä‘Æ¡n thÃ nh cÃ´ng');
+                    showToast(res.message || 'Đã hủy đơn thành công');
                     refreshOrdersList();
                 } else {
-                    alert(res.error || 'KhÃ´ng thá»ƒ há»§y Ä‘Æ¡n.');
+                    alert(res.error || 'Không thể hủy đơn.');
                 }
             } catch (e) {
                 console.error(e);
-                alert('Lá»—i káº¿t ná»‘i mÃ¡y chá»§.');
+                alert('Lỗi kết nối máy chủ.');
             }
         }
 
@@ -3220,8 +3226,8 @@
                             <td colspan="9" class="text-center py-5">
                                 <div class="d-flex flex-column align-items-center justify-content-center text-muted">
                                     <span class="material-symbols-outlined mb-2" style="font-size: 48px; color: var(--slate-300);">inbox</span>
-                                    <div class="fw-bold fs-6 text-slate-700">ChÆ°a cÃ³ Ä‘Æ¡n hÃ ng nÃ o táº¡i quáº§y hÃ´m nay</div>
-                                    <div class="small text-slate-400 mt-1">CÃ¡c Ä‘Æ¡n hÃ ng phÃ¡t sinh trong ca lÃ m viá»‡c sáº½ hiá»ƒn thá»‹ táº¡i Ä‘Ã¢y</div>
+                                    <div class="fw-bold fs-6 text-slate-700">Chưa có đơn hàng nào tại quầy hôm nay</div>
+                                    <div class="small text-slate-400 mt-1">Các đơn hàng phát sinh trong ca làm việc sẽ hiển thị tại đây</div>
                                 </div>
                             </td>
                         </tr>`;
@@ -3238,8 +3244,8 @@
                         <td colspan="9" class="text-center py-5">
                             <div class="d-flex flex-column align-items-center justify-content-center text-muted">
                                 <span class="material-symbols-outlined mb-2" style="font-size: 40px; color: var(--slate-300);">search_off</span>
-                                <div class="fw-bold fs-6 text-slate-700">KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n hÃ ng nÃ o phÃ¹ há»£p</div>
-                                <div class="small text-slate-400 mt-1">Thá»­ thay Ä‘á»•i tá»« khÃ³a hoáº·c bá»™ lá»c tráº¡ng thÃ¡i</div>
+                                <div class="fw-bold fs-6 text-slate-700">Không tìm thấy đơn hàng nào phù hợp</div>
+                                <div class="small text-slate-400 mt-1">Thử thay đổi từ khóa hoặc bộ lọc trạng thái</div>
                             </div>
                         </td>
                     </tr>`;
@@ -3259,19 +3265,19 @@
                 typeBadgeHtml = `
                     <span class="badge-type delivery">
                         <span class="material-symbols-outlined" style="font-size: 14px;">delivery_dining</span>
-                        <span>Giao hÃ ng</span>
+                        <span>Giao hàng</span>
                     </span>`;
             } else if (o.orderType === 'TAKEAWAY') {
                 typeBadgeHtml = `
                     <span class="badge-type takeaway">
                         <span class="material-symbols-outlined" style="font-size: 14px;">takeout_dining</span>
-                        <span>Mang vá»</span>
+                        <span>Mang về</span>
                     </span>`;
             } else {
                 typeBadgeHtml = `
                     <span class="badge-type dine-in">
                         <span class="material-symbols-outlined" style="font-size: 14px;">storefront</span>
-                        <span>Táº¡i quÃ¡n\${o.tableNumber ? ' (BÃ n ' + escapeHtml(o.tableNumber) + ')' : ''}</span>
+                        <span>Tại quán\${o.tableNumber ? ' (Bàn ' + escapeHtml(o.tableNumber) + ')' : ''}</span>
                     </span>`;
             }
 
@@ -3300,48 +3306,48 @@
                 paymentBadgeHtml = `
                     <span class="badge-payment cash">
                         <span class="material-symbols-outlined" style="font-size: 14px;">payments</span>
-                        <span>Tiá»n máº·t</span>
+                        <span>Tiền mặt</span>
                     </span>`;
             }
 
             let statusBadgeHtml = '';
             if (o.status === 'CONFIRMED') {
-                statusBadgeHtml = `<span class="badge-status confirmed"><span class="status-dot"></span><span>ÄÃ£ thanh toÃ¡n</span></span>`;
+                statusBadgeHtml = `<span class="badge-status confirmed"><span class="status-dot"></span><span>Đã thanh toán</span></span>`;
             } else if (o.status === 'PREPARING') {
-                statusBadgeHtml = `<span class="badge-status preparing"><span class="status-dot"></span><span>Äang pha cháº¿</span></span>`;
+                statusBadgeHtml = `<span class="badge-status preparing"><span class="status-dot"></span><span>Đang pha chế</span></span>`;
             } else if (o.status === 'READY') {
-                statusBadgeHtml = `<span class="badge-status ready"><span class="status-dot"></span><span>Sáºµn sÃ ng</span></span>`;
+                statusBadgeHtml = `<span class="badge-status ready"><span class="status-dot"></span><span>Sẵn sàng</span></span>`;
             } else if (o.status === 'DELIVERING') {
-                statusBadgeHtml = `<span class="badge-status delivering"><span class="status-dot"></span><span>Äang giao</span></span>`;
+                statusBadgeHtml = `<span class="badge-status delivering"><span class="status-dot"></span><span>Đang giao</span></span>`;
             } else if (o.status === 'COMPLETED') {
-                statusBadgeHtml = `<span class="badge-status completed"><span class="status-dot"></span><span>HoÃ n thÃ nh</span></span>`;
+                statusBadgeHtml = `<span class="badge-status completed"><span class="status-dot"></span><span>Hoàn thành</span></span>`;
             } else if (o.status === 'CANCELLED') {
-                statusBadgeHtml = `<span class="badge-status cancelled"><span class="status-dot"></span><span>ÄÃ£ há»§y</span></span>`;
+                statusBadgeHtml = `<span class="badge-status cancelled"><span class="status-dot"></span><span>Đã hủy</span></span>`;
             } else if (o.status === 'PENDING') {
-                statusBadgeHtml = `<span class="badge-status" style="background:#fef9c3;color:#854d0e;border:1px solid #fef08a;"><span class="status-dot" style="background:#eab308;"></span><span>Chá» thanh toÃ¡n</span></span>`;
+                statusBadgeHtml = `<span class="badge-status" style="background:#fef9c3;color:#854d0e;border:1px solid #fef08a;"><span class="status-dot" style="background:#eab308;"></span><span>Chờ thanh toán</span></span>`;
             } else {
                 statusBadgeHtml = `<span class="badge bg-secondary">\${escapeHtml(o.statusLabel || o.status)}</span>`;
             }
 
             let actionBtnsHtml = `
-                <a href="\${CONTEXT_PATH}/bill?orderId=\${o.id}" target="_blank" class="btn-action-bill" title="Má»Ÿ xem vÃ  in hÃ³a Ä‘Æ¡n">
+                <a href="\${CONTEXT_PATH}/bill?orderId=\${o.id}" target="_blank" class="btn-action-bill" title="Mở xem và in hóa đơn">
                     <span class="material-symbols-outlined" style="font-size: 15px;">receipt_long</span>
-                    <span>HÃ³a Ä‘Æ¡n</span>
+                    <span>Hóa đơn</span>
                 </a>`;
 
             if ((o.orderType === 'DINE_IN' || o.orderType === 'TAKEAWAY') && o.status === 'READY') {
                 actionBtnsHtml += `
-                    <button type="button" class="btn-action-complete-order" onclick="completeOrder(\${o.id})" title="ÄÃ¡nh dáº¥u hoÃ n táº¥t">
+                    <button type="button" class="btn-action-complete-order" onclick="completeOrder(\${o.id})" title="Đánh dấu hoàn tất">
                         <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
-                        <span>HoÃ n táº¥t</span>
+                        <span>Hoàn tất</span>
                     </button>`;
             }
 
             if (o.status === 'PENDING' || o.status === 'CONFIRMED') {
                 actionBtnsHtml += `
-                    <button type="button" class="btn-action-cancel-order" onclick="cancelOrder(\${o.id})" title="Há»§y Ä‘Æ¡n hÃ ng nÃ y">
+                    <button type="button" class="btn-action-cancel-order" onclick="cancelOrder(\${o.id})" title="Hủy đơn hàng này">
                         <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
-                        <span>Há»§y</span>
+                        <span>Hủy</span>
                     </button>`;
             }
 
@@ -3353,21 +3359,21 @@
                     data-status="\${escapeHtml(o.status)}" 
                     data-search="\${searchStr}">
                     <td>
-                        <span class="order-code-badge" onclick="copyOrderCode('\${escapeHtml(o.orderCode)}')" title="Báº¥m Ä‘á»ƒ sao chÃ©p mÃ£" style="cursor: pointer;">
+                        <span class="order-code-badge" onclick="copyOrderCode('\${escapeHtml(o.orderCode)}')" title="Bấm để sao chép mã" style="cursor: pointer;">
                             <span class="material-symbols-outlined" style="font-size: 14px; color: var(--slate-500);">tag</span>
                             <span>\${escapeHtml(o.orderCode)}</span>
                         </span>
                     </td>
                     <td>
                         <div class="fw-semibold text-slate-800">\${escapeHtml(o.createdTimeText)}</div>
-                        <div style="font-size: 11px; color: var(--slate-400);">HÃ´m nay</div>
+                        <div style="font-size: 11px; color: var(--slate-400);">Hôm nay</div>
                     </td>
                     <td>\${typeBadgeHtml}</td>
                     <td>\${custHtml}</td>
                     <td>
                         <div class="order-items-snippet" title="\${escapeHtml(o.itemSummary)}">
                             <div class="order-items-text">\${escapeHtml(o.itemSummary)}</div>
-                            <div class="order-items-qty">\${o.itemCount} mÃ³n</div>
+                            <div class="order-items-qty">\${o.itemCount} món</div>
                         </div>
                     </td>
                     <td class="text-end">
@@ -3435,18 +3441,18 @@
         function copyOrderCode(code) {
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(code).then(() => {
-                    showToast('ÄÃ£ sao chÃ©p mÃ£ Ä‘Æ¡n ' + code);
+                    showToast('Đã sao chép mã đơn ' + code);
                 }).catch(() => {
-                    showToast('MÃ£ Ä‘Æ¡n: ' + code);
+                    showToast('Mã đơn: ' + code);
                 });
             } else {
-                showToast('MÃ£ Ä‘Æ¡n: ' + code);
+                showToast('Mã đơn: ' + code);
             }
         }
 
         // Utility Helpers
         function formatCurrency(amount) {
-            return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + 'Ä‘';
+            return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + 'đ';
         }
 
         function escapeHtml(str) {

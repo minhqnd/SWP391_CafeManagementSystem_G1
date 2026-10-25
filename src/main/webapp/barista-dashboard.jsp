@@ -69,16 +69,22 @@
             String(b.readyAt || "").localeCompare(String(a.readyAt || ""))
             || String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || b.id - a.id);
     }
+    // Gom theo món (VD "×2 Trà chanh"); từng cốc vẫn giữ tuỳ chọn riêng (size, đường, đá, topping) trong lines.
+    // activeOrders đã xếp đơn sớm trước, nên nhóm và các dòng trong nhóm đều theo thứ tự ưu tiên pha.
+    function productKey(item) {
+        return JSON.stringify([item.productId, item.productName]);
+    }
     function groups(orders) {
         const result = new Map();
         activeOrders(orders).forEach(order => order.items.forEach(item => {
             if (item.isPrepared) return;
-            const key = groupKey(item);
-            if (!result.has(key)) result.set(key, { key, item, quantity: 0, itemIds: [], orders: new Set() });
+            const key = productKey(item);
+            if (!result.has(key)) result.set(key, { key, item, quantity: 0, itemIds: [], orders: new Set(), lines: [] });
             const group = result.get(key);
             group.quantity += item.quantity;
             group.itemIds.push(item.itemId);
             group.orders.add(order.orderCode || "#" + order.id);
+            group.lines.push({ item, order });
         }));
         return [...result.values()];
     }
@@ -104,7 +110,7 @@
             // Server supplies the authoritative completion timestamp on the next fetch.
         }
     }
-    const helpers = { options, groupKey, activeOrders, completedOrders, groups, progress, markItems, markReady };
+    const helpers = { options, groupKey, productKey, activeOrders, completedOrders, groups, progress, markItems, markReady };
     if (typeof module !== "undefined" && module.exports) module.exports = helpers;
     if (!root.document) return;
 
@@ -135,13 +141,26 @@
             if (v && typeof v === "object") return Object.entries(v).map(([k, x]) => k + ": " + describe(x)).join(", ");
             return String(v);
         }
+        // "notes" (đơn tại quầy) đã là chữ đầy đủ như "50% đường", "Lưu ý: ít ngọt" -> mỗi ý một nhãn, không thêm tiền tố
         const entries = value && typeof value === "object" && !Array.isArray(value)
-            ? Object.entries(value).map(([key, v]) => v == null || v === "" ? "" : (labels[key] || key) + ": " + describe(v))
+            ? Object.entries(value).flatMap(([key, v]) => {
+                if (v == null || v === "" || (Array.isArray(v) && !v.length)) return [];
+                if (key === "notes") {
+                    // VD "50% đường, Ít đá, Lưu ý: ít ngọt, thêm ống hút" -> "Lưu ý: ..." luôn đứng cuối, giữ nguyên
+                    const text = String(v);
+                    const noteAt = text.indexOf("Lưu ý:");
+                    const head = noteAt >= 0 ? text.slice(0, noteAt) : text;
+                    const parts = head.split(",").map(part => part.trim()).filter(Boolean);
+                    if (noteAt >= 0) parts.push(text.slice(noteAt).trim());
+                    return parts;
+                }
+                return [(labels[key] || key) + ": " + describe(v)];
+            })
             : [describe(value)];
         entries.filter(Boolean).forEach(text => box.append(element("span", "option-tag", text)));
         return box;
     }
-    function checkbox(checked, key, change, labelText) {
+    function checkbox(checked, key, change, labelText, display = "Đã pha") {
         const label = element("label", "prepared-toggle");
         const input = element("input");
         input.type = "checkbox";
@@ -150,7 +169,7 @@
         input.dataset.focusKey = key;
         input.setAttribute("aria-label", labelText);
         input.addEventListener("change", () => change(input.checked));
-        label.append(input, element("span", "", "Đã pha"));
+        label.append(input, element("span", "", display));
         return label;
     }
     function orderCard(order) {
@@ -205,8 +224,22 @@
                 const card = element("div", "group-card");
                 const title = element("div", "group-title");
                 title.append(element("span", "group-quantity", "×" + group.quantity), element("span", "item-name", group.item.productName));
-                card.append(title, tags(group.item), element("p", "group-orders", [...group.orders].join(" · ")),
-                    checkbox(false, "group-" + group.key, () => updateItems(group.itemIds, true), "Đã pha tất cả " + group.quantity + " " + group.item.productName));
+                // Chi tiết từng cốc theo thứ tự đơn đặt sớm trước, để không pha nhầm đường / đá / size
+                const lines = element("ol", "group-lines");
+                group.lines.forEach(({ item, order }) => {
+                    const line = element("li", "group-line");
+                    const head = element("div", "group-line-head");
+                    const time = order.createdAt ? String(order.createdAt).substring(11, 16) : "";
+                    const where = [order.orderCode || "#" + order.id, time, order.tableNumber ? "Bàn " + order.tableNumber : ""]
+                        .filter(Boolean).join(" · ");
+                    head.append(element("span", "item-quantity", "×" + item.quantity), element("span", "group-line-order", where));
+                    line.append(head, tags(item), checkbox(false, "line-" + item.itemId, () => updateItems([item.itemId], true),
+                        "Đã pha " + item.quantity + " " + item.productName + " của đơn " + (order.orderCode || order.id)));
+                    lines.append(line);
+                });
+                card.append(title, lines,
+                    checkbox(false, "group-" + group.key, () => updateItems(group.itemIds, true),
+                        "Đã pha tất cả " + group.quantity + " " + group.item.productName, "Đã pha cả nhóm"));
                 groupList.append(card);
             });
             if (!pending.length) groupList.append(element("p", "empty-state", "Không còn món chưa tích."));
