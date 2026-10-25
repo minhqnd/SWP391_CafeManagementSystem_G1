@@ -44,7 +44,7 @@ public class Feedback implements Serializable {
     // Core database field: content TEXT NOT NULL
     private String content;
     
-    // Core database field: status ENUM('PENDING', 'RESOLVED', 'REJECTED')
+    // Core database field: status ENUM('PENDING', 'PROCESSING', 'RESOLVED', 'REJECTED')
     private String status = "PENDING";
     
     // Core database field: admin_response TEXT NULL
@@ -202,6 +202,14 @@ public class Feedback implements Serializable {
 
     public boolean isRejected() {
         return "REJECTED".equalsIgnoreCase(status);
+    }
+
+    public boolean isTerminal() {
+        try {
+            return FeedbackStatus.from(status).isTerminal();
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     public String getFormattedCreatedAt() {

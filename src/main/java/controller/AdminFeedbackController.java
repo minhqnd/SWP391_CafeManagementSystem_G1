@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.Feedback;
+import model.FeedbackStatus;
 import model.User;
 
 import java.io.IOException;
@@ -93,31 +94,46 @@ public class AdminFeedbackController extends HttpServlet {
         HttpSession session = request.getSession();
         String sessionCsrf = (String) session.getAttribute("feedbackCsrfToken");
         String paramCsrf = request.getParameter("csrfToken");
-        if (sessionCsrf != null && paramCsrf != null && !sessionCsrf.equals(paramCsrf)) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Phiên làm việc đã hết hạn.");
+        if (sessionCsrf == null || paramCsrf == null || !sessionCsrf.equals(paramCsrf)) {
+            session.setAttribute("feedbackError", "Phiên biểu mẫu đã hết hạn. Vui lòng thao tác lại.");
+            response.sendRedirect(request.getContextPath() + "/admin/feedback");
             return;
         }
 
         String action = request.getParameter("action");
         try {
-            if ("reply".equalsIgnoreCase(action) || action == null) {
+            if ("reply".equalsIgnoreCase(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
-                String status = request.getParameter("status");
                 String adminResponse = request.getParameter("adminResponse");
 
                 if (adminResponse == null || adminResponse.trim().isEmpty()) {
                     throw new IllegalArgumentException("Nội dung phản hồi không được để trống.");
                 }
-
-                if (status == null || (!status.equals("PENDING") && !status.equals("PROCESSING") && !status.equals("RESOLVED") && !status.equals("REJECTED"))) {
-                    status = "RESOLVED";
+                String responseText = adminResponse.trim();
+                if (responseText.length() > 2000) {
+                    throw new IllegalArgumentException("Nội dung phản hồi không được vượt quá 2.000 ký tự.");
                 }
 
-                boolean success = feedbackDAO.updateFeedbackResponse(id, status, adminResponse.trim());
-                if (success) {
-                    session.setAttribute("feedbackMessage", "Đã gửi phản hồi thành công cho phiếu #" + id + ".");
+                FeedbackStatus targetStatus = FeedbackStatus.from(request.getParameter("status"));
+                FeedbackDAO.ResponseUpdateResult result = feedbackDAO.updateFeedbackResponse(
+                        id, targetStatus, responseText);
+
+                if (result == FeedbackDAO.ResponseUpdateResult.UPDATED) {
+                    if (targetStatus == FeedbackStatus.RESOLVED) {
+                        session.setAttribute("feedbackMessage",
+                                "Đã gửi phản hồi và đóng phiếu #" + id + " với trạng thái Đã giải quyết.");
+                    } else if (targetStatus == FeedbackStatus.REJECTED) {
+                        session.setAttribute("feedbackMessage",
+                                "Đã gửi phản hồi và đóng phiếu #" + id + " với trạng thái Từ chối.");
+                    } else {
+                        session.setAttribute("feedbackMessage",
+                                "Đã gửi phản hồi cho phiếu #" + id + ". Phiếu vẫn đang được xử lý.");
+                    }
+                } else if (result == FeedbackDAO.ResponseUpdateResult.ALREADY_CLOSED) {
+                    session.setAttribute("feedbackError",
+                            "Phiếu #" + id + " đã kết thúc nên không thể chỉnh sửa hoặc mở lại.");
                 } else {
-                    session.setAttribute("feedbackError", "Không tìm thấy phiếu hoặc cập nhật không thành công.");
+                    session.setAttribute("feedbackError", "Không tìm thấy phiếu #" + id + ".");
                 }
             } else {
                 session.setAttribute("feedbackError", "Hành động không hợp lệ.");
@@ -128,7 +144,7 @@ public class AdminFeedbackController extends HttpServlet {
             session.setAttribute("feedbackError", e.getMessage());
         } catch (Exception e) {
             getServletContext().log("Failed to update feedback response", e);
-            session.setAttribute("feedbackError", "Lỗi cập nhật: " + e.getMessage());
+            session.setAttribute("feedbackError", "Không thể lưu phản hồi. Vui lòng thử lại.");
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/feedback");
@@ -146,11 +162,15 @@ public class AdminFeedbackController extends HttpServlet {
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");
         if (user == null) {
+            request.getSession(true).setAttribute("errorMsg",
+                    "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập bằng tài khoản Admin.");
             response.sendRedirect(request.getContextPath() + "/?tab=login");
             return false;
         }
-        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ Quản trị viên (Admin) mới có quyền truy cập trang này.");
+        if (!"ADMIN".equalsIgnoreCase(user.getRole()) || !"ACTIVE".equalsIgnoreCase(user.getStatus())) {
+            session.setAttribute("errorMsg",
+                    "Tài khoản hiện tại không có quyền Admin hoặc đã bị khóa. Vui lòng đăng nhập lại bằng tài khoản Admin đang hoạt động.");
+            response.sendRedirect(request.getContextPath() + "/?tab=login");
             return false;
         }
         return true;

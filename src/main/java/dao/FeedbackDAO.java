@@ -2,6 +2,7 @@ package dao;
 
 import context.DBContext;
 import model.Feedback;
+import model.FeedbackStatus;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,6 +17,12 @@ import java.util.List;
  * Sử dụng trực tiếp bảng `customer_reviews` từ cơ sở dữ liệu `aura_cafe.sql`
  */
 public class FeedbackDAO extends BaseDAO {
+
+    public enum ResponseUpdateResult {
+        UPDATED,
+        NOT_FOUND,
+        ALREADY_CLOSED
+    }
 
     private Feedback mapResultSetToFeedback(ResultSet rs) throws Exception {
         Feedback fb = new Feedback();
@@ -115,14 +122,60 @@ public class FeedbackDAO extends BaseDAO {
         return list;
     }
 
-    public boolean updateFeedbackResponse(int id, String status, String adminResponse) throws Exception {
-        String sql = "UPDATE customer_reviews SET status = ?, admin_response = ? WHERE id = ?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status);
-            ps.setString(2, adminResponse);
-            ps.setInt(3, id);
-            return ps.executeUpdate() > 0;
+    public ResponseUpdateResult updateFeedbackResponse(
+            int id, FeedbackStatus targetStatus, String adminResponse) throws Exception {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Mã phiếu không hợp lệ.");
+        }
+        if (targetStatus == null || targetStatus == FeedbackStatus.PENDING) {
+            throw new IllegalArgumentException("Phản hồi phải chuyển phiếu sang trạng thái đang xử lý hoặc kết thúc.");
+        }
+        if (adminResponse == null || adminResponse.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nội dung phản hồi không được để trống.");
+        }
+        String responseText = adminResponse.trim();
+        if (responseText.length() > 2000) {
+            throw new IllegalArgumentException("Nội dung phản hồi không được vượt quá 2.000 ký tự.");
+        }
+
+        String selectSql = "SELECT status FROM customer_reviews WHERE id = ? FOR UPDATE";
+        String updateSql = "UPDATE customer_reviews SET status = ?, admin_response = ? WHERE id = ?";
+
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                FeedbackStatus currentStatus;
+                try (PreparedStatement select = conn.prepareStatement(selectSql)) {
+                    select.setInt(1, id);
+                    try (ResultSet rs = select.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return ResponseUpdateResult.NOT_FOUND;
+                        }
+                        currentStatus = FeedbackStatus.from(rs.getString("status"));
+                    }
+                }
+
+                if (currentStatus.isTerminal()) {
+                    conn.rollback();
+                    return ResponseUpdateResult.ALREADY_CLOSED;
+                }
+                if (!currentStatus.canReplyWith(targetStatus)) {
+                    throw new IllegalArgumentException("Chuyển trạng thái phiếu không hợp lệ.");
+                }
+
+                try (PreparedStatement update = conn.prepareStatement(updateSql)) {
+                    update.setString(1, targetStatus.name());
+                    update.setString(2, responseText);
+                    update.setInt(3, id);
+                    update.executeUpdate();
+                }
+                conn.commit();
+                return ResponseUpdateResult.UPDATED;
+            } catch (Exception ex) {
+                conn.rollback();
+                throw ex;
+            }
         }
     }
 

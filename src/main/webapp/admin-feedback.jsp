@@ -124,6 +124,17 @@
         .btn-action-edit:active {
             transform: translateY(0);
         }
+        .action-complete {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: #059669;
+            font-size: 11.5px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .action-complete.rejected { color: #64748b; }
         
         /* Modal & Dialog */
         .modal-content { border: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.04); }
@@ -136,6 +147,7 @@
         .db-column { float: right; font: 400 10.5px ui-monospace, monospace; color: #94a3b8; }
         .form-control, .form-select { border-radius: 12px; background: #f8fafc; border-color: #cbd5e1; font-size: 13px; padding: 10px 14px; }
         .form-control:focus, .form-select:focus { border-color: #be123c; box-shadow: 0 0 0 3px rgba(190, 18, 60, 0.12); background: #ffffff; }
+        .terminal-note { margin-top: 8px; color: #64748b; font-size: 11px; line-height: 1.45; }
         .btn-aura { background: linear-gradient(135deg, #be123c 0%, #9f1239 100%); color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 12px; border: none; padding: 10px 18px; transition: all 0.2s; }
         .btn-aura:hover { background: linear-gradient(135deg, #9f1239 0%, #881337 100%); color: #fff; box-shadow: 0 4px 12px rgba(190, 18, 60, 0.3); }
         .btn-soft { background: #f1f5f9; color: #475569; font-size: 12.5px; font-weight: 700; border-radius: 12px; border: none; padding: 10px 18px; transition: all 0.2s; }
@@ -297,7 +309,7 @@
                             </td>
                             <td class="td-action">
                                 <c:choose>
-                                    <c:when test="${empty fb.adminResponse and (fb.status == 'PENDING' or fb.status == 'PROCESSING')}">
+                                    <c:when test="${fb.status == 'PENDING' or fb.status == 'PROCESSING'}">
                                         <button type="button" class="btn-action-process btn-open-reply"
                                                 data-id="${fb.id}"
                                                 data-type="${fb.issueType}"
@@ -307,21 +319,14 @@
                                                 data-response="<c:out value="${fb.adminResponse}" />"
                                                 data-bs-toggle="modal" data-bs-target="#replyModal">
                                             <span class="material-symbols-outlined" style="font-size: 15px;">reply</span>
-                                            <span>Xử lý</span>
+                                            <span>${empty fb.adminResponse ? 'Xử lý' : 'Tiếp tục xử lý'}</span>
                                         </button>
                                     </c:when>
                                     <c:otherwise>
-                                        <button type="button" class="btn-action-edit btn-open-reply"
-                                                data-id="${fb.id}"
-                                                data-type="${fb.issueType}"
-                                                data-type-label="${fb.issueTypeLabel}"
-                                                data-content="<c:out value="${fb.content}" />"
-                                                data-status="${fb.status}"
-                                                data-response="<c:out value="${fb.adminResponse}" />"
-                                                data-bs-toggle="modal" data-bs-target="#replyModal">
-                                            <span class="material-symbols-outlined" style="font-size: 15px;">edit_note</span>
-                                            <span>Sửa phản hồi</span>
-                                        </button>
+                                        <span class="action-complete ${fb.status == 'REJECTED' ? 'rejected' : ''}">
+                                            <span class="material-symbols-outlined" style="font-size: 16px;">task_alt</span>
+                                            <span>Đã hoàn tất</span>
+                                        </span>
                                     </c:otherwise>
                                 </c:choose>
                             </td>
@@ -362,21 +367,21 @@
                         <label class="form-label w-100">
                             Trạng thái xử lý <span class="db-column">status</span>
                             <select name="status" id="modalStatus" class="form-select mt-1">
-                                <option value="RESOLVED">RESOLVED - Đã giải quyết</option>
                                 <option value="PROCESSING">PROCESSING - Đang xử lý</option>
-                                <option value="REJECTED">REJECTED - Từ chối</option>
-                                <option value="PENDING">PENDING - Chờ xử lý</option>
+                                <option value="RESOLVED">RESOLVED - Đã giải quyết (đóng phiếu)</option>
+                                <option value="REJECTED">REJECTED - Từ chối (đóng phiếu)</option>
                             </select>
+                            <span class="terminal-note">Phiếu Đã giải quyết hoặc Từ chối sẽ được đóng và không thể sửa hay mở lại.</span>
                         </label>
 
                         <label class="form-label w-100 mt-3">
                             Nội dung phản hồi * <span class="db-column">admin_response</span>
-                            <textarea name="adminResponse" id="modalAdminResponse" class="form-control mt-1" rows="4" placeholder="Nhập câu trả lời hoặc phương án xử lý gửi tới khách hàng..." required></textarea>
+                            <textarea name="adminResponse" id="modalAdminResponse" class="form-control mt-1" rows="4" maxlength="2000" placeholder="Nhập câu trả lời hoặc phương án xử lý gửi tới khách hàng..." required></textarea>
                         </label>
 
                         <div class="d-flex gap-3 mt-4">
                             <button type="button" class="btn btn-soft flex-fill" data-bs-dismiss="modal">Hủy bỏ</button>
-                            <button type="submit" class="btn btn-aura flex-fill">Gửi phản hồi</button>
+                            <button type="submit" class="btn btn-aura flex-fill" id="replySubmitButton">Gửi phản hồi</button>
                         </div>
                     </form>
                 </div>
@@ -393,12 +398,12 @@
                     const id = this.getAttribute('data-id') || '';
                     const typeLabel = this.getAttribute('data-type-label') || 'Đánh giá / Khiếu nại';
                     const content = this.getAttribute('data-content') || '';
-                    let status = this.getAttribute('data-status') || 'RESOLVED';
+                    let status = this.getAttribute('data-status') || 'PROCESSING';
                     const response = this.getAttribute('data-response') || '';
 
-                    // Nếu đang PENDING, mặc định gợi ý chuyển sang RESOLVED khi phản hồi
+                    // Gửi phản hồi là bắt đầu xử lý; đóng phiếu phải là lựa chọn có chủ đích.
                     if (status === 'PENDING') {
-                        status = 'RESOLVED';
+                        status = 'PROCESSING';
                     }
 
                     document.getElementById('modalFeedbackId').value = id;
@@ -408,6 +413,12 @@
                     document.getElementById('modalStatus').value = status;
                     document.getElementById('modalAdminResponse').value = response;
                 });
+            });
+
+            document.getElementById('replyForm').addEventListener('submit', function () {
+                const submitButton = document.getElementById('replySubmitButton');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Đang gửi...';
             });
         });
 

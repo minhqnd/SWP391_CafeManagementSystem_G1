@@ -1,6 +1,7 @@
 package dao;
 
 import context.DBContext;
+import model.FeedbackStatus;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,16 +59,26 @@ class FeedbackDAOTest {
     }
 
     @Test
-    @DisplayName("Admin can update feedback response and status")
-    void testUpdateFeedbackResponse() throws Exception {
+    @DisplayName("A closed feedback cannot be edited or reopened")
+    void closedFeedbackCannotBeUpdated() throws Exception {
         try (Connection conn = openDatabaseOrSkip()) {
             List<model.Feedback> list = feedbackDAO.getAdminFeedbacks(null, null);
-            Assumptions.assumeTrue(!list.isEmpty(), "No reviews available in test database");
-            model.Feedback target = list.get(0);
+            model.Feedback target = list.stream()
+                    .filter(model.Feedback::isTerminal)
+                    .findFirst()
+                    .orElse(null);
+            Assumptions.assumeTrue(target != null, "No closed review is available in the test database");
 
-            String testResponse = "Test automated response " + System.currentTimeMillis();
-            boolean updated = feedbackDAO.updateFeedbackResponse(target.getId(), "RESOLVED", testResponse);
-            org.junit.jupiter.api.Assertions.assertTrue(updated);
+            FeedbackDAO.ResponseUpdateResult result = feedbackDAO.updateFeedbackResponse(
+                    target.getId(), FeedbackStatus.PROCESSING, "This update must not be saved");
+
+            assertEquals(FeedbackDAO.ResponseUpdateResult.ALREADY_CLOSED, result);
+            model.Feedback unchanged = feedbackDAO.getAdminFeedbacks(null, null).stream()
+                    .filter(item -> item.getId() == target.getId())
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals(target.getStatus(), unchanged.getStatus());
+            assertEquals(target.getAdminResponse(), unchanged.getAdminResponse());
         }
     }
 
