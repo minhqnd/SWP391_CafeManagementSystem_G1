@@ -52,7 +52,7 @@ public class AdminRecipeController extends HttpServlet {
             List<ProductIngredient> recipeIngredients = selectedProduct == null
                     ? List.of()
                     : allRecipeIngredients.getOrDefault(selectedProductId, List.of());
-            Map<Integer, BigDecimal> ingredientUnitCosts = ingredientDAO.getAverageReceivedUnitCosts();
+            Map<Integer, BigDecimal> ingredientUnitCosts = ingredientDAO.getLatestPurchasePrices();
             BigDecimal recipeCost = BigDecimal.ZERO;
             List<String> missingCostIngredients = new ArrayList<>();
             for (ProductIngredient recipeIngredient : recipeIngredients) {
@@ -180,9 +180,9 @@ public class AdminRecipeController extends HttpServlet {
             }
             if (ingredientId <= 0) throw new IllegalArgumentException("Nguyên liệu không hợp lệ.");
             if (quantity.signum() <= 0
-                    || quantity.stripTrailingZeros().scale() > 0
-                    || quantity.compareTo(BigDecimal.valueOf(999_999_999L)) > 0) {
-                throw new IllegalArgumentException("Định lượng phải là số nguyên từ 1 đến 999.999.999.");
+                    || quantity.stripTrailingZeros().scale() > 3
+                    || quantity.compareTo(new BigDecimal("999999999.999")) > 0) {
+                throw new IllegalArgumentException("Định lượng phải lớn hơn 0 và có tối đa 3 chữ số thập phân.");
             }
             if (!seenIngredientIds.add(ingredientId)) {
                 throw new IllegalArgumentException("Không chọn trùng một nguyên liệu trong cùng công thức.");

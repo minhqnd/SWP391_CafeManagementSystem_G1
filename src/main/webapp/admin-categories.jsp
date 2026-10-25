@@ -96,7 +96,7 @@
                         <c:forEach var="category" items="${categories}">
                             <tr>
                                 <td class="font-monospace text-muted">#<c:out value="${category.id}" /></td>
-                                <td><c:choose><c:when test="${not empty category.imageUrl}"><img class="category-image" src="${fn:escapeXml(category.imageUrl)}" alt="Ảnh danh mục"></c:when><c:otherwise><div class="category-image-placeholder">Chưa có ảnh</div></c:otherwise></c:choose></td>
+                                <td><c:choose><c:when test="${category.storedImage}"><img class="category-image" src="${ctx}/category-image?id=${category.id}" alt="Ảnh danh mục"></c:when><c:when test="${not empty category.imageUrl}"><img class="category-image" src="${fn:escapeXml(category.imageUrl)}" alt="Ảnh danh mục"></c:when><c:otherwise><div class="category-image-placeholder">Chưa có ảnh</div></c:otherwise></c:choose></td>
                                 <td class="fw-bold text-dark"><c:out value="${category.name}" /></td>
 
                                 <td class="text-end fw-bold font-monospace"><c:out value="${category.productCount}" /></td>
@@ -127,15 +127,22 @@
                     <h2 class="h6 fw-bold mb-0"><c:choose><c:when test="${not empty selectedCategory}">Sửa danh mục</c:when><c:otherwise>Thêm danh mục mới</c:otherwise></c:choose></h2>
                     <c:if test="${not empty selectedCategory}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedCategory.id}" /></span></c:if>
                 </div>
-                <form method="post" action="${ctx}/admin/categories">
+                <form method="post" action="${ctx}/admin/categories" enctype="multipart/form-data">
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="save">
                     <input type="hidden" name="id" value="${empty selectedCategory ? 0 : selectedCategory.id}">
                     <div class="category-form-field"><label for="name" class="form-label">Tên danh mục *</label><input id="name" name="name" class="form-control" required maxlength="100" value="${fn:escapeXml(selectedCategory.name)}"></div>
-                    <div class="category-form-field"><label for="imageUrl" class="form-label">Ảnh đại diện (URL)</label><input id="imageUrl" name="imageUrl" type="url" maxlength="500" class="form-control" value="${fn:escapeXml(selectedCategory.imageUrl)}" placeholder="https://..."></div>
-                    <div class="mt-2">
-                        <img id="categoryImagePreview" class="category-image-preview" src="${fn:escapeXml(selectedCategory.imageUrl)}" alt="Ảnh danh mục preview" <c:if test="${empty selectedCategory.imageUrl}">hidden</c:if>>
-                        <div id="categoryImagePlaceholder" class="category-image-placeholder" style="width:100%;max-width:240px;height:120px" <c:if test="${not empty selectedCategory.imageUrl}">hidden</c:if>>Xem trước ảnh</div>
+                    <div class="category-form-field">
+                        <label for="imageFile" class="form-label">Ảnh đại diện</label>
+                        <input id="imageFile" name="imageFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="form-control">
+                        <div class="form-text">JPG, PNG, GIF hoặc WebP; tối đa 5 MB. Ảnh được lưu trực tiếp trong database.</div>
                     </div>
+                    <div class="mt-2">
+                        <c:set var="selectedHasImage" value="${not empty selectedCategory and (selectedCategory.storedImage or not empty selectedCategory.imageUrl)}" />
+                        <c:choose><c:when test="${selectedCategory.storedImage}"><c:set var="selectedImageSrc" value="${ctx}/category-image?id=${selectedCategory.id}" /></c:when><c:otherwise><c:set var="selectedImageSrc" value="${selectedCategory.imageUrl}" /></c:otherwise></c:choose>
+                        <img id="categoryImagePreview" class="category-image-preview" src="${fn:escapeXml(selectedImageSrc)}" alt="Ảnh danh mục preview" <c:if test="${not selectedHasImage}">hidden</c:if>>
+                        <div id="categoryImagePlaceholder" class="category-image-placeholder" style="width:100%;max-width:240px;height:120px" <c:if test="${selectedHasImage}">hidden</c:if>>Xem trước ảnh</div>
+                    </div>
+                    <c:if test="${selectedHasImage}"><div class="form-check mt-2 mb-3"><input id="removeImage" name="removeImage" value="true" type="checkbox" class="form-check-input"><label for="removeImage" class="form-check-label small">Xóa ảnh hiện tại</label></div></c:if>
                     <div class="category-form-field"><label for="status" class="form-label">Trạng thái</label><select id="status" name="status" class="form-select">
                         <option value="ACTIVE" <c:if test="${empty selectedCategory or selectedCategory.status eq 'ACTIVE'}">selected</c:if>>ACTIVE - Hoạt động</option>
                         <option value="INACTIVE" <c:if test="${selectedCategory.status eq 'INACTIVE'}">selected</c:if>>INACTIVE - Tạm ẩn</option>
@@ -149,18 +156,23 @@
 </main>
 <script>
 (() => {
-    const input = document.getElementById('imageUrl');
+    const input = document.getElementById('imageFile');
     const preview = document.getElementById('categoryImagePreview');
     const placeholder = document.getElementById('categoryImagePlaceholder');
+    const remove = document.getElementById('removeImage');
     if (!input || !preview || !placeholder) return;
     const showPlaceholder = () => { preview.hidden = true; placeholder.hidden = false; };
     preview.addEventListener('error', showPlaceholder);
-    input.addEventListener('input', () => {
-        const value = input.value.trim();
-        if (!/^https?:\/\//i.test(value)) { showPlaceholder(); return; }
+    input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (remove) remove.checked = false;
         placeholder.hidden = true;
         preview.hidden = false;
-        preview.src = value;
+        preview.src = URL.createObjectURL(file);
+    });
+    if (remove) remove.addEventListener('change', () => {
+        if (remove.checked) { input.value = ''; showPlaceholder(); }
     });
 })();
 </script></body>

@@ -9,6 +9,7 @@ public class Category implements Serializable {
     private String name;
     private String status;
     private String imageUrl;
+    private boolean storedImage;
     private int productCount;
 
     public Category() {
@@ -52,6 +53,14 @@ public class Category implements Serializable {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public boolean isStoredImage() {
+        return storedImage;
+    }
+
+    public void setStoredImage(boolean storedImage) {
+        this.storedImage = storedImage;
     }
 
     public int getProductCount() {

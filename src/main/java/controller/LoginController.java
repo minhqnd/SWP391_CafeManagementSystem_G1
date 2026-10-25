@@ -99,7 +99,7 @@ public class LoginController extends HttpServlet {
             } else if ("BARISTA".equalsIgnoreCase(position)) {
                 response.sendRedirect(request.getContextPath() + "/barista");
             } else if ("SHIPPER".equalsIgnoreCase(position)) {
-                response.sendRedirect(request.getContextPath() + "/delivery-dashboard.jsp");
+                response.sendRedirect(request.getContextPath() + "/delivery");
             } else {
                 response.sendRedirect(request.getContextPath() + "/"); // Fallback for other staff
             }

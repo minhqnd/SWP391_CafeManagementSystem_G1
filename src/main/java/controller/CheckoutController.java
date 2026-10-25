@@ -16,7 +16,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -36,6 +38,16 @@ public class CheckoutController extends HttpServlet {
     private static final ZoneId SHOP_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final String PHONE_PATTERN = "0\\d{9,10}";
 
+    // Quán ở Hà Nội: chỉ giao trong các quận nội thành
+    public static final String CITY = "Hà Nội";
+    public static final List<String> HANOI_DISTRICTS = List.of(
+            "Ba Đình", "Hoàn Kiếm", "Tây Hồ", "Long Biên", "Cầu Giấy", "Đống Đa",
+            "Hai Bà Trưng", "Hoàng Mai", "Thanh Xuân", "Nam Từ Liêm", "Bắc Từ Liêm", "Hà Đông");
+    // Giờ nhận hẹn trước: từ giờ mở cửa đến 30 phút trước giờ đóng cửa (22:00)
+    private static final LocalTime OPEN_TIME = LocalTime.of(7, 0);
+    private static final LocalTime LAST_ORDER_TIME = LocalTime.of(21, 30);
+    private static final int MIN_SCHEDULE_MINUTES = 30;
+
     private final CartService cartService = new CartService();
     private final OrderDAO orderDAO = new OrderDAO();
     private final UserDAO userDAO = new UserDAO();
@@ -46,7 +58,6 @@ public class CheckoutController extends HttpServlet {
 
         HttpSession session = request.getSession();
         Cart cart = CartController.getCart(session);
-        cart.setPointsUsed(0);
         boolean pointsStillValid = cartService.refreshCart(cart, CartController.getCustomerId(session));
 
         if (cart.getSelectedItems().isEmpty()) {
@@ -68,7 +79,6 @@ public class CheckoutController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
         Cart cart = CartController.getCart(session);
-        cart.setPointsUsed(0);
         boolean pointsStillValid = cartService.refreshCart(cart, CartController.getCustomerId(session));
 
         if (cart.getSelectedItems().isEmpty()) {
@@ -77,11 +87,14 @@ public class CheckoutController extends HttpServlet {
             return;
         }
 
-        // Bắt buộc đăng nhập mới được đặt hàng
+        // Chỉ tài khoản khách hàng được tạo đơn online. ADMIN/STAFF không được
+        // dùng ID nội bộ làm customer_id của đơn hàng.
         User user = (User) session.getAttribute("user");
-        if (user == null) {
-            session.setAttribute("errorMsg", "Vui lòng đăng nhập để tiếp tục đặt hàng.");
-            response.sendRedirect(request.getContextPath() + "/checkout");
+        if (!CartController.isCustomer(user)) {
+            request.setAttribute("checkoutError", user == null
+                    ? "Vui lòng đăng nhập bằng tài khoản khách hàng để tiếp tục đặt hàng."
+                    : "Tài khoản quản trị/nhân viên không thể đặt hàng online. Vui lòng đăng nhập bằng tài khoản khách hàng.");
+            showCheckout(request, response, cart);
             return;
         }
 
@@ -91,20 +104,40 @@ public class CheckoutController extends HttpServlet {
             showCheckout(request, response, cart);
             return;
         }
+        // Hình thức nhận (SRS 2.3.2) quyết định phí giao hàng và các trường bắt buộc
+        cart.setFulfillment(request.getParameter("fulfillment"));
         String recipientName = trim(request.getParameter("recipientName"));
         String recipientPhone = trim(request.getParameter("recipientPhone")).replaceAll("[\\s.]", "");
-        String deliveryAddress = trim(request.getParameter("deliveryAddress"));
+        String district = trim(request.getParameter("district"));
+        String ward = trim(request.getParameter("ward"));
+        String addressDetail = trim(request.getParameter("addressDetail"));
+        String tableNumber = trim(request.getParameter("tableNumber"));
+        String timeOption = trim(request.getParameter("timeOption"));
+        String scheduledTime = trim(request.getParameter("scheduledTime"));
         String orderNote = trim(request.getParameter("orderNote"));
 
         String error = null;
+        LocalDateTime scheduledAt = null;
         if (recipientName.isEmpty() || recipientName.length() > 100) {
             error = "Vui lòng nhập họ tên người nhận (tối đa 100 ký tự).";
         } else if (!recipientPhone.matches(PHONE_PATTERN)) {
             error = "Số điện thoại không hợp lệ (10 - 11 chữ số, bắt đầu bằng số 0).";
-        } else if (deliveryAddress.length() < 10 || deliveryAddress.length() > 255) {
-            error = "Vui lòng nhập địa chỉ giao hàng chi tiết (số nhà, đường, phường/xã, quận/huyện).";
+        } else if (cart.isDelivery() && !HANOI_DISTRICTS.contains(district)) {
+            error = "Vui lòng chọn Quận/Huyện giao hàng (quán chỉ giao trong nội thành Hà Nội).";
+        } else if (cart.isDelivery() && (ward.length() < 2 || ward.length() > 100)) {
+            error = "Vui lòng nhập Phường/Xã giao hàng.";
+        } else if (cart.isDelivery() && (addressDetail.length() < 5 || addressDetail.length() > 150)) {
+            error = "Vui lòng nhập địa chỉ chi tiết (số nhà, tên đường, toà nhà...).";
+        } else if (Cart.FULFILLMENT_DINE_IN.equals(cart.getFulfillment()) && !tableNumber.matches("[A-Za-z0-9 -]{0,20}")) {
+            error = "Số bàn chỉ gồm chữ, số (tối đa 20 ký tự).";
         } else if (orderNote.length() > 500) {
             error = "Ghi chú tối đa 500 ký tự.";
+        } else if ("SCHEDULED".equals(timeOption) && !Cart.FULFILLMENT_DINE_IN.equals(cart.getFulfillment())) {
+            try {
+                scheduledAt = parseScheduledTime(scheduledTime);
+            } catch (IllegalArgumentException e) {
+                error = e.getMessage();
+            }
         }
 
         if (error != null) {
@@ -112,6 +145,9 @@ public class CheckoutController extends HttpServlet {
             showCheckout(request, response, cart);
             return;
         }
+        String deliveryAddress = cart.isDelivery()
+                ? addressDetail + ", " + ward + ", " + district + ", " + CITY
+                : null;
 
         List<CartItem> items = cart.getSelectedItems();
         int pointsUsed = cart.getPointsUsed();
@@ -120,7 +156,7 @@ public class CheckoutController extends HttpServlet {
         order.setOrderCode(
                 "AURA" + LocalDateTime.now(SHOP_ZONE).format(DateTimeFormatter.ofPattern("yyMMddHHmmssSSS")));
         order.setCustomerId(user.getId());
-        order.setOrderType("ONLINE");
+        order.setOrderType(cart.getOrderType());
         order.setStatus("PENDING");
         order.setTotalAmount(cart.getSelectedSubtotal());
         order.setDiscountAmount(cart.getDiscount());
@@ -129,6 +165,8 @@ public class CheckoutController extends HttpServlet {
         order.setRecipientName(recipientName);
         order.setRecipientPhone(recipientPhone);
         order.setDeliveryAddress(deliveryAddress);
+        order.setTableNumber(Cart.FULFILLMENT_DINE_IN.equals(cart.getFulfillment()) && !tableNumber.isEmpty() ? tableNumber : null);
+        order.setScheduledAt(scheduledAt);
         order.setOrderNote(orderNote.isEmpty() ? null : orderNote);
 
         int orderId = orderDAO.placeOrder(order, items, pointsUsed);
@@ -165,7 +203,8 @@ public class CheckoutController extends HttpServlet {
     private void showCheckout(HttpServletRequest request, HttpServletResponse response, Cart cart)
             throws ServletException, IOException {
 
-        User user = (User) request.getSession().getAttribute("user");
+        User sessionUser = (User) request.getSession().getAttribute("user");
+        User user = CartController.isCustomer(sessionUser) ? sessionUser : null;
 
         // Lần đầu mở trang: điền sẵn thông tin từ tài khoản; khi gửi lại form: giữ
         // nguyên dữ liệu khách đã nhập
@@ -186,12 +225,43 @@ public class CheckoutController extends HttpServlet {
         }
         request.setAttribute("recipientName", paramOrDefault(request, "recipientName", defaultName));
         request.setAttribute("recipientPhone", paramOrDefault(request, "recipientPhone", defaultPhone));
-        request.setAttribute("deliveryAddress", paramOrDefault(request, "deliveryAddress", ""));
+        request.setAttribute("district", paramOrDefault(request, "district", ""));
+        request.setAttribute("ward", paramOrDefault(request, "ward", ""));
+        request.setAttribute("addressDetail", paramOrDefault(request, "addressDetail", ""));
+        request.setAttribute("tableNumber", paramOrDefault(request, "tableNumber", ""));
+        request.setAttribute("timeOption", paramOrDefault(request, "timeOption", "ASAP"));
+        request.setAttribute("scheduledTime", paramOrDefault(request, "scheduledTime", ""));
         request.setAttribute("orderNote", paramOrDefault(request, "orderNote", ""));
+        request.setAttribute("hanoiDistricts", HANOI_DISTRICTS);
+        request.setAttribute("city", CITY);
+        request.setAttribute("storeAddress", STORE_ADDRESS);
+        request.setAttribute("deliveryMinutes", cart.getSettings().getDeliveryMinutes());
+        request.setAttribute("openTime", OPEN_TIME.toString());
+        request.setAttribute("lastOrderTime", LAST_ORDER_TIME.toString());
         // Đăng nhập / đăng ký từ trang này xong sẽ quay lại đúng trang Checkout
         request.setAttribute("authRedirect", "/checkout");
 
         request.getRequestDispatcher("/checkout.jsp").forward(request, response);
+    }
+
+    /**
+     * Giờ hẹn nhận trong hôm nay (SRS 2.3.3 "Scheduled Delivery"): HH:mm, trong giờ mở cửa
+     * và cách hiện tại ít nhất 30 phút để quán kịp pha chế / giao hàng.
+     */
+    private LocalDateTime parseScheduledTime(String raw) {
+        if (raw == null || !raw.matches("([01]\\d|2[0-3]):[0-5]\\d")) {
+            throw new IllegalArgumentException("Vui lòng chọn giờ hẹn nhận hợp lệ (HH:mm).");
+        }
+        LocalTime time = LocalTime.parse(raw);
+        if (time.isBefore(OPEN_TIME) || time.isAfter(LAST_ORDER_TIME)) {
+            throw new IllegalArgumentException("Giờ hẹn phải trong khoảng " + OPEN_TIME + " - " + LAST_ORDER_TIME + ".");
+        }
+        LocalDateTime now = LocalDateTime.now(SHOP_ZONE);
+        LocalDateTime scheduled = LocalDateTime.of(LocalDate.now(SHOP_ZONE), time);
+        if (scheduled.isBefore(now.plusMinutes(MIN_SCHEDULE_MINUTES))) {
+            throw new IllegalArgumentException("Giờ hẹn phải sau thời điểm hiện tại ít nhất " + MIN_SCHEDULE_MINUTES + " phút.");
+        }
+        return scheduled;
     }
 
     private String paramOrDefault(HttpServletRequest request, String name, String defaultValue) {

@@ -41,7 +41,7 @@ public class InventoryDAO extends BaseDAO {
         List<InventoryTransaction> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
             "SELECT t.id, t.ingredient_id, t.transaction_type, t.quantity, " +
-            "t.reference_type, t.reference_id, t.created_at, " +
+            "t.reference_type, t.reference_id, t.reason, t.created_at, " +
             "i.name AS ingredient_name, i.unit " +
             "FROM inventory_transactions t " +
             "JOIN ingredients i ON t.ingredient_id = i.id WHERE 1=1 "
@@ -75,6 +75,7 @@ public class InventoryDAO extends BaseDAO {
                     );
                     tx.setIngredientName(rs.getString("ingredient_name"));
                     tx.setUnit(rs.getString("unit"));
+                    tx.setReason(rs.getString("reason"));
                     list.add(tx);
                 }
             }
@@ -97,6 +98,13 @@ public class InventoryDAO extends BaseDAO {
                                          BigDecimal quantity, boolean isIncrease,
                                          String referenceType, Integer referenceId)
             throws SQLException, ClassNotFoundException {
+        return recordStockAdjustment(ingredientId, transactionType, quantity, isIncrease, referenceType, referenceId, null);
+    }
+
+    public boolean recordStockAdjustment(int ingredientId, String transactionType,
+                                         BigDecimal quantity, boolean isIncrease,
+                                         String referenceType, Integer referenceId, String reason)
+            throws SQLException, ClassNotFoundException {
 
         if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Số lượng điều chỉnh phải lớn hơn 0");
@@ -105,8 +113,8 @@ public class InventoryDAO extends BaseDAO {
         String selectSql = "SELECT current_stock FROM ingredients WHERE id = ? FOR UPDATE";
         String updateSql = "UPDATE ingredients SET current_stock = ? WHERE id = ?";
         String insertTxSql = "INSERT INTO inventory_transactions " +
-                             "(ingredient_id, transaction_type, quantity, reference_type, reference_id) " +
-                             "VALUES (?, ?, ?, ?, ?)";
+                             "(ingredient_id, transaction_type, quantity, reference_type, reference_id, reason) " +
+                             "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = getConnection()) {
             boolean autoCommit = conn.getAutoCommit();
@@ -145,6 +153,7 @@ public class InventoryDAO extends BaseDAO {
                     } else {
                         psTx.setNull(5, java.sql.Types.INTEGER);
                     }
+                    psTx.setString(6, reason);
                     psTx.executeUpdate();
                 }
 

@@ -1,0 +1,76 @@
+@startuml 01-cart-order-activity
+' SRS 2.1 Online Ordering - UC10 Manage Cart, UC11 Place Online Order, UC12/13 Payment
+title Add to Cart and Place Online Order
+
+|Customer|
+start
+:View Menu / Product Detail (UC07, UC09);
+:Choose size, sugar, ice, toppings and quantity;
+:Click "Add to cart";
+
+|System|
+if (Product available (is_available) and size/toppings valid?) then (yes)
+  if (Cart already has item with same options?) then (yes)
+    :Increase quantity;
+  else (no)
+    :Add new cart line;
+  endif
+  :Recalculate unit price = base price + size surcharge + toppings\nLine total = unit price x quantity (BR-08);
+  :Update cart item badge;
+else (no)
+  :Show "Item sold out / invalid options";
+  stop
+endif
+
+|Customer|
+:View cart: edit quantity (>= 1), change options, remove items;
+:Click "Checkout";
+
+|System|
+if (Logged in?) then (no)
+  :Open login popup, keep cart;
+  |Customer|
+  :Log in (UC02);
+  |System|
+endif
+
+|Customer|
+:Choose fulfillment: Delivery / Pickup / Dine-in;
+:Enter recipient name + phone;
+if (Fulfillment?) then (Delivery)
+  :Select district (inner Hanoi), enter ward,\naddress detail; time: ASAP or scheduled today;
+elseif () then (Pickup)
+  :Pickup time: ASAP or scheduled today;
+else (Dine-in)
+  :Enter table number (if already seated);
+endif
+:Enter note, click "Confirm order & Go to payment";
+
+|System|
+:Re-validate everything on server: cart not empty (BR-06),\nquantity > 0 (BR-07), prices from DB, enough ingredients,\naddress required for delivery, scheduled time 07:00-21:30 and >= now + 30 min;
+:Calculate item total, Aura points discount,\ndelivery fee (delivery only, free above free-ship threshold);
+:In 1 transaction: create orders (PENDING; order_type = ONLINE / TAKEAWAY / DINE_IN,\nscheduled_at, table_number) + order_items + deduct redeemed points;
+:Generate order code and VietQR (amount + content = order code);
+
+|Customer|
+:Scan VietQR, transfer money\nthen click "I have transferred";
+note right
+  SRS API-02/03: result comes from VnPay/SePay webhook.
+  Current version: customer self-confirms - webhook will be integrated later.
+end note
+
+|System|
+if (Payment recorded successfully\nand amount matches order (BR-09)?) then (yes)
+  :payments = SUCCESS, orders = CONFIRMED;
+  :Push order to barista queue (flow 2.3);
+  :Earn points, create invoice, clear cart;
+  |Customer|
+  :View order status + invoice (UC14, UC15);
+else (expired / failed)
+  |System|
+  :orders = CANCELLED, refund held points;
+  |Customer|
+  :Receive notification, can reorder;
+endif
+stop
+@enduml

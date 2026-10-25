@@ -1,6 +1,6 @@
 -- =====================================================
 -- AURA CAFE ERP - DATABASE SCRIPT
--- TOTAL: 16 TABLES
+-- TOTAL: 20 TABLES
 -- MySQL 8.0.16+
 -- =====================================================
 SET NAMES utf8mb4;
@@ -20,9 +20,12 @@ DROP TABLE IF EXISTS reward_items;
 DROP TABLE IF EXISTS customer_reviews;
 DROP TABLE IF EXISTS loyalty_transactions;
 DROP TABLE IF EXISTS shop_settings;
+DROP TABLE IF EXISTS delivery_incidents;
 DROP TABLE IF EXISTS inventory_transactions;
 DROP TABLE IF EXISTS purchase_order_items;
 DROP TABLE IF EXISTS purchase_orders;
+DROP TABLE IF EXISTS restock_request_items;
+DROP TABLE IF EXISTS restock_requests;
 DROP TABLE IF EXISTS product_ingredients;
 DROP TABLE IF EXISTS ingredients;
 DROP TABLE IF EXISTS suppliers;
@@ -30,9 +33,13 @@ DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
 
+DROP TABLE IF EXISTS product_images;
 DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS category_images;
 DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS shift_handovers;
 DROP TABLE IF EXISTS work_schedules;
+DROP TABLE IF EXISTS work_shifts;
 DROP TABLE IF EXISTS users;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -83,17 +90,36 @@ CREATE TABLE users (
         CHECK (total_points >= 0)
 ) ENGINE=InnoDB;
 
--- 2. WORK SCHEDULES
+-- 2A. WORK SHIFTS (khung giờ ca theo từng tuần)
+-- Mỗi tuần (week_start = Thứ 2) có bộ ca riêng: Admin thêm / sửa / xoá ca của tuần nào
+-- thì chỉ tuần đó thay đổi, các tuần khác giữ nguyên giờ đã dùng.
+CREATE TABLE work_shifts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    week_start DATE NOT NULL,
+    shift_name VARCHAR(50) NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_shift_week_name
+        UNIQUE (week_start, shift_name),
+
+    CONSTRAINT chk_shift_time
+        CHECK (end_time > start_time),
+
+    INDEX idx_shift_week (week_start)
+) ENGINE=InnoDB;
+
+-- 2B. WORK SCHEDULES
 CREATE TABLE work_schedules (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     work_date DATE NOT NULL,
 
-    shift_name ENUM(
-        'MORNING',
-        'AFTERNOON',
-        'EVENING'
-    ) NOT NULL,
+    -- Ca thuộc tuần chứa work_date (kiểm tra ở tầng ứng dụng)
+    shift_id INT NOT NULL,
 
     -- Attendance
     check_in_time DATETIME NULL,
@@ -118,8 +144,12 @@ CREATE TABLE work_schedules (
         REFERENCES users(id)
         ON DELETE CASCADE,
 
+    CONSTRAINT fk_schedule_shift
+        FOREIGN KEY (shift_id)
+        REFERENCES work_shifts(id),
+
     CONSTRAINT uq_user_work_shift
-        UNIQUE (user_id, work_date, shift_name),
+        UNIQUE (user_id, work_date, shift_id),
 
     CONSTRAINT chk_schedule_cash
         CHECK (
@@ -127,6 +157,59 @@ CREATE TABLE work_schedules (
             AND (ending_cash_system IS NULL OR ending_cash_system >= 0)
             AND (ending_cash_actual IS NULL OR ending_cash_actual >= 0)
         )
+) ENGINE=InnoDB;
+
+-- 2C. SHIFT HANDOVERS (biên bản bàn giao ca của Thu ngân - SRS 2.5, UC60)
+-- Thu ngân chốt ca -> SUBMITTED; Admin xem lại -> CONFIRMED hoặc REJECTED (kèm lý do);
+-- bị từ chối thì Thu ngân giải trình và gửi lại (SUBMITTED).
+CREATE TABLE shift_handovers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    schedule_id INT NOT NULL,
+    cashier_id INT NOT NULL,
+
+    opening_cash DECIMAL(12,2) NOT NULL DEFAULT 0,   -- tiền két đầu ca
+    cash_sales DECIMAL(12,2) NOT NULL DEFAULT 0,     -- tiền mặt bán được trong ca
+    expected_cash DECIMAL(12,2) NOT NULL,            -- hệ thống tính = đầu ca + tiền mặt bán
+    actual_cash DECIMAL(12,2) NOT NULL,              -- thu ngân đếm thực tế
+    difference DECIMAL(12,2) NOT NULL,               -- thực tế - hệ thống
+    note TEXT NULL,                                  -- bắt buộc khi có chênh lệch
+
+    status ENUM(
+        'SUBMITTED',
+        'CONFIRMED',
+        'REJECTED'
+    ) NOT NULL DEFAULT 'SUBMITTED',
+
+    reviewed_by INT NULL,
+    review_note TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at DATETIME NULL,
+
+    CONSTRAINT uq_handover_schedule
+        UNIQUE (schedule_id),
+
+    CONSTRAINT fk_handover_schedule
+        FOREIGN KEY (schedule_id)
+        REFERENCES work_schedules(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_handover_cashier
+        FOREIGN KEY (cashier_id)
+        REFERENCES users(id),
+
+    CONSTRAINT fk_handover_reviewer
+        FOREIGN KEY (reviewed_by)
+        REFERENCES users(id),
+
+    CONSTRAINT chk_handover_cash
+        CHECK (
+            opening_cash >= 0
+            AND cash_sales >= 0
+            AND expected_cash >= 0
+            AND actual_cash >= 0
+        ),
+
+    INDEX idx_handover_status (status)
 ) ENGINE=InnoDB;
 
 -- =====================================================
@@ -141,6 +224,20 @@ CREATE TABLE categories (
     image_url VARCHAR(500),
     status ENUM('ACTIVE', 'INACTIVE')
         NOT NULL DEFAULT 'ACTIVE'
+) ENGINE=InnoDB;
+
+-- Category image binaries are separated so category list queries stay lightweight.
+CREATE TABLE category_images (
+    category_id INT PRIMARY KEY,
+    image_data MEDIUMBLOB NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    file_name VARCHAR(255) NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_category_image_category
+        FOREIGN KEY (category_id)
+        REFERENCES categories(id)
+        ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- 4. PRODUCTS
@@ -166,6 +263,20 @@ CREATE TABLE products (
         CHECK (base_price >= 0),
 
     INDEX idx_products_category (category_id)
+) ENGINE=InnoDB;
+
+-- Product image binaries are separated so product list queries stay lightweight.
+CREATE TABLE product_images (
+    product_id INT PRIMARY KEY,
+    image_data MEDIUMBLOB NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    file_name VARCHAR(255) NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_product_image_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
+        ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 
@@ -209,6 +320,9 @@ CREATE TABLE orders (
     table_number VARCHAR(20) NULL,
 
     order_note TEXT NULL,
+
+    -- Đơn online: thời gian khách hẹn nhận (giao / đến lấy); NULL = càng sớm càng tốt
+    scheduled_at DATETIME NULL,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -306,6 +420,9 @@ CREATE TABLE payments (
 
     paid_at DATETIME NULL,
     payment_note TEXT NULL,
+    gateway_reference VARCHAR(150) NULL,
+    callback_payload JSON NULL,
+    callback_received_at DATETIME NULL,
 
     CONSTRAINT fk_payment_order
         FOREIGN KEY (order_id)
@@ -316,6 +433,7 @@ CREATE TABLE payments (
         CHECK (amount >= 0),
 
     INDEX idx_payments_order (order_id)
+    ,UNIQUE KEY uq_payment_transaction_code (transaction_code)
 ) ENGINE=InnoDB;
 
 -- 8. LOYALTY TRANSACTIONS
@@ -463,7 +581,7 @@ CREATE TABLE product_ingredients (
     ingredient_id INT NOT NULL,
 
     -- BOM quantity required for one product
-    quantity_required INT UNSIGNED NOT NULL,
+    quantity_required DECIMAL(12,3) UNSIGNED NOT NULL,
 
     CONSTRAINT fk_bom_product
         FOREIGN KEY (product_id)
@@ -482,11 +600,40 @@ CREATE TABLE product_ingredients (
         CHECK (quantity_required > 0)
 ) ENGINE=InnoDB;
 
--- 13. PURCHASE ORDERS
+-- 13. RESTOCK REQUESTS (internal proposal; no supplier price or receiving here)
+CREATE TABLE restock_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    requester_id INT NOT NULL,
+    reviewer_id INT NULL,
+    status ENUM('DRAFT','PENDING_APPROVAL','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'DRAFT',
+    reason VARCHAR(500) NULL,
+    note VARCHAR(500) NULL,
+    review_note VARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at DATETIME NULL,
+    CONSTRAINT fk_restock_requester FOREIGN KEY (requester_id) REFERENCES users(id),
+    CONSTRAINT fk_restock_reviewer FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_restock_status (status)
+) ENGINE=InnoDB;
+
+CREATE TABLE restock_request_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    request_id INT NOT NULL,
+    ingredient_id INT NOT NULL,
+    quantity DECIMAL(12,3) NOT NULL,
+    item_note VARCHAR(255) NULL,
+    CONSTRAINT fk_restock_item_request FOREIGN KEY (request_id) REFERENCES restock_requests(id) ON DELETE CASCADE,
+    CONSTRAINT fk_restock_item_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients(id),
+    CONSTRAINT chk_restock_quantity CHECK (quantity > 0),
+    UNIQUE KEY uq_restock_request_ingredient (request_id, ingredient_id)
+) ENGINE=InnoDB;
+
+-- 15. PURCHASE ORDERS
 CREATE TABLE purchase_orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     supplier_id INT NOT NULL,
     creator_id INT NOT NULL,
+    restock_request_id INT NULL,
 
     total_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
 
@@ -496,8 +643,10 @@ CREATE TABLE purchase_orders (
         'RECEIVED',
         'CANCELLED'
     ) NOT NULL DEFAULT 'DRAFT',
-
+    note VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ordered_at DATETIME NULL,
+    received_at DATETIME NULL,
 
     CONSTRAINT fk_po_supplier
         FOREIGN KEY (supplier_id)
@@ -507,10 +656,16 @@ CREATE TABLE purchase_orders (
         FOREIGN KEY (creator_id)
         REFERENCES users(id),
 
+    CONSTRAINT fk_po_restock_request
+        FOREIGN KEY (restock_request_id)
+        REFERENCES restock_requests(id)
+        ON DELETE SET NULL,
+
     CONSTRAINT chk_po_total
         CHECK (total_cost >= 0),
 
-    INDEX idx_po_supplier (supplier_id)
+    INDEX idx_po_supplier (supplier_id),
+    UNIQUE KEY uq_po_restock_request (restock_request_id)
 ) ENGINE=InnoDB;
 
 -- 14. PURCHASE ORDER ITEMS
@@ -562,6 +717,7 @@ CREATE TABLE inventory_transactions (
     ) NOT NULL DEFAULT 'ADJUSTMENT',
 
     reference_id INT NULL,
+    reason VARCHAR(500) NULL,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -576,6 +732,23 @@ CREATE TABLE inventory_transactions (
     INDEX idx_inventory_reference (reference_type, reference_id)
 ) ENGINE=InnoDB;
 
+-- Delivery incident history belongs to the delivery process, not order notes.
+CREATE TABLE delivery_incidents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    shipper_id INT NOT NULL,
+    incident_type ENUM('CUSTOMER_UNAVAILABLE','WRONG_ADDRESS','DAMAGED','PAYMENT_PROBLEM','OTHER') NOT NULL,
+    description VARCHAR(1000) NOT NULL,
+    status ENUM('OPEN','PROCESSING','RESOLVED','REJECTED') NOT NULL DEFAULT 'OPEN',
+    admin_note VARCHAR(1000) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    resolved_at DATETIME NULL,
+    CONSTRAINT fk_incident_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    CONSTRAINT fk_incident_shipper FOREIGN KEY (shipper_id) REFERENCES users(id),
+    INDEX idx_incident_order (order_id),
+    INDEX idx_incident_status (status)
+) ENGINE=InnoDB;
+
 -- GROUP E: SHOP SETTINGS (1 TABLE)
 -- 16. SHOP SETTINGS
 CREATE TABLE shop_settings (
@@ -586,7 +759,7 @@ CREATE TABLE shop_settings (
 
 -- =====================================================
 -- END OF SCRIPT
--- TOTAL: 16 TABLES
+-- TOTAL: 20 TABLES
 -- =====================================================
 USE aura_cafe_erp;
 
@@ -619,29 +792,43 @@ VALUES
  'demo_hash', 'STAFF', 'ACTIVE', 'SHIPPER', 7500000,
  '2025-03-01', 0);
 
--- 2. WORK SCHEDULES
+-- 2A. WORK SHIFTS (mỗi tuần một bộ ca; tuần 26/10 đổi giờ Ca chiều để minh hoạ giờ ca lưu riêng theo tuần)
+INSERT INTO work_shifts
+(id, week_start, shift_name, start_time, end_time)
+VALUES
+(1, '2026-09-28', 'Ca sáng', '07:00:00', '12:00:00'),
+(2, '2026-09-28', 'Ca chiều', '12:00:00', '17:00:00'),
+(3, '2026-09-28', 'Ca tối', '17:00:00', '22:00:00'),
+(4, '2026-10-19', 'Ca sáng', '07:00:00', '12:00:00'),
+(5, '2026-10-19', 'Ca chiều', '12:00:00', '17:00:00'),
+(6, '2026-10-19', 'Ca tối', '17:00:00', '22:00:00'),
+(7, '2026-10-26', 'Ca sáng', '07:00:00', '12:00:00'),
+(8, '2026-10-26', 'Ca chiều', '12:30:00', '17:30:00'),
+(9, '2026-10-26', 'Ca tối', '17:30:00', '22:00:00');
+
+-- 2B. WORK SCHEDULES (shift_id 1-3 = Ca sáng / chiều / tối của tuần 28/09)
 INSERT INTO work_schedules
-(user_id, work_date, shift_name, check_in_time,
+(user_id, work_date, shift_id, check_in_time,
  check_out_time, status, starting_cash,
  ending_cash_system, ending_cash_actual, note)
 VALUES
-(2, '2026-10-03', 'MORNING',
+(2, '2026-10-03', 1,
  '2026-10-03 08:00:00', '2026-10-03 12:00:00',
  'COMPLETED', NULL, NULL, NULL, 'Ca sáng pha chế'),
 
-(3, '2026-10-03', 'AFTERNOON',
+(3, '2026-10-03', 2,
  '2026-10-03 12:00:00', NULL,
  'PRESENT', 500000, NULL, NULL, 'Ca chiều thu ngân'),
 
-(2, '2026-10-04', 'AFTERNOON',
+(2, '2026-10-04', 2,
  '2026-10-04 12:05:00', NULL,
  'PRESENT', NULL, NULL, NULL, 'Ca chiều pha chế'),
 
-(6, '2026-10-03', 'EVENING',
+(6, '2026-10-03', 3,
  NULL, NULL, 'SCHEDULED', NULL, NULL, NULL,
  'Ca tối giao hàng'),
 
-(3, '2026-10-04', 'EVENING',
+(3, '2026-10-04', 3,
  NULL, NULL, 'SCHEDULED', 500000, NULL, NULL,
  'Ca tối thu ngân');
 
@@ -931,9 +1118,13 @@ INSERT INTO shop_settings (setting_key, setting_value) VALUES
 ('delivery_minutes', '30'),
 ('points_step', '10'),
 ('points_step_value', '2000'),
-('shift_morning', '07:00-12:00'),
-('shift_afternoon', '12:00-17:00'),
-('shift_evening', '17:00-22:00');
+('points_earn_unit', '10000'),
+('payment_test_mode', 'true'),
+('payment_callback_secret', 'AURA-LOCAL-DEMO-SECRET'),
+('payment_bank_id', 'VCB'),
+('payment_bank_name', 'Vietcombank'),
+('payment_account_no', '9888823456'),
+('payment_account_name', 'CONG TY TNHH AURA CAFE');
 
 -- FEEDBACK SAMPLE DATA (stored with customer ratings and complaints)
 INSERT INTO customer_reviews
@@ -960,7 +1151,9 @@ VALUES
 -- =====================================================
 
 SELECT 'users' AS table_name, COUNT(*) AS total FROM users
+UNION ALL SELECT 'work_shifts', COUNT(*) FROM work_shifts
 UNION ALL SELECT 'work_schedules', COUNT(*) FROM work_schedules
+UNION ALL SELECT 'shift_handovers', COUNT(*) FROM shift_handovers
 UNION ALL SELECT 'categories', COUNT(*) FROM categories
 UNION ALL SELECT 'products', COUNT(*) FROM products
 UNION ALL SELECT 'orders', COUNT(*) FROM orders

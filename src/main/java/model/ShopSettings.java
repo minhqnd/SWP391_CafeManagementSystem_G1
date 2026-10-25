@@ -15,20 +15,27 @@ public class ShopSettings implements Serializable {
     public static final String KEY_DELIVERY_MINUTES = "delivery_minutes";
     public static final String KEY_POINTS_STEP = "points_step";
     public static final String KEY_POINTS_STEP_VALUE = "points_step_value";
-    public static final String KEY_SHIFT_MORNING = "shift_morning";
-    public static final String KEY_SHIFT_AFTERNOON = "shift_afternoon";
-    public static final String KEY_SHIFT_EVENING = "shift_evening";
+    public static final String KEY_POINTS_EARN_UNIT = "points_earn_unit";
+    public static final String KEY_PAYMENT_TEST_MODE = "payment_test_mode";
+    public static final String KEY_PAYMENT_CALLBACK_SECRET = "payment_callback_secret";
+    public static final String KEY_PAYMENT_BANK_ID = "payment_bank_id";
+    public static final String KEY_PAYMENT_BANK_NAME = "payment_bank_name";
+    public static final String KEY_PAYMENT_ACCOUNT_NO = "payment_account_no";
+    public static final String KEY_PAYMENT_ACCOUNT_NAME = "payment_account_name";
+    // Khung giờ ca không còn lưu ở đây: mỗi tuần có bộ ca riêng trong bảng work_shifts (/admin/shifts)
 
     private double freeshipThreshold = 150000;  // tiền hàng tối thiểu để miễn phí giao hàng (0 = mọi đơn)
     private double deliveryFee = 18000;         // phí giao hàng khi chưa đủ mức freeship
     private int deliveryMinutes = 30;           // thời gian giao dự kiến kể từ khi thanh toán
     private int pointsStep = 10;                // mốc điểm: khách dùng 10, 20, 30... điểm
     private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm
-    // Khung giờ ca "HH:mm-HH:mm" chỉ lấy từ shop_settings (Admin sửa ở /admin/shifts), không có giá trị cố định:
-    // ca chưa có dòng cấu hình trong Database thì để null -> màn hình hiện "Chưa cấu hình"
-    private String shiftMorning;
-    private String shiftAfternoon;
-    private String shiftEvening;
+    private double pointsEarnUnit = 10000;      // số tiền hàng sau giảm để nhận 1 điểm
+    private boolean paymentTestMode = true;
+    private String paymentCallbackSecret = "AURA-LOCAL-DEMO-SECRET";
+    private String paymentBankId = "VCB";
+    private String paymentBankName = "Vietcombank";
+    private String paymentAccountNo = "9888823456";
+    private String paymentAccountName = "CONG TY TNHH AURA CAFE";
 
     public double getFreeshipThreshold() { return freeshipThreshold; }
     public void setFreeshipThreshold(double freeshipThreshold) { this.freeshipThreshold = freeshipThreshold; }
@@ -45,15 +52,27 @@ public class ShopSettings implements Serializable {
     public double getPointsStepValue() { return pointsStepValue; }
     public void setPointsStepValue(double pointsStepValue) { this.pointsStepValue = pointsStepValue; }
 
-    public String getShiftMorning() { return shiftMorning; }
-    public void setShiftMorning(String shiftMorning) { this.shiftMorning = shiftMorning; }
+    public double getPointsEarnUnit() { return pointsEarnUnit; }
+    public void setPointsEarnUnit(double pointsEarnUnit) { this.pointsEarnUnit = pointsEarnUnit; }
 
-    public String getShiftAfternoon() { return shiftAfternoon; }
-    public void setShiftAfternoon(String shiftAfternoon) { this.shiftAfternoon = shiftAfternoon; }
+    public boolean isPaymentTestMode() { return paymentTestMode; }
+    public void setPaymentTestMode(boolean paymentTestMode) { this.paymentTestMode = paymentTestMode; }
 
-    public String getShiftEvening() { return shiftEvening; }
-    public void setShiftEvening(String shiftEvening) { this.shiftEvening = shiftEvening; }
+    public String getPaymentCallbackSecret() { return paymentCallbackSecret; }
+    public void setPaymentCallbackSecret(String paymentCallbackSecret) {
+        if (paymentCallbackSecret != null && !paymentCallbackSecret.isBlank()) {
+            this.paymentCallbackSecret = paymentCallbackSecret;
+        }
+    }
+    public String getPaymentBankId(){return paymentBankId;} public void setPaymentBankId(String v){if(v!=null&&!v.isBlank())paymentBankId=v;}
+    public String getPaymentBankName(){return paymentBankName;} public void setPaymentBankName(String v){if(v!=null&&!v.isBlank())paymentBankName=v;}
+    public String getPaymentAccountNo(){return paymentAccountNo;} public void setPaymentAccountNo(String v){if(v!=null&&!v.isBlank())paymentAccountNo=v;}
+    public String getPaymentAccountName(){return paymentAccountName;} public void setPaymentAccountName(String v){if(v!=null&&!v.isBlank())paymentAccountName=v;}
 
+    public int calculateEarnedPoints(double goodsAmountAfterDiscount) {
+        if (goodsAmountAfterDiscount <= 0 || pointsEarnUnit <= 0) return 0;
+        return (int) Math.floor(goodsAmountAfterDiscount / pointsEarnUnit);
+    }
     /** Số tiền giảm khi dùng số điểm này - chỉ tính các mốc trọn vẹn (VD mốc 50: 120 điểm = 2 mốc) */
     public double getPointsDiscount(int points) {
         if (points <= 0 || pointsStep <= 0) {

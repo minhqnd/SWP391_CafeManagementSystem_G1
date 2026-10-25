@@ -1,403 +1,103 @@
-/* Work Shift Management Screen (Khung giờ ca làm việc) */
-.shift-page {
-    padding-top: 26px;
-}
+/* Work Shift Management Screen (Khung giờ ca làm việc theo tuần) */
+.shift-page { padding-top: 26px; display: flex; flex-direction: column; gap: 16px; max-width: 1100px; }
 
-.shift-alert {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-radius: 12px;
-    font-size: 0.86rem;
-}
+.shift-alert { display: flex; align-items: center; gap: 10px; margin: 0; border-radius: 12px; font-size: 0.86rem; }
+.shift-alert .btn-close { margin-left: auto; }
 
-.shift-alert .btn-close {
-    margin-left: auto;
-}
-
-.shift-page-header {
-    margin-bottom: 18px;
-}
-
-.shift-page-header h1 {
-    margin: 0;
-    color: #111827;
-    font-size: 1.48rem;
-    font-weight: 800;
-    letter-spacing: -0.035em;
-}
-
-/* Thanh chọn tuần thống kê */
-.shift-week-nav {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin-top: 14px;
-}
-
-.shift-week-step {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: 1px solid #e5e7eb;
-    border-radius: 9px;
-    background: #fff;
-    color: #4b5563;
-    text-decoration: none;
-}
-
-.shift-week-step:hover {
-    border-color: #f8d7da;
-    background: #fbf0f1;
-    color: #8b101c;
-}
-
-.shift-week-label {
-    color: #4b5563;
-    font-size: 0.8rem;
-}
-
-.shift-week-label strong {
-    color: #111827;
-}
-
-.shift-week-badge {
-    margin-left: 4px;
-    padding: 2px 7px;
-    border-radius: 999px;
-    background: #ecfdf5;
-    color: #047857;
-    font-size: 0.66rem;
-    font-weight: 700;
-}
-
-.shift-week-today {
-    color: #8b1420;
-    font-size: 0.76rem;
-    font-weight: 700;
-    text-decoration: none;
-}
-
-.shift-week-today:hover {
-    text-decoration: underline;
-}
-
-.shift-page-header p {
-    margin: 3px 0 0;
-    color: #6b7280;
-    font-size: 0.79rem;
-}
-
-/* 3 thẻ ca: 3 cột trên desktop, xếp dọc trên mobile */
-.shift-card-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.shift-card {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
+.shift-page-header,
+.shift-list-card {
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 16px;
     box-shadow: 0 1px 2px rgba(17, 24, 39, 0.03);
 }
 
-.shift-card-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.shift-page-header { padding: 20px 22px; }
+.shift-heading-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.shift-heading-row h1 { margin: 4px 0 2px; color: #111827; font-size: 1.48rem; font-weight: 800; letter-spacing: -0.035em; }
+.shift-heading-row p { margin: 0; color: #6b7280; font-size: 0.8rem; }
+
+.shift-table-ref {
+    display: inline-flex; padding: 3px 8px; border-radius: 5px; background: #f5f5f4; color: #78716c;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.64rem;
 }
 
-.shift-card-icon {
-    display: inline-flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 11px;
-    font-size: 22px;
-}
-
-.shift-morning .shift-card-icon {
-    background: #fff7e6;
-    color: #c2410c;
-}
-
-.shift-afternoon .shift-card-icon {
-    background: #fef9c3;
-    color: #a16207;
-}
-
-.shift-evening .shift-card-icon {
-    background: #eef2ff;
-    color: #4338ca;
-}
-
-.shift-card-head h2 {
-    margin: 0;
-    color: #111827;
-    font-size: 1rem;
-    font-weight: 800;
-}
-
-.shift-card-meta {
-    color: #9ca3af;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.66rem;
-}
-
-.shift-card-time {
-    margin: 18px 0 16px;
-    color: #111827;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-}
-
-.shift-card-time .is-unset {
-    color: #9ca3af;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 1rem;
-    font-style: italic;
-    font-weight: 600;
-}
-
-.shift-card-stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin: 0 0 18px;
-}
-
-.shift-card-stats > div {
-    padding: 9px 11px;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    background: #fafafa;
-}
-
-.shift-card-stats .stat-total {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.shift-card-stats dt {
-    margin-bottom: 3px;
-    color: #6b7280;
-    font-size: 0.62rem;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-}
-
-.shift-card-stats .stat-total dt {
-    margin-bottom: 0;
-}
-
-.shift-card-stats dd {
-    margin: 0;
-    color: #111827;
-    font-size: 1.02rem;
-    font-weight: 800;
-    line-height: 1;
-}
-
-.shift-card-stats .stat-present {
-    border-color: #a7f3d0;
-    background: #ecfdf5;
-}
-
-.shift-card-stats .stat-present dt,
-.shift-card-stats .stat-present dd {
-    color: #047857;
-}
-
-.shift-card-stats .stat-completed {
-    border-color: #c7dbff;
-    background: #eff5ff;
-}
-
-.shift-card-stats .stat-completed dt,
-.shift-card-stats .stat-completed dd {
-    color: #1255c9;
-}
-
-.shift-card-stats .stat-absent {
-    border-color: #fecaca;
-    background: #fff1f2;
-}
-
-.shift-card-stats .stat-absent dt,
-.shift-card-stats .stat-absent dd {
-    color: #b91c1c;
-}
-
-.shift-card-footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: auto;
-    padding-top: 14px;
-    border-top: 1px solid #f0f1f3;
-}
-
-.shift-card-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    color: #8b1420;
-    font-size: 0.74rem;
-    font-weight: 700;
-    text-decoration: none;
-}
-
-.shift-card-link .material-symbols-outlined {
-    font-size: 16px;
-}
-
-.shift-card-link:hover {
-    color: #6e0c15;
-    text-decoration: underline;
-}
-
-.shift-edit-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    min-height: 34px;
-    padding: 6px 12px;
-    border: 1px solid #f8d7da;
-    border-radius: 9px;
-    background: #fbf0f1;
-    color: #8b101c;
-    font-size: 0.74rem;
-    font-weight: 700;
-}
-
-.shift-edit-button .material-symbols-outlined {
-    font-size: 16px;
-}
-
-.shift-edit-button:hover {
-    background: #8b101c;
-    border-color: #8b101c;
-    color: #fff;
-}
-
-/* Modal sửa giờ ca */
-.shift-modal-content {
-    border: 0;
-    border-radius: 16px;
-    box-shadow: 0 22px 55px rgba(17, 24, 39, 0.18);
-}
-
-.shift-modal-header {
-    padding: 20px 22px 15px;
-    border-color: #f0f1f3;
-}
-
-.shift-modal-header h2 {
-    color: #111827;
-    font-size: 1.05rem;
-    font-weight: 800;
-}
-
-.shift-modal-body {
-    padding: 18px 22px 20px;
-}
-
-.shift-modal-body .form-label {
-    margin-bottom: 7px;
-    color: #374151;
-    font-size: 0.76rem;
-    font-weight: 700;
-}
-
-.shift-modal-body .form-label > span {
-    color: #dc2626;
-}
-
-.shift-modal-body .form-control {
-    min-height: 42px;
-    border-color: #dfe3e8;
-    border-radius: 10px;
-    color: #374151;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.86rem;
-}
-
-.shift-modal-body .form-control:focus {
-    border-color: #b96670;
-    box-shadow: 0 0 0 3px rgba(122, 18, 29, 0.09);
-}
-
-.shift-modal-note {
-    margin: 14px 0 0;
-    color: #9ca3af;
-    font-size: 0.68rem;
-}
-
-.shift-modal-footer {
-    padding: 15px 22px;
-    border-color: #f0f1f3;
-}
-
-.shift-cancel-button,
+.shift-add-button,
+.shift-copy-button,
 .shift-save-button {
-    min-height: 39px;
-    padding: 8px 15px;
-    border: 0;
-    border-radius: 9px;
-    font-size: 0.77rem;
-    font-weight: 700;
-}
-
-.shift-cancel-button {
-    background: #f5f5f5;
-    color: #4b5563;
-}
-
-.shift-save-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #8b101c;
-    color: #fff;
+    display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 16px;
+    border: 0; border-radius: 10px; background: #8b101c; color: #fff;
+    font-size: 0.8rem; font-weight: 700; white-space: nowrap;
     box-shadow: 0 3px 8px rgba(122, 18, 29, 0.22);
 }
+.shift-add-button:hover, .shift-copy-button:hover, .shift-save-button:hover { background: #a41624; }
+.shift-add-button .material-symbols-outlined { font-size: 20px; }
+.shift-copy-button .material-symbols-outlined, .shift-save-button .material-symbols-outlined { font-size: 17px; }
 
-.shift-save-button:hover {
-    background: #a41624;
+/* Thanh chọn tuần */
+.shift-week-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f1f3; }
+.shift-week-step {
+    display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+    border: 1px solid #e5e7eb; border-radius: 9px; background: #fff; color: #4b5563; text-decoration: none;
 }
+.shift-week-step:hover { border-color: #f8d7da; background: #fbf0f1; color: #8b101c; }
+.shift-week-label { color: #4b5563; font-size: 0.82rem; }
+.shift-week-label strong { color: #111827; }
+.shift-week-badge { margin-left: 4px; padding: 2px 8px; border-radius: 999px; background: #ecfdf5; color: #047857; font-size: 0.66rem; font-weight: 700; }
+.shift-week-badge.is-past { background: #f3f4f6; color: #6b7280; }
+.shift-week-today { color: #8b1420; font-size: 0.76rem; font-weight: 700; text-decoration: none; }
+.shift-week-today:hover { text-decoration: underline; }
 
-.shift-save-button .material-symbols-outlined {
-    font-size: 17px;
+/* Bảng ca */
+.shift-list-card { overflow: hidden; }
+.shift-table { width: 100%; min-width: 520px; border-collapse: collapse; }
+.shift-table th {
+    padding: 12px 18px; background: #fcfcfc; border-bottom: 1px solid #eceef1;
+    color: #6b7280; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; text-align: left;
 }
+.shift-table td { padding: 14px 18px; border-bottom: 1px solid #f0f1f3; color: #111827; font-size: 0.86rem; vertical-align: middle; }
+.shift-table tbody tr:last-child td { border-bottom: none; }
+.shift-name-cell { font-weight: 700; }
+.shift-time-cell { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.95rem; font-weight: 700; }
 
-@media (max-width: 1100px) {
-    .shift-card-grid {
-        grid-template-columns: 1fr;
-    }
+.shift-action-button {
+    display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; margin-left: 4px;
+    border: 1px solid #f8d7da; border-radius: 8px; background: #fbf0f1; color: #8b101c;
+    font-size: 0.74rem; font-weight: 700;
 }
+.shift-action-button .material-symbols-outlined { font-size: 16px; }
+.shift-action-button:hover:not(:disabled) { background: #8b101c; border-color: #8b101c; color: #fff; }
+.shift-action-button.is-danger { border-color: #fecaca; background: #fff1f2; color: #b91c1c; }
+.shift-action-button.is-danger:hover:not(:disabled) { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+.shift-action-button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.shift-empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    min-height: 240px; padding: 24px; color: #6b7280; text-align: center; font-size: 0.84rem;
+}
+.shift-empty-state > .material-symbols-outlined { color: #c5c9d0; font-size: 42px; }
+.shift-empty-state strong { color: #374151; font-size: 0.95rem; }
+.shift-empty-state form { margin-top: 6px; }
+
+.shift-footnote { margin: 0; color: #6b7280; font-size: 0.78rem; }
+.shift-footnote a { color: #8b1420; font-weight: 700; }
+
+/* Modal thêm / sửa ca */
+.shift-modal-content { border: 0; border-radius: 16px; box-shadow: 0 22px 55px rgba(17, 24, 39, 0.18); }
+.shift-modal-header { align-items: flex-start; padding: 20px 22px 14px; border-color: #f0f1f3; }
+.shift-modal-header h2 { margin: 0; color: #111827; font-size: 1.05rem; font-weight: 800; }
+.shift-modal-subtitle { margin: 3px 0 0; color: #6b7280; font-size: 0.74rem; }
+.shift-modal-body { padding: 18px 22px 20px; }
+.shift-modal-body .form-label { margin-bottom: 6px; color: #374151; font-size: 0.76rem; font-weight: 700; }
+.shift-modal-body .form-label > span { color: #dc2626; }
+.shift-modal-body .form-control { min-height: 42px; border-color: #dfe3e8; border-radius: 10px; font-size: 0.86rem; }
+.shift-modal-body .form-control:focus { border-color: #b96670; box-shadow: 0 0 0 3px rgba(122, 18, 29, 0.09); }
+.shift-modal-footer { padding: 14px 22px; border-color: #f0f1f3; }
+.shift-cancel-button { min-height: 40px; padding: 8px 15px; border: 0; border-radius: 10px; background: #f5f5f5; color: #4b5563; font-size: 0.8rem; font-weight: 700; }
 
 @media (max-width: 768px) {
-    .shift-page {
-        padding-top: 16px;
-    }
-
-    .shift-card {
-        padding: 16px;
-    }
+    .shift-page { padding-top: 16px; }
+    .shift-page-header { padding: 16px; }
+    .shift-heading-row { flex-direction: column; align-items: stretch; }
+    .shift-add-button { justify-content: center; }
 }

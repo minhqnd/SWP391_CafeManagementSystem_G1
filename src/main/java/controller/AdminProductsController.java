@@ -3,10 +3,12 @@ package controller;
 import dao.CategoryDAO;
 import dao.ProductDAO;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import model.Category;
 import model.Product;
 import model.User;
@@ -19,7 +21,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+@MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 6 * 1024 * 1024)
 public class AdminProductsController extends HttpServlet {
+    private static final long MAX_IMAGE_SIZE = 5L * 1024 * 1024;
     private final ProductDAO productDAO = new ProductDAO();
     private final CategoryDAO categoryDAO = new CategoryDAO();
 
@@ -89,6 +93,9 @@ public class AdminProductsController extends HttpServlet {
             session.setAttribute("productError", "Không thể lưu thay đổi vào database. Kiểm tra danh mục và dữ liệu sản phẩm.");
         } catch (ClassNotFoundException | IllegalArgumentException e) {
             session.setAttribute("productError", e.getMessage() == null ? "Dữ liệu sản phẩm không hợp lệ." : e.getMessage());
+        } catch (IllegalStateException e) {
+            getServletContext().log("Product upload exceeded the configured limit", e);
+            session.setAttribute("productError", "Ảnh sản phẩm không được lớn hơn 5 MB.");
         } catch (RuntimeException e) {
             getServletContext().log("Product operation failed", e);
             session.setAttribute("productError", "Không thể hoàn tất thao tác sản phẩm.");
@@ -96,18 +103,33 @@ public class AdminProductsController extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/admin/products");
     }
 
-    private void save(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
+    private void save(HttpServletRequest request, HttpSession session)
+            throws SQLException, ClassNotFoundException, ServletException, IOException {
         int id = parseId(request.getParameter("id"), true);
         int categoryId = parseId(request.getParameter("categoryId"), false);
         String name = trimToNull(request.getParameter("name"));
         String description = trimToNull(request.getParameter("description"));
-        String imageUrl = trimToNull(request.getParameter("imageUrl"));
+        boolean removeImage = "true".equals(request.getParameter("removeImage"));
+        Part imagePart = request.getPart("imageFile");
+        byte[] imageData = null;
+        String imageType = null;
+        String imageName = null;
         String recipeInstructions = null;
         boolean available = true;
         if (name == null || name.length() > 150) throw new IllegalArgumentException("Tên món bắt buộc và tối đa 150 ký tự.");
-        if (imageUrl != null && imageUrl.length() > 500) throw new IllegalArgumentException("Đường dẫn ảnh tối đa 500 ký tự.");
-        if (imageUrl != null && !(imageUrl.startsWith("https://") || imageUrl.startsWith("http://"))) {
-            throw new IllegalArgumentException("Đường dẫn ảnh phải bắt đầu bằng http:// hoặc https://.");
+        if (imagePart != null && imagePart.getSize() > 0) {
+            if (imagePart.getSize() > MAX_IMAGE_SIZE) {
+                throw new IllegalArgumentException("Ảnh sản phẩm không được lớn hơn 5 MB.");
+            }
+            imageType = normalizeImageType(imagePart.getContentType());
+            if (imageType == null) throw new IllegalArgumentException("Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WebP.");
+            imageData = imagePart.getInputStream().readAllBytes();
+            if (!matchesImageSignature(imageData, imageType)) {
+                throw new IllegalArgumentException("Nội dung tệp không đúng định dạng ảnh đã chọn.");
+            }
+            imageName = trimToNull(imagePart.getSubmittedFileName());
+            if (imageName != null && imageName.length() > 255) imageName = imageName.substring(imageName.length() - 255);
+            removeImage = false;
         }
         Category category = categoryDAO.getCategoryById(categoryId);
         if (category == null) throw new IllegalArgumentException("Hãy chọn một danh mục đang tồn tại.");
@@ -133,10 +155,12 @@ public class AdminProductsController extends HttpServlet {
         product.setName(name);
         product.setBasePrice(basePrice);
         product.setDescription(description);
-        product.setImageUrl(imageUrl);
+        product.setImageUrl(null);
         product.setAvailable(available);
         product.setVariantsConfig(buildVariantsConfig(request, recipeInstructions));
-        if (!productDAO.saveProduct(product)) throw new IllegalArgumentException("Không tìm thấy sản phẩm cần cập nhật.");
+        if (!productDAO.saveProduct(product, imageData, imageType, imageName, removeImage)) {
+            throw new IllegalArgumentException("Không tìm thấy sản phẩm cần cập nhật.");
+        }
         session.setAttribute("productMessage", id > 0 ? "Đã cập nhật món '" + name + "'." : "Đã thêm món '" + name + "'.");
     }
 
@@ -147,16 +171,21 @@ public class AdminProductsController extends HttpServlet {
         String[] toppingPrices = request.getParameterValues("toppingPrice");
         List<String> sizeEntries = new ArrayList<>();
         List<String> toppingEntries = new ArrayList<>();
+        boolean hasBaseSize = false;
         if (names != null) {
             for (int i = 0; i < names.length; i++) {
                 String name = trimToNull(names[i]);
                 if (name == null) continue;
                 if (name.length() > 30) throw new IllegalArgumentException("Tên size tối đa 30 ký tự.");
                 BigDecimal delta = parseNonNegative(takeAt(deltas, i), "Phụ thu size");
+                if (delta.signum() == 0) hasBaseSize = true;
                 sizeEntries.add(jsonString(name) + ":" + delta.stripTrailingZeros().toPlainString());
             }
         }
         if (sizeEntries.isEmpty()) throw new IllegalArgumentException("Sản phẩm cần có ít nhất một size.");
+        if (!hasBaseSize) {
+            throw new IllegalArgumentException("Cần có một size phụ thu 0đ để giá mặc định đúng bằng giá bán cơ bản.");
+        }
         if (toppingNames != null) {
             for (int i = 0; i < toppingNames.length; i++) {
                 String name = trimToNull(toppingNames[i]);
@@ -226,6 +255,31 @@ public class AdminProductsController extends HttpServlet {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeImageType(String contentType) {
+        if (contentType == null) return null;
+        return switch (contentType.toLowerCase()) {
+            case "image/jpeg", "image/png", "image/gif", "image/webp" -> contentType.toLowerCase();
+            default -> null;
+        };
+    }
+
+    private boolean matchesImageSignature(byte[] data, String contentType) {
+        if (data == null) return false;
+        return switch (contentType) {
+            case "image/jpeg" -> data.length >= 3 && (data[0] & 0xff) == 0xff
+                    && (data[1] & 0xff) == 0xd8 && (data[2] & 0xff) == 0xff;
+            case "image/png" -> data.length >= 8 && (data[0] & 0xff) == 0x89
+                    && data[1] == 0x50 && data[2] == 0x4e && data[3] == 0x47
+                    && data[4] == 0x0d && data[5] == 0x0a && data[6] == 0x1a && data[7] == 0x0a;
+            case "image/gif" -> data.length >= 6 && data[0] == 'G' && data[1] == 'I'
+                    && data[2] == 'F' && data[3] == '8' && (data[4] == '7' || data[4] == '9') && data[5] == 'a';
+            case "image/webp" -> data.length >= 12 && data[0] == 'R' && data[1] == 'I'
+                    && data[2] == 'F' && data[3] == 'F' && data[8] == 'W'
+                    && data[9] == 'E' && data[10] == 'B' && data[11] == 'P';
+            default -> false;
+        };
     }
 
     private void moveFlash(HttpSession session, HttpServletRequest request, String name) {

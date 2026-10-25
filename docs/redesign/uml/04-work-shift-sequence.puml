@@ -1,0 +1,53 @@
+@startuml 04-work-shift-sequence
+title Sequence - Weekly Work Shifts (UC55)
+autonumber
+actor Admin
+boundary "admin-shifts.jsp" as UI
+control "AdminShiftController\n/admin/shifts" as Ctl
+entity "WorkShiftDAO" as DAO
+database "MySQL\nwork_shifts" as DB
+
+== View shifts of a week ==
+Admin -> UI : Choose week (‹ / ›, Back to this week)
+UI -> Ctl : GET /admin/shifts?date=yyyy-MM-dd
+Ctl -> Ctl : weekStart = Monday of the week containing date\nisPastWeek = weekStart < Monday of current week
+Ctl -> DAO : getShiftsByWeek(weekStart)
+DAO -> DB : SELECT s.*, (SELECT COUNT(*) FROM work_schedules\nWHERE shift_id = s.id) FROM work_shifts s\nWHERE week_start = ? ORDER BY start_time
+DB --> DAO : shifts + number of assignments
+Ctl -> DAO : findLatestWeekBefore(weekStart)
+Ctl --> UI : shift table + "+ Add shift" button\n(past week: read-only)
+
+== Add shift ("+") / Edit shift ==
+Admin -> UI : Enter shift name, start time, end time
+UI -> Ctl : POST action=add|update (weekStart, id, shiftName, startTime, endTime, csrfToken)
+Ctl -> Ctl : check CSRF, week not past,\nname 1-50 chars, HH:mm, end > start
+Ctl -> DAO : nameExists(weekStart, name, id)
+Ctl -> DAO : findOverlap(weekStart, start, end, id)
+DAO -> DB : SELECT ... WHERE week_start = ? AND id <> ?\nAND start_time < ? AND end_time > ?
+alt valid
+  Ctl -> DAO : insert(shift) / update(shift)
+  DAO -> DB : INSERT / UPDATE work_shifts ... WHERE id = ? AND week_start = ?
+  note right of DB : Only rows of the selected week change,\nother weeks keep their shift hours
+  Ctl --> UI : redirect + "Shift added / updated ..."
+else duplicate name / overlap / invalid time
+  Ctl --> UI : reopen modal with error, keep entered data
+end
+
+== Delete shift ==
+Admin -> UI : Click "Delete" (confirm)
+UI -> Ctl : POST action=delete (id)
+Ctl -> DAO : deleteIfUnused(id)
+DAO -> DB : DELETE FROM work_shifts WHERE id = ?\nAND NOT EXISTS (schedules using this shift)
+alt shift has no schedules
+  Ctl --> UI : "Shift deleted ..."
+else staff already assigned
+  Ctl --> UI : "Remove schedules in Work Schedules first"
+end
+
+== Copy week (empty week only) ==
+Admin -> UI : Click "Copy shifts from week dd/MM"
+UI -> Ctl : POST action=copy (weekStart)
+Ctl -> DAO : copyWeek(findLatestWeekBefore(weekStart), weekStart)
+DAO -> DB : INSERT INTO work_shifts(week_start, ...)\nSELECT ?, shift_name, start_time, end_time\nFROM work_shifts WHERE week_start = ?
+Ctl --> UI : "Copied N shifts ..."
+@enduml

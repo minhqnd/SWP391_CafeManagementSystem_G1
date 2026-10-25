@@ -1064,3 +1064,67 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* ========================================================
+   TRẠNG THÁI DUYỆT BIÊN BẢN (shift_handovers.status)
+   ======================================================== */
+.handover-review-box {
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    border: 1px solid var(--warning-border);
+    background: var(--warning-soft);
+    color: #92400e;
+}
+
+.handover-review-box.review-CONFIRMED {
+    border-color: var(--success-border);
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.handover-review-box.review-REJECTED {
+    border-color: var(--danger-border);
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.handover-review-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.handover-review-meta {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.handover-review-note {
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: var(--ink);
+}
+
+.handover-resubmit-form {
+    margin-top: 12px;
+    display: grid;
+    gap: 8px;
+}
+
+.handover-resubmit-form label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.handover-resubmit-form .note-input-field {
+    margin-bottom: 0;
+}
+
+.handover-resubmit-form .btn-action-primary {
+    justify-self: start;
+    border: 0;
+    cursor: pointer;
+}
