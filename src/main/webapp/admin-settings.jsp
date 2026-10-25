@@ -97,13 +97,13 @@
                         <div class="form-text">Tính trên tiền các món khách chọn (trước khi trừ điểm). Nhập 0 = miễn phí giao hàng mọi đơn.</div>
                     </div>
                     <div class="col-md-4">
-                        <label for="deliveryFee" class="form-label small fw-semibold mb-1">Phí giao hàng khi chưa đủ Freeship</label>
+                        <label for="deliveryFee" class="form-label small fw-semibold mb-1">Phí giao tạm tính (khi chưa chọn quận)</label>
                         <div class="input-group">
                             <input type="number" id="deliveryFee" name="deliveryFee" class="form-control aura-input"
                                    min="0" max="1000000" step="1" required value="${fn:escapeXml(form.deliveryFee)}">
                             <span class="input-group-text">đ</span>
                         </div>
-                        <div class="form-text">Cộng vào tổng thanh toán của đơn chưa đạt mức Freeship.</div>
+                        <div class="form-text">Phí giao thật tính theo quận khách chọn, chỉnh ở màn <a href="${pageContext.request.contextPath}/admin/delivery-areas">Phí giao theo quận</a>.</div>
                     </div>
                     <div class="col-md-4">
                         <label for="deliveryMinutes" class="form-label small fw-semibold mb-1">Thời gian giao dự kiến</label>

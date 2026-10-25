@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
  * PaymentController - Bước 3: Thanh toán chuyển khoản VietQR
  * GET  /payment?orderId= : Mã QR + thông tin chuyển khoản của đơn đang chờ thanh toán
  * POST /payment          : Khách xác nhận đã chuyển khoản -> ghi nhận thanh toán, cộng điểm, chuyển sang Hóa đơn điện tử (Bill)
+ * POST /payment action=cod: Đơn giao tận nơi trả tiền mặt khi nhận hàng (COD) - shipper thu khi giao
  */
 @WebServlet(name = "PaymentController", urlPatterns = {"/payment"})
 public class PaymentController extends HttpServlet {
@@ -90,6 +91,19 @@ public class PaymentController extends HttpServlet {
             return;
         }
 
+        if ("cod".equals(request.getParameter("action"))) {
+            if (!paymentDAO.chooseCashOnDelivery(orderId, user.getId())) {
+                session.setAttribute("paymentError", "Chỉ đơn giao tận nơi đang chờ thanh toán mới chọn được COD.");
+                response.sendRedirect(request.getContextPath() + "/payment?orderId=" + orderId);
+                return;
+            }
+            CheckoutController.removePaidItems(session, orderId);
+            session.setAttribute("ordersMessage", "Đã xác nhận đơn #" + order.getOrderCode()
+                    + ". Vui lòng chuẩn bị tiền mặt khi nhận hàng.");
+            response.sendRedirect(request.getContextPath() + "/bill?orderId=" + orderId);
+            return;
+        }
+
         int earnedPoints = paymentDAO.payByBankTransfer(orderId, user.getId());
         if (earnedPoints == PaymentDAO.FAILED) {
             // Đơn có thể vừa được thanh toán / hủy ở tab khác
@@ -102,6 +116,8 @@ public class PaymentController extends HttpServlet {
             return;
         }
 
+        // Đơn đã thanh toán: lúc này mới bỏ các món khỏi giỏ hàng
+        CheckoutController.removePaidItems(session, orderId);
         // Cập nhật điểm Aura trong session theo Database
         user.setTotalPoints(userDAO.getTotalPoints(user.getId()));
         session.setAttribute("ordersMessage", "Thanh toán thành công đơn #" + order.getOrderCode()

@@ -214,7 +214,7 @@
                                             <c:when test="${cart.freeshipReached}">Bạn đã đạt mốc <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b> để nhận miễn phí giao hàng.</c:when>
                                             <c:otherwise>
                                                 Miễn phí giao hàng cho đơn từ <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b>
-                                                (tính trên các món đã chọn), phí giao hàng hiện tại <fmt:formatNumber value="${shop.deliveryFee}" pattern="#,##0" />đ.
+                                                (tính trên các món đã chọn). Phí giao tuỳ theo quận, chọn ở bước nhập địa chỉ.
                                             </c:otherwise>
                                         </c:choose>
                                     </div>
@@ -230,7 +230,7 @@
                                 <span class="fw-semibold"><fmt:formatNumber value="${cart.selectedSubtotal}" pattern="#,##0" />đ</span>
                             </div>
                             <div class="summary-row">
-                                <span class="label">Phí giao hàng</span>
+                                <span class="label">Phí giao hàng (tạm tính)</span>
                                 <c:choose>
                                     <c:when test="${cart.deliveryFee == 0}"><span class="fw-semibold text-success">Miễn phí</span></c:when>
                                     <c:otherwise><span class="fw-semibold"><fmt:formatNumber value="${cart.deliveryFee}" pattern="#,##0" />đ</span></c:otherwise>

@@ -264,6 +264,18 @@
                                 <span class="material-symbols-outlined fs-5">arrow_forward</span>
                             </button>
                         </form>
+                        <%-- Đơn giao tận nơi: trả tiền mặt cho shipper khi nhận hàng (COD) --%>
+                        <c:if test="${order.orderType eq 'ONLINE' and not empty order.deliveryAddress}">
+                            <form method="post" action="${ctx}/payment" class="mt-2"
+                                  onsubmit="return confirm('Thanh toán tiền mặt khi nhận hàng cho đơn ${fn:escapeXml(order.orderCode)}?');">
+                                <input type="hidden" name="action" value="cod">
+                                <input type="hidden" name="orderId" value="${order.id}">
+                                <button type="submit" class="btn btn-soft w-100 py-2 fw-semibold" style="border-radius: 10px;">
+                                    <span class="material-symbols-outlined fs-6">local_shipping</span>
+                                    Thanh toán khi nhận hàng (COD)
+                                </button>
+                            </form>
+                        </c:if>
                         <%-- Hủy đơn chưa thanh toán (hoàn lại điểm Aura đã dùng) --%>
                         <form method="post" action="${ctx}/orders" class="mt-2"
                               onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn #${fn:escapeXml(order.orderCode)}?');">
