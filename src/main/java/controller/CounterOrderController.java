@@ -9,6 +9,12 @@ import model.Order;
 import model.OrderDetail;
 import model.Product;
 import model.User;
+import model.CartItem;
+import model.ShopSettings;
+import dao.ShopSettingDAO;
+import dao.PaymentDAO;
+import service.CartService;
+import service.PaymentService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -39,6 +45,9 @@ public class CounterOrderController extends HttpServlet {
     private final CategoryDAO categoryDAO = new CategoryDAO();
     private final OrderDAO orderDAO = new OrderDAO();
     private final UserDAO userDAO = new UserDAO();
+    private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
+    private final PaymentDAO paymentDAO = new PaymentDAO();
+    private final CartService cartService = new CartService();
 
     private boolean isAuthorized(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
@@ -59,8 +68,8 @@ public class CounterOrderController extends HttpServlet {
             return false;
         }
 
-        String role = user.getRole();
-        if (!"ACTIVE".equalsIgnoreCase(user.getStatus()) || (!"STAFF".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role))) {
+        if (!"ACTIVE".equalsIgnoreCase(user.getStatus()) || !"STAFF".equalsIgnoreCase(user.getRole())
+                || !"CASHIER".equalsIgnoreCase(user.getPosition())) {
             if (isApi) {
                 sendJson(response, HttpServletResponse.SC_FORBIDDEN, "{\"success\":false,\"error\":\"Chỉ nhân viên hoặc quản trị viên được phép truy cập POS.\"}");
             } else {
@@ -108,6 +117,7 @@ public class CounterOrderController extends HttpServlet {
         request.setAttribute("categories", categories);
         request.setAttribute("products", products);
         request.setAttribute("counterOrders", counterOrders);
+        request.setAttribute("shopSettings", shopSettingDAO.getSettings());
         request.setAttribute("currentTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         request.setAttribute("currentDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
@@ -130,8 +140,6 @@ public class CounterOrderController extends HttpServlet {
             handleCreateOrder(request, response);
         } else if ("cancel-order".equals(action)) {
             handleCancelOrder(request, response);
-        } else if ("deliver-order".equals(action)) {
-            handleDeliverOrder(request, response);
         } else if ("complete-order".equals(action)) {
             handleCompleteOrder(request, response);
         } else {
@@ -269,6 +277,35 @@ public class CounterOrderController extends HttpServlet {
             return;
         }
 
+        try {
+            items = normalizeCounterItems(items);
+        } catch (IllegalArgumentException e) {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST,
+                    "{\"success\":false,\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
+            return;
+        }
+        ShopSettings settings = shopSettingDAO.getSettings();
+        if (customerId != null) {
+            User customer = userDAO.findCustomerByPhone(recipientPhone);
+            if (customer == null || customer.getId() != customerId) {
+                sendJson(response, HttpServletResponse.SC_BAD_REQUEST,
+                        "{\"success\":false,\"error\":\"Khách hàng không hợp lệ hoặc đã bị khóa.\"}");
+                return;
+            }
+            double serverSubtotal = items.stream().map(OrderDetail::getSubtotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add).doubleValue();
+            int max = settings.getMaxRedeemablePoints(customer.getTotalPoints(), serverSubtotal);
+            pointsUsed = Math.max(0, Math.min(pointsUsed, max));
+            pointsUsed = (pointsUsed / settings.getPointsStep()) * settings.getPointsStep();
+        } else {
+            pointsUsed = 0;
+        }
+        totalAmount = items.stream().map(OrderDetail::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add).doubleValue();
+        discountAmount = settings.getPointsDiscount(pointsUsed);
+        finalAmount = Math.max(0, totalAmount - discountAmount);
+        paymentMethod = "BANK_TRANSFER".equalsIgnoreCase(paymentMethod) ? "BANK_TRANSFER" : "CASH";
+
         // Tạo mã đơn hàng độc nhất dạng ORD-YYMMDD-XXXX
         String datePrefix = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
         String timeSuffix = String.format("%04d", (int) (System.currentTimeMillis() % 10000));
@@ -290,7 +327,20 @@ public class CounterOrderController extends HttpServlet {
 
         String paymentNote = "Thanh toán tại quầy qua " + ("BANK_TRANSFER".equals(paymentMethod) ? "VietQR" : "Tiền mặt");
 
-        int orderId = orderDAO.createCounterOrder(order, items, paymentMethod, pointsUsed, paymentNote);
+        int orderId = orderDAO.createCounterOrder(order, items, paymentMethod, pointsUsed, paymentNote, settings);
+
+        if (orderId > 0 && "BANK_TRANSFER".equals(paymentMethod) && settings.isPaymentTestMode()) {
+            String amount = BigDecimal.valueOf(finalAmount).stripTrailingZeros().toPlainString();
+            String txCode = "QR-" + orderCode;
+            String status = "SUCCESS";
+            String canonical = PaymentService.canonical(orderCode, txCode, amount, status);
+            String signature = PaymentService.sign(settings.getPaymentCallbackSecret(), canonical);
+            if (PaymentService.verify(settings.getPaymentCallbackSecret(), canonical, signature)) {
+                paymentDAO.applyGatewayCallback(orderCode, txCode, new BigDecimal(amount), status,
+                        "POS-LOCAL-" + System.currentTimeMillis(), "{\"source\":\"counter-simulator\"}",
+                        settings.getPointsEarnUnit());
+            }
+        }
 
         if (orderId > 0) {
             String json = String.format("{\"success\":true,\"orderId\":%d,\"orderCode\":\"%s\",\"message\":\"Tạo đơn tại quầy thành công!\"}", orderId, orderCode);
@@ -457,6 +507,35 @@ public class CounterOrderController extends HttpServlet {
             }
         }
         return items;
+    }
+
+    private List<OrderDetail> normalizeCounterItems(List<OrderDetail> submitted) {
+        List<OrderDetail> normalized = new ArrayList<>();
+        for (OrderDetail raw : submitted) {
+            String size = null;
+            List<String> toppings = new ArrayList<>();
+            String customization = raw.getCustomization() == null ? "" : raw.getCustomization();
+            for (String part : customization.split("\\|")) {
+                String value = part.trim();
+                if (value.startsWith("Size ")) size = value.substring(5).trim();
+                if (value.startsWith("+ ")) {
+                    for (String topping : value.substring(2).split(",")) {
+                        if (!topping.isBlank()) toppings.add(topping.trim());
+                    }
+                }
+            }
+            CartItem priced = cartService.createItem(raw.getProductId(), size, toppings, raw.getQuantity());
+            if (priced == null) throw new IllegalArgumentException("Có món không tồn tại hoặc đã ngừng bán.");
+            OrderDetail item = new OrderDetail();
+            item.setProductId(priced.getProductId());
+            item.setProductName(priced.getProductName());
+            item.setQuantity(priced.getQuantity());
+            item.setUnitPrice(BigDecimal.valueOf(priced.getUnitPrice()));
+            item.setSubtotal(BigDecimal.valueOf(priced.getSubtotal()));
+            item.setCustomization(customization);
+            normalized.add(item);
+        }
+        return normalized;
     }
 
     private int parseInt(String value, int defaultValue) {

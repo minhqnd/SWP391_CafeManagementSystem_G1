@@ -1,6 +1,6 @@
 -- =====================================================
 -- AURA CAFE ERP - DATABASE SCRIPT
--- TOTAL: 20 TABLES
+-- TOTAL: 25 TABLES
 -- MySQL 8.0.16+
 -- =====================================================
 SET NAMES utf8mb4;
@@ -23,9 +23,14 @@ DROP TABLE IF EXISTS shop_settings;
 DROP TABLE IF EXISTS inventory_transactions;
 DROP TABLE IF EXISTS purchase_order_items;
 DROP TABLE IF EXISTS purchase_orders;
+DROP TABLE IF EXISTS restock_request_items;
+DROP TABLE IF EXISTS restock_requests;
 DROP TABLE IF EXISTS product_ingredients;
 DROP TABLE IF EXISTS ingredients;
 DROP TABLE IF EXISTS suppliers;
+DROP TABLE IF EXISTS delivery_areas;
+DROP TABLE IF EXISTS delivery_issues;
+DROP TABLE IF EXISTS deliveries;
 DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
@@ -417,6 +422,9 @@ CREATE TABLE payments (
 
     paid_at DATETIME NULL,
     payment_note TEXT NULL,
+    gateway_reference VARCHAR(150) NULL,
+    callback_payload JSON NULL,
+    callback_received_at DATETIME NULL,
 
     CONSTRAINT fk_payment_order
         FOREIGN KEY (order_id)
@@ -427,6 +435,92 @@ CREATE TABLE payments (
         CHECK (amount >= 0),
 
     INDEX idx_payments_order (order_id)
+    ,UNIQUE KEY uq_payment_transaction_code (transaction_code)
+) ENGINE=InnoDB;
+
+-- 7B. DELIVERIES (SRS entity Delivery, UC26-UC30)
+-- Vòng đời: ASSIGNED (Admin gán shipper) -> ACCEPTED (shipper nhận đơn)
+--           -> DELIVERING (lấy hàng tại quán) -> DELIVERED (giao xong)
+-- cod_amount > 0: đơn trả tiền mặt khi nhận hàng, shipper thu hộ rồi nộp về quỹ cho Thu ngân
+CREATE TABLE deliveries (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    shipper_id INT NOT NULL,
+
+    status ENUM(
+        'ASSIGNED',
+        'ACCEPTED',
+        'DELIVERING',
+        'DELIVERED'
+    ) NOT NULL DEFAULT 'ASSIGNED',
+
+    cod_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    cod_collected DECIMAL(12,2) NULL,
+    cod_handed_over_at DATETIME NULL,
+    cod_receiver_id INT NULL,
+
+    assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    accepted_at DATETIME NULL,
+    picked_up_at DATETIME NULL,
+    delivered_at DATETIME NULL,
+    delivery_note TEXT NULL,
+
+    CONSTRAINT uq_delivery_order UNIQUE (order_id),
+
+    CONSTRAINT fk_delivery_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_delivery_shipper
+        FOREIGN KEY (shipper_id)
+        REFERENCES users(id),
+
+    CONSTRAINT fk_delivery_cod_receiver
+        FOREIGN KEY (cod_receiver_id)
+        REFERENCES users(id),
+
+    CONSTRAINT chk_delivery_cod
+        CHECK (cod_amount >= 0 AND (cod_collected IS NULL OR cod_collected >= 0)),
+
+    INDEX idx_delivery_shipper_status (shipper_id, status)
+) ENGINE=InnoDB;
+
+-- 7C. DELIVERY ISSUES (UC29 - shipper báo sự cố khi giao hàng)
+CREATE TABLE delivery_issues (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    delivery_id INT NOT NULL,
+
+    issue_type ENUM(
+        'CUSTOMER_UNREACHABLE',
+        'WRONG_ADDRESS',
+        'CUSTOMER_REFUSED',
+        'DAMAGED',
+        'TRAFFIC',
+        'OTHER'
+    ) NOT NULL,
+
+    description TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_issue_delivery
+        FOREIGN KEY (delivery_id)
+        REFERENCES deliveries(id)
+        ON DELETE CASCADE,
+
+    INDEX idx_issue_delivery (delivery_id)
+) ENGINE=InnoDB;
+
+-- 7D. DELIVERY AREAS - các quận quán giao tới + phí giao cố định của từng quận (Admin chỉnh ở /admin/delivery-areas)
+-- Phí giao của đơn = delivery_fee của quận khách chọn (miễn phí khi đạt mức freeship_threshold)
+CREATE TABLE delivery_areas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    district VARCHAR(50) NOT NULL,
+    delivery_fee DECIMAL(12,2) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+
+    CONSTRAINT uq_delivery_area_district UNIQUE (district),
+    CONSTRAINT chk_delivery_area_fee CHECK (delivery_fee >= 0)
 ) ENGINE=InnoDB;
 
 -- 8. LOYALTY TRANSACTIONS
@@ -574,7 +668,7 @@ CREATE TABLE product_ingredients (
     ingredient_id INT NOT NULL,
 
     -- BOM quantity required for one product
-    quantity_required INT UNSIGNED NOT NULL,
+    quantity_required DECIMAL(12,3) UNSIGNED NOT NULL,
 
     CONSTRAINT fk_bom_product
         FOREIGN KEY (product_id)
@@ -593,11 +687,40 @@ CREATE TABLE product_ingredients (
         CHECK (quantity_required > 0)
 ) ENGINE=InnoDB;
 
--- 13. PURCHASE ORDERS
+-- 13. RESTOCK REQUESTS (internal proposal; no supplier price or receiving here)
+CREATE TABLE restock_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    requester_id INT NOT NULL,
+    reviewer_id INT NULL,
+    status ENUM('DRAFT','PENDING_APPROVAL','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'DRAFT',
+    reason VARCHAR(500) NULL,
+    note VARCHAR(500) NULL,
+    review_note VARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at DATETIME NULL,
+    CONSTRAINT fk_restock_requester FOREIGN KEY (requester_id) REFERENCES users(id),
+    CONSTRAINT fk_restock_reviewer FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_restock_status (status)
+) ENGINE=InnoDB;
+
+CREATE TABLE restock_request_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    request_id INT NOT NULL,
+    ingredient_id INT NOT NULL,
+    quantity DECIMAL(12,3) NOT NULL,
+    item_note VARCHAR(255) NULL,
+    CONSTRAINT fk_restock_item_request FOREIGN KEY (request_id) REFERENCES restock_requests(id) ON DELETE CASCADE,
+    CONSTRAINT fk_restock_item_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients(id),
+    CONSTRAINT chk_restock_quantity CHECK (quantity > 0),
+    UNIQUE KEY uq_restock_request_ingredient (request_id, ingredient_id)
+) ENGINE=InnoDB;
+
+-- 15. PURCHASE ORDERS
 CREATE TABLE purchase_orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     supplier_id INT NOT NULL,
     creator_id INT NOT NULL,
+    restock_request_id INT NULL,
 
     total_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
 
@@ -607,8 +730,10 @@ CREATE TABLE purchase_orders (
         'RECEIVED',
         'CANCELLED'
     ) NOT NULL DEFAULT 'DRAFT',
-
+    note VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ordered_at DATETIME NULL,
+    received_at DATETIME NULL,
 
     CONSTRAINT fk_po_supplier
         FOREIGN KEY (supplier_id)
@@ -618,10 +743,16 @@ CREATE TABLE purchase_orders (
         FOREIGN KEY (creator_id)
         REFERENCES users(id),
 
+    CONSTRAINT fk_po_restock_request
+        FOREIGN KEY (restock_request_id)
+        REFERENCES restock_requests(id)
+        ON DELETE SET NULL,
+
     CONSTRAINT chk_po_total
         CHECK (total_cost >= 0),
 
-    INDEX idx_po_supplier (supplier_id)
+    INDEX idx_po_supplier (supplier_id),
+    UNIQUE KEY uq_po_restock_request (restock_request_id)
 ) ENGINE=InnoDB;
 
 -- 14. PURCHASE ORDER ITEMS
@@ -673,6 +804,7 @@ CREATE TABLE inventory_transactions (
     ) NOT NULL DEFAULT 'ADJUSTMENT',
 
     reference_id INT NULL,
+    reason VARCHAR(500) NULL,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -697,7 +829,7 @@ CREATE TABLE shop_settings (
 
 -- =====================================================
 -- END OF SCRIPT
--- TOTAL: 20 TABLES
+-- TOTAL: 25 TABLES
 -- =====================================================
 USE aura_cafe_erp;
 
@@ -937,6 +1069,29 @@ VALUES
 (8, 'MOMO', 'MOM-1003-02', 100000,
  'SUCCESS', '2026-10-03 16:22:00', NULL);
 
+-- 7D. DELIVERY AREAS (12 quận nội thành Hà Nội, quán ở Hoàn Kiếm: quận càng xa phí càng cao)
+INSERT INTO delivery_areas (district, delivery_fee) VALUES
+('Hoàn Kiếm', 10000),
+('Ba Đình', 15000),
+('Hai Bà Trưng', 15000),
+('Đống Đa', 15000),
+('Tây Hồ', 20000),
+('Long Biên', 20000),
+('Thanh Xuân', 20000),
+('Hoàng Mai', 20000),
+('Cầu Giấy', 25000),
+('Nam Từ Liêm', 30000),
+('Bắc Từ Liêm', 30000),
+('Hà Đông', 30000);
+
+-- 7B. DELIVERIES (đơn AURA-002 đã thanh toán MoMo, shipper Hoang Van Nam đang giao)
+INSERT INTO deliveries
+(order_id, shipper_id, status, cod_amount,
+ assigned_at, accepted_at, picked_up_at, delivery_note)
+VALUES
+(2, 6, 'DELIVERING', 0,
+ '2026-10-03 10:20:00', '2026-10-03 10:22:00', '2026-10-03 10:35:00', NULL);
+
 -- 8. LOYALTY TRANSACTIONS
 INSERT INTO loyalty_transactions
 (customer_id, order_id, points_change, transaction_type)
@@ -1056,10 +1211,17 @@ VALUES
 -- 16. SHOP SETTINGS
 INSERT INTO shop_settings (setting_key, setting_value) VALUES
 ('freeship_threshold', '150000'),
-('delivery_fee', '18000'),
+('delivery_fee', '15000'),
 ('delivery_minutes', '30'),
 ('points_step', '10'),
-('points_step_value', '2000');
+('points_step_value', '2000'),
+('points_earn_unit', '10000'),
+('payment_test_mode', 'true'),
+('payment_callback_secret', 'AURA-LOCAL-DEMO-SECRET'),
+('payment_bank_id', 'VCB'),
+('payment_bank_name', 'Vietcombank'),
+('payment_account_no', '9888823456'),
+('payment_account_name', 'CONG TY TNHH AURA CAFE');
 
 -- FEEDBACK SAMPLE DATA (stored with customer ratings and complaints)
 INSERT INTO customer_reviews
@@ -1089,6 +1251,9 @@ SELECT 'users' AS table_name, COUNT(*) AS total FROM users
 UNION ALL SELECT 'work_shifts', COUNT(*) FROM work_shifts
 UNION ALL SELECT 'work_schedules', COUNT(*) FROM work_schedules
 UNION ALL SELECT 'shift_handovers', COUNT(*) FROM shift_handovers
+UNION ALL SELECT 'deliveries', COUNT(*) FROM deliveries
+UNION ALL SELECT 'delivery_issues', COUNT(*) FROM delivery_issues
+UNION ALL SELECT 'delivery_areas', COUNT(*) FROM delivery_areas
 UNION ALL SELECT 'categories', COUNT(*) FROM categories
 UNION ALL SELECT 'products', COUNT(*) FROM products
 UNION ALL SELECT 'orders', COUNT(*) FROM orders
