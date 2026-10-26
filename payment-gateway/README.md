@@ -1,79 +1,95 @@
-# Universal Payment Gateway & Webhook Hub
+# ⚡ Universal Payment Gateway & Webhook Hub
 
-Một dịch vụ microservice Gateway độc lập chạy trên **Cloudflare Workers** + **Cloudflare D1 (SQLite)**, đóng vai trò làm trạm trung chuyển điều phối thanh toán tự động qua **SePay / VietQR**, có thể dùng chung cho nhiều dự án khác nhau.
-
----
-
-## 1. Tính năng chính
-- Nhận Webhook tự động từ **SePay** khi có biến động số dư chuyển khoản ngân hàng (VietQR).
-- Xác thực chữ ký bảo mật Webhook: hỗ trợ cả **HMAC-SHA256** và **API Key**.
-- Chống xử lý trùng lặp giao dịch (Idempotency) bằng `sepay_id`.
-- Tự động đối soát mã đơn hàng (`order_code`) và số tiền (`amount`).
-- Cung cấp API Polling thời gian thực cho Client/Frontend.
-- Sinh chữ ký xác thực chuẩn `HMAC-SHA256` khi thanh toán thành công để báo về Backend lõi (Java / Node / Python...).
-- Giao diện Dashboard trực quan xem lịch sử giao dịch tại route `/`.
+> **Microservice Cổng thanh toán & Điều phối Webhook tập trung** chạy trên nền tảng **Cloudflare Workers** + **Cloudflare D1 (SQLite)**. Dùng chung được cho nhiều ứng dụng độc lập (*Aura Café, Web bán hàng, Mobile App, v.v.*) với dịch vụ thanh toán tự động qua **SePay / VietQR**.
 
 ---
 
-## 2. Hướng dẫn Deploy lên Cloudflare trong 3 phút
+## 📌 1. Thông tin triển khai hiện tại
 
-### Bước 1: Cài đặt dependencies
-```bash
-cd payment-gateway
-npm install
-```
+- **Trạng thái:** `Operational` (Đang hoạt động 24/7)
+- **Domain Gateway:** `https://payment-gateway.zemorts.workers.dev`
+- **Dashboard xem giao dịch trực quan:** Mở trực tiếp [https://payment-gateway.zemorts.workers.dev](https://payment-gateway.zemorts.workers.dev)
+- **Database Cloudflare D1:** `payment-gateway-db` (ID: `969b7f48-a740-45bf-ac46-48493a240202`)
+- **SePay Webhook URL:** `https://payment-gateway.zemorts.workers.dev/api/webhooks/sepay`
 
-### Bước 2: Tạo Cloudflare D1 Database
-```bash
-npx wrangler d1 create payment-gateway-db
-```
-*Lệnh trên sẽ in ra `database_id` của bạn (ví dụ: `xxxx-xxxx-xxxx`).*
-Mở file `wrangler.toml` và thay thế giá trị `database_id = "..."` tương ứng:
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "payment-gateway-db"
-database_id = "xxxx-xxxx-xxxx" # Dán ID vừa tạo vào đây
-```
+---
 
-### Bước 3: Khởi tạo bảng dữ liệu trên Cloudflare D1
-```bash
-npx wrangler d1 execute payment-gateway-db --remote --file=./schema.sql
-```
+## 🏗️ 2. Mô hình kiến trúc & Luồng hoạt động
 
-### Bước 4: Deploy Worker
-```bash
-npx wrangler deploy
-```
-*Sau khi deploy thành công, bạn sẽ nhận được một URL công khai dạng:*
 ```text
-https://payment-gateway.<your-subdomain>.workers.dev
+               ┌───────────────────────┐
+               │    Ngân hàng / App    │
+               │   (Quét mã VietQR)    │
+               └──────────┬────────────┘
+                          │ (Tiền vào tài khoản)
+                          ▼
+               ┌───────────────────────┐
+               │    SePay Service      │
+               └──────────┬────────────┘
+                          │ (1) Gửi HTTP POST Webhook
+                          ▼
+         ┌───────────────────────────────────┐
+         │     CLOUDFLARE WORKER GATEWAY     │
+         │  (payment-gateway.workers.dev)    │
+         │   • Xác thực chữ ký SePay         │
+         │   • Chống trùng lặp (Idempotent)  │
+         │   • Khớp mã đơn & số tiền         │
+         │   • Ký chữ ký HMAC-SHA256         │
+         └─────────────┬─────────────────────┘
+                       │ Lưu trữ giao dịch
+                       ▼
+              [ Cloudflare D1 SQL ]
+                       ▲
+                       │ (2) Polling mỗi 2s (GET /status)
+                       │     (Nhận SUCCESS + Signature)
+                       │
+             ┌─────────┴─────────┐
+             │  Client Browser   │
+             │  (Trang checkout) │
+             └─────────┬─────────┘
+                       │ (3) POST Callback kèm Signature
+                       ▼
+         ┌───────────────────────────┐
+         │    CORE BACKEND SERVER    │
+         │   (Java / Node / Python)  │
+         │   • Verify HMAC Signature │
+         │   • Chốt đơn & Cộng điểm  │
+         └───────────────────────────┘
 ```
 
 ---
 
-## 3. Cấu hình trên SePay Dashboard (my.sepay.vn)
+## 🚀 3. Hướng dẫn kết nối với SePay (my.sepay.vn)
 
-1. Đăng nhập vào [my.sepay.vn](https://my.sepay.vn).
-2. Vào mục **Webhooks** ➔ **Thêm Webhook**:
-   - **URL Webhook**: `https://payment-gateway.<your-subdomain>.workers.dev/api/webhooks/sepay`
-   - **Loại giao dịch**: Tất cả (hoặc Chỉ tiền vào `in`)
-   - **Phương thức xác thực**: Chọn **HMAC-SHA256** (hoặc **API Key**)
-3. Nếu chọn **HMAC-SHA256**:
-   - Copy Secret Key trên SePay, chạy lệnh sau để gán bí mật vào Cloudflare:
-     ```bash
-     npx wrangler secret put SEPAY_WEBHOOK_SECRET
-     # Dán secret key vào và Enter
-     ```
-4. Bấm **Gửi thử** trên SePay để kiểm tra. Kết quả báo `Thành công` là hoàn tất!
+### A. Chế độ Test / Demo (Không cần xác thực)
+Dành cho việc test nhanh mà không cần cấu hình khóa bí mật:
+1. Đăng nhập [my.sepay.vn](https://my.sepay.vn) ➔ Vào menu **Webhooks** ➔ **Thêm webhook**.
+2. **URL Webhook:** `https://payment-gateway.zemorts.workers.dev/api/webhooks/sepay`
+3. **Loại giao dịch:** Chọn `Tất cả` (hoặc `Tiền vào in`).
+4. **Phương thức xác thực:** Chọn **Không xác thực**.
+5. Bấm **Lưu** ➔ Bấm **Gửi thử** để kiểm tra (kết quả trả về `Thành công` là xong).
+
+### B. Chế độ Production (Bảo mật tối đa với HMAC-SHA256)
+1. Khi tạo/sửa Webhook trên SePay, chọn **Phương thức xác thực: HMAC-SHA256**.
+2. Copy chuỗi **Secret Key** do SePay hiển thị.
+3. Mở terminal tại thư mục này và gán secret vào Worker:
+   ```bash
+   cd payment-gateway
+   npx wrangler secret put SEPAY_WEBHOOK_SECRET
+   # Dán Secret Key vào rồi nhấn Enter
+   ```
+4. Khi đã gán key, Worker sẽ tự động kiểm tra chữ ký `X-SePay-Signature` và chống tấn công Replay Attack (quá 5 phút).
 
 ---
 
-## 4. Tài liệu API (Dành cho các ứng dụng kết nối)
+## 🔌 4. Tài liệu chi tiết các API của Gateway
 
-### A. Đăng ký đơn hàng cần thanh toán
-- **URL**: `POST /api/orders/register`
-- **Body (JSON)**:
+### 1. Đăng ký đơn hàng mới (`POST /api/orders/register`)
+Được gọi từ **Backend** (Java, Node, v.v.) ngay khi khách tạo đơn hàng để báo cho Gateway biết đơn cần chờ thanh toán:
+
+- **Endpoint:** `POST /api/orders/register`
+- **Headers:** `Content-Type: application/json`
+- **Body:**
   ```json
   {
     "appId": "aura_cafe",
@@ -82,10 +98,37 @@ https://payment-gateway.<your-subdomain>.workers.dev
     "transactionCode": "TX-10023-17290000"
   }
   ```
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Order registered successfully",
+    "orderCode": "AUR-10023",
+    "transactionCode": "TX-10023-17290000",
+    "amount": 45000
+  }
+  ```
 
-### B. Kiểm tra trạng thái đơn (Polling)
-- **URL**: `GET /api/orders/:orderCode/status`
-- **Response**:
+---
+
+### 2. Kiểm tra trạng thái đơn hàng (`GET /api/orders/:orderCode/status`)
+Được gọi từ **Frontend (Javascript)** hoặc **Backend** định kỳ (Polling mỗi 2 giây) để biết đơn đã thanh toán hay chưa:
+
+- **Endpoint:** `GET /api/orders/AUR-10023/status`
+- **Response khi đang chờ (PENDING):**
+  ```json
+  {
+    "success": true,
+    "orderCode": "AUR-10023",
+    "transactionCode": "TX-10023-17290000",
+    "amount": 45000,
+    "status": "PENDING",
+    "signature": null,
+    "gatewayReference": null,
+    "paidAt": null
+  }
+  ```
+- **Response khi đã thanh toán thành công (SUCCESS):**
   ```json
   {
     "success": true,
@@ -93,11 +136,82 @@ https://payment-gateway.<your-subdomain>.workers.dev
     "transactionCode": "TX-10023-17290000",
     "amount": 45000,
     "status": "SUCCESS",
-    "signature": "a1b2c3d4...",
+    "signature": "bc6ef036961b8076de47e8b6db24e851d331c67c1195c1ef562253ece4cdb289",
     "gatewayReference": "FT24012345678",
-    "paidAt": "2026-10-26 14:00:00"
+    "paidAt": "2026-10-26 14:20:00"
   }
   ```
 
-### C. Mô phỏng thanh toán thành công (Test Mode)
-- **URL**: `POST /api/orders/:orderCode/simulate-pay`
+> **Ghi chú về `signature`:** Chữ ký được Worker sinh ra bằng thuật toán `HMAC-SHA256` dựa trên chuỗi chuẩn:  
+> `canonical = orderCode + "|" + transactionCode + "|" + amount + "|SUCCESS"`  
+> Backend của bạn chỉ cần đối soát chữ ký này bằng `SECRET_KEY` là đảm bảo an toàn tuyệt đối, chống làm giả.
+
+---
+
+### 3. Endpoint nhận Webhook từ SePay (`POST /api/webhooks/sepay`)
+Endpoint công khai dành riêng cho SePay gửi thông báo khi có giao dịch ngân hàng:
+
+- **Endpoint:** `POST /api/webhooks/sepay`
+- **Payload chuẩn từ SePay:**
+  ```json
+  {
+    "id": 92704,
+    "gateway": "Vietcombank",
+    "transactionDate": "2026-10-26 14:20:00",
+    "accountNumber": "9888823456",
+    "code": "AUR-10023",
+    "content": "AUR-10023 chuyen tien",
+    "transferType": "in",
+    "transferAmount": 45000,
+    "referenceCode": "FT24012345678"
+  }
+  ```
+- **Phản hồi của Worker:** Luôn trả về `{"success": true}` trong vòng chưa tới 10ms.
+
+---
+
+### 4. Giả lập thanh toán thành công (`POST /api/orders/:orderCode/simulate-pay`)
+Dành riêng cho dev / trình diễn đồ án khi không muốn chuyển tiền thật:
+
+- **Endpoint:** `POST /api/orders/AUR-10023/simulate-pay`
+- **Tác dụng:** Chuyển ngay đơn hàng sang `SUCCESS` và tự động sinh chữ ký HMAC hợp lệ trong D1.
+
+---
+
+### 5. Xem lịch sử tất cả giao dịch (`GET /api/transactions`)
+- **Endpoint:** `GET /api/transactions`
+- Trả về danh sách 50 đơn hàng và 50 log webhook gần nhất lưu trong Cloudflare D1.
+
+---
+
+## 💻 5. Cách tích hợp vào dự án mới trong tương lai
+
+Dịch vụ này được thiết kế theo chuẩn **đa dự án (Multi-tenant)** thông qua tham số `appId`.
+
+Khi làm dự án mới (ví dụ: `project_bán_quần_áo`), bạn chỉ cần:
+1. Gửi `appId = "shop_fashion"` khi đăng ký đơn:
+   ```json
+   POST /api/orders/register
+   { "appId": "shop_fashion", "orderCode": "FASHION-999", "amount": 250000 }
+   ```
+2. Cho khách quét mã VietQR có nội dung `FASHION-999`.
+3. Frontend polling: `GET /api/orders/FASHION-999/status`.
+4. Không cần deploy thêm bất kỳ Worker hay Database nào khác!
+
+---
+
+## 🛠️ 6. Các lệnh quản trị thông dụng
+
+```bash
+# Xem log request thời gian thực của Worker
+npx wrangler tail
+
+# Chạy thử nghiệm Worker tại Localhost (cổng 8787)
+npm run dev
+
+# Chạy câu lệnh SQL trực tiếp trên Cloudflare D1
+npx wrangler d1 execute payment-gateway-db --remote --command="SELECT * FROM orders LIMIT 10"
+
+# Cập nhật code mới lên Cloudflare
+npx wrangler deploy
+```
