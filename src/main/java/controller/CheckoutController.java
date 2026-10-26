@@ -111,14 +111,15 @@ public class CheckoutController extends HttpServlet {
             return;
         }
         // Hình thức nhận (SRS 2.3.2) quyết định phí giao hàng và các trường bắt buộc
-        cart.setFulfillment(request.getParameter("fulfillment"));
+        // Đặt hàng online chỉ có Giao tận nơi (đã bỏ Tự đến lấy / Dùng tại quán và hẹn giờ)
+        cart.setFulfillment(Cart.FULFILLMENT_DELIVERY);
         String recipientName = trim(request.getParameter("recipientName"));
         String recipientPhone = trim(request.getParameter("recipientPhone")).replaceAll("[\\s.]", "");
         String district = trim(request.getParameter("district"));
         String ward = trim(request.getParameter("ward"));
         String addressDetail = trim(request.getParameter("addressDetail"));
         String tableNumber = trim(request.getParameter("tableNumber"));
-        String timeOption = trim(request.getParameter("timeOption"));
+        String timeOption = "ASAP";
         String scheduledTime = trim(request.getParameter("scheduledTime"));
         String orderNote = trim(request.getParameter("orderNote"));
 

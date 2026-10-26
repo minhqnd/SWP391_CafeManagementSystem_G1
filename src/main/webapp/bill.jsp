@@ -274,10 +274,6 @@
                     </div>
                 </c:if>
 
-                <div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant pt-space-xs border-t border-surface-container">
-                    <span class="text-xs">VAT đã tính (8%):</span>
-                    <span class="font-tabular-data text-xs text-secondary">${order.formattedVatAmount}</span>
-                </div>
             </div>
 
             <!-- Total Final Amount -->
@@ -287,7 +283,7 @@
                         Tổng cộng thanh toán
                     </span>
                     <span class="font-label-sm text-label-sm text-secondary">
-                        Đã thanh toán đủ (Đã bao gồm VAT)
+                        Đã thanh toán đủ
                     </span>
                 </div>
                 <div class="font-display-lg text-display-lg text-primary font-bold font-tabular-data tracking-tight">
