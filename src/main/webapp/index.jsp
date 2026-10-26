@@ -400,7 +400,7 @@
     <jsp:include page="/components/product_detail_modal.jsp" />
 
     <!-- Nhúng Component Auth Modal -->
-    <% if(session.getAttribute("user") == null) { %>
+    <% if(session.getAttribute("user") == null || "login".equals(request.getParameter("tab"))) { %>
         <jsp:include page="components/auth_modal.jsp" />
     <% } %>
 

@@ -1,15 +1,7 @@
-<%@ page import="dao.UserDAO" %>
-<%@ page import="model.User" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%
-    UserDAO dao = new UserDAO();
-    User u = dao.getUserById(2); // Assuming ID 2 is a Barista, or I'll just create a dummy Barista User
-    if (u == null) {
-        u = new User();
-        u.setId(999);
-        u.setRole("STAFF");
-        u.setPosition("BARISTA");
-        u.setStatus("ACTIVE");
-    }
-    session.setAttribute("user", u);
-    out.println("Session initialized with Barista.");
+    // Legacy development URL: never replace the authenticated session user.
+    // The normal login controller keeps an existing user on the correct dashboard
+    // and shows the login form when no authenticated session exists.
+    response.sendRedirect(request.getContextPath() + "/login");
 %>

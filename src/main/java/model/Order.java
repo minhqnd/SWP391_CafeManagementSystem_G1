@@ -313,10 +313,6 @@ public class Order implements Serializable {
         return new DecimalFormat("###,###,###").format(discountAmount).replace(",", ".") + " đ";
     }
 
-    public String getFormattedVatAmount() {
-        double vat = (totalAmount - discountAmount) * 0.08;
-        return new DecimalFormat("###,###,###").format(vat).replace(",", ".") + " đ";
-    }
 
     public String getFormattedFinalAmount() {
         return new DecimalFormat("###,###,###").format(finalAmount).replace(",", ".") + " đ";

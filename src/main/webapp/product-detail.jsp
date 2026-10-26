@@ -641,9 +641,6 @@
                                 <div class="price-from-label">Giá từ</div>
                                 <span class="price-main" id="displayTotalPrice">${product.formattedPrice}</span>
                             </div>
-                            <div class="text-end">
-                                <span class="price-note">Đã bao gồm VAT</span>
-                            </div>
                         </div>
 
                         <!-- Size Options -->
