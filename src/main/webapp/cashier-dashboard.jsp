@@ -3000,8 +3000,7 @@
                 const qrImg = document.getElementById('vietQrImg');
                 const bankId = qrImg.dataset.bankId;
                 const accountNo = document.getElementById('bankStk').textContent.trim();
-                const accountName = document.getElementById('bankAccountName').textContent.trim();
-                const qrUrl = `https://img.vietqr.io/image/\${encodeURIComponent(bankId)}-\${encodeURIComponent(accountNo)}-compact2.png?amount=\${finalTotal}&addInfo=\${encodeURIComponent(desc)}&accountName=\${encodeURIComponent(accountName)}`;
+                const qrUrl = `https://vietqr.app/img?bank=\${encodeURIComponent(bankId)}&acc=\${encodeURIComponent(accountNo)}&template=compact&amount=\${finalTotal}&des=\${encodeURIComponent(desc)}&showinfo=true&fullacc=true&holder=\${encodeURIComponent(accountName)}&store=\${encodeURIComponent('AURA Cafe')}`;
                 qrImg.src = qrUrl;
             }
         }

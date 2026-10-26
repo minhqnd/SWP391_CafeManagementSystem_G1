@@ -163,6 +163,9 @@ public class ShopSettingDAO extends BaseDAO {
                 case ShopSettings.KEY_PAYMENT_TEST_MODE:
                     settings.setPaymentTestMode(Boolean.parseBoolean(value.trim()));
                     break;
+                case ShopSettings.KEY_PAYMENT_GATEWAY_URL:
+                    settings.setPaymentGatewayUrl(value.trim());
+                    break;
                 case ShopSettings.KEY_PAYMENT_CALLBACK_SECRET:
                     settings.setPaymentCallbackSecret(value.trim());
                     break;
