@@ -32,7 +32,7 @@ public class ShopSettings implements Serializable {
     private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm
     private double pointsEarnUnit = 10000;      // số tiền hàng sau giảm để nhận 1 điểm
     private boolean paymentTestMode = true;
-    private String paymentGatewayUrl = "http://localhost:8787"; // Cloudflare Worker URL (local or *.workers.dev)
+    private String paymentGatewayUrl = "https://payment-gateway.zemorts.workers.dev"; // Live Cloudflare Worker URL
     private String paymentCallbackSecret = "AURA-LOCAL-DEMO-SECRET";
     private String paymentBankId = "VCB";
     private String paymentBankName = "Vietcombank";

@@ -1217,6 +1217,7 @@ INSERT INTO shop_settings (setting_key, setting_value) VALUES
 ('points_step_value', '2000'),
 ('points_earn_unit', '10000'),
 ('payment_test_mode', 'true'),
+('payment_gateway_url', 'https://payment-gateway.zemorts.workers.dev'),
 ('payment_callback_secret', 'AURA-LOCAL-DEMO-SECRET'),
 ('payment_bank_id', 'VCB'),
 ('payment_bank_name', 'Vietcombank'),
