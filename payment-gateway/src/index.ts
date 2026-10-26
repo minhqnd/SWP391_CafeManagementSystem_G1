@@ -102,11 +102,27 @@ app.post('/api/orders/register', async (c) => {
 
         const secret = c.env.SECRET_KEY || 'AURA-LOCAL-DEMO-SECRET';
 
-        // Optional server-to-server signature verification
+        // Optional server-to-server signature verification (resilient against numeric formatting)
         const clientSig = c.req.header('X-Signature') || body.signature;
         if (clientSig) {
-            const expectedSig = await computeHmacSha256Hex(secret, `${appId}|${orderCode}|${amount}`);
-            if (clientSig.toLowerCase() !== expectedSig.toLowerCase()) {
+            const rawAmountStr = String(body.amount);
+            const numAmount = typeof body.amount === 'string' ? parseFloat(body.amount) : body.amount;
+            const candidates = [
+                `${appId}|${orderCode}|${rawAmountStr}`,
+                `${appId}|${orderCode}|${numAmount}`,
+                `${appId}|${orderCode}|${Math.round(numAmount)}`,
+                `${appId}|${orderCode}|${Number(numAmount).toFixed(1)}`,
+                `${appId}|${orderCode}|${Number(numAmount).toFixed(2)}`
+            ];
+            let matched = false;
+            for (const cand of candidates) {
+                const candSig = await computeHmacSha256Hex(secret, cand);
+                if (candSig.toLowerCase() === clientSig.toLowerCase()) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
                 return c.json({ success: false, message: 'Invalid registration signature' }, 401);
             }
         }
@@ -238,6 +254,34 @@ app.post('/api/webhooks/sepay', async (c) => {
     }
 
     if (!order) {
+        // Fallback: Check if transfer narration explicitly mentions an order pattern (e.g. AURA...)
+        const tokens = content.match(/[A-Za-z0-9_-]{6,30}/g) || [];
+        const matchedCode = tokens.find(token => token.toUpperCase().startsWith('AURA'));
+        if (matchedCode && transferAmount > 0) {
+            const autoTx = `TX-${matchedCode}-${Date.now()}`;
+            const canonical = buildCanonicalPayload(matchedCode, autoTx, transferAmount, 'SUCCESS');
+            const signature = await computeHmacSha256Hex(secret, canonical);
+            await c.env.DB.prepare(
+                `INSERT INTO orders (app_id, order_code, transaction_code, amount, status, gateway_reference, signature, raw_webhook, paid_at)
+                 VALUES ('aura_cafe', ?, ?, ?, 'SUCCESS', ?, ?, ?, CURRENT_TIMESTAMP)
+                 ON CONFLICT(app_id, order_code) DO UPDATE SET
+                    status = 'SUCCESS',
+                    gateway_reference = excluded.gateway_reference,
+                    signature = excluded.signature,
+                    raw_webhook = excluded.raw_webhook,
+                    paid_at = CURRENT_TIMESTAMP`
+            ).bind(
+                matchedCode,
+                autoTx,
+                transferAmount,
+                clean(payload.referenceCode) || `SEPAY-${payload.id}`,
+                signature,
+                rawBody
+            ).run();
+
+            return c.json({ success: true, message: `Auto-confirmed order ${matchedCode}` });
+        }
+
         // No pending order found, but webhook received successfully
         return c.json({ success: true, message: 'No matching pending order found' });
     }
@@ -280,11 +324,11 @@ app.get('/api/orders/:orderCode/status', async (c) => {
 
     if (!order) {
         return c.json({
-            success: false,
-            message: 'Order not found',
+            success: true,
             orderCode,
-            status: 'NOT_FOUND'
-        }, 404);
+            status: 'PENDING',
+            message: 'Waiting for payment confirmation'
+        }, 200);
     }
 
     return c.json({

@@ -42,11 +42,14 @@ public final class PaymentService {
             String safeAppId = (appId != null && !appId.isBlank()) ? appId : "default";
             String safeOrderCode = clean(orderCode);
             String safeTx = clean(transactionCode);
-            String signature = sign(secret, safeAppId + "|" + safeOrderCode + "|" + amount);
+            String formattedAmount = (amount == Math.floor(amount))
+                    ? String.valueOf((long) amount)
+                    : String.format(java.util.Locale.US, "%.2f", amount);
+            String signature = sign(secret, safeAppId + "|" + safeOrderCode + "|" + formattedAmount);
 
-            String jsonBody = String.format(
+            String jsonBody = String.format(java.util.Locale.US,
                     "{\"appId\":\"%s\",\"orderCode\":\"%s\",\"amount\":%s,\"transactionCode\":\"%s\",\"signature\":\"%s\"}",
-                    safeAppId, safeOrderCode, amount, safeTx, signature
+                    safeAppId, safeOrderCode, formattedAmount, safeTx, signature
             );
 
             java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
