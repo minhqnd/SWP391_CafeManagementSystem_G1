@@ -31,7 +31,8 @@ import java.util.regex.Pattern;
 @WebServlet(name = "AdminEmployeesController", urlPatterns = {"/admin/employees"})
 public class AdminEmployeesController extends HttpServlet {
 
-    private static final Set<String> ROLES = Set.of("ADMIN", "STAFF");
+    /** Vai trò chọn trên form: ADMIN = Quản trị, còn lại là nhân viên (STAFF) theo vị trí làm việc */
+    private static final Set<String> ROLE_CHOICES = Set.of("ADMIN", "CASHIER", "BARISTA", "SHIPPER");
     private static final Set<String> POSITIONS = Set.of("MANAGER", "BARISTA", "CASHIER", "SHIPPER");
     private static final Set<String> STATUSES = Set.of("ACTIVE", "INACTIVE", "LOCKED");
     private static final String[] FORM_FIELDS = {"id", "fullName", "phone", "email", "role", "position",
@@ -182,8 +183,10 @@ public class AdminEmployeesController extends HttpServlet {
             }
         }
 
-        String role = requireAllowed(form.get("role"), ROLES, "Vai trò không hợp lệ.");
-        String position = requireAllowed(form.get("position"), POSITIONS, "Chức vụ không hợp lệ.");
+        // Một ô Vai trò: Quản trị -> role ADMIN (position MANAGER); Thu ngân / Pha chế / Giao hàng -> role STAFF
+        String roleChoice = requireAllowed(form.get("role"), ROLE_CHOICES, "Vai trò không hợp lệ.");
+        String role = "ADMIN".equals(roleChoice) ? "ADMIN" : "STAFF";
+        String position = "ADMIN".equals(roleChoice) ? "MANAGER" : roleChoice;
         String status = requireAllowed(form.get("status"), STATUSES, "Trạng thái không hợp lệ.");
         String hireDate = parseOptionalDate(form.get("hireDate"), "Ngày vào làm không hợp lệ.");
         String birthday = parseOptionalDate(form.get("birthday"), "Ngày sinh không hợp lệ.");
