@@ -156,11 +156,11 @@ Endpoint công khai dành riêng cho SePay gửi thông báo khi có giao dịch
   ```json
   {
     "id": 92704,
-    "gateway": "Vietcombank",
+    "gateway": "MBBank",
     "transactionDate": "2026-10-26 14:20:00",
-    "accountNumber": "9888823456",
-    "code": "AUR-10023",
-    "content": "AUR-10023 chuyen tien",
+    "accountNumber": "234556688",
+    "code": "AURA261026001",
+    "content": "AURA261026001 chuyen tien",
     "transferType": "in",
     "transferAmount": 45000,
     "referenceCode": "FT24012345678"

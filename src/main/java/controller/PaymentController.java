@@ -150,9 +150,14 @@ public class PaymentController extends HttpServlet {
     }
 
     private String buildQrUrl(Order order,ShopSettings settings){
-        return "https://img.vietqr.io/image/"+settings.getPaymentBankId()+"-"+settings.getPaymentAccountNo()+"-qr_only.png?amount="+Math.round(order.getFinalAmount())
-                +"&addInfo="+URLEncoder.encode(order.getOrderCode(),StandardCharsets.UTF_8)
-                +"&accountName="+URLEncoder.encode(settings.getPaymentAccountName(),StandardCharsets.UTF_8);
+        return "https://vietqr.app/img?bank="+URLEncoder.encode(settings.getPaymentBankId(),StandardCharsets.UTF_8)
+                +"&acc="+URLEncoder.encode(settings.getPaymentAccountNo(),StandardCharsets.UTF_8)
+                +"&template=compact"
+                +"&amount="+Math.round(order.getFinalAmount())
+                +"&des="+URLEncoder.encode(order.getOrderCode(),StandardCharsets.UTF_8)
+                +"&showinfo=true&fullacc=true"
+                +"&holder="+URLEncoder.encode(settings.getPaymentAccountName(),StandardCharsets.UTF_8)
+                +"&store="+URLEncoder.encode("AURA Cafe",StandardCharsets.UTF_8);
     }
     private int parseInt(String value){try{return Integer.parseInt(value.trim());}catch(Exception e){return -1;}}
     private String trim(String value){return value==null?"":value.trim();}

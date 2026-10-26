@@ -1219,10 +1219,10 @@ INSERT INTO shop_settings (setting_key, setting_value) VALUES
 ('payment_test_mode', 'true'),
 ('payment_gateway_url', 'https://payment-gateway.zemorts.workers.dev'),
 ('payment_callback_secret', 'AURA-LOCAL-DEMO-SECRET'),
-('payment_bank_id', 'VCB'),
-('payment_bank_name', 'Vietcombank'),
-('payment_account_no', '9888823456'),
-('payment_account_name', 'CONG TY TNHH AURA CAFE');
+('payment_bank_id', 'MBBank'),
+('payment_bank_name', 'MBBank'),
+('payment_account_no', '234556688'),
+('payment_account_name', 'NGUYEN DUC QUANG MINH');
 
 -- FEEDBACK SAMPLE DATA (stored with customer ratings and complaints)
 INSERT INTO customer_reviews

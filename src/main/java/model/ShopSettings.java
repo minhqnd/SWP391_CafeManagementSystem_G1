@@ -34,10 +34,10 @@ public class ShopSettings implements Serializable {
     private boolean paymentTestMode = true;
     private String paymentGatewayUrl = "https://payment-gateway.zemorts.workers.dev"; // Live Cloudflare Worker URL
     private String paymentCallbackSecret = "AURA-LOCAL-DEMO-SECRET";
-    private String paymentBankId = "VCB";
-    private String paymentBankName = "Vietcombank";
-    private String paymentAccountNo = "9888823456";
-    private String paymentAccountName = "CONG TY TNHH AURA CAFE";
+    private String paymentBankId = "MBBank";
+    private String paymentBankName = "MBBank";
+    private String paymentAccountNo = "234556688";
+    private String paymentAccountName = "NGUYEN DUC QUANG MINH";
 
     public double getFreeshipThreshold() { return freeshipThreshold; }
     public void setFreeshipThreshold(double freeshipThreshold) { this.freeshipThreshold = freeshipThreshold; }

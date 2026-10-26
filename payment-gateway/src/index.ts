@@ -223,9 +223,14 @@ app.post('/api/webhooks/sepay', async (c) => {
         ).all();
 
         for (const o of (pendingOrders.results as any[])) {
-            // Strip # or prefix variations for resilient matching
-            const plainCode = o.order_code.replace(/^[#\s]+/, '');
-            if (content.includes(o.order_code) || (plainCode.length >= 4 && content.includes(plainCode))) {
+            // Resilient matching: handles uppercase/lowercase, hyphens, spaces and bank formatting
+            const normContent = content.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const normOrderCode = o.order_code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const plainCode = o.order_code.replace(/^[#\s]+/, '').toUpperCase();
+
+            if (content.toUpperCase().includes(o.order_code.toUpperCase()) ||
+                (plainCode.length >= 4 && content.toUpperCase().includes(plainCode)) ||
+                (normOrderCode.length >= 4 && normContent.includes(normOrderCode))) {
                 order = o;
                 break;
             }

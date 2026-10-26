@@ -113,7 +113,7 @@ public class Payment implements Serializable {
 
     public String getPaymentMethodDisplay() {
         if ("BANK_TRANSFER".equalsIgnoreCase(paymentMethod) || "VIETQR".equalsIgnoreCase(paymentMethod)) {
-            return "Chuyển khoản VietQR (Vietcombank)";
+            return "Chuyển khoản VietQR (MBBank)";
         } else if ("MOMO".equalsIgnoreCase(paymentMethod)) {
             return "Ví điện tử MoMo";
         } else if ("CARD".equalsIgnoreCase(paymentMethod) || "VNPAY".equalsIgnoreCase(paymentMethod)) {
