@@ -46,6 +46,14 @@ public class PaymentController extends HttpServlet {
         Payment payment=paymentDAO.ensurePendingBankTransfer(orderId,user.getId());
         if(payment==null){session.setAttribute("paymentError","Không thể khởi tạo giao dịch thanh toán.");response.sendRedirect(request.getContextPath()+"/orders");return;}
         ShopSettings settings=shopSettingDAO.getSettings();
+        PaymentService.registerOrderToGateway(
+                settings.getPaymentGatewayUrl(),
+                "aura_cafe",
+                order.getOrderCode(),
+                order.getFinalAmount(),
+                payment.getTransactionCode(),
+                settings.getPaymentCallbackSecret()
+        );
         CartController.moveFlashMessage(session,request,"paymentError");
         request.setAttribute("order",order);
         request.setAttribute("payment",payment);
@@ -56,6 +64,7 @@ public class PaymentController extends HttpServlet {
         request.setAttribute("storeAddress",CheckoutController.STORE_ADDRESS);
         request.setAttribute("deliveryMinutes",settings.getDeliveryMinutes());
         request.setAttribute("paymentTestMode",settings.isPaymentTestMode());
+        request.setAttribute("paymentGatewayUrl",settings.getPaymentGatewayUrl());
         request.setAttribute("expectedRewardPoints",settings.calculateEarnedPoints(order.getTotalAmount()-order.getDiscountAmount()));
         request.getRequestDispatcher("/payment.jsp").forward(request,response);
     }

@@ -17,6 +17,7 @@ public class ShopSettings implements Serializable {
     public static final String KEY_POINTS_STEP_VALUE = "points_step_value";
     public static final String KEY_POINTS_EARN_UNIT = "points_earn_unit";
     public static final String KEY_PAYMENT_TEST_MODE = "payment_test_mode";
+    public static final String KEY_PAYMENT_GATEWAY_URL = "payment_gateway_url";
     public static final String KEY_PAYMENT_CALLBACK_SECRET = "payment_callback_secret";
     public static final String KEY_PAYMENT_BANK_ID = "payment_bank_id";
     public static final String KEY_PAYMENT_BANK_NAME = "payment_bank_name";
@@ -31,6 +32,7 @@ public class ShopSettings implements Serializable {
     private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm
     private double pointsEarnUnit = 10000;      // số tiền hàng sau giảm để nhận 1 điểm
     private boolean paymentTestMode = true;
+    private String paymentGatewayUrl = "http://localhost:8787"; // Cloudflare Worker URL (local or *.workers.dev)
     private String paymentCallbackSecret = "AURA-LOCAL-DEMO-SECRET";
     private String paymentBankId = "VCB";
     private String paymentBankName = "Vietcombank";
@@ -58,6 +60,13 @@ public class ShopSettings implements Serializable {
 
     public boolean isPaymentTestMode() { return paymentTestMode; }
     public void setPaymentTestMode(boolean paymentTestMode) { this.paymentTestMode = paymentTestMode; }
+
+    public String getPaymentGatewayUrl() { return paymentGatewayUrl; }
+    public void setPaymentGatewayUrl(String paymentGatewayUrl) {
+        if (paymentGatewayUrl != null && !paymentGatewayUrl.isBlank()) {
+            this.paymentGatewayUrl = paymentGatewayUrl.trim().replaceAll("/+$", "");
+        }
+    }
 
     public String getPaymentCallbackSecret() { return paymentCallbackSecret; }
     public void setPaymentCallbackSecret(String paymentCallbackSecret) {
