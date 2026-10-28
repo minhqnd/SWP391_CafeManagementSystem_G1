@@ -40,8 +40,7 @@ public class ShiftHandoverDAO extends BaseDAO {
         BigDecimal expected = openingCash.add(cashSales);
         BigDecimal difference = actualCash.subtract(expected);
 
-        String closeSql = "UPDATE work_schedules SET status = 'COMPLETED', check_out_time = NOW(), " +
-                          "ending_cash_actual = ?, ending_cash_system = ?, note = ? " +
+        String closeSql = "UPDATE work_schedules SET status = 'COMPLETED', check_out_time = NOW(), note = ? " +
                           "WHERE id = ? AND user_id = ? AND status = 'PRESENT'";
         String insertSql = "INSERT INTO shift_handovers (schedule_id, cashier_id, opening_cash, cash_sales, " +
                            "expected_cash, actual_cash, difference, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -50,11 +49,9 @@ public class ShiftHandoverDAO extends BaseDAO {
             conn.setAutoCommit(false);
             try {
                 try (PreparedStatement ps = conn.prepareStatement(closeSql)) {
-                    ps.setBigDecimal(1, actualCash);
-                    ps.setBigDecimal(2, expected);
-                    ps.setString(3, note);
-                    ps.setInt(4, scheduleId);
-                    ps.setInt(5, cashierId);
+                    ps.setString(1, note);
+                    ps.setInt(2, scheduleId);
+                    ps.setInt(3, cashierId);
                     if (ps.executeUpdate() == 0) {
                         conn.rollback();
                         return 0;

@@ -119,8 +119,7 @@
                                                      tabindex="0" role="button" aria-label="Sửa ca của ${fn:escapeXml(item.userName)}"
                                                      data-id="${item.id}" data-user-id="${item.userId}"
                                                      data-work-date="${item.workDateFormatted}" data-shift-id="${item.shiftId}"
-                                                     data-status="${item.status}" data-note="${fn:escapeXml(item.note)}"
-                                                     data-starting-cash="${item.startingCash}" data-ending-cash="${item.endingCashActual}">
+                                                     data-status="${item.status}" data-note="${fn:escapeXml(item.note)}">
                                                 <div class="employee-card-name"><c:out value="${item.userName}" /></div>
                                                 <div class="employee-card-meta">${item.positionDisplayName} · ${item.statusDisplayName}</div>
                                                 <c:if test="${item.status == 'SCHEDULED'}">
@@ -195,14 +194,6 @@
                                 <div class="invalid-feedback" id="addShiftError">Vui lòng chọn ca làm việc.</div>
                             </div>
                         </div>
-                        <div class="mb-3 cash-field-group" data-cash-group="add">
-                            <label for="addStartingCash" class="form-label">Tiền két đầu ca (VNĐ)</label>
-                            <input type="number" class="form-control aura-input" id="addStartingCash" name="startingCash"
-                                   min="0" max="9999999999" step="1000" inputmode="numeric"
-                                   placeholder="Chỉ áp dụng cho Thu ngân" aria-describedby="addCashHint addCashError">
-                            <div class="field-hint" id="addCashHint">Chọn nhân viên Thu ngân để nhập tiền két.</div>
-                            <div class="invalid-feedback" id="addCashError">Số tiền phải từ 0 đến 9.999.999.999đ và là bội số của 1.000đ.</div>
-                        </div>
                         <div>
                             <div class="field-label-row">
                                 <label for="addNote" class="form-label">Ghi chú</label>
@@ -274,21 +265,6 @@
                             </select>
                             <div class="invalid-feedback" id="editStatusError">Vui lòng chọn trạng thái ca làm việc.</div>
                         </div>
-                        <div class="row g-3 mb-3 cash-field-group" data-cash-group="edit">
-                            <div class="col-sm-6">
-                                <label for="editStartingCash" class="form-label">Tiền két đầu ca</label>
-                                <input type="number" class="form-control aura-input" id="editStartingCash" name="startingCash"
-                                       min="0" max="9999999999" step="1000" inputmode="numeric" aria-describedby="editStartingCashError">
-                                <div class="invalid-feedback" id="editStartingCashError">Số tiền phải hợp lệ và là bội số của 1.000đ.</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label for="editEndingCashActual" class="form-label">Tiền két thực tế cuối ca</label>
-                                <input type="number" class="form-control aura-input" id="editEndingCashActual" name="endingCashActual"
-                                       min="0" max="9999999999" step="1000" inputmode="numeric" aria-describedby="editEndingCashError">
-                                <div class="invalid-feedback" id="editEndingCashError">Số tiền phải hợp lệ và là bội số của 1.000đ.</div>
-                            </div>
-                            <div class="col-12 pt-0"><div class="field-hint" id="editCashHint">Thông tin két chỉ áp dụng cho Thu ngân.</div></div>
-                        </div>
                         <div>
                             <div class="field-label-row">
                                 <label for="editNote" class="form-label">Ghi chú</label>
@@ -314,26 +290,10 @@
         const editScheduleModal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
         const addScheduleForm = document.getElementById('addScheduleForm');
         const editScheduleForm = document.getElementById('editScheduleForm');
-        const maxCashAmount = 9999999999;
-
-        function getSelectedPosition(selectId) {
-            const select = document.getElementById(selectId);
-            return select.options[select.selectedIndex]?.dataset.position || '';
-        }
 
         function resetValidation(form) {
             form.classList.remove('was-validated');
             form.querySelectorAll('input, select, textarea').forEach((field) => field.setCustomValidity(''));
-        }
-
-        function validateCashInput(input) {
-            input.setCustomValidity('');
-            if (input.disabled || input.value.trim() === '') return;
-
-            const amount = input.valueAsNumber;
-            if (!Number.isFinite(amount) || amount < 0 || amount > maxCashAmount || !Number.isInteger(amount) || amount % 1000 !== 0) {
-                input.setCustomValidity('Số tiền không hợp lệ');
-            }
         }
 
         function updateNoteCounter(noteInput, counter) {
@@ -341,41 +301,14 @@
             noteInput.setCustomValidity(noteInput.value.length <= 500 ? '' : 'Ghi chú quá dài');
         }
 
-        function updateCashAvailability(prefix) {
-            const position = getSelectedPosition(prefix + 'UserId');
-            const isCashier = position === 'CASHIER';
-            const group = document.querySelector('[data-cash-group="' + prefix + '"]');
-            const cashInputs = group.querySelectorAll('input[type="number"]');
-
-            group.classList.toggle('is-disabled', !isCashier);
-            cashInputs.forEach((input) => {
-                if (!isCashier) input.value = '';
-                input.disabled = !isCashier;
-                input.setCustomValidity('');
-            });
-
-            const hint = document.getElementById(prefix + 'CashHint');
-            if (hint) {
-                hint.textContent = isCashier
-                    ? 'Không bắt buộc. Số tiền nhập theo bội số 1.000đ.'
-                    : 'Chỉ nhân viên Thu ngân mới được nhập thông tin tiền két.';
-            }
-        }
-
         function setupFormValidation(form, prefix) {
             const noteInput = document.getElementById(prefix + 'Note');
             const noteCounter = document.getElementById(prefix + 'NoteCount');
-            const userSelect = document.getElementById(prefix + 'UserId');
-            const cashInputs = form.querySelectorAll('.cash-field-group input[type="number"]');
 
-            userSelect.addEventListener('change', () => updateCashAvailability(prefix));
             noteInput.addEventListener('input', () => updateNoteCounter(noteInput, noteCounter));
-            cashInputs.forEach((input) => input.addEventListener('input', () => validateCashInput(input)));
 
             form.addEventListener('submit', (event) => {
-                updateCashAvailability(prefix);
                 updateNoteCounter(noteInput, noteCounter);
-                cashInputs.forEach(validateCashInput);
 
                 if (!form.checkValidity()) {
                     event.preventDefault();
@@ -388,7 +321,6 @@
 
         setupFormValidation(addScheduleForm, 'add');
         setupFormValidation(editScheduleForm, 'edit');
-        updateCashAvailability('add');
 
         document.querySelectorAll('.add-schedule-trigger').forEach((button) => {
             button.addEventListener('click', () => {
@@ -398,7 +330,6 @@
                 const addShiftSelect = document.getElementById('addShiftId');
                 if (button.dataset.shiftId) addShiftSelect.value = button.dataset.shiftId;
                 updateNoteCounter(document.getElementById('addNote'), document.getElementById('addNoteCount'));
-                updateCashAvailability('add');
                 addScheduleModal.show();
             });
         });
@@ -410,14 +341,9 @@
             document.getElementById('editShiftId').value = card.dataset.shiftId;
             document.getElementById('editStatus').value = card.dataset.status;
             document.getElementById('editNote').value = card.dataset.note || '';
-            document.getElementById('editStartingCash').value = card.dataset.startingCash && card.dataset.startingCash !== 'null'
-                ? card.dataset.startingCash : '';
-            document.getElementById('editEndingCashActual').value = card.dataset.endingCash && card.dataset.endingCash !== 'null'
-                ? card.dataset.endingCash : '';
 
             resetValidation(editScheduleForm);
             updateNoteCounter(document.getElementById('editNote'), document.getElementById('editNoteCount'));
-            updateCashAvailability('edit');
             editScheduleModal.show();
         }
 

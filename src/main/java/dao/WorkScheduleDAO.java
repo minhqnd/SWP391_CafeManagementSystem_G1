@@ -23,7 +23,7 @@ public class WorkScheduleDAO extends BaseDAO {
     /** Cột chung: lịch + nhân viên + ca của tuần đó */
     private static final String SELECT_SCHEDULE =
             "SELECT ws.id, ws.user_id, ws.work_date, ws.shift_id, ws.check_in_time, ws.check_out_time, " +
-            "       ws.starting_cash, ws.ending_cash_system, ws.ending_cash_actual, ws.status, ws.note, " +
+            "       ws.status, ws.note, " +
             "       s.shift_name, s.start_time AS shift_start, s.end_time AS shift_end, " +
             "       u.full_name AS user_name, u.phone AS user_phone, u.position AS user_position " +
             "FROM work_schedules ws " +
@@ -148,8 +148,8 @@ public class WorkScheduleDAO extends BaseDAO {
             return false;
         }
 
-        String sql = "INSERT INTO work_schedules (user_id, work_date, shift_id, status, note, starting_cash) " +
-                     "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO work_schedules (user_id, work_date, shift_id, status, note) " +
+                     "VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -159,11 +159,6 @@ public class WorkScheduleDAO extends BaseDAO {
             ps.setInt(3, ws.getShiftId());
             ps.setString(4, ws.getStatus() != null ? ws.getStatus() : "SCHEDULED");
             ps.setString(5, ws.getNote());
-            if (ws.getStartingCash() != null) {
-                ps.setDouble(6, ws.getStartingCash());
-            } else {
-                ps.setNull(6, java.sql.Types.DECIMAL);
-            }
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -181,8 +176,7 @@ public class WorkScheduleDAO extends BaseDAO {
         }
 
         String sql = "UPDATE work_schedules SET user_id = ?, work_date = ?, shift_id = ?, " +
-                     "       status = ?, note = ?, starting_cash = ?, ending_cash_actual = ? " +
-                     "WHERE id = ?";
+                     "       status = ?, note = ? WHERE id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -192,20 +186,7 @@ public class WorkScheduleDAO extends BaseDAO {
             ps.setInt(3, ws.getShiftId());
             ps.setString(4, ws.getStatus());
             ps.setString(5, ws.getNote());
-
-            if (ws.getStartingCash() != null) {
-                ps.setDouble(6, ws.getStartingCash());
-            } else {
-                ps.setNull(6, java.sql.Types.DECIMAL);
-            }
-
-            if (ws.getEndingCashActual() != null) {
-                ps.setDouble(7, ws.getEndingCashActual());
-            } else {
-                ps.setNull(7, java.sql.Types.DECIMAL);
-            }
-
-            ps.setInt(8, ws.getId());
+            ps.setInt(6, ws.getId());
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -269,50 +250,6 @@ public class WorkScheduleDAO extends BaseDAO {
             ps.setString(3, status);
             ps.setString(4, note);
             ps.setInt(5, id);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * Check-in nhanh kèm cập nhật tiền đầu ca
-     */
-    public boolean checkInStaff(int id, Double startingCash) {
-        String sql = "UPDATE work_schedules SET status = 'PRESENT', check_in_time = COALESCE(check_in_time, NOW()), " +
-                     "starting_cash = COALESCE(?, starting_cash) WHERE id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            if (startingCash != null) {
-                ps.setDouble(1, startingCash);
-            } else {
-                ps.setNull(1, java.sql.Types.DECIMAL);
-            }
-            ps.setInt(2, id);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * Bàn giao ca & Chốt két tiền mặt cuối ca
-     */
-    public boolean closeShiftAndHandoverCash(int id, double endingCashActual, Double endingCashSystem, String note) {
-        String sql = "UPDATE work_schedules SET status = 'COMPLETED', check_out_time = COALESCE(check_out_time, NOW()), " +
-                     "ending_cash_actual = ?, ending_cash_system = ?, note = ? WHERE id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setDouble(1, endingCashActual);
-            if (endingCashSystem != null) {
-                ps.setDouble(2, endingCashSystem);
-            } else {
-                ps.setNull(2, java.sql.Types.DECIMAL);
-            }
-            ps.setString(3, note);
-            ps.setInt(4, id);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -453,15 +390,6 @@ public class WorkScheduleDAO extends BaseDAO {
         }
         ws.setCheckInTime(rs.getTimestamp("check_in_time"));
         ws.setCheckOutTime(rs.getTimestamp("check_out_time"));
-
-        double startingCash = rs.getDouble("starting_cash");
-        if (!rs.wasNull()) ws.setStartingCash(startingCash);
-
-        double endingCashSystem = rs.getDouble("ending_cash_system");
-        if (!rs.wasNull()) ws.setEndingCashSystem(endingCashSystem);
-
-        double endingCashActual = rs.getDouble("ending_cash_actual");
-        if (!rs.wasNull()) ws.setEndingCashActual(endingCashActual);
 
         ws.setStatus(rs.getString("status"));
         ws.setNote(rs.getString("note"));

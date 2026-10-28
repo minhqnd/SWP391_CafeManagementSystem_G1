@@ -138,9 +138,12 @@
 
                 <div class="shift-banner-metrics">
                     <div class="banner-metric-item">
-                        <div class="banner-metric-label">TIỀN ĐẦU CA</div>
+                        <div class="banner-metric-label">DOANH THU TIỀN MẶT</div>
                         <div class="banner-metric-value">
-                            <fmt:formatNumber value="${headerShift.startingCash}" pattern="#,##0" />đ
+                            <c:choose>
+                                <c:when test="${closeMode}"><fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ</c:when>
+                                <c:otherwise><fmt:formatNumber value="${handoverRecord.cashSales}" pattern="#,##0" />đ</c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
                     <div class="banner-metric-item">
@@ -265,9 +268,7 @@
                                     <div class="system-cash-grid">
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">Tiền đầu ca</div>
-                                            <div class="system-cash-val">
-                                                <fmt:formatNumber value="${closePreview.startingCash}" pattern="#,##0" />đ
-                                            </div>
+                                            <div class="system-cash-val" id="openingCashDisplay">0đ</div>
                                         </div>
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">+ Thu tiền mặt</div>
@@ -277,8 +278,8 @@
                                         </div>
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">= Phải có trong két</div>
-                                            <div class="system-cash-val val-maroon">
-                                                <fmt:formatNumber value="${closePreview.expectedCash}" pattern="#,##0" />đ
+                                            <div class="system-cash-val val-maroon" id="expectedCashDisplay">
+                                                <fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ
                                             </div>
                                         </div>
                                     </div>
@@ -298,6 +299,18 @@
                                     <input type="hidden" name="action" value="close-shift">
                                     <input type="hidden" name="scheduleId" value="${activeShift.id}">
 
+                                    <label class="database-field-label" for="openingCash">
+                                        Tiền két đầu ca
+                                        <span>shift_handovers.opening_cash</span>
+                                    </label>
+                                    <div class="cash-input-wrap">
+                                        <input type="number" name="openingCash" id="openingCash"
+                                               class="cash-actual-input" min="0" max="9999999999" step="1000"
+                                               value="0" required inputmode="numeric">
+                                        <span>đ</span>
+                                    </div>
+                                    <p class="field-help">Xác nhận số tiền có trong két khi bắt đầu ca.</p>
+
                                     <label class="database-field-label" for="endingCashActual">
                                         Tiền mặt thực tế cuối ca
                                         <span>shift_handovers.actual_cash</span>
@@ -313,7 +326,7 @@
                                     <div id="diffBox" class="diff-status-box diff-shortage">
                                         <span id="diffLabel">Thiếu tiền</span>
                                         <span id="diffAmount" class="diff-amount">
-                                            -<fmt:formatNumber value="${closePreview.expectedCash}" pattern="#,##0" />đ
+                                            -<fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ
                                         </span>
                                     </div>
 
@@ -602,8 +615,8 @@
             </div>
         </c:if>
 
-        <div id="handoverConfig" 
-             data-expected-cash="${not empty closePreview ? closePreview.expectedCash : (not empty handoverSummary ? handoverSummary.expectedCash : 0)}"
+        <div id="handoverConfig"
+             data-cash-sales="${not empty closePreview ? closePreview.cashSales : (not empty handoverRecord ? handoverRecord.cashSales : 0)}"
              style="display: none;"></div>
 
     </main>
@@ -625,10 +638,13 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // 2. Reconcile the database-backed ending_cash_actual value.
+        // 2. Đối soát tiền được lưu trong shift_handovers.
         const configEl = document.getElementById('handoverConfig');
-        const EXPECTED_CASH = configEl ? (parseFloat(configEl.getAttribute('data-expected-cash')) || 0) : 0;
+        const CASH_SALES = configEl ? (parseFloat(configEl.getAttribute('data-cash-sales')) || 0) : 0;
+        const openingCashInput = document.getElementById('openingCash');
         const actualCashInput = document.getElementById('endingCashActual');
+        const openingCashDisplay = document.getElementById('openingCashDisplay');
+        const expectedCashDisplay = document.getElementById('expectedCashDisplay');
         const diffBox = document.getElementById('diffBox');
         const diffLabel = document.getElementById('diffLabel');
         const diffAmount = document.getElementById('diffAmount');
@@ -639,9 +655,14 @@
         const noteRequiredHelp = document.getElementById('noteRequiredHelp');
 
         function recalculateCash() {
+            const opening = openingCashInput ? (parseInt(openingCashInput.value, 10) || 0) : 0;
             const actual = actualCashInput ? (parseInt(actualCashInput.value, 10) || 0) : 0;
-            const diff = actual - EXPECTED_CASH;
+            const expected = opening + CASH_SALES;
+            const diff = actual - expected;
             const absDiff = Math.abs(diff);
+
+            if (openingCashDisplay) openingCashDisplay.textContent = formatVND(opening);
+            if (expectedCashDisplay) expectedCashDisplay.textContent = formatVND(expected);
 
             // Lệch két thì bắt buộc ghi chú (server cũng kiểm tra lại)
             if (noteInput) noteInput.required = diff !== 0;
@@ -665,19 +686,21 @@
             }
         }
 
-        if (actualCashInput) {
-            actualCashInput.addEventListener('input', () => {
-                if (Number(actualCashInput.value) < 0) actualCashInput.value = 0;
+        [openingCashInput, actualCashInput].forEach(input => {
+            if (input) input.addEventListener('input', () => {
+                if (Number(input.value) < 0) input.value = 0;
                 recalculateCash();
             });
-            recalculateCash();
-        }
+        });
+        if (openingCashInput || actualCashInput) recalculateCash();
 
         const form = document.getElementById('closeShiftForm');
         if (form) {
             form.addEventListener('submit', e => {
                 const actual = actualCashInput ? (parseInt(actualCashInput.value, 10) || 0) : 0;
-                if (actual === 0 && EXPECTED_CASH > 0) {
+                const opening = openingCashInput ? (parseInt(openingCashInput.value, 10) || 0) : 0;
+                const expected = opening + CASH_SALES;
+                if (actual === 0 && expected > 0) {
                     if (!confirm('Số tiền thực tế đang là 0đ. Bạn có chắc chắn muốn hoàn tất bàn giao không?')) {
                         e.preventDefault();
                         return;
