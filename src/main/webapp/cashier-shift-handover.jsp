@@ -21,68 +21,10 @@
 </head>
 <body>
 
-    <!-- ========================================================
-         TOP NAVBAR
-         ======================================================== -->
-    <header class="cashier-header">
-        <div class="header-left">
-            <a class="brand" href="${ctx}/cashier" title="Quay lại POS">
-                <span class="brand-mark material-symbols-outlined">coffee</span>
-                <span class="brand-copy">
-                    <strong>AURA CAFÉ</strong>
-                    <small>POS THU NGÂN</small>
-                </span>
-            </a>
-
-            <div class="shift-pill">
-                <span class="material-symbols-outlined">schedule</span>
-                <c:choose>
-                    <c:when test="${not empty headerShift}">
-                        <span>${headerShift.shiftDisplayName} (${headerShift.shiftTime}) - ${headerShift.workDateFormatted}</span>
-                        <span class="divider">•</span>
-                        <span>Thu ngân: <strong><c:out value="${sessionScope.user.fullName}" /></strong></span>
-                    </c:when>
-                    <c:otherwise>
-                        <span>Chưa có ca làm việc - ${currentDate}</span>
-                        <span class="divider">•</span>
-                        <span>Thu ngân: <strong><c:out value="${sessionScope.user.fullName}" /></strong></span>
-                    </c:otherwise>
-                </c:choose>
-            </div>
-        </div>
-
-        <!-- Center Nav: Chốt ca & Bàn giao ca liên kết -->
-        <nav class="cashier-nav" aria-label="Điều hướng thu ngân">
-            <a href="${ctx}/cashier">
-                <span class="material-symbols-outlined">point_of_sale</span>
-                <span>Tạo đơn tại quầy</span>
-            </a>
-            <a href="${ctx}/cashier?tab=orders">
-                <span class="material-symbols-outlined">receipt_long</span>
-                <span>Danh sách đơn</span>
-            </a>
-            <a class="${closeMode ? 'active' : ''}" 
-               href="${ctx}/cashier/handover?mode=close">
-                <span class="material-symbols-outlined">calculate</span>
-                <span>Chốt ca</span>
-            </a>
-            <a class="${not closeMode ? 'active' : ''}" 
-               href="${ctx}/cashier/handover?mode=handover">
-                <span class="material-symbols-outlined">assignment_turned_in</span>
-                <span>Bàn giao ca</span>
-            </a>
-        </nav>
-
-        <div class="header-right">
-            <div class="clock-block">
-                <strong id="liveClock">${currentTime}</strong>
-                <small>${currentDate}</small>
-            </div>
-            <div class="cashier-avatar" title="${sessionScope.user.fullName}">
-                ${cashierInitials}
-            </div>
-        </div>
-    </header>
+    <!-- Thanh header dùng chung cho các màn Thu ngân -->
+    <jsp:include page="/components/cashier-header.jsp">
+        <jsp:param name="active" value="${closeMode ? 'close' : 'handover'}" />
+    </jsp:include>
 
     <!-- ========================================================
          MAIN CONTENT CONTAINER

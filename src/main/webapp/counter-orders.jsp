@@ -17,23 +17,25 @@
     <link href="${ctx}/assets/css/counter-orders.css" rel="stylesheet">
 </head>
 <body>
-    <header class="co-top">
-        <a class="co-brand" href="${ctx}${isBarista ? '/barista' : '/cashier'}">Aura Café · <span class="muted" style="font-size:14px"><c:out value="${sessionScope.user.fullName}" /></span></a>
-        <nav class="co-nav">
-            <c:choose>
-                <c:when test="${isBarista}">
+    <c:choose>
+        <c:when test="${isBarista}">
+            <header class="co-top">
+                <a class="co-brand" href="${ctx}/barista">Aura Café · <span class="muted" style="font-size:14px"><c:out value="${sessionScope.user.fullName}" /></span></a>
+                <nav class="co-nav">
                     <a href="${ctx}/barista"><span class="material-symbols-outlined">coffee_maker</span>Đơn pha chế</a>
                     <a href="${ctx}/barista?action=completed"><span class="material-symbols-outlined">task_alt</span>Đơn đã pha</a>
-                </c:when>
-                <c:otherwise>
-                    <a href="${ctx}/cashier"><span class="material-symbols-outlined">point_of_sale</span>Tạo đơn tại quầy</a>
-                    <a href="${ctx}/cashier/handover?mode=close"><span class="material-symbols-outlined">calculate</span>Chốt ca</a>
-                </c:otherwise>
-            </c:choose>
-            <a class="active" href="${ctx}/counter-orders"><span class="material-symbols-outlined">receipt_long</span>Đơn tại quầy</a>
-            <a href="${ctx}/login?action=logout"><span class="material-symbols-outlined">logout</span>Đăng xuất</a>
-        </nav>
-    </header>
+                    <a class="active" href="${ctx}/counter-orders"><span class="material-symbols-outlined">receipt_long</span>Đơn tại quầy</a>
+                    <a href="${ctx}/login?action=logout"><span class="material-symbols-outlined">logout</span>Đăng xuất</a>
+                </nav>
+            </header>
+        </c:when>
+        <c:otherwise>
+            <%-- Thu ngân: cùng thanh header với màn Bán tại quầy / Chốt ca --%>
+            <jsp:include page="/components/cashier-header.jsp">
+                <jsp:param name="active" value="counter" />
+            </jsp:include>
+        </c:otherwise>
+    </c:choose>
 
     <main class="co-page">
         <section class="panel">

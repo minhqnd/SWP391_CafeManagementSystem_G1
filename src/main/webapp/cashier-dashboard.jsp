@@ -1872,59 +1872,12 @@
 </head>
 <body>
 
-    <!-- Top Header -->
-    <header class="pos-header">
-        <div class="brand-area">
-            <a href="${pageContext.request.contextPath}/cashier" class="brand-title">
-                <span class="material-symbols-outlined">coffee</span>
-                <span>AURA CAFÉ</span>
-            </a>
-            <span class="pos-badge">POS THU NGÂN</span>
-        </div>
-
-        <!-- Center Tabs Switcher -->
-        <div class="nav-tabs-pos">
-            <button class="nav-tab-btn active" id="tabBtnPos" onclick="switchMainTab('pos')">
-                <span class="material-symbols-outlined">point_of_sale</span>
-                <span>Tạo đơn tại quầy</span>
-            </button>
-            <button class="nav-tab-btn" id="tabBtnOrders" onclick="switchMainTab('orders')">
-                <span class="material-symbols-outlined">receipt_long</span>
-                <span>Đơn hôm nay (<span id="todayOrderCount">${counterOrders.size()}</span>)</span>
-            </button>
-            <%-- Danh sách đơn tại quầy theo ngày / trạng thái (Screen 12, UC20) --%>
-            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/counter-orders">
-                <span class="material-symbols-outlined">list_alt</span>
-                <span>Đơn tại quầy</span>
-            </a>
-            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover?mode=close">
-                <span class="material-symbols-outlined">calculate</span>
-                <span>Chốt ca</span>
-            </a>
-            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover">
-                <span class="material-symbols-outlined">assignment_turned_in</span>
-                <span>Bàn giao ca</span>
-            </a>
-        </div>
-
-        <!-- Right User Actions -->
-        <div class="header-meta">
-            <div class="shift-info">
-                <span class="material-symbols-outlined text-muted">schedule</span>
-                <span class="live-clock" id="clockDisplay">${currentTime}</span>
-                <span class="text-muted">|</span>
-                <span>${currentDate}</span>
-            </div>
-            <div class="user-pill">
-                <span class="material-symbols-outlined text-muted">account_circle</span>
-                <span>${sessionScope.user.fullName}</span>
-            </div>
-            <a href="${pageContext.request.contextPath}/login?action=logout" class="btn-link-action" title="Đăng xuất khỏi hệ thống">
-                <span class="material-symbols-outlined">logout</span>
-                <span>Đăng xuất</span>
-            </a>
-        </div>
-    </header>
+    <!-- Top Header: dùng chung cho các màn Thu ngân -->
+    <jsp:include page="/components/cashier-header.jsp">
+        <jsp:param name="onPos" value="true" />
+        <jsp:param name="active" value="pos" />
+        <jsp:param name="orderCount" value="${counterOrders.size()}" />
+    </jsp:include>
 
     <!-- Main Workspace -->
     <div class="pos-workspace">
