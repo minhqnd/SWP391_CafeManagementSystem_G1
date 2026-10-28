@@ -3,7 +3,6 @@ package controller;
 import dao.OrderDAO;
 import dao.PaymentDAO;
 import dao.ShopSettingDAO;
-import dao.UserDAO;
 import model.Order;
 import model.Payment;
 import model.ShopSettings;
@@ -26,7 +25,6 @@ public class PaymentController extends HttpServlet {
     private final OrderDAO orderDAO = new OrderDAO();
     private final PaymentDAO paymentDAO = new PaymentDAO();
     private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
-    private final UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -63,7 +61,6 @@ public class PaymentController extends HttpServlet {
         request.setAttribute("qrUrl",buildQrUrl(order,settings));
         request.setAttribute("storeAddress",CheckoutController.STORE_ADDRESS);
         request.setAttribute("deliveryMinutes",settings.getDeliveryMinutes());
-        request.setAttribute("paymentTestMode",settings.isPaymentTestMode());
         request.setAttribute("paymentGatewayUrl",settings.getPaymentGatewayUrl());
         request.setAttribute("expectedRewardPoints",settings.calculateEarnedPoints(order.getTotalAmount()-order.getDiscountAmount()));
         request.getRequestDispatcher("/payment.jsp").forward(request,response);
@@ -93,31 +90,9 @@ public class PaymentController extends HttpServlet {
             return;
         }
 
-        ShopSettings settings=shopSettingDAO.getSettings();
-        if(!settings.isPaymentTestMode()){
-            session.setAttribute("paymentError","Giao dịch đang chờ cổng thanh toán xác nhận tự động.");
-            response.sendRedirect(request.getContextPath()+"/payment?orderId="+orderId);
-            return;
-        }
-        Payment payment=paymentDAO.ensurePendingBankTransfer(orderId,user.getId());
-        if(payment==null){session.setAttribute("paymentError","Không thể khởi tạo giao dịch.");response.sendRedirect(request.getContextPath()+"/orders");return;}
-        String amount=BigDecimal.valueOf(order.getFinalAmount()).stripTrailingZeros().toPlainString();
-        String status="SUCCESS";
-        String canonical=PaymentService.canonical(order.getOrderCode(),payment.getTransactionCode(),amount,status);
-        String signature=PaymentService.sign(settings.getPaymentCallbackSecret(),canonical);
-        PaymentDAO.CallbackResult result=processCallback(order.getOrderCode(),payment.getTransactionCode(),amount,status,
-                "LOCAL-"+System.currentTimeMillis(),signature,settings);
-        if(!result.accepted() || !result.successful()){
-            session.setAttribute("paymentError","Mô phỏng callback thất bại: "+result.message());
-            response.sendRedirect(request.getContextPath()+"/payment?orderId="+orderId);
-            return;
-        }
-        // Đơn đã thanh toán: lúc này mới bỏ các món khỏi giỏ hàng
-        CheckoutController.removePaidItems(session,orderId);
-        user.setTotalPoints(userDAO.getTotalPoints(user.getId()));
-        session.setAttribute("ordersMessage","Thanh toán thành công đơn #"+order.getOrderCode()
-                +(result.earnedPoints()>0?". Bạn được cộng "+result.earnedPoints()+" điểm Aura.":"."));
-        response.sendRedirect(request.getContextPath()+"/bill?orderId="+orderId);
+        // Không còn mô phỏng thanh toán: chuyển khoản QR chỉ được xác nhận qua callback của cổng thanh toán
+        session.setAttribute("paymentError","Giao dịch đang chờ cổng thanh toán xác nhận tự động.");
+        response.sendRedirect(request.getContextPath()+"/payment?orderId="+orderId);
     }
 
     private void handleCallback(HttpServletRequest request,HttpServletResponse response)throws IOException{

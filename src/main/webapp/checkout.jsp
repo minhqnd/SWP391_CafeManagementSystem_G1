@@ -92,29 +92,17 @@
                 <div class="col-lg-7">
                     <fieldset class="${isGuest ? 'checkout-locked' : ''}" ${isGuest ? 'disabled' : ''}>
 
-                        <!-- Hình thức nhận hàng (SRS 2.3.2) -->
-                        <div class="aura-card p-3 p-md-4 mb-4">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="section-title">
-                                    <span class="section-icon"><span class="material-symbols-outlined">storefront</span></span>
-                                    Hình thức nhận hàng
-                                </div>
-                                <span class="badge-step mb-3">Bước 2 / 3</span>
-                            </div>
-                            <div class="fulfillment-options" role="radiogroup" aria-label="Hình thức nhận hàng">
-                                <label class="fulfillment-option">
-                                    <input type="radio" name="fulfillment" value="DELIVERY" checked>
-                                    <span class="material-symbols-outlined">delivery_dining</span>
-                                    <span><b>Giao tận nơi</b><small>Khoảng ${deliveryMinutes} phút</small></span>
-                                </label>
-                            </div>
-                        </div>
+                        <%-- Đặt hàng online chỉ có Giao tận nơi nên không hiện ô chọn hình thức nhận hàng --%>
+                        <input type="hidden" name="fulfillment" value="DELIVERY">
 
                         <!-- Thông tin người nhận & địa chỉ (SRS 2.3.3) -->
                         <div class="aura-card p-3 p-md-4 mb-4">
-                            <div class="section-title">
-                                <span class="section-icon"><span class="material-symbols-outlined">person</span></span>
-                                Thông tin người nhận
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="section-title">
+                                    <span class="section-icon"><span class="material-symbols-outlined">person</span></span>
+                                    Thông tin người nhận
+                                </div>
+                                <span class="badge-step mb-3">Bước 2 / 3</span>
                             </div>
                             <div class="info-box mb-3">
                                 <div class="row g-3">
@@ -287,9 +275,9 @@
     <!-- Bootstrap 5 JS Bundle (modal, dropdown, menu mobile) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Đổi hình thức nhận: hiện đúng trường cần nhập, cập nhật phí giao & tổng tiền (server tính lại khi đặt)
+        // Đổi quận giao: cập nhật phí giao & tổng tiền (server tính lại khi đặt). Chỉ có Giao tận nơi.
         (() => {
-            const radios = document.querySelectorAll('input[name="fulfillment"]');
+            const mode = 'DELIVERY';
             const feeRow = document.getElementById('deliveryFeeRow');
             const districtSelect = document.getElementById('district');
             const areaText = document.getElementById('deliveryAreaText');
@@ -298,9 +286,6 @@
             const money = (v) => Math.round(v).toLocaleString('vi-VN') + 'đ';
 
             const apply = () => {
-                const checked = document.querySelector('input[name="fulfillment"]:checked');
-                const mode = checked ? checked.value : 'DELIVERY';
-                radios.forEach((radio) => radio.closest('.fulfillment-option').classList.toggle('is-selected', radio.checked));
                 document.querySelectorAll('[data-show-for]').forEach((el) => {
                     el.hidden = !el.dataset.showFor.split(' ').includes(mode);
                 });
@@ -321,7 +306,6 @@
                 totalText.textContent = money(Number(feeRow.dataset.baseTotal) + fee);
             };
 
-            radios.forEach((radio) => radio.addEventListener('change', apply));
             districtSelect.addEventListener('change', apply);
             apply();
         })();
