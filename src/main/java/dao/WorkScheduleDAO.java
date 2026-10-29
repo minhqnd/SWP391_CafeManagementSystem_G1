@@ -28,7 +28,7 @@ public class WorkScheduleDAO extends BaseDAO {
             "       u.full_name AS user_name, u.phone AS user_phone, u.position AS user_position " +
             "FROM work_schedules ws " +
             "JOIN work_shifts s ON s.id = ws.shift_id " +
-            "JOIN users u ON ws.user_id = u.id ";
+            "JOIN users u ON ws.user_id = u.id AND u.role = 'STAFF' ";
 
     /**
      * Lấy danh sách ca làm việc theo bộ lọc ngày, nhân viên, ca (shift_id), trạng thái, vị trí
@@ -149,7 +149,8 @@ public class WorkScheduleDAO extends BaseDAO {
         }
 
         String sql = "INSERT INTO work_schedules (user_id, work_date, shift_id, status, note) " +
-                     "VALUES (?, ?, ?, ?, ?)";
+                     "SELECT ?, ?, ?, ?, ? FROM users " +
+                     "WHERE id = ? AND role = 'STAFF' AND status = 'ACTIVE'";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -159,6 +160,7 @@ public class WorkScheduleDAO extends BaseDAO {
             ps.setInt(3, ws.getShiftId());
             ps.setString(4, ws.getStatus() != null ? ws.getStatus() : "SCHEDULED");
             ps.setString(5, ws.getNote());
+            ps.setInt(6, ws.getUserId());
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -175,8 +177,10 @@ public class WorkScheduleDAO extends BaseDAO {
             return false;
         }
 
-        String sql = "UPDATE work_schedules SET user_id = ?, work_date = ?, shift_id = ?, " +
-                     "       status = ?, note = ? WHERE id = ?";
+        String sql = "UPDATE work_schedules ws " +
+                     "JOIN users u ON u.id = ? AND u.role = 'STAFF' AND u.status = 'ACTIVE' " +
+                     "SET ws.user_id = u.id, ws.work_date = ?, ws.shift_id = ?, " +
+                     "    ws.status = ?, ws.note = ? WHERE ws.id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

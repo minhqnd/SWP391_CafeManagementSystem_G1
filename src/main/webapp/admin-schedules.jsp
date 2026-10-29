@@ -75,7 +75,6 @@
             <div class="weekly-schedule-toolbar">
                 <h2 id="weeklyScheduleTitle">Bảng xếp lịch tuần theo ca</h2>
                 <div class="position-legend" aria-label="Chú thích vị trí nhân viên">
-                    <span class="legend-pill legend-manager">Quản lý nhân viên</span>
                     <span class="legend-pill legend-barista">Pha chế</span>
                     <span class="legend-pill legend-cashier">Thu ngân</span>
                     <span class="legend-pill legend-shipper">Giao hàng</span>
