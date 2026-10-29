@@ -97,6 +97,21 @@ public class CashierShiftHandoverController extends HttpServlet {
         ShiftHandoverSummary closePreview = activeShift != null
                 ? workScheduleDAO.getShiftHandoverSummary(activeShift, Timestamp.valueOf(LocalDateTime.now()))
                 : null;
+        ShiftHandover previousHandover = null;
+        BigDecimal openingCash = BigDecimal.ZERO;
+        if (activeShift != null) {
+            try {
+                previousHandover = shiftHandoverDAO.getPreviousHandoverForSchedule(activeShift.getId());
+                if (previousHandover != null && previousHandover.getActualCash() != null) {
+                    openingCash = previousHandover.getActualCash();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        BigDecimal expectedCash = closePreview != null
+                ? openingCash.add(closePreview.getCashSales())
+                : openingCash;
         ShiftHandover handoverRecord = null;
         if (completedShift != null) {
             try {
@@ -139,6 +154,9 @@ public class CashierShiftHandoverController extends HttpServlet {
         request.setAttribute("completedShift", completedShift);
         request.setAttribute("headerShift", headerShift);
         request.setAttribute("closePreview", closePreview);
+        request.setAttribute("previousHandover", previousHandover);
+        request.setAttribute("openingCash", openingCash);
+        request.setAttribute("expectedCash", expectedCash);
         request.setAttribute("handoverSummary", handoverSummary);
         request.setAttribute("handoverRecord", handoverRecord);
         request.setAttribute("closeMode", closeMode);
@@ -172,7 +190,11 @@ public class CashierShiftHandoverController extends HttpServlet {
             WorkSchedule schedule = workScheduleDAO.getScheduleById(scheduleId);
             validateOwnedActiveShift(schedule, cashier);
 
-            BigDecimal openingCash = parseCashAmount(request.getParameter("openingCash"));
+            ShiftHandover previousHandover =
+                    shiftHandoverDAO.getPreviousHandoverForSchedule(schedule.getId());
+            BigDecimal openingCash = previousHandover != null && previousHandover.getActualCash() != null
+                    ? previousHandover.getActualCash()
+                    : BigDecimal.ZERO;
             BigDecimal actualCash = parseCashAmount(request.getParameter("endingCashActual"));
             String note = normalizeNote(request.getParameter("note"));
             Timestamp closingTime = Timestamp.valueOf(LocalDateTime.now());

@@ -268,12 +268,12 @@
                                     <div class="system-cash-grid">
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">Tiền đầu ca</div>
-                                            <div class="system-cash-val" id="openingCashDisplay">0đ</div>
+                                            <div class="system-cash-val" id="openingCashDisplay"><fmt:formatNumber value="${openingCash}" pattern="#,##0" />đ</div>
                                         </div>
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">+ Thu tiền mặt</div>
                                             <div class="system-cash-val val-green">
-                                                <fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ
+                                                <fmt:formatNumber value="${expectedCash}" pattern="#,##0" />đ
                                             </div>
                                         </div>
                                         <div class="system-cash-item">
@@ -306,10 +306,17 @@
                                     <div class="cash-input-wrap">
                                         <input type="number" name="openingCash" id="openingCash"
                                                class="cash-actual-input" min="0" max="9999999999" step="1000"
-                                               value="0" required inputmode="numeric">
+                                               value="${openingCash}" required inputmode="numeric" readonly>
                                         <span>đ</span>
                                     </div>
-                                    <p class="field-help">Xác nhận số tiền có trong két khi bắt đầu ca.</p>
+                                    <c:choose>
+                                        <c:when test="${not empty previousHandover}">
+                                            <p class="field-help">Tự động nhận từ tiền thực tế cuối ca của <c:out value="${previousHandover.cashierName}" />.</p>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <p class="field-help">Không có ca bàn giao trước đó nên tiền đầu ca là 0đ.</p>
+                                        </c:otherwise>
+                                    </c:choose>
 
                                     <label class="database-field-label" for="endingCashActual">
                                         Tiền mặt thực tế cuối ca

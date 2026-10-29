@@ -88,6 +88,29 @@ public class ShiftHandoverDAO extends BaseDAO {
         return findOne(SELECT_HANDOVER + "WHERE h.id = ?", id);
     }
 
+    /**
+     * Finds the latest completed handover before the supplied scheduled shift.
+     * Its actual cash is the physical cash carried into the next cashier shift.
+     */
+    public ShiftHandover getPreviousHandoverForSchedule(int scheduleId)
+            throws SQLException, ClassNotFoundException {
+        String sql = "SELECT h.*, previous_ws.work_date, previous_shift.shift_name, "
+                + "previous_shift.start_time, previous_shift.end_time, cashier.full_name AS cashier_name "
+                + "FROM work_schedules current_ws "
+                + "JOIN work_shifts current_shift ON current_shift.id = current_ws.shift_id "
+                + "JOIN shift_handovers h ON h.status = 'CONFIRMED' "
+                + "JOIN work_schedules previous_ws ON previous_ws.id = h.schedule_id "
+                + "JOIN work_shifts previous_shift ON previous_shift.id = previous_ws.shift_id "
+                + "JOIN users cashier ON cashier.id = h.cashier_id "
+                + "WHERE current_ws.id = ? AND ("
+                + "previous_ws.work_date < current_ws.work_date OR ("
+                + "previous_ws.work_date = current_ws.work_date "
+                + "AND previous_shift.end_time <= current_shift.start_time)) "
+                + "ORDER BY previous_ws.work_date DESC, previous_shift.end_time DESC, "
+                + "h.created_at DESC, h.id DESC LIMIT 1";
+        return findOne(sql, scheduleId);
+    }
+
     /** Danh sách biên bản cho Admin, mới nhất lên đầu; status = null thì lấy tất cả */
     public List<ShiftHandover> getHandovers(String status) throws SQLException, ClassNotFoundException {
         String sql = SELECT_HANDOVER + (status != null ? "WHERE h.status = ? " : "")
