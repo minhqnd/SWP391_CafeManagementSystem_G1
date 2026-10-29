@@ -24,8 +24,7 @@ import java.util.List;
 /**
  * Màn hình chốt két và bàn giao ca dành riêng cho Thu ngân (SRS 2.5 / UC60).
  * URL: /cashier/handover, dùng mode=close để mở bước kiểm đếm/chốt ca.
- * Chốt ca sẽ lập biên bản shift_handovers (SUBMITTED) chờ Admin xác nhận / từ chối;
- * biên bản bị từ chối thì Thu ngân giải trình và gửi lại (action=resubmit).
+ * Chốt ca sẽ hoàn tất biên bản shift_handovers ngay; Admin chỉ xem lịch sử.
  */
 @WebServlet(name = "CashierShiftHandoverController", urlPatterns = {"/cashier/handover"})
 public class CashierShiftHandoverController extends HttpServlet {
@@ -164,10 +163,6 @@ public class CashierShiftHandoverController extends HttpServlet {
 
         HttpSession session = request.getSession();
         String action = request.getParameter("action");
-        if ("resubmit".equalsIgnoreCase(action)) {
-            handleResubmit(request, response, session, cashier);
-            return;
-        }
         try {
             if (!"close-shift".equalsIgnoreCase(action)) {
                 throw new IllegalArgumentException("Thao tác bàn giao ca không hợp lệ.");
@@ -194,7 +189,7 @@ public class CashierShiftHandoverController extends HttpServlet {
                 throw new IllegalStateException("Ca đã được chốt hoặc trạng thái ca vừa thay đổi. Vui lòng tải lại trang.");
             }
 
-            session.setAttribute("handoverSuccessMsg", "Đã chốt két và gửi biên bản bàn giao ca. Biên bản đang chờ Admin xác nhận.");
+            session.setAttribute("handoverSuccessMsg", "Đã chốt két và hoàn tất bàn giao ca.");
             response.sendRedirect(request.getContextPath() + "/cashier/handover?scheduleId=" + schedule.getId() + "&mode=handover");
         } catch (IllegalArgumentException | IllegalStateException e) {
             session.setAttribute("handoverErrorMsg", e.getMessage());
@@ -204,34 +199,6 @@ public class CashierShiftHandoverController extends HttpServlet {
             session.setAttribute("handoverErrorMsg", "Không thể chốt ca do lỗi hệ thống. Vui lòng thử lại.");
             response.sendRedirect(request.getContextPath() + "/cashier/handover?mode=close");
         }
-    }
-
-    /** Giải trình lại biên bản bị Admin từ chối, đưa về trạng thái chờ duyệt */
-    private void handleResubmit(HttpServletRequest request, HttpServletResponse response,
-                                HttpSession session, User cashier) throws IOException {
-        String scheduleParam = "";
-        try {
-            int handoverId = parsePositiveId(request.getParameter("handoverId"));
-            ShiftHandover handover = shiftHandoverDAO.getById(handoverId);
-            if (handover == null || handover.getCashierId() != cashier.getId()) {
-                throw new IllegalArgumentException("Biên bản bàn giao không tồn tại hoặc không thuộc tài khoản này.");
-            }
-            scheduleParam = "&scheduleId=" + handover.getScheduleId();
-            String explanation = normalizeNote(request.getParameter("explanation"));
-            if (explanation.isEmpty()) {
-                throw new IllegalArgumentException("Vui lòng nhập nội dung giải trình trước khi gửi lại.");
-            }
-            if (!shiftHandoverDAO.resubmit(handoverId, cashier.getId(), explanation)) {
-                throw new IllegalStateException("Chỉ biên bản bị từ chối mới có thể gửi lại.");
-            }
-            session.setAttribute("handoverSuccessMsg", "Đã gửi lại biên bản bàn giao, đang chờ Admin xác nhận.");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            session.setAttribute("handoverErrorMsg", e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            session.setAttribute("handoverErrorMsg", "Không thể gửi lại biên bản do lỗi hệ thống. Vui lòng thử lại.");
-        }
-        response.sendRedirect(request.getContextPath() + "/cashier/handover?mode=handover" + scheduleParam);
     }
 
     private User getAuthorizedCashier(HttpServletRequest request, HttpServletResponse response)

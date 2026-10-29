@@ -340,7 +340,7 @@
 
                                     <button type="submit" class="btn-submit-close">
                                         <span class="material-symbols-outlined">verified_user</span>
-                                        Chốt ca và gửi biên bản cho Admin
+                                        Chốt ca và hoàn tất bàn giao
                                     </button>
                                 </form>
                             </div>
@@ -380,43 +380,16 @@
                                 </div>
                             </div>
 
-                            <!-- Trạng thái duyệt biên bản (shift_handovers.status) -->
+                            <!-- Trạng thái hoàn tất biên bản -->
                             <c:if test="${not empty handoverRecord}">
                                 <div class="handover-review-box review-${handoverRecord.status}">
                                     <div class="handover-review-head">
-                                        <span class="material-symbols-outlined">
-                                            <c:choose>
-                                                <c:when test="${handoverRecord.status eq 'CONFIRMED'}">verified</c:when>
-                                                <c:when test="${handoverRecord.status eq 'REJECTED'}">cancel</c:when>
-                                                <c:otherwise>hourglass_top</c:otherwise>
-                                            </c:choose>
-                                        </span>
-                                        <strong>${handoverRecord.statusLabel}</strong>
+                                        <span class="material-symbols-outlined">verified</span>
+                                        <strong>Đã chốt ca</strong>
                                         <span class="handover-review-meta">
-                                            Gửi lúc ${handoverRecord.createdAtDisplay}
-                                            <c:if test="${not empty handoverRecord.reviewerName}">
-                                                • Người duyệt: <c:out value="${handoverRecord.reviewerName}" /> (${handoverRecord.reviewedAtDisplay})
-                                            </c:if>
+                                            Hoàn tất lúc ${handoverRecord.createdAtDisplay}
                                         </span>
                                     </div>
-                                    <c:if test="${not empty handoverRecord.reviewNote}">
-                                        <p class="handover-review-note">
-                                            <strong>${handoverRecord.rejected ? 'Lý do từ chối' : 'Ý kiến Admin'}:</strong>
-                                            <c:out value="${handoverRecord.reviewNote}" />
-                                        </p>
-                                    </c:if>
-                                    <c:if test="${handoverRecord.rejected}">
-                                        <form method="post" action="${ctx}/cashier/handover" class="handover-resubmit-form">
-                                            <input type="hidden" name="action" value="resubmit">
-                                            <input type="hidden" name="handoverId" value="${handoverRecord.id}">
-                                            <label for="explanation">Giải trình và gửi lại cho Admin</label>
-                                            <textarea name="explanation" id="explanation" class="note-input-field" rows="3"
-                                                      maxlength="500" required placeholder="Nhập giải trình về khoản chênh lệch..."><c:out value="${handoverRecord.note}" /></textarea>
-                                            <button type="submit" class="btn-action-primary">
-                                                <span class="material-symbols-outlined">send</span> Gửi lại biên bản
-                                            </button>
-                                        </form>
-                                    </c:if>
                                 </div>
                             </c:if>
 
@@ -706,7 +679,7 @@
                         return;
                     }
                 } else {
-                    if (!confirm('Xác nhận chốt ca và gửi biên bản bàn giao cho Admin duyệt?')) {
+                    if (!confirm('Xác nhận chốt ca và hoàn tất biên bản bàn giao?')) {
                         e.preventDefault();
                         return;
                     }

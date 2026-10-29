@@ -10,29 +10,26 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * ShiftHandoverDAO - Biên bản bàn giao ca (bảng shift_handovers, SRS 2.5 / UC60).
- * Thu ngân chốt ca -> lập biên bản SUBMITTED; Admin xem lại -> CONFIRMED / REJECTED.
+ * Thu ngân chốt ca -> hoàn tất biên bản ngay, Admin chỉ xem lịch sử.
  */
 public class ShiftHandoverDAO extends BaseDAO {
 
     private static final String SELECT_HANDOVER =
             "SELECT h.*, ws.work_date, s.shift_name, s.start_time, s.end_time, " +
-            "       c.full_name AS cashier_name, r.full_name AS reviewer_name " +
+            "       c.full_name AS cashier_name " +
             "FROM shift_handovers h " +
             "JOIN work_schedules ws ON ws.id = h.schedule_id " +
             "JOIN work_shifts s ON s.id = ws.shift_id " +
-            "JOIN users c ON c.id = h.cashier_id " +
-            "LEFT JOIN users r ON r.id = h.reviewed_by ";
+            "JOIN users c ON c.id = h.cashier_id ";
 
     /**
      * Chốt ca + lập biên bản trong 1 transaction:
      * 1. work_schedules: PRESENT -> COMPLETED (chỉ đúng ca của thu ngân này, đang làm)
-     * 2. INSERT shift_handovers (SUBMITTED) với số tiền hệ thống tính và tiền thực tế.
+     * 2. INSERT shift_handovers (CONFIRMED) với số tiền hệ thống tính và tiền thực tế.
      * Trả về id biên bản; 0 nếu ca không còn ở trạng thái PRESENT (đã chốt / gửi 2 lần).
      */
     public int submitHandover(int scheduleId, int cashierId, BigDecimal openingCash, BigDecimal cashSales,
@@ -43,7 +40,8 @@ public class ShiftHandoverDAO extends BaseDAO {
         String closeSql = "UPDATE work_schedules SET status = 'COMPLETED', check_out_time = NOW(), note = ? " +
                           "WHERE id = ? AND user_id = ? AND status = 'PRESENT'";
         String insertSql = "INSERT INTO shift_handovers (schedule_id, cashier_id, opening_cash, cash_sales, " +
-                           "expected_cash, actual_cash, difference, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                           "expected_cash, actual_cash, difference, note, status) " +
+                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED')";
 
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
@@ -105,51 +103,6 @@ public class ShiftHandoverDAO extends BaseDAO {
         return list;
     }
 
-    /** Số biên bản theo trạng thái (đủ 3 trạng thái) */
-    public Map<String, Integer> countByStatus() throws SQLException, ClassNotFoundException {
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        counts.put("SUBMITTED", 0);
-        counts.put("CONFIRMED", 0);
-        counts.put("REJECTED", 0);
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT status, COUNT(*) AS cnt FROM shift_handovers GROUP BY status");
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) counts.put(rs.getString("status"), rs.getInt("cnt"));
-        }
-        return counts;
-    }
-
-    /**
-     * Admin xác nhận / từ chối - chỉ biên bản đang chờ duyệt (điều kiện nằm trong câu UPDATE,
-     * chống 2 admin duyệt cùng lúc). Trả về false nếu biên bản đã được xử lý.
-     */
-    public boolean review(int id, int adminId, boolean confirm, String reviewNote)
-            throws SQLException, ClassNotFoundException {
-        String sql = "UPDATE shift_handovers SET status = ?, reviewed_by = ?, review_note = ?, reviewed_at = NOW() " +
-                     "WHERE id = ? AND status = 'SUBMITTED'";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, confirm ? "CONFIRMED" : "REJECTED");
-            ps.setInt(2, adminId);
-            ps.setString(3, reviewNote == null || reviewNote.isEmpty() ? null : reviewNote);
-            ps.setInt(4, id);
-            return ps.executeUpdate() > 0;
-        }
-    }
-
-    /** Thu ngân giải trình biên bản bị từ chối và gửi lại để Admin duyệt */
-    public boolean resubmit(int id, int cashierId, String explanation) throws SQLException, ClassNotFoundException {
-        String sql = "UPDATE shift_handovers SET status = 'SUBMITTED', note = ?, reviewed_by = NULL, reviewed_at = NULL " +
-                     "WHERE id = ? AND cashier_id = ? AND status = 'REJECTED'";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, explanation);
-            ps.setInt(2, id);
-            ps.setInt(3, cashierId);
-            return ps.executeUpdate() > 0;
-        }
-    }
-
     private ShiftHandover findOne(String sql, int param) throws SQLException, ClassNotFoundException {
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -180,11 +133,7 @@ public class ShiftHandoverDAO extends BaseDAO {
         h.setDifference(rs.getBigDecimal("difference"));
         h.setNote(rs.getString("note"));
         h.setStatus(rs.getString("status"));
-        h.setReviewedBy(rs.getObject("reviewed_by", Integer.class));
-        h.setReviewerName(rs.getString("reviewer_name"));
-        h.setReviewNote(rs.getString("review_note"));
         h.setCreatedAt(rs.getTimestamp("created_at"));
-        h.setReviewedAt(rs.getTimestamp("reviewed_at"));
         return h;
     }
 }

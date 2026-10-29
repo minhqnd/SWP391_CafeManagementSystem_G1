@@ -702,18 +702,13 @@ CREATE TABLE `shift_handovers` (
   `actual_cash` decimal(12,2) NOT NULL,
   `difference` decimal(12,2) NOT NULL,
   `note` text COLLATE utf8mb4_unicode_ci,
-  `status` enum('SUBMITTED','CONFIRMED','REJECTED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'SUBMITTED',
-  `reviewed_by` int DEFAULT NULL,
-  `review_note` text COLLATE utf8mb4_unicode_ci,
+  `status` enum('CONFIRMED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'CONFIRMED',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `reviewed_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_handover_schedule` (`schedule_id`),
   KEY `fk_handover_cashier` (`cashier_id`),
-  KEY `fk_handover_reviewer` (`reviewed_by`),
   KEY `idx_handover_status` (`status`),
   CONSTRAINT `fk_handover_cashier` FOREIGN KEY (`cashier_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_handover_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_handover_schedule` FOREIGN KEY (`schedule_id`) REFERENCES `work_schedules` (`id`) ON DELETE CASCADE,
   CONSTRAINT `chk_handover_cash` CHECK (((`opening_cash` >= 0) and (`cash_sales` >= 0) and (`expected_cash` >= 0) and (`actual_cash` >= 0)))
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -725,7 +720,7 @@ CREATE TABLE `shift_handovers` (
 
 LOCK TABLES `shift_handovers` WRITE;
 /*!40000 ALTER TABLE `shift_handovers` DISABLE KEYS */;
-INSERT INTO `shift_handovers` VALUES (1,12,3,0.00,45000.00,45000.00,45000.00,0.00,'ok','CONFIRMED',1,NULL,'2026-10-28 16:41:30','2026-10-28 17:16:13');
+INSERT INTO `shift_handovers` VALUES (1,12,3,0.00,45000.00,45000.00,45000.00,0.00,'ok','CONFIRMED','2026-10-28 16:41:30');
 /*!40000 ALTER TABLE `shift_handovers` ENABLE KEYS */;
 UNLOCK TABLES;
 
