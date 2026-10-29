@@ -104,6 +104,8 @@
 }
 
 .order-toolbar {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -113,7 +115,7 @@
 .order-search {
     position: relative;
     flex: 1;
-    max-width: 440px;
+    min-width: 0;
 }
 
 .order-search span {
@@ -142,6 +144,30 @@
 .order-toolbar select {
     padding: 7px 30px 7px 11px;
 }
+
+.date-filter { position: relative; flex: 0 0 auto; }
+.date-filter-trigger {
+    display: flex; align-items: center; gap: 6px; min-height: 39px;
+    padding: 7px 10px; border: 1px solid var(--order-border); border-radius: 11px;
+    background: #fafaf9; color: #292524; font: inherit; font-size: .76rem; cursor: pointer;
+}
+.date-filter-trigger .material-symbols-outlined { font-size: 18px; }
+.date-filter-trigger:focus-visible, .date-popover button:focus-visible, .date-popover input:focus-visible {
+    outline: 2px solid var(--order-primary); outline-offset: 2px;
+}
+.date-popover {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 10;
+    width: min(300px, calc(100vw - 32px)); padding: 16px;
+    border: 1px solid var(--order-border); border-radius: 12px;
+    background: #fff; box-shadow: 0 12px 32px rgba(28, 25, 23, .16);
+}
+.date-popover[hidden] { display: none; }
+.date-popover label { display: block; margin: 0 0 5px; font-size: .75rem; font-weight: 700; }
+.date-popover input { width: 100%; min-width: 0; padding: 8px; margin-bottom: 12px; border: 1px solid var(--order-border); border-radius: 8px; font-size: .8rem; }
+.date-error { color: #b91c1c; font-size: .75rem; margin: 0 0 10px; }
+.date-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.date-actions button { padding: 8px 12px; border: 1px solid var(--order-border); border-radius: 8px; background: #fff; font-size: .75rem; font-weight: 700; }
+.date-actions #dateApply { border-color: var(--order-primary); background: var(--order-primary); color: #fff; }
 
 .order-search input:focus, .order-toolbar select:focus {
     border-color: var(--order-primary);
@@ -389,9 +415,8 @@
         max-width: none;
     }
 
-    .order-edit-grid {
-        grid-template-columns: 1fr;
-    }
+    .date-filter-trigger { width: 100%; }
+    .date-filter-trigger #dateLabel { flex: 1; text-align: left; }
 
 }
 
