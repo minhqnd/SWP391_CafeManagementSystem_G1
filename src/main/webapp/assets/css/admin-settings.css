@@ -1,297 +1,53 @@
-:root {
-    --settings-accent: #b42318;
-    --settings-ink: #292524;
-    --settings-muted: #78716c;
-    --settings-line: #e7e5e4;
-}
-
 body.admin-body {
     background: #f7f7f6;
-    color: var(--settings-ink);
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #292524;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
-.settings-page {
-    max-width: 1320px;
+.admin-main-wrapper.settings-page {
+    max-width: 1280px;
     padding-bottom: 48px;
 }
 
-.settings-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 26px;
-}
-
-.settings-header h1 {
-    margin: 8px 0 7px;
-    font-size: 30px;
-    font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: -0.035em;
-}
-
-.settings-header p {
-    max-width: 760px;
-    margin: 0;
-    color: var(--settings-muted);
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.settings-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: #a8a29e;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.settings-breadcrumb a {
-    color: var(--settings-accent);
-    text-decoration: none;
-}
-
-.settings-breadcrumb .material-symbols-outlined {
-    font-size: 16px;
-}
-
-.btn-add-setting,
-.btn-save {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 11px 16px;
-    border: 0;
-    border-radius: 11px;
-    background: #292524;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 800;
-    text-decoration: none;
-    transition: 0.2s;
-}
-
-.btn-add-setting:hover,
-.btn-save:hover {
-    background: #44403c;
-    color: #fff;
-    transform: translateY(-1px);
-}
-
-.btn-add-setting .material-symbols-outlined,
-.btn-save .material-symbols-outlined {
-    font-size: 19px;
-}
-
-.settings-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-    gap: 18px;
-}
-
-.settings-card {
-    padding: 21px;
-    border: 1px solid var(--settings-line);
-    border-radius: 18px;
+.settings-page-heading {
+    padding: 20px;
+    border: 1px solid #e7e5e4;
+    border-radius: 16px;
     background: #fff;
-    box-shadow: 0 2px 10px rgba(28, 25, 23, 0.035);
 }
 
-.settings-card-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #f1f0ef;
+.settings-page-heading h1 {
+    color: #1c1917;
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -.025em;
 }
 
-.settings-card-title h2 {
-    margin: 0;
-    font-size: 14px;
+.settings-page .settings-group {
+    border: 1px solid #e7e5e4;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(28, 25, 23, .04);
+}
+
+.settings-page .section-title {
     font-weight: 800;
 }
 
-.group-icon {
-    display: grid;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: #fef2f2;
-    color: var(--settings-accent);
-    font-size: 19px;
-    place-items: center;
-}
-
-.settings-fields {
-    display: grid;
-    gap: 15px;
-    padding-top: 16px;
-}
-
-.setting-field label {
-    display: block;
-    margin-bottom: 7px;
-    color: #44403c;
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.setting-field input {
-    width: 100%;
-    min-height: 43px;
-    padding: 9px 12px;
-    border: 1px solid #d6d3d1;
-    border-radius: 10px;
-    outline: none;
-    background: #fff;
-    color: #292524;
-    font-size: 13px;
-    transition: 0.18s;
-}
-
-.setting-field input:focus {
-    border-color: #a8a29e;
-    box-shadow: 0 0 0 3px rgba(168, 162, 158, 0.18);
-}
-
-.field-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 6px;
-    color: #a8a29e;
-    font-size: 10px;
-}
-
-.field-meta code {
-    padding: 2px 5px;
-    border-radius: 5px;
-    background: #f5f5f4;
-    color: #a8a29e;
-}
-
-.settings-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.btn-cancel {
-    padding: 10px 16px;
-    border: 1px solid var(--settings-line);
-    border-radius: 11px;
-    background: #fff;
-    color: #57534e;
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-}
-
-.btn-cancel:hover {
-    background: #f5f5f4;
-    color: #292524;
-}
-
-.settings-alert {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 18px;
-    padding: 11px 14px;
-    border-radius: 11px;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.settings-alert .material-symbols-outlined {
-    font-size: 20px;
-}
-
-.settings-alert.success {
-    border: 1px solid #bbf7d0;
-    background: #f0fdf4;
-    color: #166534;
-}
-
-.settings-alert.error {
-    border: 1px solid #fecaca;
-    background: #fef2f2;
-    color: #991b1b;
-}
-
-.settings-modal {
-    border: 0;
-    border-radius: 18px;
-    box-shadow: 0 24px 70px rgba(28, 25, 23, 0.2);
-}
-
-.settings-modal .modal-header,
-.settings-modal .modal-footer {
-    padding: 18px 21px;
-    border-color: #f1f0ef;
-}
-
-.settings-modal .modal-body {
-    padding: 21px;
-}
-
-.settings-modal small {
-    color: var(--settings-accent);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-}
-
-.settings-modal h2 {
-    margin: 3px 0 0;
-    font-size: 18px;
-    font-weight: 800;
-}
-
-.input-help {
-    margin-top: 6px;
-    color: #a8a29e;
-    font-size: 11px;
-}
-
-@media (max-width: 991.98px) {
-    .settings-grid {
-        grid-template-columns: 1fr;
-    }
+.settings-mobile-bar {
+    display: none;
 }
 
 @media (max-width: 767.98px) {
-    .settings-page {
+    .admin-main-wrapper.settings-page {
         padding: 20px 15px 40px;
     }
 
-    .settings-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .btn-add-setting {
-        width: 100%;
-    }
-
-    .settings-header h1 {
-        font-size: 25px;
-    }
-
-    .settings-card {
-        padding: 17px;
-    }
-
-    .field-meta {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
+    .settings-mobile-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px;
+        background: #fff;
+        border-bottom: 1px solid #e7e5e4;
     }
 }
