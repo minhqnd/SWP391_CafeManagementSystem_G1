@@ -163,7 +163,7 @@
         <li class="nav-item">
             <a href="${ctx}/admin/settings" class="nav-link ${param.activeMenu == 'settings' ? 'active' : ''}">
                 <span class="material-symbols-outlined">settings</span>
-                <span>Cài đặt cửa hàng</span>
+                <span>Cài đặt hệ thống</span>
             </a>
         </li>
         <li class="nav-item">
