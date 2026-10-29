@@ -110,9 +110,10 @@ public class CounterOrderController extends HttpServlet {
         }
 
         // Mặc định: Hiển thị giao diện POS
+        User cashier = (User) request.getSession().getAttribute("user");
         List<Category> categories = categoryDAO.getAllActiveCategoriesWithCount();
         List<Product> products = productDAO.filterProducts(null, null);
-        List<Order> counterOrders = orderDAO.getCounterOrdersToday();
+        List<Order> counterOrders = orderDAO.getCounterOrdersToday(cashier.getId());
 
         request.setAttribute("categories", categories);
         request.setAttribute("products", products);
@@ -179,7 +180,7 @@ public class CounterOrderController extends HttpServlet {
         }
 
         Order order = orderDAO.getOrderById(orderId);
-        if (order == null) {
+        if (order == null || !isOwnedCounterOrder(request, order)) {
             sendJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"success\":false,\"error\":\"Không tìm thấy đơn hàng.\"}");
             return;
         }
@@ -351,7 +352,8 @@ public class CounterOrderController extends HttpServlet {
     }
 
     private void handleGetOrders(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        List<Order> orders = orderDAO.getCounterOrdersToday();
+        User cashier = (User) request.getSession().getAttribute("user");
+        List<Order> orders = orderDAO.getCounterOrdersToday(cashier.getId());
         StringBuilder sb = new StringBuilder("{\"success\":true,\"todayCount\":").append(orders.size()).append(",\"orders\":[");
         for (int i = 0; i < orders.size(); i++) {
             Order o = orders.get(i);
@@ -387,6 +389,12 @@ public class CounterOrderController extends HttpServlet {
             return;
         }
 
+        Order order = orderDAO.getOrderById(orderId);
+        if (order == null || !isOwnedCounterOrder(request, order)) {
+            sendJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"success\":false,\"error\":\"Không tìm thấy đơn hàng.\"}");
+            return;
+        }
+
         String errorMsg = orderDAO.cancelCounterOrderWithReason(orderId);
         if (errorMsg == null) {
             sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã hủy đơn hàng thành công.\"}");
@@ -417,6 +425,12 @@ public class CounterOrderController extends HttpServlet {
             return;
         }
 
+        Order order = orderDAO.getOrderById(orderId);
+        if (order == null || !isOwnedCounterOrder(request, order)) {
+            sendJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"success\":false,\"error\":\"Không tìm thấy đơn hàng.\"}");
+            return;
+        }
+
         boolean success = orderDAO.completeCounterOrder(orderId);
         if (success) {
             sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã đánh dấu hoàn tất đơn hàng và giao khách thành công.\"}");
@@ -426,6 +440,15 @@ public class CounterOrderController extends HttpServlet {
     }
 
     // Helper functions
+    private boolean isOwnedCounterOrder(HttpServletRequest request, Order order) {
+        User cashier = (User) request.getSession().getAttribute("user");
+        return cashier != null
+                && order.getCashierId() != null
+                && order.getCashierId() == cashier.getId()
+                && ("DINE_IN".equalsIgnoreCase(order.getOrderType())
+                    || "TAKEAWAY".equalsIgnoreCase(order.getOrderType()));
+    }
+
     private void sendJson(HttpServletResponse response, int status, String json) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json");

@@ -50,6 +50,26 @@ public class WorkScheduleDAOTest {
         List<User> staffList = userDAO.getStaffEmployees();
         assertNotNull(staffList);
         assertFalse(staffList.isEmpty(), "Should find staff members from seed data");
+        assertTrue(staffList.stream().allMatch(user -> "STAFF".equals(user.getRole())),
+                "Schedule employee list must not include ADMIN accounts");
+        assertNull(userDAO.getActiveStaffById(1), "ADMIN accounts must not be assignable to shifts");
+    }
+
+    @Test
+    public void testAdminScheduleIsRejectedByDao() throws Exception {
+        LocalDate workDay = LocalDate.of(2026, 10, 29);
+        List<WorkShift> shifts = workShiftDAO.getShiftsByWeek(
+                workDay.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)));
+        assertFalse(shifts.isEmpty(), "Seed week should contain work shifts");
+
+        WorkSchedule adminSchedule = new WorkSchedule();
+        adminSchedule.setUserId(1);
+        adminSchedule.setWorkDate(Date.valueOf(workDay));
+        adminSchedule.setShiftId(shifts.get(0).getId());
+        adminSchedule.setStatus("SCHEDULED");
+
+        assertFalse(workScheduleDAO.addSchedule(adminSchedule),
+                "DAO must reject shift assignments for ADMIN accounts");
     }
 
     @Test
