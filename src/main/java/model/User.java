@@ -167,7 +167,7 @@ public class User implements Serializable {
     }
 
     public String getPositionDisplayName() {
-        if ("MANAGER".equalsIgnoreCase(position)) return "Quản lý";
+        if ("MANAGER".equalsIgnoreCase(position)) return "Quản lý nhân viên";
         if ("BARISTA".equalsIgnoreCase(position)) return "Pha chế";
         if ("CASHIER".equalsIgnoreCase(position)) return "Thu ngân";
         if ("SHIPPER".equalsIgnoreCase(position)) return "Giao hàng";

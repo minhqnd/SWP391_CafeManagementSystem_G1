@@ -594,7 +594,7 @@
                 <!-- Left: Product Image -->
                 <div class="col-12 col-md-6 col-lg-5 animate-in animate-delay-1">
                     <div class="product-gallery">
-                        <img id="productMainImg" src="${product.imageUrl}" alt="${product.name}"
+                        <img id="productMainImg" src="${product.displayImageUrl}" alt="${product.name}"
                              onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80'">
                         <div class="gallery-category-tag">
                             <span class="material-symbols-outlined" style="font-size: 14px;">local_cafe</span>
@@ -640,9 +640,6 @@
                             <div>
                                 <div class="price-from-label">Giá từ</div>
                                 <span class="price-main" id="displayTotalPrice">${product.formattedPrice}</span>
-                            </div>
-                            <div class="text-end">
-                                <span class="price-note">Đã bao gồm VAT</span>
                             </div>
                         </div>
 
@@ -715,7 +712,7 @@
                         <div class="col">
                             <a href="${pageContext.request.contextPath}/product-detail?id=${rp.id}" class="related-card h-100">
                                 <div style="overflow: hidden;">
-                                    <img src="${rp.imageUrl}" alt="${rp.name}" class="related-card-img" loading="lazy"
+                                    <img src="${rp.displayImageUrl}" alt="${rp.name}" class="related-card-img" loading="lazy"
                                          onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'">
                                 </div>
                                 <div class="related-card-body">
@@ -836,7 +833,7 @@
             categoryName: '${product.categoryName}',
             categoryId: Number('${product.categoryId}'),
             basePrice: Number('${product.basePrice}'),
-            imageUrl: '${product.imageUrl}',
+            imageUrl: '${product.displayImageUrl}',
             variantsConfig: '${product.variantsConfig != null ? product.variantsConfig : "{}"}'
         };
 
@@ -871,15 +868,20 @@
             if (sizes && typeof sizes === 'object' && Object.keys(sizes).length > 0) {
                 sizeSection.style.display = '';
                 var sizeKeys = Object.keys(sizes);
+                var defaultSizeName = sizeKeys.find(function (name) {
+                    return Number(sizes[name]) === 0;
+                }) || sizeKeys.reduce(function (cheapest, name) {
+                    return Number(sizes[name]) < Number(sizes[cheapest]) ? name : cheapest;
+                });
                 var html = '';
                 sizeKeys.forEach(function (sName, idx) {
-                    var extraPrice = sizes[sName] || 0;
-                    var isFirst = idx === 0;
-                    if (isFirst) {
+                    var extraPrice = Number(sizes[sName]) || 0;
+                    var isDefault = sName === defaultSizeName;
+                    if (isDefault) {
                         selectedSizePrice = extraPrice;
                         selectedSizeName = sName;
                     }
-                    html += '<div class="size-chip ' + (isFirst ? 'selected' : '') + '" onclick="selectSize(this, \'' + sName + '\', ' + extraPrice + ')">'
+                    html += '<div class="size-chip ' + (isDefault ? 'selected' : '') + '" onclick="selectSize(this, \'' + sName + '\', ' + extraPrice + ')">'
                         + '<span class="fw-bold">' + sName + '</span>'
                         + (extraPrice > 0 ? '<span class="size-extra">+' + extraPrice.toLocaleString('vi-VN') + 'đ</span>' : '<span class="size-extra">Tiêu chuẩn</span>')
                         + '</div>';

@@ -96,7 +96,7 @@ public class MenuController extends HttpServlet {
             json.append("\"basePrice\":").append(product.getBasePrice()).append(",");
             json.append("\"formattedPrice\":").append(escapeJson(product.getFormattedPrice())).append(",");
             json.append("\"description\":").append(escapeJson(product.getDescription() != null ? product.getDescription() : "")).append(",");
-            json.append("\"imageUrl\":").append(escapeJson(product.getImageUrl() != null ? product.getImageUrl() : "")).append(",");
+            json.append("\"imageUrl\":").append(escapeJson(product.getDisplayImageUrl() != null ? product.getDisplayImageUrl() : "")).append(",");
             json.append("\"isAvailable\":").append(product.isAvailable()).append(",");
             json.append("\"variantsConfig\":").append(product.getVariantsConfig() != null && !product.getVariantsConfig().isEmpty() ? product.getVariantsConfig() : "{}");
             json.append("}");

@@ -1,0 +1,31 @@
+/* Shift Handover Review Screen (Bàn giao ca - Admin duyệt) */
+.handover-page { max-width: 1320px; }
+
+.handover-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f1f3; }
+.handover-filter-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+    border: 1px solid #e5e7eb; border-radius: 999px; background: #fff; color: #4b5563;
+    font-size: 0.78rem; font-weight: 700; text-decoration: none;
+}
+.handover-filter-chip span { padding: 0 7px; border-radius: 999px; background: #f3f4f6; font-size: 0.7rem; }
+.handover-filter-chip:hover { border-color: #f8d7da; color: #8b101c; }
+.handover-filter-chip.is-active { border-color: #8b101c; background: #8b101c; color: #fff; }
+.handover-filter-chip.is-active span { background: rgba(255, 255, 255, 0.2); }
+
+.handover-table { min-width: 1080px; }
+.handover-table td { font-size: 0.8rem; }
+.handover-sub { color: #6b7280; font-size: 0.7rem; }
+.handover-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.handover-diff { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+.handover-diff.diff-0 { background: #ecfdf5; color: #047857; }
+.handover-diff.diff-1 { background: #fffbeb; color: #b45309; }
+.handover-diff.diff--1 { background: #fef2f2; color: #b91c1c; }
+
+.handover-note-cell { max-width: 240px; color: #374151; white-space: pre-line; }
+.handover-review-line { margin-top: 4px; color: #6b7280; font-size: 0.72rem; }
+
+.handover-status { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
+.handover-status.status-SUBMITTED { background: #fffbeb; color: #b45309; }
+.handover-status.status-CONFIRMED { background: #ecfdf5; color: #047857; }
+.handover-status.status-REJECTED { background: #fef2f2; color: #b91c1c; }

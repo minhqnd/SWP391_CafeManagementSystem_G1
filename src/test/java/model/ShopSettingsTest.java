@@ -46,9 +46,10 @@ public class ShopSettingsTest {
         ShopSettings settings = new ShopSettings();
 
         assertEquals(150000, settings.getFreeshipThreshold());
-        assertEquals(18000, settings.getDeliveryFee());
+        assertEquals(15000, settings.getDeliveryFee());
         assertEquals(30, settings.getDeliveryMinutes());
         assertEquals(10, settings.getPointsStep());
         assertEquals(2000, settings.getPointsStepValue());
     }
+
 }

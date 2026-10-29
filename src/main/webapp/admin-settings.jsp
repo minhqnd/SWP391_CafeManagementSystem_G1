@@ -97,13 +97,13 @@
                         <div class="form-text">Tính trên tiền các món khách chọn (trước khi trừ điểm). Nhập 0 = miễn phí giao hàng mọi đơn.</div>
                     </div>
                     <div class="col-md-4">
-                        <label for="deliveryFee" class="form-label small fw-semibold mb-1">Phí giao hàng khi chưa đủ Freeship</label>
+                        <label for="deliveryFee" class="form-label small fw-semibold mb-1">Phí giao tạm tính (khi chưa chọn quận)</label>
                         <div class="input-group">
                             <input type="number" id="deliveryFee" name="deliveryFee" class="form-control aura-input"
                                    min="0" max="1000000" step="1" required value="${fn:escapeXml(form.deliveryFee)}">
                             <span class="input-group-text">đ</span>
                         </div>
-                        <div class="form-text">Cộng vào tổng thanh toán của đơn chưa đạt mức Freeship.</div>
+                        <div class="form-text">Phí giao thật tính theo quận khách chọn, chỉnh ở màn <a href="${pageContext.request.contextPath}/admin/delivery-areas">Phí giao theo quận</a>.</div>
                     </div>
                     <div class="col-md-4">
                         <label for="deliveryMinutes" class="form-label small fw-semibold mb-1">Thời gian giao dự kiến</label>
@@ -134,6 +134,15 @@
                         <div class="form-text">Khách chỉ dùng được bội số của mốc này (VD mốc 10: 10, 20, 30... điểm - là bước của thanh kéo ở Giỏ hàng).</div>
                     </div>
                     <div class="col-md-6">
+                        <label for="pointsEarnUnit" class="form-label small fw-semibold mb-1">Chi tiêu để nhận 1 điểm</label>
+                        <div class="input-group">
+                            <input type="number" id="pointsEarnUnit" name="pointsEarnUnit" class="form-control aura-input"
+                                   min="1000" max="100000000" step="1000" required value="${fn:escapeXml(form.pointsEarnUnit)}">
+                            <span class="input-group-text">đ / điểm</span>
+                        </div>
+                        <div class="form-text">Tính trên tiền hàng sau khi trừ điểm; Admin có thể thay đổi, hệ thống không hard-code.</div>
+                    </div>
+                    <div class="col-md-6">
                         <label for="pointsStepValue" class="form-label small fw-semibold mb-1">Mỗi mốc được giảm</label>
                         <div class="input-group">
                             <input type="number" id="pointsStepValue" name="pointsStepValue" class="form-control aura-input"
@@ -155,7 +164,7 @@
                         <span class="text-muted align-self-center">...</span>
                     </div>
                     <div class="text-muted">
-                        Tích điểm (cố định): mỗi <fmt:formatNumber value="${moneyPerPoint}" pattern="#,##0" />đ tiền hàng sau khi trừ điểm = 1 điểm,
+                        Tích điểm theo cấu hình: mỗi <fmt:formatNumber value="${moneyPerPoint}" pattern="#,##0" />đ tiền hàng sau khi trừ điểm = 1 điểm,
                         cộng khi khách thanh toán. Điểm dùng cho đơn được trừ lúc đặt và hoàn lại nếu khách hủy đơn chưa thanh toán.
                     </div>
                 </div>

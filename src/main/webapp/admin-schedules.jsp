@@ -63,11 +63,19 @@
             </div>
         </section>
 
+        <c:if test="${empty weekShifts}">
+            <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+                <span class="material-symbols-outlined">schedule</span>
+                <span>Tuần ${weekStartLabel} - ${weekEndLabel} chưa có khung ca nên chưa xếp lịch được.
+                    <a href="${ctx}/admin/shifts?date=${monday}" class="alert-link">Tạo khung ca cho tuần này</a>.</span>
+            </div>
+        </c:if>
+
         <section class="weekly-schedule-card" aria-labelledby="weeklyScheduleTitle">
             <div class="weekly-schedule-toolbar">
                 <h2 id="weeklyScheduleTitle">Bảng xếp lịch tuần theo ca</h2>
                 <div class="position-legend" aria-label="Chú thích vị trí nhân viên">
-                    <span class="legend-pill legend-manager">Quản lý</span>
+                    <span class="legend-pill legend-manager">Quản lý nhân viên</span>
                     <span class="legend-pill legend-barista">Pha chế</span>
                     <span class="legend-pill legend-cashier">Thu ngân</span>
                     <span class="legend-pill legend-shipper">Giao hàng</span>
@@ -101,95 +109,42 @@
                         <c:forEach items="${weekDays}" var="day">
                             <c:set var="dayIso" value="${day.toString()}" />
                             <div class="weekly-day-column ${dayIso == selectedDate ? 'is-selected' : ''}" role="cell">
-                                <c:set var="morningKey" value="${dayIso}_MORNING" />
-                                <c:set var="morningList" value="${calendarSlotMap[morningKey]}" />
-                                <div class="day-shift-section">
-                                    <div class="day-shift-label">Ca sáng <span>(${settings.shiftMorning})</span></div>
-                                    <c:forEach items="${morningList}" var="item">
-                                        <article class="employee-shift-card role-${fn:toLowerCase(item.userPosition)} edit-schedule-trigger"
-                                                 tabindex="0" role="button" aria-label="Sửa ca của ${fn:escapeXml(item.userName)}"
-                                                 data-id="${item.id}" data-user-id="${item.userId}"
-                                                 data-work-date="${item.workDateFormatted}" data-shift-name="${item.shiftName}"
-                                                 data-status="${item.status}" data-note="${fn:escapeXml(item.note)}"
-                                                 data-starting-cash="${item.startingCash}" data-ending-cash="${item.endingCashActual}">
-                                            <div class="employee-card-name"><c:out value="${item.userName}" /></div>
-                                            <div class="employee-card-meta">${item.positionDisplayName} · ${item.statusDisplayName}</div>
-                                            <c:if test="${item.status == 'SCHEDULED'}">
-                                                <form method="post" action="${ctx}/admin/schedules" class="employee-card-delete"
-                                                      onsubmit="event.stopPropagation(); return confirm('Bạn có chắc muốn hủy ca làm này?');">
-                                                    <input type="hidden" name="action" value="delete">
-                                                    <input type="hidden" name="id" value="${item.id}">
-                                                    <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                    <input type="hidden" name="returnView" value="calendar">
-                                                    <button type="submit" onclick="event.stopPropagation()" aria-label="Hủy ca của ${fn:escapeXml(item.userName)}">
-                                                        <span class="material-symbols-outlined">close</span>
-                                                    </button>
-                                                </form>
-                                            </c:if>
-                                        </article>
-                                    </c:forEach>
-                                    <button type="button" class="empty-shift-slot add-schedule-trigger" data-date="${dayIso}" data-shift="MORNING">+ Xếp ca</button>
-                                </div>
-
-                                <c:set var="afternoonKey" value="${dayIso}_AFTERNOON" />
-                                <c:set var="afternoonList" value="${calendarSlotMap[afternoonKey]}" />
-                                <div class="day-shift-section">
-                                    <div class="day-shift-label">Ca chiều <span>(${settings.shiftAfternoon})</span></div>
-                                    <c:forEach items="${afternoonList}" var="item">
-                                        <article class="employee-shift-card role-${fn:toLowerCase(item.userPosition)} edit-schedule-trigger"
-                                                 tabindex="0" role="button" aria-label="Sửa ca của ${fn:escapeXml(item.userName)}"
-                                                 data-id="${item.id}" data-user-id="${item.userId}"
-                                                 data-work-date="${item.workDateFormatted}" data-shift-name="${item.shiftName}"
-                                                 data-status="${item.status}" data-note="${fn:escapeXml(item.note)}"
-                                                 data-starting-cash="${item.startingCash}" data-ending-cash="${item.endingCashActual}">
-                                            <div class="employee-card-name"><c:out value="${item.userName}" /></div>
-                                            <div class="employee-card-meta">${item.positionDisplayName} · ${item.statusDisplayName}</div>
-                                            <c:if test="${item.status == 'SCHEDULED'}">
-                                                <form method="post" action="${ctx}/admin/schedules" class="employee-card-delete"
-                                                      onsubmit="event.stopPropagation(); return confirm('Bạn có chắc muốn hủy ca làm này?');">
-                                                    <input type="hidden" name="action" value="delete">
-                                                    <input type="hidden" name="id" value="${item.id}">
-                                                    <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                    <input type="hidden" name="returnView" value="calendar">
-                                                    <button type="submit" onclick="event.stopPropagation()" aria-label="Hủy ca của ${fn:escapeXml(item.userName)}">
-                                                        <span class="material-symbols-outlined">close</span>
-                                                    </button>
-                                                </form>
-                                            </c:if>
-                                        </article>
-                                    </c:forEach>
-                                    <button type="button" class="empty-shift-slot add-schedule-trigger" data-date="${dayIso}" data-shift="AFTERNOON">+ Xếp ca</button>
-                                </div>
-
-                                <c:set var="eveningKey" value="${dayIso}_EVENING" />
-                                <c:set var="eveningList" value="${calendarSlotMap[eveningKey]}" />
-                                <div class="day-shift-section">
-                                    <div class="day-shift-label">Ca tối <span>(${settings.shiftEvening})</span></div>
-                                    <c:forEach items="${eveningList}" var="item">
-                                        <article class="employee-shift-card role-${fn:toLowerCase(item.userPosition)} edit-schedule-trigger"
-                                                 tabindex="0" role="button" aria-label="Sửa ca của ${fn:escapeXml(item.userName)}"
-                                                 data-id="${item.id}" data-user-id="${item.userId}"
-                                                 data-work-date="${item.workDateFormatted}" data-shift-name="${item.shiftName}"
-                                                 data-status="${item.status}" data-note="${fn:escapeXml(item.note)}"
-                                                 data-starting-cash="${item.startingCash}" data-ending-cash="${item.endingCashActual}">
-                                            <div class="employee-card-name"><c:out value="${item.userName}" /></div>
-                                            <div class="employee-card-meta">${item.positionDisplayName} · ${item.statusDisplayName}</div>
-                                            <c:if test="${item.status == 'SCHEDULED'}">
-                                                <form method="post" action="${ctx}/admin/schedules" class="employee-card-delete"
-                                                      onsubmit="event.stopPropagation(); return confirm('Bạn có chắc muốn hủy ca làm này?');">
-                                                    <input type="hidden" name="action" value="delete">
-                                                    <input type="hidden" name="id" value="${item.id}">
-                                                    <input type="hidden" name="returnDate" value="${selectedDate}">
-                                                    <input type="hidden" name="returnView" value="calendar">
-                                                    <button type="submit" onclick="event.stopPropagation()" aria-label="Hủy ca của ${fn:escapeXml(item.userName)}">
-                                                        <span class="material-symbols-outlined">close</span>
-                                                    </button>
-                                                </form>
-                                            </c:if>
-                                        </article>
-                                    </c:forEach>
-                                    <button type="button" class="empty-shift-slot add-schedule-trigger" data-date="${dayIso}" data-shift="EVENING">+ Xếp ca</button>
-                                </div>
+                                <%-- Các ca của tuần lấy từ work_shifts (mỗi tuần có bộ ca riêng) --%>
+                                <c:forEach items="${weekShifts}" var="shift">
+                                    <c:set var="slotKey" value="${dayIso}_${shift.id}" />
+                                    <div class="day-shift-section">
+                                        <div class="day-shift-label"><c:out value="${shift.shiftName}" /> <span>(${shift.timeRange})</span></div>
+                                        <c:forEach items="${calendarSlotMap[slotKey]}" var="item">
+                                            <article class="employee-shift-card role-${fn:toLowerCase(item.userPosition)} edit-schedule-trigger"
+                                                     tabindex="0" role="button" aria-label="Sửa ca của ${fn:escapeXml(item.userName)}"
+                                                     data-id="${item.id}" data-user-id="${item.userId}"
+                                                     data-work-date="${item.workDateFormatted}" data-shift-id="${item.shiftId}"
+                                                     data-status="${item.status}" data-note="${fn:escapeXml(item.note)}"
+                                                     data-starting-cash="${item.startingCash}" data-ending-cash="${item.endingCashActual}">
+                                                <div class="employee-card-name"><c:out value="${item.userName}" /></div>
+                                                <div class="employee-card-meta">${item.positionDisplayName} · ${item.statusDisplayName}</div>
+                                                <c:if test="${item.status == 'SCHEDULED'}">
+                                                    <form method="post" action="${ctx}/admin/schedules" class="employee-card-delete"
+                                                          onsubmit="event.stopPropagation(); return confirm('Bạn có chắc muốn hủy ca làm này?');">
+                                                        <input type="hidden" name="action" value="delete">
+                                                        <input type="hidden" name="id" value="${item.id}">
+                                                        <input type="hidden" name="returnDate" value="${selectedDate}">
+                                                        <input type="hidden" name="returnView" value="calendar">
+                                                        <button type="submit" onclick="event.stopPropagation()" aria-label="Hủy ca của ${fn:escapeXml(item.userName)}">
+                                                            <span class="material-symbols-outlined">close</span>
+                                                        </button>
+                                                    </form>
+                                                </c:if>
+                                            </article>
+                                        </c:forEach>
+                                        <button type="button" class="empty-shift-slot add-schedule-trigger" data-date="${dayIso}" data-shift-id="${shift.id}">+ Xếp ca</button>
+                                    </div>
+                                </c:forEach>
+                                <c:if test="${empty weekShifts}">
+                                    <div class="day-shift-section">
+                                        <div class="day-shift-label">Chưa có khung ca</div>
+                                    </div>
+                                </c:if>
                             </div>
                         </c:forEach>
                     </div>
@@ -227,15 +182,15 @@
                         <div class="row g-3 mb-3">
                             <div class="col-sm-6">
                                 <label for="addWorkDate" class="form-label">Ngày làm việc <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control aura-input" id="addWorkDate" name="workDate" required value="${selectedDate}" aria-describedby="addWorkDateError">
+                                <input type="date" class="form-control aura-input" id="addWorkDate" name="workDate" required min="${monday}" max="${sunday}" value="${selectedDate}" aria-describedby="addWorkDateError">
                                 <div class="invalid-feedback" id="addWorkDateError">Vui lòng chọn ngày làm việc.</div>
                             </div>
                             <div class="col-sm-6">
-                                <label for="addShiftName" class="form-label">Ca làm việc <span class="text-danger">*</span></label>
-                                <select class="form-select aura-input" id="addShiftName" name="shiftName" required aria-describedby="addShiftError">
-                                    <option value="MORNING">Ca sáng (${settings.shiftMorning})</option>
-                                    <option value="AFTERNOON">Ca chiều (${settings.shiftAfternoon})</option>
-                                    <option value="EVENING">Ca tối (${settings.shiftEvening})</option>
+                                <label for="addShiftId" class="form-label">Ca làm việc <span class="text-danger">*</span></label>
+                                <select class="form-select aura-input" id="addShiftId" name="shiftId" required aria-describedby="addShiftError">
+                                    <c:forEach items="${weekShifts}" var="shift">
+                                        <option value="${shift.id}"><c:out value="${shift.label}" /></option>
+                                    </c:forEach>
                                 </select>
                                 <div class="invalid-feedback" id="addShiftError">Vui lòng chọn ca làm việc.</div>
                             </div>
@@ -296,15 +251,15 @@
                         <div class="row g-3 mb-3">
                             <div class="col-sm-6">
                                 <label for="editWorkDate" class="form-label">Ngày làm việc <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control aura-input" id="editWorkDate" name="workDate" required aria-describedby="editWorkDateError">
+                                <input type="date" class="form-control aura-input" id="editWorkDate" name="workDate" required min="${monday}" max="${sunday}" aria-describedby="editWorkDateError">
                                 <div class="invalid-feedback" id="editWorkDateError">Vui lòng chọn ngày làm việc.</div>
                             </div>
                             <div class="col-sm-6">
-                                <label for="editShiftName" class="form-label">Ca làm việc <span class="text-danger">*</span></label>
-                                <select class="form-select aura-input" id="editShiftName" name="shiftName" required aria-describedby="editShiftError">
-                                    <option value="MORNING">Ca sáng (${settings.shiftMorning})</option>
-                                    <option value="AFTERNOON">Ca chiều (${settings.shiftAfternoon})</option>
-                                    <option value="EVENING">Ca tối (${settings.shiftEvening})</option>
+                                <label for="editShiftId" class="form-label">Ca làm việc <span class="text-danger">*</span></label>
+                                <select class="form-select aura-input" id="editShiftId" name="shiftId" required aria-describedby="editShiftError">
+                                    <c:forEach items="${weekShifts}" var="shift">
+                                        <option value="${shift.id}"><c:out value="${shift.label}" /></option>
+                                    </c:forEach>
                                 </select>
                                 <div class="invalid-feedback" id="editShiftError">Vui lòng chọn ca làm việc.</div>
                             </div>
@@ -440,7 +395,8 @@
                 addScheduleForm.reset();
                 resetValidation(addScheduleForm);
                 document.getElementById('addWorkDate').value = button.dataset.date || '${selectedDate}';
-                document.getElementById('addShiftName').value = button.dataset.shift || 'MORNING';
+                const addShiftSelect = document.getElementById('addShiftId');
+                if (button.dataset.shiftId) addShiftSelect.value = button.dataset.shiftId;
                 updateNoteCounter(document.getElementById('addNote'), document.getElementById('addNoteCount'));
                 updateCashAvailability('add');
                 addScheduleModal.show();
@@ -451,7 +407,7 @@
             document.getElementById('editId').value = card.dataset.id;
             document.getElementById('editUserId').value = card.dataset.userId;
             document.getElementById('editWorkDate').value = card.dataset.workDate;
-            document.getElementById('editShiftName').value = card.dataset.shiftName;
+            document.getElementById('editShiftId').value = card.dataset.shiftId;
             document.getElementById('editStatus').value = card.dataset.status;
             document.getElementById('editNote').value = card.dataset.note || '';
             document.getElementById('editStartingCash').value = card.dataset.startingCash && card.dataset.startingCash !== 'null'

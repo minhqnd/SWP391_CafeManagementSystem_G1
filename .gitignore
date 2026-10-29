@@ -34,3 +34,10 @@ Thumbs.db
 *.log
 /cafe_system-main
 nb-configuration.xml
+
+### Node / Cloudflare Workers ###
+node_modules/
+.wrangler/
+.dev.vars
+dist/
+

@@ -8,7 +8,7 @@
         onclick="window.location.href='${pageContext.request.contextPath}/product-detail?id=${p.id}'">
         <!-- Image Box -->
         <div class="product-img-box">
-            <img src="${p.imageUrl}" alt="${p.name}" loading="lazy"
+            <img src="${p.displayImageUrl}" alt="${p.name}" loading="lazy"
                 onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'">
         </div>
 

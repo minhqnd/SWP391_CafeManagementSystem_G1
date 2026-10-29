@@ -62,6 +62,17 @@
             <form method="post" action="${ctx}/admin/orders"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.orderAdminCsrfToken)}"><input type="hidden" name="action" value="status"><input type="hidden" name="id" value="${detailOrder.id}"><label>Trạng thái đơn (status)</label><div class="input-group"><select name="status" class="form-select"><c:forEach var="status" items="${['PENDING','CONFIRMED','PREPARING','READY','DELIVERING','COMPLETED','CANCELLED']}"><option value="${status}" ${detailOrder.status eq status ? 'selected' : ''}>${status}</option></c:forEach></select><button class="btn-order-save">Cập nhật</button></div></form>
             <c:if test="${detailOrder.orderType eq 'ONLINE'}"><form method="post" action="${ctx}/admin/orders"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.orderAdminCsrfToken)}"><input type="hidden" name="action" value="shipper"><input type="hidden" name="id" value="${detailOrder.id}"><label>Shipper (shipper_id)</label><div class="input-group"><select name="shipperId" class="form-select"><option value="">-- Chưa gán --</option><c:forEach var="shipper" items="${shippers}"><option value="${shipper.id}" ${detailOrder.shipperId eq shipper.id ? 'selected' : ''}><c:out value="${shipper.fullName}" /></option></c:forEach></select><button class="btn-order-save">Cập nhật</button></div></form></c:if>
         </div>
+        <c:if test="${not empty detailDelivery}">
+            <div class="detail-summary mt-3">
+                <span>Giao hàng: <strong>${detailDelivery.statusLabel}</strong> (<c:out value="${detailDelivery.shipperName}" />)</span>
+                <span>Phân công: <strong>${detailDelivery.assignedAtDisplay}</strong></span>
+                <c:if test="${not empty detailDelivery.deliveredAt}"><span>Giao xong: <strong>${detailDelivery.deliveredAtDisplay}</strong></span></c:if>
+                <c:if test="${detailDelivery.cod}"><span>COD: <strong><fmt:formatNumber value="${detailDelivery.codAmount}" pattern="#,##0" />đ</strong>${empty detailDelivery.codHandedOverAt ? (detailDelivery.delivered ? ' · shipper đang giữ' : '') : ' · đã nộp cho '.concat(detailDelivery.codReceiverName)}</span></c:if>
+                <c:forEach var="issue" items="${detailDelivery.issues}">
+                    <span class="wide" style="color:#b91c1c">Sự cố ${issue.createdAtDisplay}: <strong>${issue.issueTypeLabel}</strong> – <c:out value="${issue.description}" /></span>
+                </c:forEach>
+            </div>
+        </c:if>
     </div>
     <div class="modal-footer"><a href="${ctx}/bill?orderId=${detailOrder.id}" class="btn-order-save"><span class="material-symbols-outlined">receipt</span>Xem hóa đơn</a></div>
 </div></div></div>

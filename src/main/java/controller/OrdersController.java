@@ -59,7 +59,7 @@ public class OrdersController extends HttpServlet {
 
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
-        if (user == null) {
+        if (!CartController.isCustomer(user)) {
             response.sendRedirect(request.getContextPath() + "/?login=true");
             return;
         }
@@ -112,7 +112,7 @@ public class OrdersController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
-        if (user == null) {
+        if (!CartController.isCustomer(user)) {
             response.sendRedirect(request.getContextPath() + "/?login=true");
             return;
         }

@@ -1,0 +1,53 @@
+@startuml 02-cart-order-sequence
+title Sequence - Add to Cart and Place Online Order (UC10, UC11, UC12)
+autonumber
+actor Customer as C
+boundary "menu.jsp / cart.jsp\ncheckout.jsp / payment.jsp" as UI
+control "CartController\n/cart/add, /cart" as CartC
+control "CheckoutController\n/checkout" as CheckC
+control "PaymentController\n/payment" as PayC
+entity "CartService\n(cart in session)" as Cart
+entity "OrderDAO" as ODAO
+entity "PaymentDAO" as PayDAO
+database "MySQL" as DB
+
+== Add to cart (UC10) ==
+C -> UI : Choose product, size, toppings, quantity\nclick "Add to cart"
+UI -> CartC : POST /cart/add (productId, size, toppings, quantity)
+CartC -> Cart : createItem(...) - read price + variants_config from DB,\ncheck product available, size/toppings valid
+Cart -> DB : SELECT ... FROM products WHERE id = ?
+CartC -> Cart : cart.addItem(item) (merge lines with same options)
+CartC --> UI : cart item count, subtotal
+
+== Choose fulfillment & details (SRS 2.3.2, 2.3.3) ==
+C -> UI : Open /checkout
+UI -> CheckC : GET /checkout
+CheckC -> Cart : refreshCart() - recalculate prices, points, free-ship
+CheckC -> ODAO : getCheckoutStockError(items) - enough ingredients?
+CheckC --> UI : 3 fulfillment options: Delivery / Pickup / Dine-in
+C -> UI : Choose fulfillment (JS updates delivery fee + total)\nenter recipient, phone;\nDelivery: district, ward, address detail;\nDine-in: table number; time: ASAP / scheduled
+UI -> CheckC : POST /checkout (fulfillment, recipient*, district, ward,\naddressDetail, tableNumber, timeOption, scheduledTime, orderNote)
+CheckC -> CheckC : CUSTOMER accounts only; re-validate everything on server:\nphone, district in inner city, scheduled time 07:00-21:30 and >= now + 30'
+CheckC -> CheckC : cart.setFulfillment() -> order_type ONLINE / TAKEAWAY / DINE_IN\ndelivery fee only for delivery
+CheckC -> ODAO : placeOrder(order PENDING, items, pointsUsed) [1 transaction]
+ODAO -> DB : INSERT orders(..., delivery_fee, delivery_address,\ntable_number, scheduled_at) + order_items\n+ deduct points (loyalty_transactions REDEEM)
+alt out of stock / points changed
+  CheckC --> UI : show error, keep entered data
+else success
+  CheckC -> Cart : remove ordered items from cart
+  CheckC --> UI : redirect /payment?orderId=...
+end
+
+== Payment (UC12) ==
+UI -> PayC : GET /payment?orderId
+PayC --> UI : VietQR (amount, content = order code),\nfulfillment, scheduled time, address
+C -> UI : Transfer money, click "I have transferred"
+UI -> PayC : POST /payment (orderId)
+PayC -> PayDAO : payByBankTransfer(orderId, customerId)
+PayDAO -> DB : INSERT payments SUCCESS; orders -> CONFIRMED;\nloyalty_transactions EARN
+PayC --> UI : redirect /bill?orderId (e-invoice)
+note over PayC, DB
+  SRS (API-02/03) requires confirmation via VnPay/SePay webhook;
+  currently the customer self-confirms - webhook will be integrated later.
+end note
+@enduml
