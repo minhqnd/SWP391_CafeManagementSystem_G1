@@ -7,12 +7,18 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 /** Truy vấn dành riêng cho màn hình quản lý đơn hàng của Admin. */
 public class AdminOrderDAO extends BaseDAO {
     public List<AdminOrderSummary> findAll() throws SQLException, ClassNotFoundException {
+        return findAll(null, null);
+    }
+
+    public List<AdminOrderSummary> findAll(LocalDate from, LocalDate to) throws SQLException, ClassNotFoundException {
         String sql = "SELECT o.id, o.order_code, o.order_type, o.status, o.final_amount, o.created_at, o.table_number, "
                 + "COALESCE(c.full_name, o.recipient_name, 'Khách vãng lai') AS customer_name, "
                 + "COALESCE(c.phone, o.recipient_phone, '') AS customer_phone, "
@@ -21,9 +27,17 @@ public class AdminOrderDAO extends BaseDAO {
                 + "FROM orders o LEFT JOIN users c ON c.id = o.customer_id "
                 + "LEFT JOIN users cashier ON cashier.id = o.cashier_id LEFT JOIN users shipper ON shipper.id = o.shipper_id "
                 + "LEFT JOIN payments pay ON pay.id = (SELECT p.id FROM payments p WHERE p.order_id = o.id ORDER BY p.id DESC LIMIT 1) "
+                + "WHERE (? IS NULL OR o.created_at >= ?) AND (? IS NULL OR o.created_at < ?) "
                 + "ORDER BY o.created_at DESC, o.id DESC";
         List<AdminOrderSummary> orders = new ArrayList<>();
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            Timestamp start = from == null ? null : Timestamp.valueOf(from.atStartOfDay());
+            Timestamp end = to == null ? null : Timestamp.valueOf(to.plusDays(1).atStartOfDay());
+            ps.setTimestamp(1, start);
+            ps.setTimestamp(2, start);
+            ps.setTimestamp(3, end);
+            ps.setTimestamp(4, end);
+            try (ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 AdminOrderSummary order = new AdminOrderSummary();
                 order.setId(rs.getInt("id"));
@@ -41,6 +55,7 @@ public class AdminOrderDAO extends BaseDAO {
                 order.setPaymentMethod(rs.getString("payment_method"));
                 order.setPaymentStatus(rs.getString("payment_status"));
                 orders.add(order);
+            }
             }
         }
         return orders;
