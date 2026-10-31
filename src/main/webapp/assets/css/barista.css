@@ -9,6 +9,84 @@ body {
     font-family: Inter, sans-serif;
     font-size: 14px;
 }
+/* Cashier header layout, scoped to Barista; brand markup and dimensions stay intact. */
+.aura-navbar.barista-topbar {
+    min-height: 56px;
+    padding: 0 !important;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: none;
+    z-index: 1000;
+    color: #0f172a;
+}
+.barista-topbar > .container-fluid {
+    min-height: 55px;
+    padding: 0 16px !important;
+    gap: 12px;
+}
+.barista-topbar #mainNavbar { gap: 12px; justify-content: space-between; }
+.barista-topbar .barista-tabs {
+    gap: 4px !important;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin: 0 auto !important;
+}
+.barista-topbar .barista-tabs .aura-nav-link {
+    padding: 6px 14px !important;
+    border-radius: 6px;
+    font: 600 13px 'Inter', sans-serif;
+    color: #475569;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+.barista-topbar .barista-tabs .aura-nav-link:hover { color: #0f172a; }
+.barista-topbar .barista-tabs .active-nav {
+    background: #fff;
+    color: #900b1a !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.barista-topbar .barista-tabs .active-nav::after { display: none; }
+.barista-topbar .header-actions { gap: 16px !important; flex-shrink: 0; }
+.barista-topbar .header-user {
+    gap: 6px !important;
+    background: #f8fafc;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.barista-topbar .header-user > .rounded-circle {
+    width: 20px !important;
+    height: 20px !important;
+    border: 0 !important;
+    background: transparent !important;
+}
+.barista-topbar .header-user .material-symbols-outlined { font-size: 20px; color: #0f172a !important; }
+.barista-topbar .header-user > .flex-column { display: flex !important; }
+.barista-topbar .header-user > .flex-column > .text-danger { display: none; }
+.barista-topbar .barista-logout {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #475569;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+.barista-topbar .barista-logout .material-symbols-outlined { font-size: 20px; }
+.barista-topbar .barista-logout:hover { background: #f1f5f9; color: #900b1a; }
+@media (max-width: 991.98px) {
+    .barista-topbar #mainNavbar { padding-bottom: 12px; }
+    .barista-topbar .barista-tabs { flex-direction: row; flex-wrap: wrap; }
+    .barista-topbar .header-actions { margin-top: 12px; justify-content: space-between; }
+}
 .barista-main {
     max-width: 1800px;
     margin: auto;
