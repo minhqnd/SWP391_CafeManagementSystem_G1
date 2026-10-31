@@ -27,6 +27,12 @@
                     <span>Tổng quan</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="${ctx}/admin/reports" class="nav-link ${param.activeMenu == 'reports' ? 'active' : ''}">
+                    <span class="material-symbols-outlined">analytics</span>
+                    <span>Báo cáo chi tiết</span>
+                </a>
+            </li>
         </ul>
 
         <!-- GROUP: BÁN HÀNG -->
@@ -86,7 +92,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
+                <a href="${ctx}/admin/purchases" class="nav-link ${param.activeMenu == 'purchases' ? 'active' : ''}">
                     <span class="material-symbols-outlined">description</span>
                     <span>Phiếu nhập hàng</span>
                 </a>
@@ -120,6 +126,12 @@
                     <span>Chấm công</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="${ctx}/admin/handovers" class="nav-link ${param.activeMenu == 'handovers' ? 'active' : ''}">
+                    <span class="material-symbols-outlined">assignment_turned_in</span>
+                    <span>Lịch sử bàn giao</span>
+                </a>
+            </li>
         </ul>
 
         <!-- GROUP: KHÁCH HÀNG -->
@@ -132,13 +144,13 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
+                <a href="${ctx}/admin/loyalty" class="nav-link ${param.activeMenu == 'loyalty' ? 'active' : ''}">
                     <span class="material-symbols-outlined">loyalty</span>
                     <span>Tích điểm</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="${ctx}/admin-dashboard.jsp#comingSoon" class="nav-link coming-link" title="Đang phát triển">
+                <a href="${ctx}/admin/feedback" class="nav-link ${param.activeMenu == 'feedback' ? 'active' : ''}">
                     <span class="material-symbols-outlined">rate_review</span>
                     <span>Đánh giá &amp; Khiếu nại</span>
                 </a>
@@ -151,7 +163,13 @@
         <li class="nav-item">
             <a href="${ctx}/admin/settings" class="nav-link ${param.activeMenu == 'settings' ? 'active' : ''}">
                 <span class="material-symbols-outlined">settings</span>
-                <span>Cài đặt cửa hàng</span>
+                <span>Cài đặt hệ thống</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="${ctx}/admin/delivery-areas" class="nav-link ${param.activeMenu == 'deliveryAreas' ? 'active' : ''}">
+                <span class="material-symbols-outlined">local_shipping</span>
+                <span>Phí giao theo quận</span>
             </a>
         </li>
     </ul>

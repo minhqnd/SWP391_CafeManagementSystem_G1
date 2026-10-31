@@ -134,7 +134,7 @@
                     <ol class="pay-guide mb-0">
                         <li>Mở ứng dụng ngân hàng, chọn <b>Quét mã QR</b> và quét mã bên trên.</li>
                         <li>Kiểm tra đúng <b>số tiền</b> và <b>nội dung chuyển khoản</b> là mã đơn <b><c:out value="${order.orderCode}" /></b>.</li>
-                        <li>Chuyển khoản xong, bấm <b>Xác nhận đã thanh toán</b> để bar bắt đầu pha chế.</li>
+                        <li>Hệ thống chỉ xác nhận khi nhận callback hợp lệ từ cổng thanh toán.</li>
                     </ol>
                 </div>
             </div>
@@ -164,9 +164,16 @@
                         <div>
                             <div class="bank-label">Hình thức nhận</div>
                             <div class="fw-semibold">
+                                ${order.fulfillmentLabel}<c:if test="${not empty order.tableNumber}"> · Bàn <c:out value="${order.tableNumber}" /></c:if>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="bank-label">Thời gian nhận</div>
+                            <div class="fw-semibold">
                                 <c:choose>
+                                    <c:when test="${not empty order.scheduledAt}">Hẹn ${order.scheduledAtDisplay}</c:when>
                                     <c:when test="${order.delivery}">Giao trong khoảng ${deliveryMinutes} phút</c:when>
-                                    <c:otherwise>Tự đến lấy tại quầy</c:otherwise>
+                                    <c:otherwise>Càng sớm càng tốt</c:otherwise>
                                 </c:choose>
                             </div>
                         </div>
@@ -179,7 +186,7 @@
                             <div class="fw-semibold"><c:out value="${order.recipientPhone}" /></div>
                         </div>
                         <div class="ebill-info-full">
-                            <div class="bank-label">${order.delivery ? 'Địa chỉ giao hàng' : 'Nhận tại quầy'}</div>
+                            <div class="bank-label">${order.delivery ? 'Địa chỉ giao hàng' : 'Địa chỉ quán'}</div>
                             <div class="fw-semibold"><c:out value="${order.delivery ? order.deliveryAddress : storeAddress}" /></div>
                         </div>
                         <c:if test="${not empty order.orderNote}">
@@ -241,20 +248,21 @@
                         </div>
                         <div class="grand-total"><fmt:formatNumber value="${order.finalAmount}" pattern="#,##0" /> đ</div>
                     </div>
-                    <c:if test="${order.rewardPoints > 0}">
+                    <c:if test="${expectedRewardPoints > 0}">
                         <div class="saving-note mt-2 mb-3">
                             <span class="material-symbols-outlined fs-6" style="color: var(--aura-gold);">stars</span>
-                            Nhận <b>+${order.rewardPoints} điểm Aura</b> sau khi thanh toán
+                            Nhận <b>+${expectedRewardPoints} điểm Aura</b> sau khi thanh toán
                         </div>
                     </c:if>
 
                     <div class="no-print">
+                        <%-- Chuyển khoản QR được cổng thanh toán xác nhận tự động; khách chỉ chọn COD hoặc huỷ đơn --%>
                         <form method="post" action="${ctx}/payment" class="mt-3"
-                              onsubmit="return confirm('Bạn đã chuyển khoản đúng số tiền và nội dung ${fn:escapeXml(order.orderCode)}?');">
+                              onsubmit="return confirm('Chọn thanh toán tiền mặt khi nhận hàng?');">
                             <input type="hidden" name="orderId" value="${order.id}">
-                            <button type="submit" class="btn btn-aura w-100 py-3">
-                                Xác nhận đã thanh toán
-                                <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                            <input type="hidden" name="action" value="cod">
+                            <button type="submit" class="btn btn-outline-dark w-100 py-2 fw-semibold" style="border-radius:10px;">
+                                Thanh toán khi nhận hàng (COD)
                             </button>
                         </form>
                         <%-- Hủy đơn chưa thanh toán (hoàn lại điểm Aura đã dùng) --%>
@@ -283,6 +291,79 @@
                 setTimeout(function () { button.innerText = oldText; }, 1500);
             });
         }
+
+        // ========================================================
+        // Tự động Polling trạng thái thanh toán từ Payment Gateway Hub
+        // ========================================================
+        (function() {
+            var gatewayUrl = '${fn:escapeXml(paymentGatewayUrl)}';
+            var orderCode = '${fn:escapeXml(order.orderCode)}';
+            var orderId = '${order.id}';
+            var ctx = '${ctx}';
+
+            if (!gatewayUrl || !orderCode) return;
+
+            var cleanGateway = gatewayUrl.replace(/\/+$/, '');
+            var isFinished = false;
+
+            function checkPaymentStatus() {
+                if (isFinished) return;
+
+                fetch(cleanGateway + '/api/orders/' + encodeURIComponent(orderCode) + '/status')
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (data && data.status === 'SUCCESS' && data.signature) {
+                            isFinished = true;
+
+                            // Hiển thị thông báo thành công
+                            var statusBadges = document.querySelectorAll('.status-badge');
+                            statusBadges.forEach(function(b) {
+                                b.className = 'status-badge status-confirmed bg-success text-white';
+                                b.innerText = 'Đã thanh toán thành công!';
+                            });
+
+                            // Báo về server Java localhost để chốt đơn & cộng điểm
+                            var params = new URLSearchParams();
+                            params.append('orderCode', data.orderCode);
+                            params.append('transactionCode', data.transactionCode || '');
+                            params.append('amount', String(data.amount));
+                            params.append('status', 'SUCCESS');
+                            params.append('gatewayReference', data.gatewayReference || '');
+                            params.append('signature', data.signature);
+
+                            fetch(ctx + '/payment/callback', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: params.toString()
+                            })
+                            .then(function() {
+                                setTimeout(function() {
+                                    window.location.href = ctx + '/bill?orderId=' + orderId;
+                                }, 1000);
+                            })
+                            .catch(function(err) {
+                                console.error('Lỗi khi chốt đơn về server:', err);
+                                window.location.href = ctx + '/bill?orderId=' + orderId;
+                            });
+                        }
+                    })
+                    .catch(function() {
+                        // Gateway chưa bật hoặc mạng lag -> tiếp tục polling lần sau
+                    });
+            }
+
+            // Polling mỗi 2.5 giây
+            var pollInterval = setInterval(function() {
+                if (isFinished) {
+                    clearInterval(pollInterval);
+                    return;
+                }
+                checkPaymentStatus();
+            }, 2500);
+
+            // Kiểm tra ngay khi vừa vào trang
+            setTimeout(checkPaymentStatus, 1000);
+        })();
     </script>
 </body>
 </html>

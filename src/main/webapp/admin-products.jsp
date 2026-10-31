@@ -82,7 +82,6 @@
                 <h1 class="page-title">Quản lý sản phẩm &amp; giá bán</h1>
                 <p class="page-subtitle">Thêm món, gán vào danh mục, cập nhật ảnh, giá, size, topping và trạng thái bán.</p>
             </div>
-            <a href="#productEditor" class="btn btn-aura btn-sm fw-bold text-nowrap"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm món mới</a>
         </div>
         <div class="product-stats" aria-label="Thống kê sản phẩm">
             <div class="product-stat"><span>Tổng sản phẩm</span><strong><c:out value="${productTotal}" /></strong></div>
@@ -120,7 +119,7 @@
                         <c:forEach var="product" items="${products}">
                     <tr data-variants="${fn:escapeXml(product.variantsConfig)}">
                         <td><div class="d-flex align-items-center gap-2">
-                            <c:choose><c:when test="${not empty product.imageUrl}"><img class="product-image" src="${fn:escapeXml(product.imageUrl)}" alt="Ảnh ${fn:escapeXml(product.name)}"></c:when><c:otherwise><div class="product-image-placeholder">Chưa có ảnh</div></c:otherwise></c:choose>
+                            <c:choose><c:when test="${product.storedImage}"><img class="product-image" src="${ctx}/product-image?id=${product.id}" alt="Ảnh ${fn:escapeXml(product.name)}"></c:when><c:when test="${not empty product.imageUrl}"><img class="product-image" src="${fn:escapeXml(product.imageUrl)}" alt="Ảnh ${fn:escapeXml(product.name)}"></c:when><c:otherwise><div class="product-image-placeholder">Chưa có ảnh</div></c:otherwise></c:choose>
                             <div class="min-w-0"><strong class="d-block text-dark"><c:out value="${product.name}" /></strong><div class="small text-muted text-truncate"><span class="font-monospace text-danger">#<c:out value="${product.id}" /></span></div></div>
                         </div></td>
                         <td><span class="badge rounded-pill text-bg-light border"><c:out value="${product.categoryName}" /></span></td>
@@ -150,7 +149,7 @@
             <div><h2 class="h6 fw-bold mb-0"><c:choose><c:when test="${not empty selectedProduct}">Sửa sản phẩm</c:when><c:otherwise>Thêm sản phẩm mới</c:otherwise></c:choose></h2><p class="small text-muted mb-0 mt-1">Danh mục, giá và ảnh tại đây sẽ dùng trên menu khách hàng.</p></div>
             <c:if test="${not empty selectedProduct}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedProduct.id}" /></span></c:if>
         </div>
-        <form id="productForm" method="post" action="${ctx}/admin/products">
+        <form id="productForm" method="post" action="${ctx}/admin/products" enctype="multipart/form-data">
             <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="${empty selectedProduct ? 0 : selectedProduct.id}">
             <input type="hidden" id="variantsConfig" value="${fn:escapeXml(selectedProduct.variantsConfig)}">
                 <div class="row product-form-grid">
@@ -158,7 +157,15 @@
                 <div class="col-12"><label for="categoryId" class="form-label">Danh mục *</label><select id="categoryId" name="categoryId" class="form-select" required <c:if test="${empty categories}">disabled</c:if>><option value="">Chọn danh mục</option><c:forEach var="category" items="${categories}"><option value="${category.id}" <c:if test="${selectedProduct.categoryId eq category.id}">selected</c:if>><c:out value="${category.name}" /><c:if test="${category.status ne 'ACTIVE'}"> · Tạm ẩn</c:if></option></c:forEach></select></div>
                 <div class="col-12"><label for="basePrice" class="form-label">Giá bán cơ bản (VNĐ) *</label><input id="basePrice" name="basePrice" type="number" min="0" step="0.01" class="form-control" required value="${empty selectedProduct ? '' : selectedProduct.basePriceInputValue}"></div>
                 <div class="col-12"><label for="description" class="form-label">Mô tả</label><textarea id="description" name="description" rows="2" class="form-control">${fn:escapeXml(selectedProduct.description)}</textarea></div>
-                <div class="col-12"><label for="imageUrl" class="form-label">Ảnh sản phẩm (URL)</label><input id="imageUrl" name="imageUrl" type="url" maxlength="500" class="form-control" value="${fn:escapeXml(selectedProduct.imageUrl)}"><div class="mt-2"><img id="productImagePreview" class="product-image-preview" src="${fn:escapeXml(selectedProduct.imageUrl)}" alt="Xem trước ảnh sản phẩm" <c:if test="${empty selectedProduct.imageUrl}">hidden</c:if>><div id="productImagePlaceholder" class="product-image-placeholder" style="width:100%;max-width:250px;height:130px" <c:if test="${not empty selectedProduct.imageUrl}">hidden</c:if>>Chưa có ảnh</div></div></div>
+                <div class="col-12">
+                    <label for="imageFile" class="form-label">Ảnh sản phẩm</label>
+                    <input id="imageFile" name="imageFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="form-control">
+                    <div class="form-text">JPG, PNG, GIF hoặc WebP; tối đa 5 MB. Ảnh được lưu trực tiếp trong database.</div>
+                    <c:set var="selectedHasImage" value="${not empty selectedProduct and (selectedProduct.storedImage or not empty selectedProduct.imageUrl)}" />
+                    <c:choose><c:when test="${selectedProduct.storedImage}"><c:set var="selectedImageSrc" value="${ctx}/product-image?id=${selectedProduct.id}" /></c:when><c:otherwise><c:set var="selectedImageSrc" value="${selectedProduct.imageUrl}" /></c:otherwise></c:choose>
+                    <div class="mt-2"><img id="productImagePreview" class="product-image-preview" src="${fn:escapeXml(selectedImageSrc)}" alt="Xem trước ảnh sản phẩm" <c:if test="${not selectedHasImage}">hidden</c:if>><div id="productImagePlaceholder" class="product-image-placeholder" style="width:100%;max-width:250px;height:130px" <c:if test="${selectedHasImage}">hidden</c:if>>Chưa có ảnh</div></div>
+                    <c:if test="${selectedHasImage}"><div class="form-check mt-2"><input id="removeImage" name="removeImage" value="true" type="checkbox" class="form-check-input"><label for="removeImage" class="form-check-label small">Xóa ảnh hiện tại</label></div></c:if>
+                </div>
                 <div class="col-12"><div class="variant-editor"><div class="variant-heading"><span>Size &amp; phụ thu</span><button type="button" class="btn btn-sm btn-outline-primary" id="addSize"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm size</button></div><div id="sizesList"></div></div></div>
                 <div class="col-12"><div class="variant-editor"><div class="variant-heading"><span>Topping &amp; giá</span><button type="button" class="btn btn-sm btn-outline-primary" id="addTopping"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm topping</button></div><div id="toppingsList"></div><div class="form-text">Không bắt buộc.</div></div></div>
                 </div>
@@ -174,9 +181,10 @@
     const toppingsList = document.getElementById('toppingsList');
     const configInput = document.getElementById('variantsConfig');
     const form = document.getElementById('productForm');
-    const imageInput = document.getElementById('imageUrl');
+    const imageInput = document.getElementById('imageFile');
     const preview = document.getElementById('productImagePreview');
     const placeholder = document.getElementById('productImagePlaceholder');
+    const removeImage = document.getElementById('removeImage');
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const addVariantRow = (container, name, amount, nameField, amountField, namePlaceholder, amountPlaceholder) => {
         const row = document.createElement('div');
@@ -196,23 +204,37 @@
     sizes.forEach(([name, delta]) => addVariantRow(sizesList, name, delta, 'sizeName', 'sizeDelta', 'Tên size', 'Phụ thu'));
     toppings.forEach(t => addVariantRow(toppingsList, typeof t === 'string' ? t : t.name, typeof t === 'string' ? null : t.price, 'toppingName', 'toppingPrice', 'Tên topping', 'Giá'));
     form.addEventListener('submit', event => {
-        const hasSize = Array.from(sizesList.querySelectorAll('[name="sizeName"]')).some(input => input.value.trim());
+        const sizeRows = Array.from(sizesList.querySelectorAll('.variant-row')).filter(row =>
+            row.querySelector('[name="sizeName"]').value.trim()
+        );
+        const hasSize = sizeRows.length > 0;
         if (!hasSize) {
             event.preventDefault();
             window.alert('Hãy thêm ít nhất một size cho sản phẩm.');
             document.getElementById('addSize').focus();
+            return;
+        }
+        const hasBaseSize = sizeRows.some(row => Number(row.querySelector('[name="sizeDelta"]').value || 0) === 0);
+        if (!hasBaseSize) {
+            event.preventDefault();
+            window.alert('Cần có một size phụ thu 0đ để giá mặc định đúng bằng giá bán cơ bản.');
+            sizeRows[0].querySelector('[name="sizeDelta"]').focus();
         }
     });
     const showPlaceholder = () => { preview.hidden = true; placeholder.hidden = false; };
     if (imageInput && preview && placeholder) {
         preview.addEventListener('error', showPlaceholder);
         if (preview.getAttribute('src') && preview.complete && preview.naturalWidth === 0) showPlaceholder();
-        imageInput.addEventListener('input', () => {
-            const value = imageInput.value.trim();
-            if (!/^https?:\/\//i.test(value)) { showPlaceholder(); return; }
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files && imageInput.files[0];
+            if (!file) return;
+            if (removeImage) removeImage.checked = false;
             placeholder.hidden = true;
             preview.hidden = false;
-            preview.src = value;
+            preview.src = URL.createObjectURL(file);
+        });
+        if (removeImage) removeImage.addEventListener('change', () => {
+            if (removeImage.checked) { imageInput.value = ''; showPlaceholder(); }
         });
     }
     document.querySelectorAll('tr[data-variants]').forEach(row => {

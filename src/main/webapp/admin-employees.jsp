@@ -6,8 +6,8 @@
 <c:set var="csrf" value="${fn:escapeXml(sessionScope.employeeCsrfToken)}" />
 <%-- Dữ liệu form khi server báo lỗi (không bao giờ chứa mật khẩu); mặc định khi thêm mới --%>
 <c:set var="form" value="${employeeForm}" />
-<c:set var="fRole" value="${empty form ? 'STAFF' : form.role}" />
-<c:set var="fPosition" value="${empty form ? 'CASHIER' : form.position}" />
+<%-- Vai trò gộp: ADMIN = Quản trị, còn lại là nhân viên theo vị trí (CASHIER / BARISTA / SHIPPER) --%>
+<c:set var="fRole" value="${empty form ? 'CASHIER' : form.role}" />
 <c:set var="fStatus" value="${empty form ? 'ACTIVE' : form.status}" />
 <c:set var="fHireDate" value="${empty form ? today : form.hireDate}" />
 <!DOCTYPE html>
@@ -37,7 +37,7 @@
             <div>
                 <span class="table-ref">Bảng: users (role ADMIN, STAFF)</span>
                 <h1 class="page-title">Quản lý nhân viên</h1>
-                <p class="page-subtitle">Tài khoản nội bộ: vai trò, chức vụ, trạng thái và ngày vào làm.</p>
+                <p class="page-subtitle">Tài khoản nội bộ: vai trò, trạng thái và ngày vào làm.</p>
             </div>
             <button type="button" id="employeeAddButton" class="btn btn-aura btn-sm fw-bold text-nowrap"
                     data-bs-toggle="modal" data-bs-target="#employeeModal">
@@ -59,10 +59,10 @@
         <div class="employee-card-head">
             <h2 id="employeeListTitle">Danh sách nhân viên</h2>
             <form method="get" action="${ctx}/admin/employees" class="employee-filter">
-                <label for="positionFilter" class="visually-hidden">Lọc theo chức vụ</label>
+                <label for="positionFilter" class="visually-hidden">Lọc theo vai trò</label>
                 <select id="positionFilter" name="position" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="ALL">Tất cả chức vụ</option>
-                    <option value="MANAGER" ${positionFilter eq 'MANAGER' ? 'selected' : ''}>Quản lý</option>
+                    <option value="ALL">Tất cả vai trò</option>
+                    <option value="MANAGER" ${positionFilter eq 'MANAGER' ? 'selected' : ''}>Quản trị</option>
                     <option value="BARISTA" ${positionFilter eq 'BARISTA' ? 'selected' : ''}>Pha chế</option>
                     <option value="CASHIER" ${positionFilter eq 'CASHIER' ? 'selected' : ''}>Thu ngân</option>
                     <option value="SHIPPER" ${positionFilter eq 'SHIPPER' ? 'selected' : ''}>Giao hàng</option>
@@ -77,7 +77,6 @@
                         <th scope="col">Họ và tên</th>
                         <th scope="col">SĐT / Email</th>
                         <th scope="col">Vai trò</th>
-                        <th scope="col">Chức vụ</th>
                         <th scope="col">Ngày vào làm</th>
                         <th scope="col">Trạng thái</th>
                         <th scope="col" class="text-end">Thao tác</th>
@@ -95,9 +94,9 @@
                             <div class="font-monospace"><c:out value="${emp.phone}" /></div>
                             <div class="employee-muted"><c:out value="${empty emp.email ? '—' : emp.email}" /></div>
                         </td>
-                        <td>${emp.roleDisplayName}</td>
                         <td>
                             <c:choose>
+                                <c:when test="${emp.role eq 'ADMIN'}"><span class="position-badge position-manager">Quản trị</span></c:when>
                                 <c:when test="${not empty emp.position}"><span class="position-badge position-${fn:toLowerCase(emp.position)}">${emp.positionDisplayName}</span></c:when>
                                 <c:otherwise><span class="employee-muted">—</span></c:otherwise>
                             </c:choose>
@@ -111,8 +110,7 @@
                                     data-full-name="${fn:escapeXml(emp.fullName)}"
                                     data-phone="${fn:escapeXml(emp.phone)}"
                                     data-email="${fn:escapeXml(emp.email)}"
-                                    data-role="${emp.role}"
-                                    data-position="${emp.position}"
+                                    data-role="${emp.role eq 'ADMIN' ? 'ADMIN' : emp.position}"
                                     data-hire-date="${emp.hireDate}"
                                     data-birthday="${emp.birthday}"
                                     data-status="${emp.status}"
@@ -198,17 +196,10 @@
                         <div class="col-md-6">
                             <label class="form-label" for="employeeRole">Vai trò</label>
                             <select class="form-select" id="employeeRole" name="role">
-                                <option value="STAFF" ${fRole eq 'STAFF' ? 'selected' : ''}>Nhân viên (STAFF)</option>
-                                <option value="ADMIN" ${fRole eq 'ADMIN' ? 'selected' : ''}>Quản trị (ADMIN)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="employeePosition">Chức vụ</label>
-                            <select class="form-select" id="employeePosition" name="position">
-                                <option value="MANAGER" ${fPosition eq 'MANAGER' ? 'selected' : ''}>Quản lý</option>
-                                <option value="BARISTA" ${fPosition eq 'BARISTA' ? 'selected' : ''}>Pha chế</option>
-                                <option value="CASHIER" ${fPosition eq 'CASHIER' ? 'selected' : ''}>Thu ngân</option>
-                                <option value="SHIPPER" ${fPosition eq 'SHIPPER' ? 'selected' : ''}>Giao hàng</option>
+                                <option value="ADMIN" ${fRole eq 'ADMIN' ? 'selected' : ''}>Quản trị</option>
+                                <option value="CASHIER" ${fRole eq 'CASHIER' ? 'selected' : ''}>Thu ngân</option>
+                                <option value="BARISTA" ${fRole eq 'BARISTA' ? 'selected' : ''}>Pha chế</option>
+                                <option value="SHIPPER" ${fRole eq 'SHIPPER' ? 'selected' : ''}>Giao hàng</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -259,7 +250,7 @@
     const fields = {
         id: byId('employeeId'), fullName: byId('employeeFullName'), phone: byId('employeePhone'),
         email: byId('employeeEmail'), password: byId('employeePassword'), role: byId('employeeRole'),
-        position: byId('employeePosition'), hireDate: byId('employeeHireDate'),
+        hireDate: byId('employeeHireDate'),
         birthday: byId('employeeBirthday'), status: byId('employeeStatus'), address: byId('employeeAddress')
     };
     const title = byId('employeeModalTitle');
@@ -287,7 +278,7 @@
 
     byId('employeeAddButton').addEventListener('click', () => {
         resetState();
-        fill({ id: '0', fullName: '', phone: '', email: '', role: 'STAFF', position: 'CASHIER',
+        fill({ id: '0', fullName: '', phone: '', email: '', role: 'CASHIER',
                hireDate: form.dataset.today, birthday: '', status: 'ACTIVE', address: '' });
         setMode(false);
     });
@@ -297,7 +288,7 @@
             const d = button.dataset;
             resetState();
             fill({ id: d.id, fullName: d.fullName, phone: d.phone, email: d.email, role: d.role,
-                   position: d.position, hireDate: d.hireDate, birthday: d.birthday,
+                   hireDate: d.hireDate, birthday: d.birthday,
                    status: d.status, address: d.address });
             setMode(true);
         });

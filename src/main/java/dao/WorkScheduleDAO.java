@@ -1,8 +1,6 @@
 package dao;
 
-import model.ShiftStat;
 import model.ShiftHandoverSummary;
-import model.ShopSettings;
 import model.WorkSchedule;
 
 import java.math.BigDecimal;
@@ -11,84 +9,34 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * WorkScheduleDAO - Thao tác dữ liệu bảng work_schedules
+ * WorkScheduleDAO - Thao tác dữ liệu bảng work_schedules.
+ * Mỗi lịch gắn với 1 ca (shift_id) của bảng work_shifts - tên và giờ ca lấy theo đúng tuần của lịch.
  */
 public class WorkScheduleDAO extends BaseDAO {
 
-    /**
-     * Lấy thống kê số lượt xếp ca và trạng thái cho 3 ca làm việc (MORNING, AFTERNOON, EVENING)
-     */
-    public Map<String, ShiftStat> getShiftStats(ShopSettings settings) {
-        return getShiftStats(settings, null, null);
-    }
+    /** Cột chung: lịch + nhân viên + ca của tuần đó */
+    private static final String SELECT_SCHEDULE =
+            "SELECT ws.id, ws.user_id, ws.work_date, ws.shift_id, ws.check_in_time, ws.check_out_time, " +
+            "       ws.status, ws.note, " +
+            "       s.shift_name, s.start_time AS shift_start, s.end_time AS shift_end, " +
+            "       u.full_name AS user_name, u.phone AS user_phone, u.position AS user_position " +
+            "FROM work_schedules ws " +
+            "JOIN work_shifts s ON s.id = ws.shift_id " +
+            "JOIN users u ON ws.user_id = u.id AND u.role = 'STAFF' ";
 
     /**
-     * Thống kê lượt xếp ca theo ca + trạng thái trong khoảng ngày [fromDate, toDate] (null = không giới hạn),
-     * bằng 1 câu GROUP BY shift_name, status.
-     */
-    public Map<String, ShiftStat> getShiftStats(ShopSettings settings, Date fromDate, Date toDate) {
-        Map<String, ShiftStat> stats = new LinkedHashMap<>();
-        stats.put("MORNING", new ShiftStat("MORNING", ShopSettings.KEY_SHIFT_MORNING, "Ca sáng", settings.getShiftMorning()));
-        stats.put("AFTERNOON", new ShiftStat("AFTERNOON", ShopSettings.KEY_SHIFT_AFTERNOON, "Ca chiều", settings.getShiftAfternoon()));
-        stats.put("EVENING", new ShiftStat("EVENING", ShopSettings.KEY_SHIFT_EVENING, "Ca tối", settings.getShiftEvening()));
-
-        StringBuilder sql = new StringBuilder("SELECT shift_name, status, COUNT(*) AS cnt FROM work_schedules WHERE 1=1 ");
-        List<Date> params = new ArrayList<>();
-        if (fromDate != null) {
-            sql.append("AND work_date >= ? ");
-            params.add(fromDate);
-        }
-        if (toDate != null) {
-            sql.append("AND work_date <= ? ");
-            params.add(toDate);
-        }
-        sql.append("GROUP BY shift_name, status");
-
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                ps.setDate(i + 1, params.get(i));
-            }
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String shiftName = rs.getString("shift_name");
-                    String status = rs.getString("status");
-                    int count = rs.getInt("cnt");
-
-                    ShiftStat stat = stats.get(shiftName);
-                    if (stat != null) {
-                        stat.incrementStatus(status, count);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return stats;
-    }
-
-    /**
-     * Lấy danh sách ca làm việc theo bộ lọc ngày, nhân viên, ca, trạng thái, vị trí
+     * Lấy danh sách ca làm việc theo bộ lọc ngày, nhân viên, ca (shift_id), trạng thái, vị trí
      */
     public List<WorkSchedule> getSchedules(Date fromDate, Date toDate, Integer userId,
-                                           String shiftName, String status, String position) {
+                                           Integer shiftId, String status, String position) {
         List<WorkSchedule> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder(
-                "SELECT ws.id, ws.user_id, ws.work_date, ws.shift_name, ws.check_in_time, ws.check_out_time, " +
-                "       ws.starting_cash, ws.ending_cash_system, ws.ending_cash_actual, ws.status, ws.note, " +
-                "       u.full_name AS user_name, u.phone AS user_phone, u.position AS user_position " +
-                "FROM work_schedules ws " +
-                "JOIN users u ON ws.user_id = u.id " +
-                "WHERE 1=1 "
-        );
+        StringBuilder sql = new StringBuilder(SELECT_SCHEDULE + "WHERE 1=1 ");
 
         List<Object> params = new ArrayList<>();
 
@@ -104,9 +52,9 @@ public class WorkScheduleDAO extends BaseDAO {
             sql.append("AND ws.user_id = ? ");
             params.add(userId);
         }
-        if (shiftName != null && !shiftName.trim().isEmpty() && !"ALL".equalsIgnoreCase(shiftName)) {
-            sql.append("AND ws.shift_name = ? ");
-            params.add(shiftName.trim());
+        if (shiftId != null && shiftId > 0) {
+            sql.append("AND ws.shift_id = ? ");
+            params.add(shiftId);
         }
         if (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status)) {
             sql.append("AND ws.status = ? ");
@@ -117,9 +65,7 @@ public class WorkScheduleDAO extends BaseDAO {
             params.add(position.trim());
         }
 
-        sql.append("ORDER BY ws.work_date ASC, " +
-                   "CASE ws.shift_name WHEN 'MORNING' THEN 1 WHEN 'AFTERNOON' THEN 2 WHEN 'EVENING' THEN 3 ELSE 4 END ASC, " +
-                   "u.full_name ASC");
+        sql.append("ORDER BY ws.work_date ASC, s.start_time ASC, u.full_name ASC");
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
@@ -145,12 +91,7 @@ public class WorkScheduleDAO extends BaseDAO {
      * Lấy chi tiết 1 ca làm việc theo ID
      */
     public WorkSchedule getScheduleById(int id) {
-        String sql = "SELECT ws.id, ws.user_id, ws.work_date, ws.shift_name, ws.check_in_time, ws.check_out_time, " +
-                     "       ws.starting_cash, ws.ending_cash_system, ws.ending_cash_actual, ws.status, ws.note, " +
-                     "       u.full_name AS user_name, u.phone AS user_phone, u.position AS user_position " +
-                     "FROM work_schedules ws " +
-                     "JOIN users u ON ws.user_id = u.id " +
-                     "WHERE ws.id = ?";
+        String sql = SELECT_SCHEDULE + "WHERE ws.id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -170,9 +111,9 @@ public class WorkScheduleDAO extends BaseDAO {
     /**
      * Kiểm tra xem nhân viên đã được phân ca vào khung giờ đó chưa
      */
-    public boolean isShiftExists(int userId, Date workDate, String shiftName, Integer excludeId) {
+    public boolean isShiftExists(int userId, Date workDate, int shiftId, Integer excludeId) {
         StringBuilder sql = new StringBuilder(
-                "SELECT COUNT(*) FROM work_schedules WHERE user_id = ? AND work_date = ? AND shift_name = ? "
+                "SELECT COUNT(*) FROM work_schedules WHERE user_id = ? AND work_date = ? AND shift_id = ? "
         );
         if (excludeId != null && excludeId > 0) {
             sql.append("AND id <> ? ");
@@ -183,7 +124,7 @@ public class WorkScheduleDAO extends BaseDAO {
 
             ps.setInt(1, userId);
             ps.setDate(2, workDate);
-            ps.setString(3, shiftName);
+            ps.setInt(3, shiftId);
             if (excludeId != null && excludeId > 0) {
                 ps.setInt(4, excludeId);
             }
@@ -203,26 +144,23 @@ public class WorkScheduleDAO extends BaseDAO {
      * Thêm mới ca làm việc
      */
     public boolean addSchedule(WorkSchedule ws) {
-        if (isShiftExists(ws.getUserId(), ws.getWorkDate(), ws.getShiftName(), null)) {
+        if (isShiftExists(ws.getUserId(), ws.getWorkDate(), ws.getShiftId(), null)) {
             return false;
         }
 
-        String sql = "INSERT INTO work_schedules (user_id, work_date, shift_name, status, note, starting_cash) " +
-                     "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO work_schedules (user_id, work_date, shift_id, status, note) " +
+                     "SELECT ?, ?, ?, ?, ? FROM users " +
+                     "WHERE id = ? AND role = 'STAFF' AND status = 'ACTIVE'";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, ws.getUserId());
             ps.setDate(2, ws.getWorkDate());
-            ps.setString(3, ws.getShiftName());
+            ps.setInt(3, ws.getShiftId());
             ps.setString(4, ws.getStatus() != null ? ws.getStatus() : "SCHEDULED");
             ps.setString(5, ws.getNote());
-            if (ws.getStartingCash() != null) {
-                ps.setDouble(6, ws.getStartingCash());
-            } else {
-                ps.setNull(6, java.sql.Types.DECIMAL);
-            }
+            ps.setInt(6, ws.getUserId());
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -235,36 +173,24 @@ public class WorkScheduleDAO extends BaseDAO {
      * Cập nhật thông tin ca làm việc
      */
     public boolean updateSchedule(WorkSchedule ws) {
-        if (isShiftExists(ws.getUserId(), ws.getWorkDate(), ws.getShiftName(), ws.getId())) {
+        if (isShiftExists(ws.getUserId(), ws.getWorkDate(), ws.getShiftId(), ws.getId())) {
             return false;
         }
 
-        String sql = "UPDATE work_schedules SET user_id = ?, work_date = ?, shift_name = ?, " +
-                     "       status = ?, note = ?, starting_cash = ?, ending_cash_actual = ? " +
-                     "WHERE id = ?";
+        String sql = "UPDATE work_schedules ws " +
+                     "JOIN users u ON u.id = ? AND u.role = 'STAFF' AND u.status = 'ACTIVE' " +
+                     "SET ws.user_id = u.id, ws.work_date = ?, ws.shift_id = ?, " +
+                     "    ws.status = ?, ws.note = ? WHERE ws.id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, ws.getUserId());
             ps.setDate(2, ws.getWorkDate());
-            ps.setString(3, ws.getShiftName());
+            ps.setInt(3, ws.getShiftId());
             ps.setString(4, ws.getStatus());
             ps.setString(5, ws.getNote());
-
-            if (ws.getStartingCash() != null) {
-                ps.setDouble(6, ws.getStartingCash());
-            } else {
-                ps.setNull(6, java.sql.Types.DECIMAL);
-            }
-
-            if (ws.getEndingCashActual() != null) {
-                ps.setDouble(7, ws.getEndingCashActual());
-            } else {
-                ps.setNull(7, java.sql.Types.DECIMAL);
-            }
-
-            ps.setInt(8, ws.getId());
+            ps.setInt(6, ws.getId());
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -328,75 +254,6 @@ public class WorkScheduleDAO extends BaseDAO {
             ps.setString(3, status);
             ps.setString(4, note);
             ps.setInt(5, id);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * Check-in nhanh kèm cập nhật tiền đầu ca
-     */
-    public boolean checkInStaff(int id, Double startingCash) {
-        String sql = "UPDATE work_schedules SET status = 'PRESENT', check_in_time = COALESCE(check_in_time, NOW()), " +
-                     "starting_cash = COALESCE(?, starting_cash) WHERE id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            if (startingCash != null) {
-                ps.setDouble(1, startingCash);
-            } else {
-                ps.setNull(1, java.sql.Types.DECIMAL);
-            }
-            ps.setInt(2, id);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * Bàn giao ca & Chốt két tiền mặt cuối ca
-     */
-    public boolean closeShiftAndHandoverCash(int id, double endingCashActual, Double endingCashSystem, String note) {
-        String sql = "UPDATE work_schedules SET status = 'COMPLETED', check_out_time = COALESCE(check_out_time, NOW()), " +
-                     "ending_cash_actual = ?, ending_cash_system = ?, note = ? WHERE id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setDouble(1, endingCashActual);
-            if (endingCashSystem != null) {
-                ps.setDouble(2, endingCashSystem);
-            } else {
-                ps.setNull(2, java.sql.Types.DECIMAL);
-            }
-            ps.setString(3, note);
-            ps.setInt(4, id);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * Chốt ca từ màn hình Cashier. Điều kiện user_id và trạng thái PRESENT được đặt
-     * ngay trong câu UPDATE để tránh chốt nhầm ca hoặc gửi lại biểu mẫu hai lần.
-     */
-    public boolean closeCashierShift(int id, int userId, BigDecimal endingCashActual,
-                                     BigDecimal endingCashSystem, String note) {
-        String sql = "UPDATE work_schedules " +
-                     "SET status = 'COMPLETED', check_out_time = NOW(), " +
-                     "    ending_cash_actual = ?, ending_cash_system = ?, note = ? " +
-                     "WHERE id = ? AND user_id = ? AND status = 'PRESENT'";
-
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBigDecimal(1, endingCashActual);
-            ps.setBigDecimal(2, endingCashSystem);
-            ps.setString(3, note);
-            ps.setInt(4, id);
-            ps.setInt(5, userId);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -484,9 +341,7 @@ public class WorkScheduleDAO extends BaseDAO {
      */
     public List<WorkSchedule> getRecentSchedulesForUser(int userId, int limit) {
         List<WorkSchedule> list = new java.util.ArrayList<>();
-        String sql = "SELECT ws.*, u.full_name AS user_name, u.phone AS user_phone, u.position AS user_position " +
-                     "FROM work_schedules ws " +
-                     "JOIN users u ON ws.user_id = u.id " +
+        String sql = SELECT_SCHEDULE +
                      "WHERE ws.user_id = ? " +
                      "ORDER BY ws.work_date DESC, ws.id DESC LIMIT ?";
         try (Connection conn = getConnection();
@@ -529,18 +384,16 @@ public class WorkScheduleDAO extends BaseDAO {
         ws.setUserPhone(rs.getString("user_phone"));
         ws.setUserPosition(rs.getString("user_position"));
         ws.setWorkDate(rs.getDate("work_date"));
+        ws.setShiftId(rs.getInt("shift_id"));
         ws.setShiftName(rs.getString("shift_name"));
+        Time shiftStart = rs.getTime("shift_start");
+        Time shiftEnd = rs.getTime("shift_end");
+        if (shiftStart != null && shiftEnd != null) {
+            ws.setShiftStart(shiftStart.toLocalTime());
+            ws.setShiftTime(shiftStart.toString().substring(0, 5) + "-" + shiftEnd.toString().substring(0, 5));
+        }
         ws.setCheckInTime(rs.getTimestamp("check_in_time"));
         ws.setCheckOutTime(rs.getTimestamp("check_out_time"));
-
-        double startingCash = rs.getDouble("starting_cash");
-        if (!rs.wasNull()) ws.setStartingCash(startingCash);
-
-        double endingCashSystem = rs.getDouble("ending_cash_system");
-        if (!rs.wasNull()) ws.setEndingCashSystem(endingCashSystem);
-
-        double endingCashActual = rs.getDouble("ending_cash_actual");
-        if (!rs.wasNull()) ws.setEndingCashActual(endingCashActual);
 
         ws.setStatus(rs.getString("status"));
         ws.setNote(rs.getString("note"));

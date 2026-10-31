@@ -16,12 +16,14 @@ He thong Quan ly Quan Ca phe Aura Cafe duoc xay dung tren nen tang Java Web Serv
 
 ## 2. Huong dan thiet lap Co so du lieu (Database Setup)
 
-Toàn bộ schema và dữ liệu mẫu của dự án được gom trong một file duy nhất: `database/aura_cafe.sql` (16 bảng, gồm 12 sản phẩm, 6 danh mục, điểm thành viên, phản ánh và tài khoản demo). Đánh giá và phản ánh dùng chung một bảng. Không có danh mục voucher; thu ngân tra cứu khách bằng số điện thoại để xem điểm và áp dụng điểm khi bán hàng.
+Toàn bộ schema và dữ liệu MySQL của ứng dụng Aura Café được gom trong một file duy nhất: `database/aura_cafe.sql` (25 bảng). File này là ảnh chụp hợp nhất gồm tài khoản, lịch/ca làm việc, bàn giao ca, sản phẩm, đơn hàng, thanh toán, giao hàng, khách hàng thân thiết, phản ánh, kho và cấu hình cửa hàng. Đánh giá và phản ánh dùng chung bảng `customer_reviews`; điểm thành viên dùng `users.total_points` và `loyalty_transactions`.
+
+Payment Gateway là microservice Cloudflare Workers riêng và dùng Cloudflare D1/SQLite, vì vậy schema tương thích của nó vẫn nằm tại `payment-gateway/schema.sql` và không được trộn vào schema MySQL.
 
 - File khoi tao: `database/aura_cafe.sql`
 - Ten database mac dinh: `aura_cafe_erp`
 
-Khi lấy code mới về hoặc muốn cài lại database, mở và chạy lại file `database/aura_cafe.sql` trong MySQL. Script này xóa các bảng cũ rồi tạo lại schema và dữ liệu mẫu; hãy sao lưu database trước nếu cần giữ dữ liệu hiện tại.
+Khi lấy code mới về hoặc muốn cài lại database, mở và chạy lại file `database/aura_cafe.sql` trong MySQL. Script này xóa database `aura_cafe_erp` hiện có rồi tạo lại toàn bộ schema và dữ liệu đã hợp nhất; hãy sao lưu database trước nếu cần giữ dữ liệu phát sinh sau thời điểm tạo file.
 
 Thành viên mới có thể chạy file theo một trong hai cách:
 
@@ -117,7 +119,9 @@ SWP391_CafeManagementSystem_G1/
 ├── pom.xml                                   # Quan ly thu vien Maven (Jakarta EE 10, MySQL Connector, Gson, JSTL)
 ├── run.sh                                    # Script khoi chay tu dong (clean compile, package va deploy)
 ├── database/
-│   └── aura_cafe.sql                         # File SQL duy nhất: khởi tạo schema và dữ liệu mẫu
+│   └── aura_cafe.sql                         # File MySQL duy nhất: schema và dữ liệu hợp nhất
+├── payment-gateway/
+│   └── schema.sql                            # Schema D1/SQLite riêng của Payment Gateway
 └── src/
     └── main/
         ├── java/

@@ -9,6 +9,10 @@ public class LoyaltyTransaction {
     private int pointsChange;
     private String transactionType;
     private Date createdAt;
+    private String customerName;
+    private String customerPhone;
+    private String orderCode;
+    private int balanceAfter;
 
     public LoyaltyTransaction() {
     }
@@ -68,5 +72,37 @@ public class LoyaltyTransaction {
 
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
+    }
+
+    public String getOrderCode() {
+        return orderCode;
+    }
+
+    public void setOrderCode(String orderCode) {
+        this.orderCode = orderCode;
+    }
+
+    public int getBalanceAfter() {
+        return balanceAfter;
+    }
+
+    public void setBalanceAfter(int balanceAfter) {
+        this.balanceAfter = balanceAfter;
     }
 }

@@ -7,112 +7,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RestockRequest implements Serializable {
-    private static final long serialVersionUID = 1L;
-
     private int id;
-    private int supplierId;
-    private String supplierName;
-    private int creatorId;
-    private String creatorName;
-    private BigDecimal totalCost = BigDecimal.ZERO;
-    private String status; // 'DRAFT', 'ORDERED', 'RECEIVED', 'CANCELLED'
+    private int requesterId;
+    private String requesterName;
+    private Integer reviewerId;
+    private String reviewerName;
+    private String status;
+    private String reason;
+    private String note;
+    private String reviewNote;
     private Timestamp createdAt;
-    private String notes;
-    private List<RestockItem> items = new ArrayList<>();
+    private Timestamp reviewedAt;
+    private List<RestockItem> items=new ArrayList<>();
 
-    public static class RestockItem implements Serializable {
-        private static final long serialVersionUID = 1L;
-        private int id;
-        private int poId;
-        private int ingredientId;
-        private String ingredientName;
-        private String unit;
-        private BigDecimal quantity = BigDecimal.ZERO;
-        private BigDecimal unitPrice = BigDecimal.ZERO;
-
-        public RestockItem() {}
-
-        public RestockItem(int ingredientId, String ingredientName, String unit,
-                           BigDecimal quantity, BigDecimal unitPrice) {
-            this.ingredientId = ingredientId;
-            this.ingredientName = ingredientName;
-            this.unit = unit;
-            this.quantity = quantity;
-            this.unitPrice = unitPrice;
-        }
-
-        public int getId() { return id; }
-        public void setId(int id) { this.id = id; }
-
-        public int getPoId() { return poId; }
-        public void setPoId(int poId) { this.poId = poId; }
-
-        public int getIngredientId() { return ingredientId; }
-        public void setIngredientId(int ingredientId) { this.ingredientId = ingredientId; }
-
-        public String getIngredientName() { return ingredientName; }
-        public void setIngredientName(String ingredientName) { this.ingredientName = ingredientName; }
-
-        public String getUnit() { return unit; }
-        public void setUnit(String unit) { this.unit = unit; }
-
-        public BigDecimal getQuantity() { return quantity; }
-        public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
-
-        public BigDecimal getUnitPrice() { return unitPrice; }
-        public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
-
-        public BigDecimal getSubtotal() {
-            if (quantity == null || unitPrice == null) return BigDecimal.ZERO;
-            return quantity.multiply(unitPrice);
-        }
+    public static class RestockItem implements Serializable{
+        private int id,requestId,ingredientId;private String ingredientName,unit,itemNote;private BigDecimal quantity=BigDecimal.ZERO,unitPrice=BigDecimal.ZERO;
+        public RestockItem(){}
+        public RestockItem(int ingredientId,String ingredientName,String unit,BigDecimal quantity){this.ingredientId=ingredientId;this.ingredientName=ingredientName;this.unit=unit;this.quantity=quantity;}
+        public RestockItem(int ingredientId,String ingredientName,String unit,BigDecimal quantity,BigDecimal unitPrice){this(ingredientId,ingredientName,unit,quantity);this.unitPrice=unitPrice;}
+        public int getId(){return id;}public void setId(int v){id=v;}public int getRequestId(){return requestId;}public void setRequestId(int v){requestId=v;}
+        public int getIngredientId(){return ingredientId;}public void setIngredientId(int v){ingredientId=v;}public String getIngredientName(){return ingredientName;}public void setIngredientName(String v){ingredientName=v;}
+        public String getUnit(){return unit;}public void setUnit(String v){unit=v;}public BigDecimal getQuantity(){return quantity;}public void setQuantity(BigDecimal v){quantity=v;}
+        public String getItemNote(){return itemNote;}public void setItemNote(String v){itemNote=v;}
+        public BigDecimal getUnitPrice(){return unitPrice;}public void setUnitPrice(BigDecimal v){unitPrice=v;}
+        public BigDecimal getSubtotal(){return quantity.multiply(unitPrice);}
     }
-
-    public RestockRequest() {
-        this.status = "DRAFT";
-    }
-
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-
-    public int getSupplierId() { return supplierId; }
-    public void setSupplierId(int supplierId) { this.supplierId = supplierId; }
-
-    public String getSupplierName() { return supplierName; }
-    public void setSupplierName(String supplierName) { this.supplierName = supplierName; }
-
-    public int getCreatorId() { return creatorId; }
-    public void setCreatorId(int creatorId) { this.creatorId = creatorId; }
-
-    public String getCreatorName() { return creatorName; }
-    public void setCreatorName(String creatorName) { this.creatorName = creatorName; }
-
-    public BigDecimal getTotalCost() { return totalCost; }
-    public void setTotalCost(BigDecimal totalCost) { this.totalCost = totalCost; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-
-    public List<RestockItem> getItems() { return items; }
-    public void setItems(List<RestockItem> items) { this.items = items; }
-
-    public String getItemsSummary() {
-        if (items == null || items.isEmpty()) return "-";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < items.size(); i++) {
-            RestockItem it = items.get(i);
-            sb.append(it.getIngredientName()).append(": ")
-              .append(it.getQuantity().stripTrailingZeros().toPlainString()).append(" ")
-              .append(it.getUnit() != null ? it.getUnit() : "")
-              .append(" x ").append(String.format("%,.0fđ", it.getUnitPrice()));
-            if (i < items.size() - 1) sb.append(", ");
-        }
-        return sb.toString();
-    }
+    public int getId(){return id;}public void setId(int v){id=v;}public int getRequesterId(){return requesterId;}public void setRequesterId(int v){requesterId=v;}
+    public String getRequesterName(){return requesterName;}public void setRequesterName(String v){requesterName=v;}public Integer getReviewerId(){return reviewerId;}public void setReviewerId(Integer v){reviewerId=v;}
+    public String getReviewerName(){return reviewerName;}public void setReviewerName(String v){reviewerName=v;}public String getStatus(){return status;}public void setStatus(String v){status=v;}
+    public String getReason(){return reason;}public void setReason(String v){reason=v;}public String getNote(){return note;}public void setNote(String v){note=v;}
+    public String getReviewNote(){return reviewNote;}public void setReviewNote(String v){reviewNote=v;}public Timestamp getCreatedAt(){return createdAt;}public void setCreatedAt(Timestamp v){createdAt=v;}
+    public Timestamp getReviewedAt(){return reviewedAt;}public void setReviewedAt(Timestamp v){reviewedAt=v;}public List<RestockItem> getItems(){return items;}public void setItems(List<RestockItem> v){items=v;}
+    public String getItemsSummary(){StringBuilder s=new StringBuilder();for(RestockItem i:items){if(s.length()>0)s.append(", ");s.append(i.getIngredientName()).append(": ").append(i.getQuantity().stripTrailingZeros().toPlainString()).append(" ").append(i.getUnit());if(i.getUnitPrice()!=null&&i.getUnitPrice().signum()>0)s.append(" x ").append(String.format(java.util.Locale.US,"%,.0f",i.getUnitPrice())).append("đ");}return s.toString();}
 }

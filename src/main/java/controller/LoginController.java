@@ -1,6 +1,7 @@
 package controller;
 
 import dao.UserDAO;
+import model.Cart;
 import model.User;
 import utils.RedirectUtil;
 
@@ -67,8 +68,24 @@ public class LoginController extends HttpServlet {
         User loginUser = userDAO.login(userIdentifier, pass);
 
         if (loginUser != null) {
-            // Đăng nhập thành công -> Tạo Session
-            HttpSession session = request.getSession();
+            // Renew the session after authentication so an older role/CSRF state cannot leak
+            // into the newly authenticated account. The anonymous shopping cart is safe to keep.
+            HttpSession oldSession = request.getSession(false);
+            Cart cart = null;
+            if (oldSession != null) {
+                Object sessionCart = oldSession.getAttribute(Cart.SESSION_KEY);
+                if (sessionCart instanceof Cart) {
+                    cart = (Cart) sessionCart;
+                    // Loyalty balances belong to the previous identity, not the browser cart.
+                    cart.setAvailablePoints(0);
+                    cart.setPointsUsed(0);
+                }
+                oldSession.invalidate();
+            }
+            HttpSession session = request.getSession(true);
+            if (cart != null) {
+                session.setAttribute(Cart.SESSION_KEY, cart);
+            }
             session.setAttribute("user", loginUser); // Lưu object User vào session
 
             // Khách hàng đăng nhập từ trang Checkout -> quay lại tiếp tục đặt hàng
@@ -99,7 +116,7 @@ public class LoginController extends HttpServlet {
             } else if ("BARISTA".equalsIgnoreCase(position)) {
                 response.sendRedirect(request.getContextPath() + "/barista");
             } else if ("SHIPPER".equalsIgnoreCase(position)) {
-                response.sendRedirect(request.getContextPath() + "/delivery-dashboard.jsp");
+                response.sendRedirect(request.getContextPath() + "/delivery");
             } else {
                 response.sendRedirect(request.getContextPath() + "/"); // Fallback for other staff
             }

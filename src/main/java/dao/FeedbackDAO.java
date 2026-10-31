@@ -2,6 +2,7 @@ package dao;
 
 import context.DBContext;
 import model.Feedback;
+import model.FeedbackStatus;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,13 +18,23 @@ import java.util.List;
  */
 public class FeedbackDAO extends BaseDAO {
 
+    public enum ResponseUpdateResult {
+        UPDATED,
+        NOT_FOUND,
+        ALREADY_CLOSED
+    }
+
     private Feedback mapResultSetToFeedback(ResultSet rs) throws Exception {
         Feedback fb = new Feedback();
         int id = rs.getInt("id");
         fb.setId(id);
-        String ticketCode = rs.getString("ticket_code");
-        fb.setTicketCode(ticketCode != null && !ticketCode.isBlank()
-                ? ticketCode : "#CR-" + String.format("%04d", id));
+        try {
+            String ticketCode = rs.getString("ticket_code");
+            fb.setTicketCode(ticketCode != null && !ticketCode.isBlank()
+                    ? ticketCode : "#" + id);
+        } catch (Exception e) {
+            fb.setTicketCode("#" + id);
+        }
         fb.setCustomerId(rs.getInt("customer_id"));
         fb.setOrderId(rs.getInt("order_id"));
 
@@ -57,11 +68,11 @@ public class FeedbackDAO extends BaseDAO {
 
     public List<Feedback> getAllFeedbacks(int limit) {
         List<Feedback> list = new ArrayList<>();
-        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, COALESCE(o.order_code, cr.order_code) AS order_code " +
+        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, o.order_code AS order_code " +
                      "FROM customer_reviews cr " +
                      "JOIN users u ON cr.customer_id = u.id " +
                      "LEFT JOIN orders o ON cr.order_id = o.id " +
-                     "ORDER BY cr.created_at DESC LIMIT ?";
+                     "ORDER BY cr.created_at DESC, cr.id DESC LIMIT ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, limit > 0 ? limit : 20);
@@ -76,14 +87,106 @@ public class FeedbackDAO extends BaseDAO {
         return list;
     }
 
+    public List<Feedback> getAdminFeedbacks(String issueType, String status) throws Exception {
+        List<Feedback> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT cr.*, " +
+                "u.full_name AS customer_name, u.phone AS customer_phone, o.order_code AS order_code " +
+                "FROM customer_reviews cr " +
+                "JOIN users u ON cr.customer_id = u.id " +
+                "LEFT JOIN orders o ON cr.order_id = o.id " +
+                "WHERE 1=1 ");
+
+        List<Object> params = new ArrayList<>();
+        if (issueType != null && !issueType.isBlank() && !"ALL".equalsIgnoreCase(issueType)) {
+            sql.append("AND cr.issue_type = ? ");
+            params.add(issueType.trim().toUpperCase());
+        }
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            sql.append("AND cr.status = ? ");
+            params.add(status.trim().toUpperCase());
+        }
+        sql.append("ORDER BY cr.created_at DESC, cr.id DESC");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToFeedback(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    public ResponseUpdateResult updateFeedbackResponse(
+            int id, FeedbackStatus targetStatus, String adminResponse) throws Exception {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Mã phiếu không hợp lệ.");
+        }
+        if (targetStatus == null || targetStatus == FeedbackStatus.PENDING) {
+            throw new IllegalArgumentException("Phản hồi phải chuyển phiếu sang trạng thái đang xử lý hoặc kết thúc.");
+        }
+        if (adminResponse == null || adminResponse.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nội dung phản hồi không được để trống.");
+        }
+        String responseText = adminResponse.trim();
+        if (responseText.length() > 2000) {
+            throw new IllegalArgumentException("Nội dung phản hồi không được vượt quá 2.000 ký tự.");
+        }
+
+        String selectSql = "SELECT status FROM customer_reviews WHERE id = ? FOR UPDATE";
+        String updateSql = "UPDATE customer_reviews SET status = ?, admin_response = ? WHERE id = ?";
+
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                FeedbackStatus currentStatus;
+                try (PreparedStatement select = conn.prepareStatement(selectSql)) {
+                    select.setInt(1, id);
+                    try (ResultSet rs = select.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return ResponseUpdateResult.NOT_FOUND;
+                        }
+                        currentStatus = FeedbackStatus.from(rs.getString("status"));
+                    }
+                }
+
+                if (currentStatus.isTerminal()) {
+                    conn.rollback();
+                    return ResponseUpdateResult.ALREADY_CLOSED;
+                }
+                if (!currentStatus.canReplyWith(targetStatus)) {
+                    throw new IllegalArgumentException("Chuyển trạng thái phiếu không hợp lệ.");
+                }
+
+                try (PreparedStatement update = conn.prepareStatement(updateSql)) {
+                    update.setString(1, targetStatus.name());
+                    update.setString(2, responseText);
+                    update.setInt(3, id);
+                    update.executeUpdate();
+                }
+                conn.commit();
+                return ResponseUpdateResult.UPDATED;
+            } catch (Exception ex) {
+                conn.rollback();
+                throw ex;
+            }
+        }
+    }
+
     public List<Feedback> getFeedbacksByCustomerId(int customerId) {
         List<Feedback> list = new ArrayList<>();
-        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, COALESCE(o.order_code, cr.order_code) AS order_code " +
+        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, o.order_code AS order_code " +
                      "FROM customer_reviews cr " +
                      "JOIN users u ON cr.customer_id = u.id " +
                      "LEFT JOIN orders o ON cr.order_id = o.id " +
                      "WHERE cr.customer_id = ? " +
-                     "ORDER BY cr.created_at DESC";
+                     "ORDER BY cr.created_at DESC, cr.id DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, customerId);

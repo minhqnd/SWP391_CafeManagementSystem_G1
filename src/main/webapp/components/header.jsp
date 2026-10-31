@@ -178,14 +178,20 @@
                             <a id="orders-link"
                                class="nav-link aura-nav-link ${param.activePage == 'barista-orders' ? 'active-nav' : ''}"
                                href="${pageContext.request.contextPath}/barista">
-                                Đơn pha chế <span class="d-none d-sm-inline">(F1)</span>
+                                Đơn pha chế
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a id="recipes-link"
-                               class="nav-link aura-nav-link ${param.activePage == 'barista-recipes' ? 'active-nav' : ''}"
-                               href="${pageContext.request.contextPath}/barista?action=recipes">
-                                Công thức &amp; Định lượng <span class="d-none d-sm-inline">(F2)</span>
+                            <a id="completed-link"
+                               class="nav-link aura-nav-link ${param.activePage == 'barista-completed' ? 'active-nav' : ''}"
+                               href="${pageContext.request.contextPath}/barista?action=completed">
+                                Đơn đã pha
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link aura-nav-link"
+                               href="${pageContext.request.contextPath}/counter-orders">
+                                Đơn tại quầy
                             </a>
                         </li>
                     </c:when>
@@ -335,7 +341,8 @@
                             <c:if test="${not empty currentKeyword}"><c:param name="keyword" value="${currentKeyword}" /></c:if>
                         </c:url>
                         <a class="menu-category-option ${currentCategory == cat.id ? 'active' : ''}" href="${menuCategoryUrl}">
-                            <img src="${not empty cat.imageUrl ? cat.imageUrl : 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=80&amp;h=80&amp;fit=crop'}" alt="${cat.name}" loading="lazy" />
+                            <c:url var="storedCategoryImage" value="/category-image"><c:param name="id" value="${cat.id}" /></c:url>
+                            <img src="${cat.storedImage ? storedCategoryImage : (not empty cat.imageUrl ? cat.imageUrl : 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=80&amp;h=80&amp;fit=crop')}" alt="${cat.name}" loading="lazy" />
                             <span>${cat.name}</span>
                             <span class="menu-category-count">${cat.productCount}</span>
                         </a>

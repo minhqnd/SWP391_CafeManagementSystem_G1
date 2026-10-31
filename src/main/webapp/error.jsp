@@ -3,6 +3,13 @@
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:set var="errorException" value="${requestScope['jakarta.servlet.error.exception']}" />
 <c:set var="errorMessage" value="${requestScope['jakarta.servlet.error.message']}" />
+<%
+    Throwable rootCause = (Throwable) request.getAttribute("jakarta.servlet.error.exception");
+    while (rootCause != null && rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+        rootCause = rootCause.getCause();
+    }
+    request.setAttribute("errorRootCause", rootCause);
+%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -24,7 +31,8 @@
     <c:if test="${not empty errorException or not empty errorMessage}">
         <details class="text-start small mb-4">
             <summary class="text-secondary">Chi tiết lỗi để sửa</summary>
-            <pre class="mt-2 mb-0 p-3 rounded bg-light text-wrap"><c:out value="${errorException}" /><c:if test="${not empty errorMessage}">: <c:out value="${errorMessage}" /></c:if></pre>
+            <pre class="mt-2 mb-0 p-3 rounded bg-light text-wrap"><c:out value="${errorRootCause}" /><c:if test="${errorMessage ne errorRootCause.message and not empty errorMessage}">
+Request: <c:out value="${errorMessage}" /></c:if><c:if test="${empty errorRootCause and not empty errorMessage}"><c:out value="${errorMessage}" /></c:if></pre>
         </details>
     </c:if>
     <div class="d-flex justify-content-center flex-wrap gap-2">

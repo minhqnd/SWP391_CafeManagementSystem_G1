@@ -214,13 +214,31 @@
                                             <c:when test="${cart.freeshipReached}">Bạn đã đạt mốc <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b> để nhận miễn phí giao hàng.</c:when>
                                             <c:otherwise>
                                                 Miễn phí giao hàng cho đơn từ <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b>
-                                                (tính trên các món đã chọn), phí giao hàng hiện tại <fmt:formatNumber value="${shop.deliveryFee}" pattern="#,##0" />đ.
+                                                (tính trên các món đã chọn). Phí giao tuỳ theo quận, chọn ở bước nhập địa chỉ.
                                             </c:otherwise>
                                         </c:choose>
                                     </div>
                                 </c:otherwise>
                             </c:choose>
                         </div>
+
+                        <c:if test="${sessionScope.user.role == 'CUSTOMER'}">
+                            <div class="aura-card p-3 mb-3">
+                                <form id="pointsForm" method="post" action="${ctx}/cart"
+                                      data-step="${shop.pointsStep}" data-step-value="${shop.pointsStepValue}">
+                                    <input type="hidden" name="action" value="usePoints">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold">Dùng điểm Aura</span>
+                                        <span id="pointsDiscount" class="${cart.pointsUsed > 0 ? 'fw-bold text-aura text-nowrap' : 'fw-semibold text-muted small text-nowrap'}">
+                                            <c:choose><c:when test="${cart.pointsUsed > 0}">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0"/>đ</c:when><c:otherwise>Chưa dùng điểm</c:otherwise></c:choose>
+                                        </span>
+                                    </div>
+                                    <input id="pointsRange" name="pointsUsed" class="form-range" type="range"
+                                           min="0" max="${cart.maxRedeemablePoints}" step="${shop.pointsStep}" value="${cart.pointsUsed}">
+                                    <div class="small text-muted">Đang dùng <b id="pointsValue">${cart.pointsUsed}</b> / ${cart.availablePoints} điểm.</div>
+                                </form>
+                            </div>
+                        </c:if>
 
                         <!-- Tóm tắt đơn hàng -->
                         <div class="aura-card p-3 p-md-4">
@@ -230,7 +248,7 @@
                                 <span class="fw-semibold"><fmt:formatNumber value="${cart.selectedSubtotal}" pattern="#,##0" />đ</span>
                             </div>
                             <div class="summary-row">
-                                <span class="label">Phí giao hàng</span>
+                                <span class="label">Phí giao hàng (tạm tính)</span>
                                 <c:choose>
                                     <c:when test="${cart.deliveryFee == 0}"><span class="fw-semibold text-success">Miễn phí</span></c:when>
                                     <c:otherwise><span class="fw-semibold"><fmt:formatNumber value="${cart.deliveryFee}" pattern="#,##0" />đ</span></c:otherwise>

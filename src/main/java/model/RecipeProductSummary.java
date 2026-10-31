@@ -9,23 +9,19 @@ public class RecipeProductSummary {
     private final List<IngredientLine> ingredientLines;
     private final BigDecimal recipeCost;
     private final boolean costComplete;
-    private final BigDecimal grossMarginPercent;
 
     public RecipeProductSummary(Product product, List<IngredientLine> ingredientLines,
-                                BigDecimal recipeCost, boolean costComplete,
-                                BigDecimal grossMarginPercent) {
+                                BigDecimal recipeCost, boolean costComplete) {
         this.product = product;
         this.ingredientLines = ingredientLines;
         this.recipeCost = recipeCost;
         this.costComplete = costComplete;
-        this.grossMarginPercent = grossMarginPercent;
     }
 
     public Product getProduct() { return product; }
     public List<IngredientLine> getIngredientLines() { return ingredientLines; }
     public BigDecimal getRecipeCost() { return recipeCost; }
     public boolean isCostComplete() { return costComplete; }
-    public BigDecimal getGrossMarginPercent() { return grossMarginPercent; }
     public boolean isHasRecipe() { return !ingredientLines.isEmpty(); }
 
     public static class IngredientLine {

@@ -643,12 +643,6 @@
                             <span class="pulse-dot"></span>
                             <span>${o.statusLabel}</span>
                         </div>
-                        <c:if test="${not empty o.estimateReceiveTime(deliveryMinutes)}">
-                            <div class="text-end d-none d-sm-block">
-                                <div class="text-muted" style="font-size: 0.68rem; text-transform: uppercase; font-weight: 600;">Dự kiến xong</div>
-                                <div class="fw-bold" style="font-size: 0.95rem; color: #1e293b;">${o.estimateReceiveTime(deliveryMinutes)}</div>
-                            </div>
-                        </c:if>
                     </div>
                 </div>
 

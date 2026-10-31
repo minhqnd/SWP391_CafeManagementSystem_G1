@@ -823,3 +823,17 @@ body.aura-cart-page {
     .checkout-stepper .step { min-width: 80px; }
     .checkout-stepper .step-label { font-size: 0.7rem; }
 }
+
+/* ===== Checkout: chọn hình thức nhận hàng (Giao tận nơi / Tự đến lấy / Dùng tại quán) ===== */
+.fulfillment-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.fulfillment-option {
+    display: flex; align-items: center; gap: 10px; padding: 12px; cursor: pointer;
+    border: 1.5px solid var(--aura-border); border-radius: 12px; background: #fff;
+    transition: border-color .15s ease, background .15s ease;
+}
+.fulfillment-option input { accent-color: var(--aura-primary); }
+.fulfillment-option .material-symbols-outlined { color: var(--aura-primary); font-size: 24px; }
+.fulfillment-option b { display: block; font-size: 0.86rem; color: var(--aura-text); }
+.fulfillment-option small { display: block; font-size: 0.72rem; color: var(--aura-muted); }
+.fulfillment-option.is-selected { border-color: var(--aura-primary); background: var(--aura-primary-soft); }
+@media (max-width: 767.98px) { .fulfillment-options { grid-template-columns: 1fr; } }

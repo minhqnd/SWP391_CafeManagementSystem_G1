@@ -31,6 +31,12 @@ public class OrderDetail implements Serializable {
     private int categoryId;
     private String categoryName;
     private String imageUrl;
+    // Transient Barista UI state; not a database column.
+    private boolean prepared;
+
+    public boolean isPrepared() { return prepared; }
+
+    public void setPrepared(boolean prepared) { this.prepared = prepared; }
 
     public OrderDetail() {
     }
