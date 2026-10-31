@@ -166,12 +166,6 @@
                 <span>Cài đặt hệ thống</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a href="${ctx}/admin/delivery-areas" class="nav-link ${param.activeMenu == 'deliveryAreas' ? 'active' : ''}">
-                <span class="material-symbols-outlined">local_shipping</span>
-                <span>Phí giao theo quận</span>
-            </a>
-        </li>
     </ul>
 
     <!-- Sidebar Bottom: User & Logout -->

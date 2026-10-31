@@ -1,6 +1,6 @@
 -- =====================================================
 -- AURA CAFE ERP - CONSOLIDATED DATABASE
--- Canonical MySQL 8.x schema and data snapshot (25 tables)
+-- Canonical MySQL 8.x schema and data snapshot (24 tables)
 -- Generated from aura_cafe_erp on 2026-10-28
 -- =====================================================
 -- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
@@ -177,34 +177,6 @@ LOCK TABLES `deliveries` WRITE;
 /*!40000 ALTER TABLE `deliveries` DISABLE KEYS */;
 INSERT INTO `deliveries` VALUES (1,2,6,'DELIVERING',0.00,NULL,NULL,NULL,'2026-10-03 10:20:00','2026-10-03 10:22:00','2026-10-03 10:35:00',NULL,NULL);
 /*!40000 ALTER TABLE `deliveries` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `delivery_areas`
---
-
-DROP TABLE IF EXISTS `delivery_areas`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `delivery_areas` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `district` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `delivery_fee` decimal(12,2) NOT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_delivery_area_district` (`district`),
-  CONSTRAINT `chk_delivery_area_fee` CHECK ((`delivery_fee` >= 0))
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `delivery_areas`
---
-
-LOCK TABLES `delivery_areas` WRITE;
-/*!40000 ALTER TABLE `delivery_areas` DISABLE KEYS */;
-INSERT INTO `delivery_areas` VALUES (1,'Hoàn Kiếm',10000.00,1),(2,'Ba Đình',15000.00,1),(3,'Hai Bà Trưng',15000.00,1),(4,'Đống Đa',15000.00,1),(5,'Tây Hồ',20000.00,1),(6,'Long Biên',20000.00,1),(7,'Thanh Xuân',20000.00,1),(8,'Hoàng Mai',20000.00,1),(9,'Cầu Giấy',25000.00,1),(10,'Nam Từ Liêm',30000.00,1),(11,'Bắc Từ Liêm',30000.00,1),(12,'Hà Đông',30000.00,1);
-/*!40000 ALTER TABLE `delivery_areas` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -745,7 +717,7 @@ CREATE TABLE `shop_settings` (
 
 LOCK TABLES `shop_settings` WRITE;
 /*!40000 ALTER TABLE `shop_settings` DISABLE KEYS */;
-INSERT INTO `shop_settings` VALUES ('delivery_fee','15000','2026-10-28 14:26:58'),('delivery_minutes','30','2026-10-28 14:26:58'),('freeship_threshold','150000','2026-10-28 14:26:58'),('payment_account_name','NGUYEN DUC QUANG MINH','2026-10-28 14:26:58'),('payment_account_no','234556688','2026-10-28 14:26:58'),('payment_bank_id','MBBank','2026-10-28 14:26:58'),('payment_bank_name','MBBank','2026-10-28 14:26:58'),('payment_callback_secret','AURA-LOCAL-DEMO-SECRET','2026-10-28 14:26:58'),('payment_gateway_url','https://payment-gateway.zemorts.workers.dev','2026-10-28 14:26:58'),('payment_test_mode','true','2026-10-28 14:26:58'),('points_earn_unit','10000','2026-10-28 14:26:58'),('points_step','10','2026-10-28 14:26:58'),('points_step_value','2000','2026-10-28 14:26:58');
+INSERT INTO `shop_settings` VALUES ('delivery_fee','25000','2026-10-28 14:26:58'),('delivery_minutes','30','2026-10-28 14:26:58'),('freeship_threshold','150000','2026-10-28 14:26:58'),('payment_account_name','NGUYEN DUC QUANG MINH','2026-10-28 14:26:58'),('payment_account_no','234556688','2026-10-28 14:26:58'),('payment_bank_id','MBBank','2026-10-28 14:26:58'),('payment_bank_name','MBBank','2026-10-28 14:26:58'),('payment_callback_secret','AURA-LOCAL-DEMO-SECRET','2026-10-28 14:26:58'),('payment_gateway_url','https://payment-gateway.zemorts.workers.dev','2026-10-28 14:26:58'),('payment_test_mode','true','2026-10-28 14:26:58'),('points_earn_unit','10000','2026-10-28 14:26:58'),('points_step','10','2026-10-28 14:26:58'),('points_step_value','2000','2026-10-28 14:26:58');
 /*!40000 ALTER TABLE `shop_settings` ENABLE KEYS */;
 UNLOCK TABLES;
 

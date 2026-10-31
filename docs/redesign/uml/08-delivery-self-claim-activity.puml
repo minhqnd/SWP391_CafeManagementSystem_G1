@@ -1,0 +1,71 @@
+@startuml 08-delivery-self-claim-activity
+' SRS Delivery Management - UC26 View Deliveries, UC27 Update Delivery Status,
+' UC28 View Delivery Detail, UC29 Report Delivery Issue, UC30 Collect & Hand Over COD
+' Redesign: shippers claim READY orders themselves from a shared pool (no manual Admin assignment)
+title Online Delivery with Shipper Self-Claim (UC26-UC30)
+
+|Customer|
+start
+:Place online order with delivery address;
+if (Payment method?) then (Online gateway)
+  |System|
+  :Gateway callback SUCCESS\n-> payments SUCCESS, orders CONFIRMED;
+else (COD)
+  |System|
+  :payments CASH PENDING (COD-<order code>)\n-> orders CONFIRMED;
+endif
+
+|Barista|
+:Prepare drinks: CONFIRMED -> PREPARING;
+:Mark order done -> READY;
+
+|System|
+:Order enters the "Waiting orders" pool\n(ONLINE + address, READY, no deliveries record yet);
+
+|Shipper|
+:Step 1 "Claim": open waiting orders\n(oldest first, page auto-refreshes every 30 s);
+:Click "Claim & deliver" while at the store;
+|System|
+:Lock the order row (SELECT ... FOR UPDATE);
+if (Order still READY and unclaimed?) then (no)
+  :Show "Order already claimed by another shipper";
+  stop
+else (yes)
+  :INSERT deliveries (status DELIVERING, cod_amount,\naccepted_at = picked_up_at = now)\norders -> DELIVERING, orders.shipper_id;
+endif
+
+|Shipper|
+:Step 2 "Deliver & collect": take the order to the customer\n(phone number and address shown on the order card);
+if (Delivery problem?\n(unreachable, wrong address, customer refuses...)) then (yes)
+  :Report issue: type + description (UC29);
+  |System|
+  :INSERT delivery_issues;
+  note right: Admin follows up and contacts the customer
+  stop
+else (no)
+endif
+
+if (COD order?) then (yes)
+  |Shipper|
+  :Collect cash, tick "I collected the full COD amount";
+  |System|
+  if (Box ticked?) then (no)
+    :Reject: tick the box first\n(report an issue if the customer did not pay in full);
+    stop
+  else (yes)
+    :payments COD -> SUCCESS\n+ earn Aura points for the customer (once);
+  endif
+else (no - paid online)
+endif
+|System|
+:deliveries -> DELIVERED, orders -> COMPLETED;
+
+|Shipper|
+if (Holding COD cash?) then (yes)
+  :Step 3 "Hand over COD": give all cash to a Cashier (UC30);
+  |System|
+  :Set cod_handed_over_at + cod_receiver_id\nfor every unsettled COD delivery;
+else (no)
+endif
+stop
+@enduml
