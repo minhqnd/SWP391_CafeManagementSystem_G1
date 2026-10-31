@@ -238,15 +238,9 @@ public class Cart implements Serializable {
         return "ONLINE";
     }
 
-    // Phí giao cố định của quận khách chọn (bảng delivery_areas) - biết sau khi chọn địa chỉ ở bước Checkout
-    private Double areaDeliveryFee;
-
-    public Double getAreaDeliveryFee() { return areaDeliveryFee; }
-    public void setAreaDeliveryFee(Double areaDeliveryFee) { this.areaDeliveryFee = areaDeliveryFee; }
-
     /**
      * Phí giao hàng: chỉ tính khi giao tận nơi, miễn phí khi tiền hàng đạt mức freeship Admin cài đặt;
-     * còn lại = phí của quận đã chọn (chưa chọn quận thì tạm tính phí mặc định delivery_fee).
+     * còn lại = 1 mức phí cố định cho mọi địa chỉ (delivery_fee, Admin chỉnh ở Cài đặt).
      */
     public double getDeliveryFee() {
         if (!isDelivery()) {
@@ -255,7 +249,7 @@ public class Cart implements Serializable {
         if (isFreeshipReached()) {
             return 0;
         }
-        return areaDeliveryFee != null ? areaDeliveryFee : settings.getDeliveryFee();
+        return settings.getDeliveryFee();
     }
 
     /** Khách cần trả = tiền hàng - điểm + phí giao hàng */
