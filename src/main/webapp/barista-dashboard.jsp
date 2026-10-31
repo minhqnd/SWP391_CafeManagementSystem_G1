@@ -14,7 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-    <link href="${pageContext.request.contextPath}/assets/css/barista.css?v=20261030-3" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/barista.css?v=20261031-1" rel="stylesheet">
 </head>
 <body data-context-path="${pageContext.request.contextPath}"
       data-csrf-token="${sessionScope.baristaCsrfToken}" data-barista-view="${completedView ? 'completed' : 'active'}">
@@ -74,9 +74,13 @@
             .filter((o) => ["CONFIRMED", "PREPARING"].includes(o.status))
             .sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")) || a.id - b.id);
     }
-    function completedOrders(orders) {
+    function completedOrders(orders, now = new Date()) {
+        const today = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit",
+        }).format(now);
         return orders
-            .filter((o) => o.status === "READY")
+            // Legacy orders have no persisted completion time; fall back to creation date.
+            .filter((o) => o.status === "READY" && String(o.readyAt || o.createdAt || "").slice(0, 10) === today)
             .sort(
                 (a, b) =>
                     String(b.readyAt || "").localeCompare(String(a.readyAt || "")) ||
@@ -400,7 +404,7 @@
         visible.forEach((order) => list.append(orderCard(order)));
         if (!visible.length)
             list.append(
-                element("p", "empty-state", completed ? "Chưa có đơn nào đã pha." : "Không có đơn đang chờ pha chế."),
+                element("p", "empty-state", completed ? "Chưa có đơn nào đã pha trong ngày hôm nay." : "Không có đơn đang chờ pha chế."),
             );
         if (groupList) {
             groupList.replaceChildren();

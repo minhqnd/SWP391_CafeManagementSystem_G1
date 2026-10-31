@@ -141,7 +141,7 @@ test("completion checks remaining lines and moves order to read-only READY selec
         false,
     );
     assert.equal(
-        kds.completedOrders(orders).some((o) => o.id === 2),
+        kds.completedOrders(orders, new Date("2026-10-19T03:00:00Z")).some((o) => o.id === 2),
         true,
     );
     assert.equal(
@@ -160,10 +160,23 @@ test("oldest active first, latest completion first regardless of creation date",
     kds.markReady(orders, 1);
     orders[1].readyAt = "2026-10-19T09:01:00";
     assert.deepEqual(
-        kds.completedOrders(orders).map((o) => o.id),
+        kds.completedOrders(orders, new Date("2026-10-19T03:00:00Z")).map((o) => o.id),
         [3, 1],
     );
 });
+test("completed orders reset at Vietnam midnight and use completion date before creation date", () => {
+    const orders = [
+        { id: 1, status: "READY", createdAt: "2026-10-18T23:00:00", readyAt: "2026-10-19T23:59:59" },
+        { id: 2, status: "READY", createdAt: "2026-10-19T23:00:00", readyAt: "2026-10-20T00:00:00" },
+        { id: 3, status: "READY", createdAt: "2026-10-19T10:00:00" },
+        { id: 4, status: "READY" },
+        { id: 5, status: "PREPARING", createdAt: "2026-10-20T00:00:00" },
+    ];
+    assert.deepEqual(kds.completedOrders(orders, new Date("2026-10-19T16:59:59Z")).map(o => o.id), [1, 3]);
+    assert.deepEqual(kds.completedOrders(orders, new Date("2026-10-19T17:00:00Z")).map(o => o.id), [2]);
+    assert.deepEqual(kds.activeOrders(orders).map(o => o.id), [5]);
+});
+
 test("same product ID but different snapshot name or customization stays separate", () => {
     const a = { productId: 7, productName: "Cà phê", customization: '{"size":"M"}' };
     assert.notEqual(kds.groupKey(a), kds.groupKey({ ...a, productName: "Cà phê sữa" }));
