@@ -81,7 +81,7 @@ public class BaristaPreparationService {
         // Reuse the existing conditional status update. No new SQL fields or item writes.
         if (!orderDAO.updateBaristaOrderStatus(orderId, status)) return false;
         if ("READY".equals(status)) {
-            completionTimes.put(orderId, LocalDateTime.now());
+            completionTimes.put(orderId, LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
             startedOrders.remove(orderId);
         }
         return true;
