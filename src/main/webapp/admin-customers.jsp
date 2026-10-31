@@ -26,7 +26,6 @@
     <header class="customer-overview">
         <div class="customer-heading">
             <div>
-                <span class="table-ref">Bảng: users · role = CUSTOMER</span>
                 <h1>Quản lý khách hàng</h1>
                 <p>Thông tin khách hàng, điểm tích lũy và tổng chi tiêu từ đơn hàng đã hoàn thành.</p>
             </div>
