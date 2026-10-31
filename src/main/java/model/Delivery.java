@@ -9,7 +9,8 @@ import java.util.List;
 
 /**
  * Delivery - Một lần giao hàng của đơn online (bảng deliveries, SRS entity Delivery, UC26-UC30).
- * ASSIGNED (Admin gán) -> ACCEPTED (shipper nhận) -> DELIVERING (đã lấy hàng) -> DELIVERED.
+ * Shipper nhận đơn đã pha xong -> DELIVERING (nhận + lấy hàng 1 bước) -> DELIVERED.
+ * Đơn Admin gán sẵn: ASSIGNED -> DELIVERING khi shipper bấm "Nhận đơn & đi giao".
  * Kèm thông tin đơn hàng cần cho shipper: người nhận, SĐT, địa chỉ, món, tiền thu hộ (COD).
  */
 public class Delivery implements Serializable {

@@ -9,6 +9,8 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +38,104 @@ public class DeliveryDAO extends BaseDAO {
             "LEFT JOIN users c ON c.id = o.customer_id " +
             "LEFT JOIN users r ON r.id = d.cod_receiver_id ";
 
-    /** UC26: đơn đang được phân công cho shipper (chưa giao xong), đơn đang giao lên đầu */
+    /** Đơn giao tận nơi Barista đã pha xong (READY) nhưng chưa shipper nào nhận */
+    private static final String AVAILABLE_ORDER_FILTER =
+            "o.order_type = 'ONLINE' AND o.delivery_address IS NOT NULL AND o.status = 'READY' " +
+            "AND NOT EXISTS (SELECT 1 FROM deliveries d WHERE d.order_id = o.id) ";
+
+    /** UC26: kho đơn chờ shipper nhận - đơn đặt sớm hơn lên đầu */
+    public List<Delivery> getAvailableOrders() throws SQLException, ClassNotFoundException {
+        String sql = "SELECT o.id AS order_id, o.order_code, o.status AS order_status, o.recipient_name, " +
+                "       o.recipient_phone, o.delivery_address, o.order_note, o.created_at AS order_created_at, " +
+                "       o.final_amount, o.delivery_fee, c.full_name AS customer_name, " +
+                "       CASE WHEN EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.id AND p.status = 'SUCCESS') " +
+                "            THEN 0 ELSE o.final_amount END AS cod_amount, " +
+                "       (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi WHERE oi.order_id = o.id) AS item_count " +
+                "FROM orders o LEFT JOIN users c ON c.id = o.customer_id " +
+                "WHERE " + AVAILABLE_ORDER_FILTER +
+                "ORDER BY o.created_at, o.id";
+        List<Delivery> list = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Delivery d = new Delivery();
+                d.setOrderId(rs.getInt("order_id"));
+                d.setOrderCode(rs.getString("order_code"));
+                d.setOrderStatus(rs.getString("order_status"));
+                d.setCustomerName(rs.getString("customer_name"));
+                d.setRecipientName(rs.getString("recipient_name"));
+                d.setRecipientPhone(rs.getString("recipient_phone"));
+                d.setDeliveryAddress(rs.getString("delivery_address"));
+                d.setOrderNote(rs.getString("order_note"));
+                d.setOrderCreatedAt(rs.getTimestamp("order_created_at"));
+                d.setFinalAmount(rs.getBigDecimal("final_amount"));
+                d.setDeliveryFee(rs.getBigDecimal("delivery_fee"));
+                d.setCodAmount(rs.getBigDecimal("cod_amount"));
+                d.setItemCount(rs.getInt("item_count"));
+                list.add(d);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * UC27: shipper nhận 1 đơn trong kho đơn chờ nhận và lấy hàng đi giao luôn (đơn đã pha xong - READY).
+     * Khoá dòng đơn hàng (FOR UPDATE) nên 2 shipper bấm cùng lúc thì chỉ người đầu tiên nhận được.
+     * Tạo deliveries ở trạng thái DELIVERING, đơn hàng -> DELIVERING và ghi orders.shipper_id.
+     * Trả về id chuyến giao mới, hoặc 0 nếu đơn không còn chờ nhận.
+     */
+    public int claim(int orderId, int shipperId) throws SQLException, ClassNotFoundException {
+        String lockOrderSql = "SELECT o.final_amount, " +
+                "EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.id AND p.status = 'SUCCESS') AS paid " +
+                "FROM orders o WHERE o.id = ? AND " + AVAILABLE_ORDER_FILTER + "FOR UPDATE";
+        String insertSql = "INSERT INTO deliveries (order_id, shipper_id, status, cod_amount, assigned_at, accepted_at, picked_up_at) " +
+                "VALUES (?, ?, 'DELIVERING', ?, NOW(), NOW(), NOW())";
+        String updateOrderSql = "UPDATE orders SET shipper_id = ?, status = 'DELIVERING' WHERE id = ?";
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                BigDecimal codAmount;
+                try (PreparedStatement ps = conn.prepareStatement(lockOrderSql)) {
+                    ps.setInt(1, orderId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return 0;
+                        }
+                        codAmount = rs.getBoolean("paid") ? BigDecimal.ZERO : rs.getBigDecimal("final_amount");
+                    }
+                }
+                int deliveryId;
+                try (PreparedStatement ps = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setInt(1, orderId);
+                    ps.setInt(2, shipperId);
+                    ps.setBigDecimal(3, codAmount);
+                    ps.executeUpdate();
+                    try (ResultSet keys = ps.getGeneratedKeys()) {
+                        keys.next();
+                        deliveryId = keys.getInt(1);
+                    }
+                }
+                try (PreparedStatement ps = conn.prepareStatement(updateOrderSql)) {
+                    ps.setInt(1, shipperId);
+                    ps.setInt(2, orderId);
+                    ps.executeUpdate();
+                }
+                conn.commit();
+                return deliveryId;
+            } catch (SQLIntegrityConstraintViolationException e) {
+                // uq_delivery_order: đơn vừa được người khác nhận
+                conn.rollback();
+                return 0;
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            }
+        }
+    }
+
+    /** UC26: đơn shipper đang giữ (tự nhận hoặc Admin gán, chưa giao xong), đơn đang giao lên đầu */
     public List<Delivery> getActiveDeliveries(int shipperId) throws SQLException, ClassNotFoundException {
         String sql = SELECT_DELIVERY +
                 "WHERE d.shipper_id = ? AND d.status IN ('ASSIGNED', 'ACCEPTED', 'DELIVERING') " +
@@ -68,14 +167,6 @@ public class DeliveryDAO extends BaseDAO {
         String sql = SELECT_DELIVERY +
                 "WHERE d.shipper_id = ? AND d.status = 'DELIVERED' AND d.cod_amount > 0 " +
                 "AND d.cod_handed_over_at IS NULL ORDER BY d.delivered_at";
-        return query(sql, shipperId);
-    }
-
-    /** Lịch sử nộp tiền COD gần đây */
-    public List<Delivery> getCodHistory(int shipperId) throws SQLException, ClassNotFoundException {
-        String sql = SELECT_DELIVERY +
-                "WHERE d.shipper_id = ? AND d.cod_handed_over_at IS NOT NULL " +
-                "ORDER BY d.cod_handed_over_at DESC, d.id DESC LIMIT 30";
         return query(sql, shipperId);
     }
 
@@ -119,19 +210,15 @@ public class DeliveryDAO extends BaseDAO {
         return list;
     }
 
-    /** UC27: shipper nhận đơn được phân công */
-    public boolean accept(int id, int shipperId) throws SQLException, ClassNotFoundException {
-        String sql = "UPDATE deliveries d JOIN orders o ON o.id = d.order_id " +
-                     "SET d.status = 'ACCEPTED', d.accepted_at = NOW() " +
-                     "WHERE d.id = ? AND d.shipper_id = ? AND d.status = 'ASSIGNED' AND o.status <> 'CANCELLED'";
-        return update(sql, id, shipperId) > 0;
-    }
-
-    /** UC27: lấy hàng tại quán và bắt đầu giao - chỉ khi Barista đã pha xong (READY) */
+    /**
+     * UC27: đơn Admin gán sẵn - shipper nhận và lấy hàng đi giao trong 1 bước,
+     * chỉ khi Barista đã pha xong (READY)
+     */
     public boolean startDelivery(int id, int shipperId) throws SQLException, ClassNotFoundException {
         String sql = "UPDATE deliveries d JOIN orders o ON o.id = d.order_id " +
-                     "SET d.status = 'DELIVERING', d.picked_up_at = NOW(), o.status = 'DELIVERING' " +
-                     "WHERE d.id = ? AND d.shipper_id = ? AND d.status = 'ACCEPTED' AND o.status = 'READY'";
+                     "SET d.status = 'DELIVERING', d.accepted_at = COALESCE(d.accepted_at, NOW()), " +
+                     "    d.picked_up_at = NOW(), o.status = 'DELIVERING' " +
+                     "WHERE d.id = ? AND d.shipper_id = ? AND d.status IN ('ASSIGNED', 'ACCEPTED') AND o.status = 'READY'";
         return update(sql, id, shipperId) > 0;
     }
 

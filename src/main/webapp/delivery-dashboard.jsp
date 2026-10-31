@@ -7,7 +7,6 @@
 <%-- Trang chỉ hiển thị qua DeliveryController (/delivery) --%>
 <c:if test="${empty tab}"><c:redirect url="/delivery" /></c:if>
 <c:set var="csrf" value="${fn:escapeXml(sessionScope.deliveryCsrfToken)}" />
-<c:set var="me" value="${sessionScope.user}" />
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -18,387 +17,221 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="${ctx}/assets/css/delivery.css" rel="stylesheet">
 </head>
 <body>
-<div class="layout">
-    <aside class="ship-sidebar">
-        <div class="brand">Aura Café<span class="portal">Delivery Portal</span></div>
-        <div class="profile">
-            <div class="d-flex gap-3 align-items-center">
-                <div class="avatar"><c:out value="${fn:substring(me.fullName, 0, 1)}" /></div>
-                <div>
-                    <strong><c:out value="${me.fullName}" /></strong>
-                    <div class="muted font-monospace"><c:out value="${me.phone}" /></div>
-                </div>
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between"><span class="muted">Chức vụ:</span><strong>Giao hàng</strong></div>
-            <div class="d-flex justify-content-between mt-1"><span class="muted">Hôm nay:</span><strong>${todayDisplay}</strong></div>
-        </div>
-        <nav>
-            <a class="nav-link ${tab eq 'active' and empty detail ? 'active' : ''}" href="${ctx}/delivery">
-                <span class="material-symbols-outlined">local_shipping</span>Đơn được phân công
-                <span class="count">${fn:length(activeDeliveries)}</span>
-            </a>
-            <a class="nav-link ${tab eq 'done' and empty detail ? 'active' : ''}" href="${ctx}/delivery?tab=done">
-                <span class="material-symbols-outlined">task_alt</span>Đã giao
-                <span class="count">${deliveredTodayCount}</span>
-            </a>
-            <a class="nav-link ${tab eq 'cod' and empty detail ? 'active' : ''}" href="${ctx}/delivery?tab=cod">
-                <span class="material-symbols-outlined">payments</span>Tiền COD
-                <span class="count">${fn:length(codHolding)}</span>
-            </a>
-        </nav>
-        <a class="logout" href="${ctx}/login?action=logout"><span class="material-symbols-outlined">logout</span>Đăng xuất</a>
-    </aside>
+<header class="topbar">
+    <div class="brand">Aura Café <span>Giao hàng</span></div>
+    <div class="who">
+        <span class="material-symbols-outlined">account_circle</span><c:out value="${sessionScope.user.fullName}" />
+        <a class="logout" href="${ctx}/login?action=logout" title="Đăng xuất"><span class="material-symbols-outlined">logout</span></a>
+    </div>
+</header>
 
-    <main class="main">
-        <c:if test="${not empty deliverySuccessMsg}">
-            <div class="flash ok"><span class="material-symbols-outlined">check_circle</span><c:out value="${deliverySuccessMsg}" /></div>
-        </c:if>
-        <c:if test="${not empty deliveryErrorMsg}">
-            <div class="flash err"><span class="material-symbols-outlined">error</span><c:out value="${deliveryErrorMsg}" /></div>
-        </c:if>
+<main class="page">
+    <%-- Quy trình 3 bước, mỗi bước là 1 tab --%>
+    <nav class="steps" aria-label="Quy trình giao hàng">
+        <a class="step ${tab eq 'available' ? 'active' : ''}" href="${ctx}/delivery?tab=available">
+            <b>1</b><span>Nhận đơn<small>${fn:length(availableOrders)} đơn chờ</small></span>
+        </a>
+        <a class="step ${tab eq 'delivering' ? 'active' : ''}" href="${ctx}/delivery?tab=delivering">
+            <b>2</b><span>Giao &amp; thu tiền<small>${fn:length(activeDeliveries)} đơn của tôi</small></span>
+        </a>
+        <a class="step ${tab eq 'cod' ? 'active' : ''}" href="${ctx}/delivery?tab=cod">
+            <b>3</b><span>Nộp tiền COD<small><fmt:formatNumber value="${codHoldingTotal}" pattern="#,##0" />đ đang giữ</small></span>
+        </a>
+    </nav>
 
-        <section class="head mb-4">
-            <span class="screen">Screen 14 • Giao hàng</span>
-            <h1>Quản lý giao hàng</h1>
-            <p class="muted mb-0">Nhận đơn được phân công, lấy hàng khi quán pha xong, giao cho khách, báo sự cố và nộp tiền COD cho Thu ngân.</p>
-            <div class="stats">
-                <div class="stat"><span>Chờ nhận đơn</span><strong>${assignedCount} đơn</strong></div>
-                <div class="stat"><span>Đã nhận / đang giao</span><strong>${inProgressCount} đơn</strong></div>
-                <div class="stat"><span>Đã giao hôm nay</span><strong>${deliveredTodayCount} đơn</strong></div>
-                <div class="stat highlight"><span>Tiền COD đang giữ</span><strong><fmt:formatNumber value="${codHoldingTotal}" pattern="#,##0" />đ</strong></div>
-            </div>
-        </section>
+    <c:if test="${not empty deliverySuccessMsg}">
+        <div class="flash ok"><span class="material-symbols-outlined">check_circle</span><c:out value="${deliverySuccessMsg}" /></div>
+    </c:if>
+    <c:if test="${not empty deliveryErrorMsg}">
+        <div class="flash err"><span class="material-symbols-outlined">error</span><c:out value="${deliveryErrorMsg}" /></div>
+    </c:if>
 
-        <c:choose>
-            <%-- ================= UC28: CHI TIẾT ĐƠN GIAO ================= --%>
-            <c:when test="${not empty detail}">
-                <c:set var="d" value="${detail}" />
-                <a class="action mb-3" href="${ctx}/delivery${d.delivered ? '?tab=done' : ''}">
-                    <span class="material-symbols-outlined">arrow_back</span>Quay lại danh sách
-                </a>
-                <div class="row g-4 align-items-start">
-                    <div class="col-lg-7">
-                        <section class="panel p-4">
-                            <div class="d-flex flex-wrap justify-content-between gap-2 border-bottom pb-3 mb-3">
-                                <div class="d-flex flex-wrap gap-2 align-items-center">
-                                    <span class="code">#<c:out value="${d.orderCode}" /></span>
-                                    <span class="badge-st st-${d.status}">${d.statusLabel}</span>
-                                    <span class="badge-st ost ost-${d.orderStatus}">Quán: ${d.orderStatusLabel}</span>
-                                </div>
-                                <span class="muted font-monospace">Đặt lúc ${d.orderCreatedAtDisplay}</span>
-                            </div>
+    <c:choose>
+        <%-- ============ BƯỚC 1: ĐƠN CHỜ NHẬN (UC26, UC27) ============ --%>
+        <c:when test="${tab eq 'available'}">
+            <p class="guide">Đơn quán đã pha xong, chưa ai nhận. Đang ở quán thì bấm <b>Nhận đơn &amp; đi giao</b> rồi mang hàng đi luôn.
+                <span class="muted">Trang tự làm mới mỗi 30 giây.</span></p>
+            <c:if test="${empty availableOrders}">
+                <div class="empty"><span class="material-symbols-outlined">coffee</span>Chưa có đơn nào pha xong chờ giao.</div>
+            </c:if>
+            <c:forEach var="o" items="${availableOrders}">
+                <article class="card">
+                    <div class="card-head">
+                        <span class="code">#<c:out value="${o.orderCode}" /></span>
+                        <span class="muted">Đặt lúc ${o.orderCreatedAtDisplay}</span>
+                    </div>
+                    <p class="name"><c:out value="${o.recipientName}" /></p>
+                    <p class="line"><span class="material-symbols-outlined">location_on</span><c:out value="${o.deliveryAddress}" /></p>
+                    <div class="items">
+                        <c:forEach var="it" items="${o.items}">
+                            <div><b>${it.quantity}x</b> <c:out value="${it.productName}" /> <span class="muted"><c:out value="${it.optionsText}" /></span></div>
+                        </c:forEach>
+                    </div>
+                    <c:if test="${not empty o.orderNote}"><p class="note">Ghi chú: <c:out value="${o.orderNote}" /></p></c:if>
+                    <div class="money ${o.cod ? 'cod' : 'paid'}">
+                        <c:choose>
+                            <c:when test="${o.cod}">Thu của khách <b><fmt:formatNumber value="${o.codAmount}" pattern="#,##0" />đ</b></c:when>
+                            <c:otherwise>Khách đã trả online - <b>không thu tiền</b></c:otherwise>
+                        </c:choose>
+                    </div>
+                    <form method="post" action="${ctx}/delivery" data-confirm="Nhận đơn #${fn:escapeXml(o.orderCode)} và mang đi giao?">
+                        <input type="hidden" name="csrfToken" value="${csrf}">
+                        <input type="hidden" name="action" value="claim">
+                        <input type="hidden" name="orderId" value="${o.orderId}">
+                        <button type="submit" class="btn primary"><span class="material-symbols-outlined">two_wheeler</span>Nhận đơn &amp; đi giao</button>
+                    </form>
+                </article>
+            </c:forEach>
+        </c:when>
 
-                            <h2 class="recipient"><c:out value="${d.recipientName}" /></h2>
-                            <p><a class="tel" href="tel:${fn:escapeXml(d.recipientPhone)}"><span class="material-symbols-outlined">call</span> <c:out value="${d.recipientPhone}" /></a>
-                                <c:if test="${not empty d.customerName and d.customerName ne d.recipientName}">
-                                    <span class="muted">· Người đặt: <c:out value="${d.customerName}" /></span>
+        <%-- ============ BƯỚC 2: ĐANG GIAO - GIAO XONG + THU COD, BÁO SỰ CỐ (UC27, UC28, UC29) ============ --%>
+        <c:when test="${tab eq 'delivering'}">
+            <p class="guide">Giao tới khách rồi bấm <b>Đã giao xong</b>. Đơn thu tiền mặt phải tick <b>đã thu đủ tiền</b> trước.
+                Không giao được thì bấm <b>Gặp sự cố</b>.</p>
+            <c:if test="${empty activeDeliveries}">
+                <div class="empty"><span class="material-symbols-outlined">two_wheeler</span>
+                    Bạn chưa nhận đơn nào. Sang <a href="${ctx}/delivery?tab=available">bước 1</a> để nhận đơn.</div>
+            </c:if>
+            <c:forEach var="d" items="${activeDeliveries}">
+                <article class="card ${d.delivering ? 'on-the-way' : ''}">
+                    <div class="card-head">
+                        <span class="code">#<c:out value="${d.orderCode}" /></span>
+                        <span class="badge ${d.delivering ? 'go' : 'wait'}">${d.delivering ? 'Đang giao' : 'Chờ lấy hàng'}</span>
+                    </div>
+                    <p class="name"><c:out value="${d.recipientName}" /></p>
+                    <p class="line"><span class="material-symbols-outlined">call</span><b><c:out value="${d.recipientPhone}" /></b></p>
+                    <p class="line"><span class="material-symbols-outlined">location_on</span><c:out value="${d.deliveryAddress}" /></p>
+                    <div class="items">
+                        <c:forEach var="it" items="${d.items}">
+                            <div><b>${it.quantity}x</b> <c:out value="${it.productName}" /> <span class="muted"><c:out value="${it.optionsText}" /></span></div>
+                        </c:forEach>
+                    </div>
+                    <c:if test="${not empty d.orderNote}"><p class="note">Ghi chú: <c:out value="${d.orderNote}" /></p></c:if>
+                    <div class="money ${d.cod ? 'cod' : 'paid'}">
+                        <c:choose>
+                            <c:when test="${d.cod}">Thu của khách <b><fmt:formatNumber value="${d.codAmount}" pattern="#,##0" />đ</b></c:when>
+                            <c:otherwise>Khách đã trả online - <b>không thu tiền</b></c:otherwise>
+                        </c:choose>
+                    </div>
+
+                    <c:choose>
+                        <c:when test="${d.delivering}">
+                            <form method="post" action="${ctx}/delivery" class="done-form" data-confirm="Xác nhận đã giao xong đơn #${fn:escapeXml(d.orderCode)}?">
+                                <input type="hidden" name="csrfToken" value="${csrf}">
+                                <input type="hidden" name="action" value="deliver">
+                                <input type="hidden" name="id" value="${d.id}">
+                                <c:if test="${d.cod}">
+                                    <label class="check"><input type="checkbox" name="codConfirmed" required>
+                                        Tôi đã thu đủ <b><fmt:formatNumber value="${d.codAmount}" pattern="#,##0" />đ</b> tiền mặt</label>
                                 </c:if>
-                            </p>
-                            <c:url var="mapUrl" value="https://www.google.com/maps/search/"><c:param name="api" value="1" /><c:param name="query" value="${d.deliveryAddress}" /></c:url>
-                            <p class="address mt-2"><span class="material-symbols-outlined">location_on</span>
-                                <c:out value="${d.deliveryAddress}" /> · <a href="${mapUrl}" target="_blank" rel="noopener">Mở bản đồ</a></p>
-                            <p><span class="material-symbols-outlined">schedule</span>
-                                Thời gian nhận: <strong>${empty d.scheduledAt ? 'Càng sớm càng tốt' : 'Hẹn '.concat(d.scheduledAtDisplay)}</strong></p>
-                            <c:if test="${not empty d.orderNote}">
-                                <p class="note-box mt-2">Ghi chú của khách: <c:out value="${d.orderNote}" /></p>
-                            </c:if>
+                                <button type="submit" class="btn primary"><span class="material-symbols-outlined">task_alt</span>Đã giao xong</button>
+                            </form>
+                        </c:when>
+                        <c:when test="${d.orderReady}">
+                            <form method="post" action="${ctx}/delivery" data-confirm="Nhận đơn #${fn:escapeXml(d.orderCode)} và mang đi giao?">
+                                <input type="hidden" name="csrfToken" value="${csrf}">
+                                <input type="hidden" name="action" value="start">
+                                <input type="hidden" name="id" value="${d.id}">
+                                <button type="submit" class="btn primary"><span class="material-symbols-outlined">two_wheeler</span>Nhận đơn &amp; đi giao</button>
+                            </form>
+                        </c:when>
+                        <c:otherwise>
+                            <p class="waiting"><span class="material-symbols-outlined">hourglass_top</span>Quán đang pha chế (${d.orderStatusLabel}), pha xong mới lấy hàng được.</p>
+                        </c:otherwise>
+                    </c:choose>
 
-                            <h3 class="h6 fw-bold mt-4">Món trong đơn (${d.itemCount})</h3>
-                            <div class="items">
-                                <c:forEach var="it" items="${d.items}">
-                                    <div class="d-flex justify-content-between gap-2">
-                                        <span><strong>${it.quantity}x</strong> <c:out value="${it.productName}" /></span>
-                                        <span class="muted"><c:out value="${it.optionsText}" /></span>
-                                    </div>
-                                </c:forEach>
-                            </div>
+                    <details class="issue-box">
+                        <summary><span class="material-symbols-outlined">report_problem</span>Gặp sự cố?
+                            <c:if test="${not empty d.issues}"><span class="muted">(đã báo ${fn:length(d.issues)})</span></c:if></summary>
+                        <c:forEach var="issue" items="${d.issues}">
+                            <p class="issue"><b>${issue.issueTypeLabel}</b> · ${issue.createdAtDisplay}<br><c:out value="${issue.description}" /></p>
+                        </c:forEach>
+                        <form method="post" action="${ctx}/delivery">
+                            <input type="hidden" name="csrfToken" value="${csrf}">
+                            <input type="hidden" name="action" value="report">
+                            <input type="hidden" name="id" value="${d.id}">
+                            <select name="issueType" required aria-label="Loại sự cố">
+                                <option value="">-- Chọn loại sự cố --</option>
+                                <c:forEach var="t" items="${issueTypes}"><option value="${t.key}">${t.value}</option></c:forEach>
+                            </select>
+                            <textarea name="description" rows="2" maxlength="500" required aria-label="Mô tả sự cố"
+                                      placeholder="VD: Gọi 3 lần không nghe máy, đã chờ 10 phút..."></textarea>
+                            <button type="submit" class="btn danger"><span class="material-symbols-outlined">send</span>Gửi cho quản lý</button>
+                        </form>
+                    </details>
+                </article>
+            </c:forEach>
+        </c:when>
 
-                            <div class="row g-3 mt-1">
-                                <div class="col-sm-6">
-                                    <div class="cod ${d.cod ? '' : 'paid'}">
-                                        <small>${d.cod ? 'Thu tiền mặt (COD)' : 'Thanh toán'}</small>
-                                        <strong>
-                                            <c:choose>
-                                                <c:when test="${d.cod}"><fmt:formatNumber value="${d.codAmount}" pattern="#,##0" />đ</c:when>
-                                                <c:otherwise>Đã thanh toán online</c:otherwise>
-                                            </c:choose>
-                                        </strong>
-                                        <small>Tổng đơn <fmt:formatNumber value="${d.finalAmount}" pattern="#,##0" />đ (phí giao <fmt:formatNumber value="${d.deliveryFee}" pattern="#,##0" />đ)</small>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <ul class="timeline">
-                                        <li><span>Được phân công</span><strong>${d.assignedAtDisplay}</strong></li>
-                                        <li class="${empty d.acceptedAt ? 'pending' : ''}"><span>Nhận đơn</span><strong>${empty d.acceptedAt ? '—' : d.acceptedAtDisplay}</strong></li>
-                                        <li class="${empty d.pickedUpAt ? 'pending' : ''}"><span>Lấy hàng</span><strong>${empty d.pickedUpAt ? '—' : d.pickedUpAtDisplay}</strong></li>
-                                        <li class="${empty d.deliveredAt ? 'pending' : ''}"><span>Giao xong</span><strong>${empty d.deliveredAt ? '—' : d.deliveredAtDisplay}</strong></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <c:if test="${not empty d.deliveryNote}">
-                                <p class="muted mt-3">Ghi chú giao hàng: <c:out value="${d.deliveryNote}" /></p>
-                            </c:if>
-
-                            <div class="actions">
-                                <c:set var="card" value="${d}" scope="request" />
-                                <jsp:include page="/components/delivery-actions.jsp" />
-                            </div>
-                        </section>
-                    </div>
-
-                    <div class="col-lg-5 d-grid gap-4">
-                        <c:if test="${not d.delivered}">
-                            <section class="panel p-4" id="report">
-                                <h2 class="h6 fw-bold mb-3"><span class="material-symbols-outlined text-danger">report_problem</span> Báo sự cố giao hàng</h2>
-                                <form method="post" action="${ctx}/delivery">
-                                    <input type="hidden" name="csrfToken" value="${csrf}">
-                                    <input type="hidden" name="action" value="report">
-                                    <input type="hidden" name="id" value="${d.id}">
-                                    <label class="form-label fw-semibold" for="issueType">Loại sự cố</label>
-                                    <select class="form-select mb-3" id="issueType" name="issueType" required>
-                                        <option value="">-- Chọn loại sự cố --</option>
-                                        <c:forEach var="t" items="${issueTypes}">
-                                            <option value="${t.key}">${t.value}</option>
-                                        </c:forEach>
-                                    </select>
-                                    <label class="form-label fw-semibold" for="issueDescription">Mô tả</label>
-                                    <textarea class="form-control mb-3" id="issueDescription" name="description" rows="3" maxlength="500" required
-                                              placeholder="VD: Gọi 3 lần không nghe máy, đã chờ 10 phút tại toà nhà..."></textarea>
-                                    <button type="submit" class="primary w-100 justify-content-center">
-                                        <span class="material-symbols-outlined">send</span>Gửi báo cáo sự cố
-                                    </button>
-                                </form>
-                            </section>
-                        </c:if>
-                        <section class="panel p-4">
-                            <h2 class="h6 fw-bold mb-3">Sự cố đã báo (${fn:length(d.issues)})</h2>
-                            <c:choose>
-                                <c:when test="${empty d.issues}"><p class="muted mb-0">Chưa có sự cố nào.</p></c:when>
-                                <c:otherwise>
-                                    <c:forEach var="issue" items="${d.issues}">
-                                        <div class="issue">
-                                            <div class="d-flex justify-content-between gap-2">
-                                                <strong>${issue.issueTypeLabel}</strong>
-                                                <span class="muted">${issue.createdAtDisplay}</span>
-                                            </div>
-                                            <div><c:out value="${issue.description}" /></div>
-                                        </div>
-                                    </c:forEach>
-                                </c:otherwise>
-                            </c:choose>
-                        </section>
-                    </div>
+        <%-- ============ BƯỚC 3: NỘP TIỀN COD (UC30) ============ --%>
+        <c:otherwise>
+            <p class="guide">Cuối ca, đưa toàn bộ tiền mặt đã thu cho Thu ngân rồi bấm <b>Đã nộp tiền</b>.</p>
+            <section class="card">
+                <div class="holding">
+                    <span>Tiền mặt đang giữ (${fn:length(codHolding)} đơn)</span>
+                    <b><fmt:formatNumber value="${codHoldingTotal}" pattern="#,##0" />đ</b>
                 </div>
-            </c:when>
-
-            <%-- ================= UC26/UC27: ĐƠN ĐƯỢC PHÂN CÔNG ================= --%>
-            <c:when test="${tab eq 'active'}">
-                <div class="section-title"><h2>Đơn được phân công (${fn:length(activeDeliveries)})</h2></div>
                 <c:choose>
-                    <c:when test="${empty activeDeliveries}">
-                        <section class="panel empty">
-                            <span class="material-symbols-outlined">inventory_2</span>
-                            Chưa có đơn nào được phân công. Quản lý gán đơn ở màn Quản lý đơn hàng.
-                        </section>
-                    </c:when>
+                    <c:when test="${empty codHolding}"><p class="muted center">Bạn không giữ khoản tiền nào cần nộp.</p></c:when>
                     <c:otherwise>
-                        <div class="d-grid gap-3">
-                            <c:forEach var="d" items="${activeDeliveries}">
-                                <section class="order ${d.delivering ? 'is-delivering' : ''}">
-                                    <div class="d-flex flex-wrap justify-content-between gap-2 border-bottom pb-2 mb-3">
-                                        <div class="d-flex flex-wrap gap-2 align-items-center">
-                                            <span class="code">#<c:out value="${d.orderCode}" /></span>
-                                            <span class="badge-st st-${d.status}">${d.statusLabel}</span>
-                                            <span class="badge-st ost ost-${d.orderStatus}">Quán: ${d.orderStatusLabel}</span>
-                                        </div>
-                                        <span class="muted font-monospace">${empty d.scheduledAt ? 'Giao ngay' : 'Hẹn '.concat(d.scheduledAtDisplay)} · đặt ${d.orderCreatedAtDisplay}</span>
-                                    </div>
-                                    <div class="row g-3">
-                                        <div class="col-md-8">
-                                            <p class="recipient"><c:out value="${d.recipientName}" />
-                                                <a class="tel small ms-1" href="tel:${fn:escapeXml(d.recipientPhone)}">☎ <c:out value="${d.recipientPhone}" /></a></p>
-                                            <p class="address"><strong>Địa chỉ:</strong> <c:out value="${d.deliveryAddress}" /></p>
-                                            <c:if test="${not empty d.orderNote}"><p class="note-box mt-2">Ghi chú: <c:out value="${d.orderNote}" /></p></c:if>
-                                            <div class="items mt-2">
-                                                <c:forEach var="it" items="${d.items}">
-                                                    <div class="d-flex justify-content-between gap-2">
-                                                        <span><strong>${it.quantity}x</strong> <c:out value="${it.productName}" /></span>
-                                                        <span class="muted"><c:out value="${it.optionsText}" /></span>
-                                                    </div>
-                                                </c:forEach>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="cod ${d.cod ? '' : 'paid'}">
-                                                <small>${d.cod ? 'Thu tiền mặt (COD)' : 'Thanh toán'}</small>
-                                                <strong>
-                                                    <c:choose>
-                                                        <c:when test="${d.cod}"><fmt:formatNumber value="${d.codAmount}" pattern="#,##0" />đ</c:when>
-                                                        <c:otherwise>Đã thanh toán online</c:otherwise>
-                                                    </c:choose>
-                                                </strong>
-                                                <small>Tổng đơn <fmt:formatNumber value="${d.finalAmount}" pattern="#,##0" />đ</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="actions">
-                                        <a class="action" href="${ctx}/delivery?id=${d.id}"><span class="material-symbols-outlined">info</span>Chi tiết</a>
-                                        <a class="action danger" href="${ctx}/delivery?id=${d.id}#report"><span class="material-symbols-outlined">report_problem</span>Báo sự cố</a>
-                                        <c:set var="card" value="${d}" scope="request" />
-                                        <jsp:include page="/components/delivery-actions.jsp" />
-                                    </div>
-                                </section>
-                            </c:forEach>
-                        </div>
+                        <form method="post" action="${ctx}/delivery" class="handover"
+                              data-confirm="Xác nhận đã nộp <fmt:formatNumber value='${codHoldingTotal}' pattern='#,##0' />đ cho Thu ngân?">
+                            <input type="hidden" name="csrfToken" value="${csrf}">
+                            <input type="hidden" name="action" value="handover">
+                            <select name="cashierId" required aria-label="Thu ngân nhận tiền">
+                                <option value="">-- Chọn Thu ngân nhận tiền --</option>
+                                <c:forEach var="cs" items="${cashiers}"><option value="${cs.id}"><c:out value="${cs.fullName}" /></option></c:forEach>
+                            </select>
+                            <button type="submit" class="btn primary"><span class="material-symbols-outlined">payments</span>Đã nộp tiền</button>
+                        </form>
                     </c:otherwise>
                 </c:choose>
-            </c:when>
+            </section>
 
-            <%-- ================= ĐÃ GIAO ================= --%>
-            <c:when test="${tab eq 'done'}">
-                <section class="panel p-4">
-                    <div class="section-title">
-                        <h2>Đơn đã giao ngày ${selectedDateDisplay} (${fn:length(deliveredList)})</h2>
-                        <form method="get" action="${ctx}/delivery" class="d-flex gap-2">
-                            <input type="hidden" name="tab" value="done">
-                            <input type="date" class="form-control form-control-sm" name="date" value="${selectedDate}">
-                            <button class="action" type="submit">Xem</button>
-                        </form>
-                    </div>
-                    <c:choose>
-                        <c:when test="${empty deliveredList}"><p class="muted mb-0">Không có đơn nào được giao trong ngày này.</p></c:when>
-                        <c:otherwise>
-                            <div class="table-responsive">
-                                <table class="table-ship">
-                                    <thead><tr><th>Mã đơn</th><th>Người nhận</th><th>Địa chỉ</th><th>Giao lúc</th><th class="text-end">COD đã thu</th><th>Nộp tiền</th></tr></thead>
-                                    <tbody>
-                                    <c:forEach var="d" items="${deliveredList}">
-                                        <tr>
-                                            <td><a href="${ctx}/delivery?id=${d.id}" class="fw-bold text-decoration-none" style="color:#a51225">#<c:out value="${d.orderCode}" /></a></td>
-                                            <td><c:out value="${d.recipientName}" /><div class="muted"><c:out value="${d.recipientPhone}" /></div></td>
-                                            <td><c:out value="${d.deliveryAddress}" /></td>
-                                            <td>${d.deliveredAtDisplay}</td>
-                                            <td class="text-end money">
-                                                <c:choose>
-                                                    <c:when test="${d.cod}"><fmt:formatNumber value="${d.codCollected}" pattern="#,##0" />đ</c:when>
-                                                    <c:otherwise><span class="muted">Đã trả online</span></c:otherwise>
-                                                </c:choose>
-                                            </td>
-                                            <td>
-                                                <c:choose>
-                                                    <c:when test="${not d.cod}">—</c:when>
-                                                    <c:when test="${d.codHolding}"><span class="badge-st st-ASSIGNED">Đang giữ</span></c:when>
-                                                    <c:otherwise><span class="badge-st st-DELIVERED">Đã nộp</span></c:otherwise>
-                                                </c:choose>
-                                            </td>
-                                        </tr>
-                                    </c:forEach>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </c:otherwise>
-                    </c:choose>
-                </section>
-            </c:when>
-
-            <%-- ================= UC30: TIỀN COD ================= --%>
-            <c:otherwise>
-                <div class="row g-4 align-items-start">
-                    <div class="col-lg-7">
-                        <section class="panel p-4">
-                            <div class="section-title"><h2>Tiền COD đang giữ (${fn:length(codHolding)} đơn)</h2></div>
-                            <c:choose>
-                                <c:when test="${empty codHolding}"><p class="muted mb-0">Bạn không giữ khoản tiền COD nào.</p></c:when>
-                                <c:otherwise>
-                                    <div class="table-responsive">
-                                        <table class="table-ship">
-                                            <thead><tr><th>Mã đơn</th><th>Người nhận</th><th>Giao lúc</th><th class="text-end">Đã thu</th></tr></thead>
-                                            <tbody>
-                                            <c:forEach var="d" items="${codHolding}">
-                                                <tr>
-                                                    <td>#<c:out value="${d.orderCode}" /></td>
-                                                    <td><c:out value="${d.recipientName}" /></td>
-                                                    <td>${d.deliveredAtDisplay}</td>
-                                                    <td class="text-end money"><fmt:formatNumber value="${d.codCollected}" pattern="#,##0" />đ</td>
-                                                </tr>
-                                            </c:forEach>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </c:otherwise>
-                            </c:choose>
-                        </section>
-                    </div>
-                    <div class="col-lg-5">
-                        <section class="panel p-4">
-                            <h2 class="h6 fw-bold">Nộp tiền COD về quỹ</h2>
-                            <div class="cod my-3"><small>Tổng cần nộp</small><strong><fmt:formatNumber value="${codHoldingTotal}" pattern="#,##0" />đ</strong></div>
-                            <form method="post" action="${ctx}/delivery" id="handoverForm"
-                                  data-total="<fmt:formatNumber value='${codHoldingTotal}' pattern='#,##0' />">
-                                <input type="hidden" name="csrfToken" value="${csrf}">
-                                <input type="hidden" name="action" value="handover">
-                                <label class="form-label fw-semibold" for="cashierId">Thu ngân nhận tiền</label>
-                                <select class="form-select mb-3" id="cashierId" name="cashierId" required ${empty codHolding ? 'disabled' : ''}>
-                                    <option value="">-- Chọn Thu ngân --</option>
-                                    <c:forEach var="cs" items="${cashiers}">
-                                        <option value="${cs.id}"><c:out value="${cs.fullName}" /></option>
-                                    </c:forEach>
-                                </select>
-                                <button type="submit" class="primary w-100 justify-content-center" ${empty codHolding ? 'disabled' : ''}>
-                                    <span class="material-symbols-outlined">payments</span>Xác nhận đã nộp tiền
-                                </button>
-                            </form>
-                        </section>
+            <%-- Đơn đã giao xem theo từng ngày (mặc định hôm nay) --%>
+            <form method="get" action="${ctx}/delivery" class="day-filter">
+                <input type="hidden" name="tab" value="cod">
+                <h2 class="sub">Đơn đã giao ngày</h2>
+                <input type="date" name="date" value="${selectedDate}" max="${today}" aria-label="Chọn ngày" onchange="this.form.submit()">
+                <c:if test="${not isToday}"><a href="${ctx}/delivery?tab=cod">Hôm nay</a></c:if>
+            </form>
+            <p class="day-sum">${selectedDateDisplay}: <b>${fn:length(deliveredList)} đơn</b>
+                · thu COD <b><fmt:formatNumber value="${deliveredCodTotal}" pattern="#,##0" />đ</b></p>
+            <c:if test="${empty deliveredList}"><p class="muted">Không có đơn nào giao xong trong ngày này.</p></c:if>
+            <c:forEach var="d" items="${deliveredList}">
+                <div class="row-done">
+                    <div><b>#<c:out value="${d.orderCode}" /></b> · <c:out value="${d.recipientName}" /><br>
+                        <span class="muted">Giao lúc ${d.deliveredAtDisplay}</span></div>
+                    <div class="right">
+                        <c:choose>
+                            <c:when test="${not d.cod}"><span class="badge paid">Trả online</span></c:when>
+                            <c:otherwise>
+                                <b><fmt:formatNumber value="${d.codCollected}" pattern="#,##0" />đ</b><br>
+                                <span class="badge ${d.codHolding ? 'wait' : 'paid'}">${d.codHolding ? 'Đang giữ' : 'Đã nộp'}</span>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
-
-                <section class="panel p-4 mt-4">
-                    <div class="section-title"><h2>Lịch sử nộp tiền COD</h2></div>
-                    <c:choose>
-                        <c:when test="${empty codHistory}"><p class="muted mb-0">Chưa có lần nộp tiền nào.</p></c:when>
-                        <c:otherwise>
-                            <div class="table-responsive">
-                                <table class="table-ship">
-                                    <thead><tr><th>Mã đơn</th><th>Đã thu</th><th>Nộp lúc</th><th>Thu ngân nhận</th></tr></thead>
-                                    <tbody>
-                                    <c:forEach var="d" items="${codHistory}">
-                                        <tr>
-                                            <td>#<c:out value="${d.orderCode}" /></td>
-                                            <td class="money"><fmt:formatNumber value="${d.codCollected}" pattern="#,##0" />đ</td>
-                                            <td>${d.codHandedOverAtDisplay}</td>
-                                            <td><c:out value="${d.codReceiverName}" /></td>
-                                        </tr>
-                                    </c:forEach>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </c:otherwise>
-                    </c:choose>
-                </section>
-            </c:otherwise>
-        </c:choose>
-    </main>
-</div>
+            </c:forEach>
+        </c:otherwise>
+    </c:choose>
+</main>
 
 <script>
     (() => {
-        // Xác nhận trước các thao tác làm thay đổi trạng thái đơn
+        // Hỏi lại trước các thao tác đổi trạng thái đơn / nộp tiền
         document.querySelectorAll('form[data-confirm]').forEach((form) => {
             form.addEventListener('submit', (event) => {
                 if (!confirm(form.dataset.confirm)) event.preventDefault();
             });
         });
-        const handover = document.getElementById('handoverForm');
-        if (handover) {
-            handover.addEventListener('submit', (event) => {
-                if (!confirm('Xác nhận đã nộp ' + handover.dataset.total + 'đ tiền COD cho Thu ngân?')) event.preventDefault();
-            });
-        }
+        // Bước 1: tự tải lại để thấy đơn Barista vừa pha xong
+        <c:if test="${tab eq 'available'}">
+        setTimeout(() => location.reload(), 30000);
+        </c:if>
     })();
 </script>
 </body>

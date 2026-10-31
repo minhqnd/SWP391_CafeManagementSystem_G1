@@ -293,6 +293,9 @@ public class Order implements Serializable {
     public void setPaidAt(LocalDateTime paidAt) { this.paidAt = paidAt; }
 
     public boolean isDelivery() { return "ONLINE".equals(orderType); }
+
+    /** Đơn giao tận nơi chọn COD, shipper chưa thu tiền (payment CASH chưa có paid_at) */
+    public boolean isCodUnpaid() { return isDelivery() && "CASH".equals(paymentMethod) && paidAt == null; }
     public boolean isPending() { return "PENDING".equals(status); }
     public boolean isCompleted() { return "COMPLETED".equals(status); }
     public boolean isCancelled() { return "CANCELLED".equals(status); }
@@ -344,7 +347,7 @@ public class Order implements Serializable {
         }
         switch (status) {
             case "PENDING": return "Chờ thanh toán";
-            case "CONFIRMED": return "Đã thanh toán";
+            case "CONFIRMED": return isCodUnpaid() ? "Đã đặt - trả tiền khi nhận" : "Đã thanh toán";
             case "PREPARING": return "Đang chuẩn bị món";
             case "READY": return isDelivery() ? "Chờ giao hàng" : "Sẵn sàng tại quầy";
             case "DELIVERING": return "Đang giao hàng";

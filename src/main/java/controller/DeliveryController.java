@@ -25,11 +25,15 @@ import java.util.stream.Collectors;
 
 /**
  * DeliveryController - Màn hình Giao hàng của Shipper (Screen 14: UC26, UC27, UC28, UC29, UC30)
- * GET  /delivery?tab=active|done|cod      : đơn đang được phân công / đã giao / tiền COD
- * GET  /delivery?id=                      : chi tiết 1 lần giao (UC28)
- * POST action=accept | pickup | deliver   : nhận đơn, lấy hàng bắt đầu giao, giao thành công (+ thu COD)
- * POST action=report                      : báo sự cố giao hàng (UC29)
- * POST action=handover                    : nộp tiền COD đang giữ cho Thu ngân (UC30)
+ * Quy trình 3 bước, mỗi bước 1 tab:
+ * GET  /delivery?tab=available  : (1) Chờ nhận - đơn Barista đã pha xong, chưa ai nhận
+ * GET  /delivery?tab=delivering : (2) Đang giao - đơn của mình, giao xong + thu COD, báo sự cố
+ * GET  /delivery?tab=cod&date= : (3) Nộp tiền - tiền COD đang giữ + đơn đã giao theo ngày (mặc định hôm nay)
+ * POST action=claim&orderId=    : nhận đơn & đi giao luôn (ai bấm trước người đó giao)
+ * POST action=start             : đơn Admin gán sẵn - nhận & đi giao khi quán pha xong
+ * POST action=deliver           : giao thành công (đơn COD phải tick "đã thu đủ tiền")
+ * POST action=report            : báo sự cố giao hàng (UC29)
+ * POST action=handover          : nộp tiền COD đang giữ cho Thu ngân (UC30)
  * Chỉ tài khoản STAFF có chức vụ SHIPPER đang hoạt động.
  */
 @WebServlet(name = "DeliveryController", urlPatterns = {"/delivery"})
@@ -55,50 +59,49 @@ public class DeliveryController extends HttpServlet {
             session.setAttribute("deliveryCsrfToken", UUID.randomUUID().toString());
         }
 
-        String tab = request.getParameter("tab");
-        if (!"done".equals(tab) && !"cod".equals(tab)) tab = "active";
-        LocalDate date = parseDateOrToday(request.getParameter("date"));
-
         try {
             int shipperId = shipper.getId();
             List<Delivery> active = deliveryDAO.getActiveDeliveries(shipperId);
-            for (Delivery d : active) {
-                d.setItems(orderDAO.getOrderDetails(d.getOrderId()));
-            }
-            List<Delivery> deliveredToday = deliveryDAO.getDeliveredOn(shipperId, LocalDate.now());
+            List<Delivery> available = deliveryDAO.getAvailableOrders();
             List<Delivery> codHolding = deliveryDAO.getCodHolding(shipperId);
             BigDecimal codHoldingTotal = codHolding.stream()
                     .map(d -> d.getCodCollected() == null ? BigDecimal.ZERO : d.getCodCollected())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            request.setAttribute("activeDeliveries", active);
-            request.setAttribute("assignedCount", active.stream().filter(Delivery::isAssigned).count());
-            request.setAttribute("inProgressCount", active.stream().filter(d -> !d.isAssigned()).count());
-            request.setAttribute("deliveredTodayCount", deliveredToday.size());
-            request.setAttribute("codHolding", codHolding);
-            request.setAttribute("codHoldingTotal", codHoldingTotal);
+            // Không chọn tab: đang giữ đơn thì mở "Đang giao", chưa có thì mở "Chờ nhận"
+            String tab = request.getParameter("tab");
+            if (!"available".equals(tab) && !"delivering".equals(tab) && !"cod".equals(tab)) {
+                tab = active.isEmpty() ? "available" : "delivering";
+            }
 
-            if ("done".equals(tab)) {
-                request.setAttribute("deliveredList", date.equals(LocalDate.now())
-                        ? deliveredToday : deliveryDAO.getDeliveredOn(shipperId, date));
-            } else if ("cod".equals(tab)) {
-                request.setAttribute("codHistory", deliveryDAO.getCodHistory(shipperId));
+            if ("available".equals(tab)) {
+                for (Delivery d : available) d.setItems(orderDAO.getOrderDetails(d.getOrderId()));
+            } else if ("delivering".equals(tab)) {
+                for (Delivery d : active) {
+                    d.setItems(orderDAO.getOrderDetails(d.getOrderId()));
+                    d.setIssues(deliveryDAO.getIssues(d.getId()));
+                }
+            } else {
+                // Đơn đã giao xem theo từng ngày (mặc định hôm nay) để khỏi lẫn đơn các ngày khác
+                LocalDate date = parseDateOrToday(request.getParameter("date"));
+                List<Delivery> delivered = deliveryDAO.getDeliveredOn(shipperId, date);
+                request.setAttribute("deliveredList", delivered);
+                request.setAttribute("deliveredCodTotal", delivered.stream()
+                        .map(d -> d.getCodCollected() == null ? BigDecimal.ZERO : d.getCodCollected())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add));
+                request.setAttribute("selectedDate", date.toString());
+                request.setAttribute("selectedDateDisplay", date.format(DISPLAY_DATE));
+                request.setAttribute("isToday", date.equals(LocalDate.now()));
                 request.setAttribute("cashiers", userDAO.getStaffEmployees().stream()
                         .filter(u -> "CASHIER".equals(u.getPosition()))
                         .collect(Collectors.toList()));
             }
 
-            int detailId = parseId(request.getParameter("id"));
-            if (detailId > 0) {
-                Delivery detail = deliveryDAO.getForShipper(detailId, shipperId);
-                if (detail == null) {
-                    request.setAttribute("deliveryErrorMsg", "Không tìm thấy đơn giao hàng hoặc đơn không được phân công cho bạn.");
-                } else {
-                    detail.setItems(orderDAO.getOrderDetails(detail.getOrderId()));
-                    detail.setIssues(deliveryDAO.getIssues(detail.getId()));
-                    request.setAttribute("detail", detail);
-                }
-            }
+            request.setAttribute("tab", tab);
+            request.setAttribute("availableOrders", available);
+            request.setAttribute("activeDeliveries", active);
+            request.setAttribute("codHolding", codHolding);
+            request.setAttribute("codHoldingTotal", codHoldingTotal);
         } catch (SQLException | ClassNotFoundException e) {
             getServletContext().log("Failed to load deliveries", e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
@@ -106,10 +109,7 @@ public class DeliveryController extends HttpServlet {
             return;
         }
 
-        request.setAttribute("tab", tab);
-        request.setAttribute("selectedDate", date.toString());
-        request.setAttribute("selectedDateDisplay", date.format(DISPLAY_DATE));
-        request.setAttribute("todayDisplay", LocalDate.now().format(DISPLAY_DATE));
+        request.setAttribute("today", LocalDate.now().toString());
         request.setAttribute("issueTypes", DeliveryIssue.TYPES);
         request.getRequestDispatcher("/delivery-dashboard.jsp").forward(request, response);
     }
@@ -123,9 +123,8 @@ public class DeliveryController extends HttpServlet {
 
         HttpSession session = request.getSession();
         String action = request.getParameter("action");
-        int id = parseId(request.getParameter("id"));
-        String back = request.getContextPath() + "/delivery"
-                + ("handover".equals(action) ? "?tab=cod" : id > 0 ? "?id=" + id : "");
+        String back = request.getContextPath() + "/delivery?tab="
+                + ("handover".equals(action) ? "cod" : "claim".equals(action) ? "available" : "delivering");
 
         String expected = (String) session.getAttribute("deliveryCsrfToken");
         if (expected == null || !expected.equals(request.getParameter("csrfToken"))) {
@@ -138,25 +137,28 @@ public class DeliveryController extends HttpServlet {
             int shipperId = shipper.getId();
             if ("handover".equals(action)) {
                 handOverCod(request, session, shipperId);
+            } else if ("claim".equals(action)) {
+                int deliveryId = deliveryDAO.claim(parseId(request.getParameter("orderId")), shipperId);
+                if (deliveryId <= 0) {
+                    throw new IllegalStateException("Đơn này đã có shipper khác nhận hoặc không còn chờ giao.");
+                }
+                Delivery claimed = deliveryDAO.getForShipper(deliveryId, shipperId);
+                session.setAttribute("deliverySuccessMsg", "Đã nhận đơn #" + claimed.getOrderCode()
+                        + ". Mang hàng đi giao, giao xong bấm \"Đã giao xong\".");
+                back = request.getContextPath() + "/delivery?tab=delivering";
             } else {
-                if (id <= 0) throw new IllegalArgumentException("Mã đơn giao hàng không hợp lệ.");
-                Delivery delivery = deliveryDAO.getForShipper(id, shipperId);
+                int id = parseId(request.getParameter("id"));
+                Delivery delivery = id > 0 ? deliveryDAO.getForShipper(id, shipperId) : null;
                 if (delivery == null) {
-                    throw new IllegalArgumentException("Đơn giao hàng không tồn tại hoặc không được phân công cho bạn.");
+                    throw new IllegalArgumentException("Đơn giao hàng không tồn tại hoặc không thuộc về bạn.");
                 }
                 String code = "#" + delivery.getOrderCode();
                 switch (action == null ? "" : action) {
-                    case "accept":
-                        if (!deliveryDAO.accept(id, shipperId)) {
-                            throw new IllegalStateException("Đơn " + code + " không còn ở trạng thái chờ nhận.");
-                        }
-                        session.setAttribute("deliverySuccessMsg", "Đã nhận đơn " + code + ".");
-                        break;
-                    case "pickup":
+                    case "start":
                         if (!deliveryDAO.startDelivery(id, shipperId)) {
-                            throw new IllegalStateException("Chỉ lấy hàng khi đã nhận đơn và quán đã pha chế xong (Sẵn sàng).");
+                            throw new IllegalStateException("Chỉ nhận đi giao khi quán đã pha xong đơn " + code + ".");
                         }
-                        session.setAttribute("deliverySuccessMsg", "Đã lấy hàng, bắt đầu giao đơn " + code + ".");
+                        session.setAttribute("deliverySuccessMsg", "Đã nhận đơn " + code + ", bắt đầu đi giao.");
                         break;
                     case "deliver":
                         completeDelivery(request, session, delivery, shipperId);
@@ -177,23 +179,23 @@ public class DeliveryController extends HttpServlet {
         response.sendRedirect(back);
     }
 
+    /** Đơn COD: shipper tick "đã thu đủ tiền" -> ghi nhận đã thu đúng số tiền phải thu */
     private void completeDelivery(HttpServletRequest request, HttpSession session, Delivery delivery, int shipperId)
             throws SQLException, ClassNotFoundException {
         BigDecimal collected = null;
         if (delivery.isCod()) {
-            collected = parseMoney(request.getParameter("codCollected"));
+            if (request.getParameter("codConfirmed") == null) {
+                throw new IllegalArgumentException("Hãy tick \"Đã thu đủ " + formatMoney(delivery.getCodAmount())
+                        + "\". Nếu khách không trả đủ, hãy báo sự cố.");
+            }
+            collected = delivery.getCodAmount();
         }
-        String note = normalizeText(request.getParameter("deliveryNote"), false, "Ghi chú giao hàng");
-        int result = deliveryDAO.completeDelivery(delivery.getId(), shipperId, collected, note);
-        if (result == DeliveryDAO.COD_MISMATCH) {
-            throw new IllegalArgumentException("Số tiền thu hộ phải đúng " + formatMoney(delivery.getCodAmount())
-                    + ". Nếu khách không trả đủ, hãy báo sự cố thay vì xác nhận giao thành công.");
-        }
+        int result = deliveryDAO.completeDelivery(delivery.getId(), shipperId, collected, null);
         if (result != DeliveryDAO.OK) {
-            throw new IllegalStateException("Chỉ xác nhận giao thành công khi đơn đang được giao.");
+            throw new IllegalStateException("Chỉ xác nhận giao xong khi đơn đang được giao.");
         }
-        session.setAttribute("deliverySuccessMsg", "Đã giao thành công đơn #" + delivery.getOrderCode()
-                + (delivery.isCod() ? ", thu COD " + formatMoney(collected) + "." : "."));
+        session.setAttribute("deliverySuccessMsg", "Đã giao xong đơn #" + delivery.getOrderCode()
+                + (delivery.isCod() ? ", thu " + formatMoney(collected) + ". Nhớ nộp tiền ở bước 3." : "."));
     }
 
     private void reportIssue(HttpServletRequest request, HttpSession session, Delivery delivery, int shipperId)
@@ -202,7 +204,7 @@ public class DeliveryController extends HttpServlet {
         if (type == null || !DeliveryIssue.TYPES.containsKey(type)) {
             throw new IllegalArgumentException("Vui lòng chọn loại sự cố.");
         }
-        String description = normalizeText(request.getParameter("description"), true, "Mô tả sự cố");
+        String description = normalizeText(request.getParameter("description"), "Mô tả sự cố");
         if (!deliveryDAO.reportIssue(delivery.getId(), shipperId, type, description)) {
             throw new IllegalStateException("Chỉ báo sự cố cho đơn chưa giao xong.");
         }
@@ -232,29 +234,18 @@ public class DeliveryController extends HttpServlet {
         }
         if (!"STAFF".equalsIgnoreCase(user.getRole()) || !"SHIPPER".equalsIgnoreCase(user.getPosition())
                 || !"ACTIVE".equalsIgnoreCase(user.getStatus())) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ nhân viên giao hàng được truy cập màn hình này.");
+            // Hay gặp khi test: cùng 1 trình duyệt đăng nhập tài khoản khác ở tab khác -> phiên bị thay
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ nhân viên giao hàng được truy cập màn hình này. "
+                    + "Trình duyệt đang đăng nhập bằng tài khoản " + user.getFullName()
+                    + " - mỗi trình duyệt chỉ giữ 1 phiên đăng nhập, hãy dùng trình duyệt khác / cửa sổ ẩn danh cho Shipper.");
             return null;
         }
         return user;
     }
 
-    /** Tiền mặt thu hộ: số nguyên đồng, 0 .. 9.999.999.999 */
-    private BigDecimal parseMoney(String raw) {
-        try {
-            BigDecimal value = new BigDecimal(raw == null ? "" : raw.trim().replaceAll("[.,\\s]", ""));
-            if (value.signum() < 0 || value.compareTo(new BigDecimal("9999999999")) > 0
-                    || value.stripTrailingZeros().scale() > 0) {
-                throw new NumberFormatException();
-            }
-            return value;
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Vui lòng nhập số tiền COD đã thu hợp lệ.");
-        }
-    }
-
-    private String normalizeText(String raw, boolean required, String fieldName) {
+    private String normalizeText(String raw, String fieldName) {
         String value = raw == null ? "" : raw.trim();
-        if (required && value.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập " + fieldName.toLowerCase() + ".");
+        if (value.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập " + fieldName.toLowerCase() + ".");
         if (value.length() > MAX_TEXT_LENGTH) {
             throw new IllegalArgumentException(fieldName + " tối đa " + MAX_TEXT_LENGTH + " ký tự.");
         }
@@ -265,9 +256,11 @@ public class DeliveryController extends HttpServlet {
         return String.format("%,d", value == null ? 0 : value.longValue()).replace(',', '.') + "đ";
     }
 
+    /** Ngày xem đơn đã giao: sai định dạng hoặc ở tương lai thì lấy hôm nay */
     private LocalDate parseDateOrToday(String raw) {
         try {
-            return raw == null || raw.isBlank() ? LocalDate.now() : LocalDate.parse(raw.trim());
+            LocalDate date = raw == null || raw.isBlank() ? LocalDate.now() : LocalDate.parse(raw.trim());
+            return date.isAfter(LocalDate.now()) ? LocalDate.now() : date;
         } catch (DateTimeParseException e) {
             return LocalDate.now();
         }
