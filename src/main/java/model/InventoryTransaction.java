@@ -13,6 +13,9 @@ public class InventoryTransaction implements Serializable {
     private String unit;
     private String transactionType; // 'IN_PURCHASE', 'OUT_ORDER', 'ADJUSTMENT', 'SPOILAGE'
     private BigDecimal quantity;
+    private BigDecimal adjustmentDelta;
+    public void setAdjustmentDelta(BigDecimal value){adjustmentDelta=value;}
+    public boolean isDecrease(){return adjustmentDelta!=null ? adjustmentDelta.signum()<0 : "OUT_ORDER".equalsIgnoreCase(transactionType)||"SPOILAGE".equalsIgnoreCase(transactionType);}
     private String referenceType;   // 'ORDER', 'PURCHASE_ORDER', 'ADJUSTMENT'
     private Integer referenceId;
     private String reason;
@@ -116,7 +119,7 @@ public class InventoryTransaction implements Serializable {
 
     public String getFormattedQuantity() {
         if (quantity == null) return "0";
-        if ("OUT_ORDER".equalsIgnoreCase(transactionType) || "SPOILAGE".equalsIgnoreCase(transactionType)) {
+        if (isDecrease()) {
             return "-" + quantity.stripTrailingZeros().toPlainString() + " " + (unit != null ? unit : "");
         }
         return "+" + quantity.stripTrailingZeros().toPlainString() + " " + (unit != null ? unit : "");

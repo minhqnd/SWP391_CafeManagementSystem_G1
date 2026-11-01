@@ -93,35 +93,6 @@ final class InventoryMovementDAO {
         }
     }
 
-    static void receivePurchaseOrder(Connection conn, int poId) throws SQLException {
-        String quantitiesSql = "SELECT ingredient_id, SUM(quantity) AS received_quantity FROM purchase_order_items "
-                + "WHERE po_id = ? GROUP BY ingredient_id ORDER BY ingredient_id";
-        List<Movement> movements = new ArrayList<>();
-        try (PreparedStatement ps = conn.prepareStatement(quantitiesSql)) {
-            ps.setInt(1, poId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    movements.add(new Movement(rs.getInt("ingredient_id"), null,
-                            rs.getBigDecimal("received_quantity")));
-                }
-            }
-        }
-        if (movements.isEmpty()) throw new SQLException("Phiếu nhập không có nguyên liệu.");
-
-        for (Movement movement : movements) {
-            // Older sample data may already contain some receipt transactions while the PO is still ORDERED.
-            if (hasMovement(conn, "IN_PURCHASE", "PURCHASE_ORDER", poId, movement.ingredientId)) continue;
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE ingredients SET current_stock = current_stock + ? WHERE id = ?")) {
-                ps.setBigDecimal(1, movement.quantity);
-                ps.setInt(2, movement.ingredientId);
-                if (ps.executeUpdate() != 1) throw new SQLException("Không tìm thấy nguyên liệu id " + movement.ingredientId);
-            }
-            insertMovement(conn, movement.ingredientId, "IN_PURCHASE", movement.quantity,
-                    "PURCHASE_ORDER", poId);
-        }
-    }
-
     private static boolean hasMovement(Connection conn, String type, String referenceType,
                                        int referenceId, int ingredientId) throws SQLException {
         String sql = "SELECT 1 FROM inventory_transactions WHERE transaction_type = ? "
