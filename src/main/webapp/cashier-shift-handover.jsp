@@ -21,68 +21,10 @@
 </head>
 <body>
 
-    <!-- ========================================================
-         TOP NAVBAR
-         ======================================================== -->
-    <header class="cashier-header">
-        <div class="header-left">
-            <a class="brand" href="${ctx}/cashier" title="Quay lại POS">
-                <span class="brand-mark material-symbols-outlined">coffee</span>
-                <span class="brand-copy">
-                    <strong>AURA CAFÉ</strong>
-                    <small>POS THU NGÂN</small>
-                </span>
-            </a>
-
-            <div class="shift-pill">
-                <span class="material-symbols-outlined">schedule</span>
-                <c:choose>
-                    <c:when test="${not empty headerShift}">
-                        <span>${headerShift.shiftDisplayName} (${headerShift.shiftTime}) - ${headerShift.workDateFormatted}</span>
-                        <span class="divider">•</span>
-                        <span>Thu ngân: <strong><c:out value="${sessionScope.user.fullName}" /></strong></span>
-                    </c:when>
-                    <c:otherwise>
-                        <span>Chưa có ca làm việc - ${currentDate}</span>
-                        <span class="divider">•</span>
-                        <span>Thu ngân: <strong><c:out value="${sessionScope.user.fullName}" /></strong></span>
-                    </c:otherwise>
-                </c:choose>
-            </div>
-        </div>
-
-        <!-- Center Nav: Chốt ca & Bàn giao ca liên kết -->
-        <nav class="cashier-nav" aria-label="Điều hướng thu ngân">
-            <a href="${ctx}/cashier">
-                <span class="material-symbols-outlined">point_of_sale</span>
-                <span>Tạo đơn tại quầy</span>
-            </a>
-            <a href="${ctx}/cashier?tab=orders">
-                <span class="material-symbols-outlined">receipt_long</span>
-                <span>Danh sách đơn</span>
-            </a>
-            <a class="${closeMode ? 'active' : ''}" 
-               href="${ctx}/cashier/handover?mode=close">
-                <span class="material-symbols-outlined">calculate</span>
-                <span>Chốt ca</span>
-            </a>
-            <a class="${not closeMode ? 'active' : ''}" 
-               href="${ctx}/cashier/handover?mode=handover">
-                <span class="material-symbols-outlined">assignment_turned_in</span>
-                <span>Bàn giao ca</span>
-            </a>
-        </nav>
-
-        <div class="header-right">
-            <div class="clock-block">
-                <strong id="liveClock">${currentTime}</strong>
-                <small>${currentDate}</small>
-            </div>
-            <div class="cashier-avatar" title="${sessionScope.user.fullName}">
-                ${cashierInitials}
-            </div>
-        </div>
-    </header>
+    <!-- Thanh header dùng chung cho các màn Thu ngân -->
+    <jsp:include page="/components/cashier-header.jsp">
+        <jsp:param name="active" value="${closeMode ? 'close' : 'handover'}" />
+    </jsp:include>
 
     <!-- ========================================================
          MAIN CONTENT CONTAINER
@@ -138,9 +80,12 @@
 
                 <div class="shift-banner-metrics">
                     <div class="banner-metric-item">
-                        <div class="banner-metric-label">TIỀN ĐẦU CA</div>
+                        <div class="banner-metric-label">DOANH THU TIỀN MẶT</div>
                         <div class="banner-metric-value">
-                            <fmt:formatNumber value="${headerShift.startingCash}" pattern="#,##0" />đ
+                            <c:choose>
+                                <c:when test="${closeMode}"><fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ</c:when>
+                                <c:otherwise><fmt:formatNumber value="${handoverRecord.cashSales}" pattern="#,##0" />đ</c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
                     <div class="banner-metric-item">
@@ -265,20 +210,18 @@
                                     <div class="system-cash-grid">
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">Tiền đầu ca</div>
-                                            <div class="system-cash-val">
-                                                <fmt:formatNumber value="${closePreview.startingCash}" pattern="#,##0" />đ
-                                            </div>
+                                            <div class="system-cash-val" id="openingCashDisplay"><fmt:formatNumber value="${openingCash}" pattern="#,##0" />đ</div>
                                         </div>
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">+ Thu tiền mặt</div>
                                             <div class="system-cash-val val-green">
-                                                <fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ
+                                                <fmt:formatNumber value="${expectedCash}" pattern="#,##0" />đ
                                             </div>
                                         </div>
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">= Phải có trong két</div>
-                                            <div class="system-cash-val val-maroon">
-                                                <fmt:formatNumber value="${closePreview.expectedCash}" pattern="#,##0" />đ
+                                            <div class="system-cash-val val-maroon" id="expectedCashDisplay">
+                                                <fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ
                                             </div>
                                         </div>
                                     </div>
@@ -298,6 +241,25 @@
                                     <input type="hidden" name="action" value="close-shift">
                                     <input type="hidden" name="scheduleId" value="${activeShift.id}">
 
+                                    <label class="database-field-label" for="openingCash">
+                                        Tiền két đầu ca
+                                        <span>shift_handovers.opening_cash</span>
+                                    </label>
+                                    <div class="cash-input-wrap">
+                                        <input type="number" name="openingCash" id="openingCash"
+                                               class="cash-actual-input" min="0" max="9999999999" step="1000"
+                                               value="${openingCash}" required inputmode="numeric" readonly>
+                                        <span>đ</span>
+                                    </div>
+                                    <c:choose>
+                                        <c:when test="${not empty previousHandover}">
+                                            <p class="field-help">Tự động nhận từ tiền thực tế cuối ca của <c:out value="${previousHandover.cashierName}" />.</p>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <p class="field-help">Không có ca bàn giao trước đó nên tiền đầu ca là 0đ.</p>
+                                        </c:otherwise>
+                                    </c:choose>
+
                                     <label class="database-field-label" for="endingCashActual">
                                         Tiền mặt thực tế cuối ca
                                         <span>shift_handovers.actual_cash</span>
@@ -313,7 +275,7 @@
                                     <div id="diffBox" class="diff-status-box diff-shortage">
                                         <span id="diffLabel">Thiếu tiền</span>
                                         <span id="diffAmount" class="diff-amount">
-                                            -<fmt:formatNumber value="${closePreview.expectedCash}" pattern="#,##0" />đ
+                                            -<fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ
                                         </span>
                                     </div>
 
@@ -327,7 +289,7 @@
 
                                     <button type="submit" class="btn-submit-close">
                                         <span class="material-symbols-outlined">verified_user</span>
-                                        Chốt ca và gửi biên bản cho Admin
+                                        Chốt ca và hoàn tất bàn giao
                                     </button>
                                 </form>
                             </div>
@@ -367,43 +329,16 @@
                                 </div>
                             </div>
 
-                            <!-- Trạng thái duyệt biên bản (shift_handovers.status) -->
+                            <!-- Trạng thái hoàn tất biên bản -->
                             <c:if test="${not empty handoverRecord}">
                                 <div class="handover-review-box review-${handoverRecord.status}">
                                     <div class="handover-review-head">
-                                        <span class="material-symbols-outlined">
-                                            <c:choose>
-                                                <c:when test="${handoverRecord.status eq 'CONFIRMED'}">verified</c:when>
-                                                <c:when test="${handoverRecord.status eq 'REJECTED'}">cancel</c:when>
-                                                <c:otherwise>hourglass_top</c:otherwise>
-                                            </c:choose>
-                                        </span>
-                                        <strong>${handoverRecord.statusLabel}</strong>
+                                        <span class="material-symbols-outlined">verified</span>
+                                        <strong>Đã chốt ca</strong>
                                         <span class="handover-review-meta">
-                                            Gửi lúc ${handoverRecord.createdAtDisplay}
-                                            <c:if test="${not empty handoverRecord.reviewerName}">
-                                                • Người duyệt: <c:out value="${handoverRecord.reviewerName}" /> (${handoverRecord.reviewedAtDisplay})
-                                            </c:if>
+                                            Hoàn tất lúc ${handoverRecord.createdAtDisplay}
                                         </span>
                                     </div>
-                                    <c:if test="${not empty handoverRecord.reviewNote}">
-                                        <p class="handover-review-note">
-                                            <strong>${handoverRecord.rejected ? 'Lý do từ chối' : 'Ý kiến Admin'}:</strong>
-                                            <c:out value="${handoverRecord.reviewNote}" />
-                                        </p>
-                                    </c:if>
-                                    <c:if test="${handoverRecord.rejected}">
-                                        <form method="post" action="${ctx}/cashier/handover" class="handover-resubmit-form">
-                                            <input type="hidden" name="action" value="resubmit">
-                                            <input type="hidden" name="handoverId" value="${handoverRecord.id}">
-                                            <label for="explanation">Giải trình và gửi lại cho Admin</label>
-                                            <textarea name="explanation" id="explanation" class="note-input-field" rows="3"
-                                                      maxlength="500" required placeholder="Nhập giải trình về khoản chênh lệch..."><c:out value="${handoverRecord.note}" /></textarea>
-                                            <button type="submit" class="btn-action-primary">
-                                                <span class="material-symbols-outlined">send</span> Gửi lại biên bản
-                                            </button>
-                                        </form>
-                                    </c:if>
                                 </div>
                             </c:if>
 
@@ -602,8 +537,8 @@
             </div>
         </c:if>
 
-        <div id="handoverConfig" 
-             data-expected-cash="${not empty closePreview ? closePreview.expectedCash : (not empty handoverSummary ? handoverSummary.expectedCash : 0)}"
+        <div id="handoverConfig"
+             data-cash-sales="${not empty closePreview ? closePreview.cashSales : (not empty handoverRecord ? handoverRecord.cashSales : 0)}"
              style="display: none;"></div>
 
     </main>
@@ -625,10 +560,13 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // 2. Reconcile the database-backed ending_cash_actual value.
+        // 2. Đối soát tiền được lưu trong shift_handovers.
         const configEl = document.getElementById('handoverConfig');
-        const EXPECTED_CASH = configEl ? (parseFloat(configEl.getAttribute('data-expected-cash')) || 0) : 0;
+        const CASH_SALES = configEl ? (parseFloat(configEl.getAttribute('data-cash-sales')) || 0) : 0;
+        const openingCashInput = document.getElementById('openingCash');
         const actualCashInput = document.getElementById('endingCashActual');
+        const openingCashDisplay = document.getElementById('openingCashDisplay');
+        const expectedCashDisplay = document.getElementById('expectedCashDisplay');
         const diffBox = document.getElementById('diffBox');
         const diffLabel = document.getElementById('diffLabel');
         const diffAmount = document.getElementById('diffAmount');
@@ -639,9 +577,14 @@
         const noteRequiredHelp = document.getElementById('noteRequiredHelp');
 
         function recalculateCash() {
+            const opening = openingCashInput ? (parseInt(openingCashInput.value, 10) || 0) : 0;
             const actual = actualCashInput ? (parseInt(actualCashInput.value, 10) || 0) : 0;
-            const diff = actual - EXPECTED_CASH;
+            const expected = opening + CASH_SALES;
+            const diff = actual - expected;
             const absDiff = Math.abs(diff);
+
+            if (openingCashDisplay) openingCashDisplay.textContent = formatVND(opening);
+            if (expectedCashDisplay) expectedCashDisplay.textContent = formatVND(expected);
 
             // Lệch két thì bắt buộc ghi chú (server cũng kiểm tra lại)
             if (noteInput) noteInput.required = diff !== 0;
@@ -665,25 +608,27 @@
             }
         }
 
-        if (actualCashInput) {
-            actualCashInput.addEventListener('input', () => {
-                if (Number(actualCashInput.value) < 0) actualCashInput.value = 0;
+        [openingCashInput, actualCashInput].forEach(input => {
+            if (input) input.addEventListener('input', () => {
+                if (Number(input.value) < 0) input.value = 0;
                 recalculateCash();
             });
-            recalculateCash();
-        }
+        });
+        if (openingCashInput || actualCashInput) recalculateCash();
 
         const form = document.getElementById('closeShiftForm');
         if (form) {
             form.addEventListener('submit', e => {
                 const actual = actualCashInput ? (parseInt(actualCashInput.value, 10) || 0) : 0;
-                if (actual === 0 && EXPECTED_CASH > 0) {
+                const opening = openingCashInput ? (parseInt(openingCashInput.value, 10) || 0) : 0;
+                const expected = opening + CASH_SALES;
+                if (actual === 0 && expected > 0) {
                     if (!confirm('Số tiền thực tế đang là 0đ. Bạn có chắc chắn muốn hoàn tất bàn giao không?')) {
                         e.preventDefault();
                         return;
                     }
                 } else {
-                    if (!confirm('Xác nhận chốt ca và gửi biên bản bàn giao cho Admin duyệt?')) {
+                    if (!confirm('Xác nhận chốt ca và hoàn tất biên bản bàn giao?')) {
                         e.preventDefault();
                         return;
                     }

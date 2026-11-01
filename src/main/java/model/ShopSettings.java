@@ -26,7 +26,7 @@ public class ShopSettings implements Serializable {
     // Khung giờ ca không còn lưu ở đây: mỗi tuần có bộ ca riêng trong bảng work_shifts (/admin/shifts)
 
     private double freeshipThreshold = 150000;  // tiền hàng tối thiểu để miễn phí giao hàng (0 = mọi đơn)
-    private double deliveryFee = 15000;         // phí giao tạm tính khi khách chưa chọn quận (phí thật theo delivery_areas)
+    private double deliveryFee = 25000;         // phí giao cố định cho mọi đơn giao tận nơi (chưa đạt freeship)
     private int deliveryMinutes = 30;           // thời gian giao dự kiến kể từ khi thanh toán
     private int pointsStep = 10;                // mốc điểm: khách dùng 10, 20, 30... điểm
     private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm

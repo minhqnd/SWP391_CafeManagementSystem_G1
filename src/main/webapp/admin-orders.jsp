@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="${ctx}/assets/css/admin-schedule.css" rel="stylesheet"><link href="${ctx}/assets/css/admin-orders.css" rel="stylesheet">
+    <link href="${ctx}/assets/css/admin-schedule.css" rel="stylesheet"><link href="${ctx}/assets/css/admin-orders.css?v=2" rel="stylesheet">
 </head>
 <body class="admin-body">
 <jsp:include page="/components/admin-sidebar.jsp"><jsp:param name="activeMenu" value="orders" /></jsp:include>
@@ -33,6 +33,18 @@
         <div class="order-search"><span class="material-symbols-outlined">search</span><input id="orderSearch" type="search" placeholder="Tìm theo mã đơn, tên hoặc SĐT khách..."></div>
         <select id="orderTypeFilter"><option value="">Tất cả hình thức</option><option value="DINE_IN">Tại quán</option><option value="TAKEAWAY">Mang đi</option><option value="ONLINE">Giao hàng</option></select>
         <select id="orderStatusFilter"><option value="">Tất cả trạng thái</option><option value="PENDING">Chờ thanh toán</option><option value="CONFIRMED">Đã xác nhận</option><option value="PREPARING">Đang pha chế</option><option value="READY">Sẵn sàng</option><option value="DELIVERING">Đang giao</option><option value="COMPLETED">Hoàn thành</option><option value="CANCELLED">Đã hủy</option></select>
+        <div class="date-filter" id="dateFilter">
+            <button type="button" class="date-filter-trigger" id="dateTrigger" aria-expanded="false" aria-controls="datePopover">
+                <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                <span id="dateLabel">Khoảng ngày</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="date-popover" id="datePopover" hidden>
+                <label for="dateFrom">Từ ngày</label><input type="date" id="dateFrom" value="${fn:escapeXml(dateFrom)}">
+                <label for="dateTo">Đến ngày</label><input type="date" id="dateTo" value="${fn:escapeXml(dateTo)}">
+                <p id="dateError" class="date-error" role="alert" hidden></p>
+                <div class="date-actions"><button type="button" id="dateClear">Xóa lọc</button><button type="button" id="dateApply">Áp dụng</button></div>
+            </div>
+        </div>
     </section>
     <section class="order-table-card"><div class="table-responsive"><table class="table order-table mb-0"><thead><tr><th>Mã đơn</th><th>Thời gian</th><th>Hình thức</th><th>Khách hàng</th><th>Thu ngân / Shipper</th><th class="text-end">Thành tiền</th><th>Thanh toán</th><th>Trạng thái</th><th class="text-end">Chi tiết</th></tr></thead><tbody>
     <c:forEach var="order" items="${orders}">
@@ -44,10 +56,11 @@
             <td class="text-end order-money"><fmt:formatNumber value="${order.finalAmount}" pattern="#,##0" />đ</td>
             <td><c:choose><c:when test="${empty order.paymentMethod}"><span class="text-muted">Chưa thanh toán</span></c:when><c:otherwise><strong><c:out value="${order.paymentMethod}" /></strong><small class="payment-${fn:toLowerCase(order.paymentStatus)}"><c:out value="${order.paymentStatus}" /></small></c:otherwise></c:choose></td>
             <td><span class="order-status status-${fn:toLowerCase(order.status)}"><c:out value="${order.status}" /></span></td>
-            <td class="text-end"><a class="view-order" href="${ctx}/admin/orders?detailId=${order.id}">Xem</a></td>
+            <td class="text-end"><a class="view-order" data-order-id="${order.id}" href="${ctx}/admin/orders?detailId=${order.id}">Xem</a></td>
         </tr>
     </c:forEach>
-    <c:if test="${empty orders}"><tr><td colspan="9" class="text-center text-muted py-5">Chưa có đơn hàng trong database.</td></tr></c:if>
+    <c:if test="${empty orders}"><tr><td colspan="9" class="text-center text-muted py-5">Không có đơn hàng phù hợp.</td></tr></c:if>
+    <c:if test="${not empty orders}"><tr id="noMatchingOrders" hidden><td colspan="9" class="text-center text-muted py-5">Không có đơn hàng phù hợp.</td></tr></c:if>
     </tbody></table></div></section>
 </main>
 
@@ -58,10 +71,7 @@
         <div class="detail-summary"><span>Hình thức: <strong><c:out value="${detailOrder.orderType}" /></strong></span><span>Thời gian: <strong><c:out value="${detailOrder.createdTimeText} ${detailOrder.createdDateText}" /></strong></span><span>Khách hàng: <strong><c:out value="${detailSummary.customerName}" /></strong></span><span>Thu ngân: <strong><c:out value="${detailSummary.cashierName}" /></strong></span><c:if test="${not empty detailOrder.tableNumber}"><span>Bàn: <strong><c:out value="${detailOrder.tableNumber}" /></strong></span></c:if><c:if test="${not empty detailOrder.deliveryAddress}"><span class="wide">Giao tới: <strong><c:out value="${detailOrder.recipientName}" /> · <c:out value="${detailOrder.recipientPhone}" /> · <c:out value="${detailOrder.deliveryAddress}" /></strong></span></c:if><c:if test="${not empty detailOrder.orderNote}"><span class="wide">Ghi chú: <c:out value="${detailOrder.orderNote}" /></span></c:if></div>
         <div class="table-responsive"><table class="table detail-table"><thead><tr><th>Món</th><th class="text-center">SL</th><th class="text-end">Đơn giá</th><th class="text-end">Thành tiền</th><th class="text-center">Đã pha</th></tr></thead><tbody><c:forEach var="item" items="${detailOrder.items}"><tr><td><strong><c:out value="${item.productName}" /></strong><small><c:out value="${item.optionsText}" /></small></td><td class="text-center"><c:out value="${item.quantity}" /></td><td class="text-end"><c:out value="${item.formattedUnitPrice}" /></td><td class="text-end fw-bold"><c:out value="${item.formattedSubtotal}" /></td><td class="text-center">${detailOrder.status eq 'READY' or detailOrder.status eq 'DELIVERING' or detailOrder.status eq 'COMPLETED' ? '✓' : '—'}</td></tr></c:forEach></tbody></table></div>
         <div class="amount-grid"><span>total_amount: <strong><c:out value="${detailOrder.formattedTotalAmount}" /></strong></span><span>discount_amount: <strong>-<c:out value="${detailOrder.formattedDiscountAmount}" /></strong></span><span>delivery_fee: <strong><c:out value="${detailOrder.formattedDeliveryFee}" /></strong></span><span>final_amount: <strong><c:out value="${detailOrder.formattedFinalAmount}" /></strong></span></div>
-        <div class="order-edit-grid">
-            <form method="post" action="${ctx}/admin/orders"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.orderAdminCsrfToken)}"><input type="hidden" name="action" value="status"><input type="hidden" name="id" value="${detailOrder.id}"><label>Trạng thái đơn (status)</label><div class="input-group"><select name="status" class="form-select"><c:forEach var="status" items="${['PENDING','CONFIRMED','PREPARING','READY','DELIVERING','COMPLETED','CANCELLED']}"><option value="${status}" ${detailOrder.status eq status ? 'selected' : ''}>${status}</option></c:forEach></select><button class="btn-order-save">Cập nhật</button></div></form>
-            <c:if test="${detailOrder.orderType eq 'ONLINE'}"><form method="post" action="${ctx}/admin/orders"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.orderAdminCsrfToken)}"><input type="hidden" name="action" value="shipper"><input type="hidden" name="id" value="${detailOrder.id}"><label>Shipper (shipper_id)</label><div class="input-group"><select name="shipperId" class="form-select"><option value="">-- Chưa gán --</option><c:forEach var="shipper" items="${shippers}"><option value="${shipper.id}" ${detailOrder.shipperId eq shipper.id ? 'selected' : ''}><c:out value="${shipper.fullName}" /></option></c:forEach></select><button class="btn-order-save">Cập nhật</button></div></form></c:if>
-        </div>
+        <div class="detail-summary"><span>Trạng thái đơn: <strong><c:out value="${detailOrder.status}" /></strong></span><span>Thanh toán: <strong><c:out value="${detailSummary.paymentMethod}" default="Chưa thanh toán" /> · <c:out value="${detailSummary.paymentStatus}" /></strong></span><span>Shipper: <strong><c:out value="${detailSummary.shipperName}" default="Chưa gán" /></strong></span><span>Số điện thoại: <strong><c:out value="${detailSummary.customerPhone}" /></strong></span></div>
         <c:if test="${not empty detailDelivery}">
             <div class="detail-summary mt-3">
                 <span>Giao hàng: <strong>${detailDelivery.statusLabel}</strong> (<c:out value="${detailDelivery.shipperName}" />)</span>
@@ -81,8 +91,67 @@
 <script>
 (() => {
     const search = document.getElementById('orderSearch'), type = document.getElementById('orderTypeFilter'), status = document.getElementById('orderStatusFilter'), rows = [...document.querySelectorAll('.order-row')];
-    const filter = () => { const q = search.value.trim().toLocaleLowerCase('vi'); rows.forEach(row => row.hidden = !!((q && !row.dataset.search.includes(q)) || (type.value && row.dataset.type !== type.value) || (status.value && row.dataset.status !== status.value))); };
+    const dateFilter = document.getElementById('dateFilter'), trigger = document.getElementById('dateTrigger'), popover = document.getElementById('datePopover');
+    const from = document.getElementById('dateFrom'), to = document.getElementById('dateTo'), error = document.getElementById('dateError');
+    const appliedFrom = from.value, appliedTo = to.value;
+    const params = new URLSearchParams(location.search);
+    search.value = params.get('q') || '';
+    type.value = params.get('type') || '';
+    status.value = params.get('status') || '';
+    const format = value => value.split('-').reverse().join('/');
+    document.getElementById('dateLabel').textContent = appliedFrom && appliedTo ? format(appliedFrom) + ' - ' + format(appliedTo)
+        : appliedFrom ? 'Từ ' + format(appliedFrom) : appliedTo ? 'Đến ' + format(appliedTo) : 'Khoảng ngày';
+    function currentParams() {
+        const result = new URLSearchParams();
+        if (search.value.trim()) result.set('q', search.value.trim());
+        if (type.value) result.set('type', type.value);
+        if (status.value) result.set('status', status.value);
+        if (appliedFrom) result.set('from', appliedFrom);
+        if (appliedTo) result.set('to', appliedTo);
+        return result;
+    }
+    function filter() {
+        const q = search.value.trim().toLocaleLowerCase('vi');
+        rows.forEach(row => row.hidden = !!((q && !row.dataset.search.includes(q)) || (type.value && row.dataset.type !== type.value) || (status.value && row.dataset.status !== status.value)));
+        const empty = document.getElementById('noMatchingOrders');
+        if (empty) empty.hidden = rows.some(row => !row.hidden);
+        const next = currentParams();
+        if (params.has('detailId')) next.set('detailId', params.get('detailId'));
+        history.replaceState(null, '', location.pathname + (next.size ? '?' + next : ''));
+        document.querySelectorAll('.view-order').forEach(link => {
+            const detail = currentParams();
+            detail.set('detailId', link.dataset.orderId);
+            link.href = location.pathname + '?' + detail;
+        });
+        const close = document.querySelector('#orderDetailModal .btn-close');
+        if (close) { const filters = currentParams(); close.href = location.pathname + (filters.size ? '?' + filters : ''); }
+    }
+    function closePopover() {
+        popover.hidden = true; trigger.setAttribute('aria-expanded', 'false');
+        from.value = appliedFrom; to.value = appliedTo; error.hidden = true;
+    }
+    trigger.addEventListener('click', () => {
+        if (!popover.hidden) { closePopover(); return; }
+        popover.hidden = false; trigger.setAttribute('aria-expanded', 'true'); from.focus();
+    });
+    document.addEventListener('click', event => { if (!dateFilter.contains(event.target)) closePopover(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && !popover.hidden) { closePopover(); trigger.focus(); } });
+    function navigateDates(start, end) {
+        const next = currentParams();
+        if (start) next.set('from', start); else next.delete('from');
+        if (end) next.set('to', end); else next.delete('to');
+        location.assign(location.pathname + (next.size ? '?' + next : ''));
+    }
+    document.getElementById('dateApply').addEventListener('click', () => {
+        if (!from.checkValidity() || !to.checkValidity() || (from.value && to.value && to.value < from.value)) {
+            error.textContent = 'Vui lòng chọn khoảng ngày hợp lệ; ngày kết thúc không được trước ngày bắt đầu.';
+            error.hidden = false; return;
+        }
+        navigateDates(from.value, to.value);
+    });
+    document.getElementById('dateClear').addEventListener('click', () => navigateDates('', ''));
     [search, type, status].forEach(el => el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', filter));
+    filter();
     <c:if test="${not empty detailOrder}">new bootstrap.Modal(document.getElementById('orderDetailModal')).show();</c:if>
 })();
 </script>

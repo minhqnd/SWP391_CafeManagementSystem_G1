@@ -654,13 +654,13 @@
                             <!-- Stepper -->
                             <div class="stepper-container">
                                 <div class="stepper-grid">
-                                    <!-- Bước 1: Đã thanh toán -->
+                                    <!-- Bước 1: Đã thanh toán (COD: đã đặt, trả tiền khi nhận hàng) -->
                                     <div class="stepper-item done">
                                         <div class="stepper-node">
                                             <span class="material-symbols-outlined" style="font-size: 18px;">receipt_long</span>
                                         </div>
-                                        <div class="stepper-title">Đã thanh toán</div>
-                                        <div class="stepper-sub">${not empty o.paidTimeText ? o.paidTimeText : o.createdTimeText}</div>
+                                        <div class="stepper-title">${o.codUnpaid ? 'Đã đặt (COD)' : 'Đã thanh toán'}</div>
+                                        <div class="stepper-sub">${o.codUnpaid ? 'Trả tiền khi nhận' : (not empty o.paidTimeText ? o.paidTimeText : o.createdTimeText)}</div>
                                     </div>
                                     <!-- Bước 2: Pha chế -->
                                     <div class="stepper-item ${o.progressStep > 2 ? 'done' : (o.progressStep == 2 ? 'current' : '')}">

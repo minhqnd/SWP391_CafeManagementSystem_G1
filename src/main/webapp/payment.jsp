@@ -256,18 +256,8 @@
                     </c:if>
 
                     <div class="no-print">
-                        <form method="post" action="${ctx}/payment" class="mt-3">
-                            <input type="hidden" name="orderId" value="${order.id}">
-                            <input type="hidden" name="action" value="simulateGateway">
-                            <button type="submit" class="btn btn-aura w-100 py-3">
-                                <c:choose>
-                                    <c:when test="${paymentTestMode}">Mô phỏng callback thanh toán thành công</c:when>
-                                    <c:otherwise>Kiểm tra trạng thái thanh toán</c:otherwise>
-                                </c:choose>
-                                <span class="material-symbols-outlined fs-5">arrow_forward</span>
-                            </button>
-                        </form>
-                        <form method="post" action="${ctx}/payment" class="mt-2"
+                        <%-- Chuyển khoản QR được cổng thanh toán xác nhận tự động; khách chỉ chọn COD hoặc huỷ đơn --%>
+                        <form method="post" action="${ctx}/payment" class="mt-3"
                               onsubmit="return confirm('Chọn thanh toán tiền mặt khi nhận hàng?');">
                             <input type="hidden" name="orderId" value="${order.id}">
                             <input type="hidden" name="action" value="cod">

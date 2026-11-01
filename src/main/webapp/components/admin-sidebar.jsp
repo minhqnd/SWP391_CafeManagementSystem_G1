@@ -129,7 +129,7 @@
             <li class="nav-item">
                 <a href="${ctx}/admin/handovers" class="nav-link ${param.activeMenu == 'handovers' ? 'active' : ''}">
                     <span class="material-symbols-outlined">assignment_turned_in</span>
-                    <span>Bàn giao ca</span>
+                    <span>Lịch sử bàn giao</span>
                 </a>
             </li>
         </ul>
@@ -163,13 +163,7 @@
         <li class="nav-item">
             <a href="${ctx}/admin/settings" class="nav-link ${param.activeMenu == 'settings' ? 'active' : ''}">
                 <span class="material-symbols-outlined">settings</span>
-                <span>Cài đặt cửa hàng</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="${ctx}/admin/delivery-areas" class="nav-link ${param.activeMenu == 'deliveryAreas' ? 'active' : ''}">
-                <span class="material-symbols-outlined">local_shipping</span>
-                <span>Phí giao theo quận</span>
+                <span>Cài đặt hệ thống</span>
             </a>
         </li>
     </ul>

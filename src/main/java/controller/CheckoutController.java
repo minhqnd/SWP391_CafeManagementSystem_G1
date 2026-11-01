@@ -1,11 +1,9 @@
 package controller;
 
-import dao.DeliveryAreaDAO;
 import dao.OrderDAO;
 import dao.UserDAO;
 import model.Cart;
 import model.CartItem;
-import model.DeliveryArea;
 import model.Order;
 import model.User;
 import service.CartService;
@@ -41,7 +39,7 @@ public class CheckoutController extends HttpServlet {
     private static final ZoneId SHOP_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final String PHONE_PATTERN = "0\\d{9,10}";
 
-    // Quán ở Hà Nội: các quận nhận giao + phí giao từng quận lưu ở bảng delivery_areas (Admin chỉnh ở /admin/delivery-areas)
+    // Quán ở Hà Nội. Phí giao cố định 1 mức cho mọi địa chỉ (shop_settings.delivery_fee, Admin chỉnh ở Cài đặt)
     public static final String CITY = "Hà Nội";
     // Giờ nhận hẹn trước: từ giờ mở cửa đến 30 phút trước giờ đóng cửa (22:00)
     private static final LocalTime OPEN_TIME = LocalTime.of(7, 0);
@@ -54,7 +52,6 @@ public class CheckoutController extends HttpServlet {
 
     private final CartService cartService = new CartService();
     private final OrderDAO orderDAO = new OrderDAO();
-    private final DeliveryAreaDAO deliveryAreaDAO = new DeliveryAreaDAO();
     private final UserDAO userDAO = new UserDAO();
 
     @Override
@@ -63,7 +60,6 @@ public class CheckoutController extends HttpServlet {
 
         HttpSession session = request.getSession();
         Cart cart = CartController.getCart(session);
-        cart.setAreaDeliveryFee(null);
         boolean pointsStillValid = cartService.refreshCart(cart, CartController.getCustomerId(session));
 
         if (cart.getSelectedItems().isEmpty()) {
@@ -129,8 +125,8 @@ public class CheckoutController extends HttpServlet {
             error = "Vui lòng nhập họ tên người nhận (tối đa 100 ký tự).";
         } else if (!recipientPhone.matches(PHONE_PATTERN)) {
             error = "Số điện thoại không hợp lệ (10 - 11 chữ số, bắt đầu bằng số 0).";
-        } else if (cart.isDelivery() && district.isEmpty()) {
-            error = "Vui lòng chọn Quận/Huyện giao hàng.";
+        } else if (cart.isDelivery() && (district.length() < 2 || district.length() > 100)) {
+            error = "Vui lòng nhập Quận/Huyện giao hàng.";
         } else if (cart.isDelivery() && (ward.length() < 2 || ward.length() > 100)) {
             error = "Vui lòng nhập Phường/Xã giao hàng.";
         } else if (cart.isDelivery() && (addressDetail.length() < 5 || addressDetail.length() > 150)) {
@@ -146,28 +142,6 @@ public class CheckoutController extends HttpServlet {
                 error = e.getMessage();
             }
         }
-
-        // Phí giao = phí cố định của quận khách chọn (bảng delivery_areas)
-        Double areaFee = null;
-        if (error == null && cart.isDelivery()) {
-            try {
-                DeliveryArea area = deliveryAreaDAO.findActive(district);
-                if (area == null) {
-                    error = "Quán chưa giao tới " + district + ". Vui lòng chọn quận khác hoặc Tự đến lấy.";
-                } else {
-                    areaFee = area.getDeliveryFee();
-                }
-            } catch (java.sql.SQLException | ClassNotFoundException e) {
-                getServletContext().log("Cannot load delivery area", e);
-                DeliveryArea fallbackArea = DeliveryAreaDAO.findDefault(district);
-                if (fallbackArea == null) {
-                    error = "Quán chưa giao tới " + district + ". Vui lòng chọn quận khác.";
-                } else {
-                    areaFee = fallbackArea.getDeliveryFee();
-                }
-            }
-        }
-        cart.setAreaDeliveryFee(areaFee);
 
         if (error != null) {
             request.setAttribute("checkoutError", error);
@@ -232,7 +206,6 @@ public class CheckoutController extends HttpServlet {
         session.setAttribute(PENDING_ORDER_ID, orderId);
         session.setAttribute(PENDING_ORDER_ITEMS, new ArrayList<>(items));
         cart.setPointsUsed(0);
-        cart.setAreaDeliveryFee(null);
         if (pointsUsed > 0) {
             user.setTotalPoints(userDAO.getTotalPoints(user.getId()));
         }
@@ -295,13 +268,6 @@ public class CheckoutController extends HttpServlet {
         request.setAttribute("timeOption", paramOrDefault(request, "timeOption", "ASAP"));
         request.setAttribute("scheduledTime", paramOrDefault(request, "scheduledTime", ""));
         request.setAttribute("orderNote", paramOrDefault(request, "orderNote", ""));
-        try {
-            request.setAttribute("deliveryAreas", deliveryAreaDAO.getActiveAreas());
-        } catch (java.sql.SQLException | ClassNotFoundException e) {
-            getServletContext().log("Cannot load delivery areas", e);
-            request.setAttribute("deliveryAreas", DeliveryAreaDAO.getDefaultAreas());
-            request.setAttribute("usingDefaultDeliveryAreas", true);
-        }
         request.setAttribute("city", CITY);
         request.setAttribute("storeAddress", STORE_ADDRESS);
         request.setAttribute("deliveryMinutes", cart.getSettings().getDeliveryMinutes());

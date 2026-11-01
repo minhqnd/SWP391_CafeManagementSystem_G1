@@ -54,21 +54,19 @@ public class FeedbackDAO extends BaseDAO {
         fb.setCreatedAt(rs.getTimestamp("created_at"));
 
         // Thông tin người dùng & đơn hàng được JOIN
-        try {
-            fb.setCustomerName(rs.getString("customer_name"));
-            fb.setCustomerPhone(rs.getString("customer_phone"));
-        } catch (Exception ignored) {}
-
-        try {
-            fb.setOrderCode(rs.getString("order_code"));
-        } catch (Exception ignored) {}
+        fb.setCustomerName(rs.getString("resolved_customer_name"));
+        fb.setCustomerPhone(rs.getString("resolved_customer_phone"));
+        fb.setOrderCode(rs.getString("resolved_order_code"));
 
         return fb;
     }
 
     public List<Feedback> getAllFeedbacks(int limit) {
         List<Feedback> list = new ArrayList<>();
-        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, o.order_code AS order_code " +
+        String sql = "SELECT cr.*, " +
+                     "COALESCE(NULLIF(TRIM(u.full_name), ''), NULLIF(TRIM(cr.customer_name), ''), CONCAT('Khách hàng #', cr.customer_id)) AS resolved_customer_name, " +
+                     "COALESCE(NULLIF(TRIM(u.phone), ''), NULLIF(TRIM(cr.customer_phone), '')) AS resolved_customer_phone, " +
+                     "COALESCE(NULLIF(TRIM(o.order_code), ''), NULLIF(TRIM(cr.order_code), '')) AS resolved_order_code " +
                      "FROM customer_reviews cr " +
                      "JOIN users u ON cr.customer_id = u.id " +
                      "LEFT JOIN orders o ON cr.order_id = o.id " +
@@ -91,7 +89,9 @@ public class FeedbackDAO extends BaseDAO {
         List<Feedback> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
                 "SELECT cr.*, " +
-                "u.full_name AS customer_name, u.phone AS customer_phone, o.order_code AS order_code " +
+                "COALESCE(NULLIF(TRIM(u.full_name), ''), NULLIF(TRIM(cr.customer_name), ''), CONCAT('Khách hàng #', cr.customer_id)) AS resolved_customer_name, " +
+                "COALESCE(NULLIF(TRIM(u.phone), ''), NULLIF(TRIM(cr.customer_phone), '')) AS resolved_customer_phone, " +
+                "COALESCE(NULLIF(TRIM(o.order_code), ''), NULLIF(TRIM(cr.order_code), '')) AS resolved_order_code " +
                 "FROM customer_reviews cr " +
                 "JOIN users u ON cr.customer_id = u.id " +
                 "LEFT JOIN orders o ON cr.order_id = o.id " +
@@ -181,7 +181,10 @@ public class FeedbackDAO extends BaseDAO {
 
     public List<Feedback> getFeedbacksByCustomerId(int customerId) {
         List<Feedback> list = new ArrayList<>();
-        String sql = "SELECT cr.*, u.full_name AS customer_name, u.phone AS customer_phone, o.order_code AS order_code " +
+        String sql = "SELECT cr.*, " +
+                     "COALESCE(NULLIF(TRIM(u.full_name), ''), NULLIF(TRIM(cr.customer_name), ''), CONCAT('Khách hàng #', cr.customer_id)) AS resolved_customer_name, " +
+                     "COALESCE(NULLIF(TRIM(u.phone), ''), NULLIF(TRIM(cr.customer_phone), '')) AS resolved_customer_phone, " +
+                     "COALESCE(NULLIF(TRIM(o.order_code), ''), NULLIF(TRIM(cr.order_code), '')) AS resolved_order_code " +
                      "FROM customer_reviews cr " +
                      "JOIN users u ON cr.customer_id = u.id " +
                      "LEFT JOIN orders o ON cr.order_id = o.id " +

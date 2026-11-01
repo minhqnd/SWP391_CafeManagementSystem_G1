@@ -1007,6 +1007,36 @@ public class OrderDAO extends BaseDAO {
     }
 
     /**
+     * Returns today's counter orders created by one cashier.
+     * The cashier POS uses this query so a newly-created cashier cannot see
+     * or operate on orders belonging to another cashier.
+     */
+    public List<Order> getCounterOrdersToday(int cashierId) {
+        String sql = CUSTOMER_ORDER_SELECT
+                + "WHERE DATE(o.created_at) = CURDATE() "
+                + "  AND o.cashier_id = ? AND o.order_type IN ('DINE_IN', 'TAKEAWAY') "
+                + "ORDER BY o.created_at DESC, o.id DESC";
+
+        Map<Integer, Order> orders = new LinkedHashMap<>();
+        List<Order> list = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, cashierId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Order order = mapCustomerOrder(rs);
+                    orders.put(order.getId(), order);
+                    list.add(order);
+                }
+            }
+            loadOrderItems(conn, orders);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
      * Đơn tại quầy (DINE_IN / TAKEAWAY do Thu ngân tạo) của một ngày, mới nhất trước - màn Danh sách đơn tại quầy (UC20)
      */
     public List<Order> getCounterOrdersByDate(LocalDate date) throws SQLException, ClassNotFoundException {

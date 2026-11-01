@@ -128,7 +128,7 @@
     }
 </style>
 
-<nav class="navbar navbar-expand-lg aura-navbar py-3 ${param.navbarMode != 'barista' ? 'aura-home-navbar' : ''}">
+<nav class="navbar navbar-expand-lg aura-navbar py-3 ${param.navbarMode != 'barista' ? 'aura-home-navbar' : 'barista-topbar'}">
     <div class="container-fluid px-4 px-lg-5">
         <!-- Brand Logo -->
         <c:set var="auraBrandMarkup">
@@ -170,7 +170,7 @@
         <div class="collapse navbar-collapse" id="mainNavbar">
             <!-- Navigation Links -->
             <c:if test="${param.navbarMode == 'barista'}">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1 gap-lg-2" style="font-size: 0.95rem;">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1 gap-lg-2 barista-tabs" style="font-size: 0.95rem;">
                 <c:choose>
                     <c:when test="${param.navbarMode == 'barista'}">
 
@@ -218,7 +218,7 @@
         </c:if>
 
             <!-- Right Actions: Cart & Profile -->
-            <div class="d-flex align-items-center gap-3 ms-lg-auto">
+            <div class="d-flex align-items-center gap-3 ms-lg-auto header-actions">
                 <!-- Cart Button -->
                 <c:if test="${param.showCart != 'false' && param.navbarMode != 'barista'}">
                 <a href="${pageContext.request.contextPath}/cart" 
@@ -233,8 +233,20 @@
                 <!-- Profile / Auth Button -->
                 <c:choose>
                     <c:when test="${not empty sessionScope.user}">
+                        <c:choose>
+                        <c:when test="${param.navbarMode == 'barista'}">
+                            <div class="d-flex align-items-center gap-2 text-dark header-user">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
+                                    <span class="material-symbols-outlined text-danger">account_circle</span>
+                                </div>
+                                <div class="d-none d-xl-flex flex-column text-start">
+                                    <span class="fw-semibold text-truncate" style="font-size: 0.85rem; max-width: 130px;"><c:out value="${sessionScope.user.fullName}" /></span>
+                                </div>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
                         <div class="dropdown">
-                            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark" data-bs-toggle="dropdown">
+                            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark header-user" data-bs-toggle="dropdown">
                                 <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
                                     <span class="material-symbols-outlined text-danger">account_circle</span>
                                 </div>
@@ -310,6 +322,8 @@
                                 </li>
                             </ul>
                         </div>
+                        </c:otherwise>
+                        </c:choose>
                     </c:when>
                     <c:otherwise>
                         <button type="button" class="btn btn-outline-danger rounded-circle p-2 d-flex align-items-center justify-content-center" 
@@ -318,6 +332,11 @@
                         </button>
                     </c:otherwise>
                 </c:choose>
+                <c:if test="${param.navbarMode == 'barista' && not empty sessionScope.user}">
+                    <a href="${pageContext.request.contextPath}/login?action=logout" class="barista-logout" title="Đăng xuất khỏi hệ thống">
+                        <span class="material-symbols-outlined">logout</span><span>Đăng xuất</span>
+                    </a>
+                </c:if>
             </div>
         </div>
     </div>
