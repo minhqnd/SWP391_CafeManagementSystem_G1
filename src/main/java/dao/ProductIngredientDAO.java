@@ -19,6 +19,19 @@ public class ProductIngredientDAO extends BaseDAO {
                  PreparedStatement psInsert = conn.prepareStatement(insertBomSql)) {
 
                 // Replace the existing BOM for this product.
+                java.util.Set<Integer> oldIds = new java.util.HashSet<>();
+                try (PreparedStatement old = conn.prepareStatement("SELECT ingredient_id FROM product_ingredients WHERE product_id = ?")) {
+                    old.setInt(1, productId);
+                    try (java.sql.ResultSet rs = old.executeQuery()) {
+                        while (rs.next()) oldIds.add(rs.getInt("ingredient_id"));
+                    }
+                }
+                if (ingredients != null) {
+                    for (ProductIngredient line : ingredients) {
+                        if (!oldIds.contains(line.getIngredientId())) IngredientDAO.requireActive(conn, line.getIngredientId());
+                    }
+                }
+
                 psDelete.setInt(1, productId);
                 psDelete.executeUpdate();
 

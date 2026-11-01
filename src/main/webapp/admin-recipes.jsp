@@ -105,7 +105,7 @@
     </header>
 
     <c:if test="${not empty recipeMessage}"><div class="alert alert-success mb-0"><c:out value="${recipeMessage}" /></div></c:if>
-    <c:if test="${not empty recipeError}"><div class="alert alert-danger mb-0"><c:out value="${recipeError}" /></div></c:if>
+    <c:if test="${not empty recipeError and empty selectedProduct}"><div class="alert alert-danger mb-0" role="alert"><c:out value="${recipeError}" /></div></c:if>
 
     <div class="recipe-toolbar">
         <h2>Định mức theo sản phẩm</h2>
@@ -175,6 +175,12 @@
                 <a href="${ctx}/admin/recipes" class="btn-close" aria-label="Đóng"></a>
             </header>
             <div class="recipe-modal-body">
+                <c:if test="${not empty recipeError}">
+                    <div id="recipeFormError" class="alert alert-danger" role="alert" tabindex="-1">
+                        <c:out value="${recipeError}" />
+                        <div class="small mt-1">Công thức chưa được lưu. Hãy sửa dữ liệu bên dưới rồi thử lại.</div>
+                    </div>
+                </c:if>
                 <form method="post" action="${ctx}/admin/recipes" class="recipe-editor" id="recipeForm">
                     <input type="hidden" name="action" value="save">
                     <input type="hidden" name="productId" value="${selectedProduct.id}">
@@ -193,12 +199,11 @@
                             <div class="ingredient-table-labels"><span>Nguyên liệu</span><span>Định lượng</span><span class="text-end">Cost / phần</span><span></span></div>
                             <div id="ingredientRows">
                                 <c:choose>
-                                    <c:when test="${not empty recipeIngredients}">
-                                        <c:forEach items="${recipeIngredients}" var="recipeIngredient">
+                                    <c:when test="${not empty recipeFormRows}">
+                                        <c:forEach items="${recipeFormRows}" var="recipeIngredient">
                                             <div class="ingredient-row">
-                                                <div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}" ${ingredient.id eq recipeIngredient.ingredientId ? 'selected' : ''}><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)</option></c:forEach></select><div class="ingredient-unit-cost"></div></div>
-                                                <fmt:formatNumber value="${recipeIngredient.quantityRequired}" pattern="0.###" var="quantityInputValue" />
-                                                <div class="ingredient-quantity"><input class="form-control" type="number" name="quantity" min="0.001" max="999999999.999" step="0.001" value="${quantityInputValue}" placeholder="0.001" aria-label="Định lượng"><div class="quantity-unit"></div></div>
+                                                <div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><c:if test="${ingredient.active or ingredient.id eq recipeIngredient.ingredientId}"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}" ${ingredient.id eq recipeIngredient.ingredientId ? 'selected' : ''}><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)<c:if test="${not ingredient.active}"> · Ngừng sử dụng (dòng cũ)</c:if></option></c:if></c:forEach></select><div class="ingredient-unit-cost"></div></div>
+                                                <div class="ingredient-quantity"><input class="form-control" type="number" name="quantity" min="0.001" max="999999999.999" step="0.001" value="${fn:escapeXml(recipeIngredient.quantity)}" placeholder="0.001" aria-label="Định lượng"><div class="quantity-unit"></div></div>
                                                 <div class="ingredient-line-cost">—</div>
                                                 <button type="button" class="btn btn-sm btn-light text-danger remove-ingredient" aria-label="Xóa nguyên liệu">×</button>
                                             </div>
@@ -206,7 +211,7 @@
                                     </c:when>
                                     <c:otherwise>
                                         <div class="ingredient-row">
-                                            <div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}"><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)</option></c:forEach></select><div class="ingredient-unit-cost"></div></div>
+                                            <div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><c:if test="${ingredient.active}"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}"><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)</option></c:if></c:forEach></select><div class="ingredient-unit-cost"></div></div>
                                             <div class="ingredient-quantity"><input class="form-control" type="number" name="quantity" min="0.001" max="999999999.999" step="0.001" placeholder="0.001" aria-label="Định lượng"><div class="quantity-unit"></div></div>
                                             <div class="ingredient-line-cost">—</div>
                                             <button type="button" class="btn btn-sm btn-light text-danger remove-ingredient" aria-label="Xóa nguyên liệu">×</button>
@@ -214,7 +219,7 @@
                                     </c:otherwise>
                                 </c:choose>
                             </div>
-                            <template id="ingredientRowTemplate"><div class="ingredient-row"><div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}"><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)</option></c:forEach></select><div class="ingredient-unit-cost"></div></div><div class="ingredient-quantity"><input class="form-control" type="number" name="quantity" min="0.001" max="999999999.999" step="0.001" placeholder="0.001" aria-label="Định lượng"><div class="quantity-unit"></div></div><div class="ingredient-line-cost">—</div><button type="button" class="btn btn-sm btn-light text-danger remove-ingredient" aria-label="Xóa nguyên liệu">×</button></div></template>
+                            <template id="ingredientRowTemplate"><div class="ingredient-row"><div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><c:if test="${ingredient.active}"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}"><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)</option></c:if></c:forEach></select><div class="ingredient-unit-cost"></div></div><div class="ingredient-quantity"><input class="form-control" type="number" name="quantity" min="0.001" max="999999999.999" step="0.001" placeholder="0.001" aria-label="Định lượng"><div class="quantity-unit"></div></div><div class="ingredient-line-cost">—</div><button type="button" class="btn btn-sm btn-light text-danger remove-ingredient" aria-label="Xóa nguyên liệu">×</button></div></template>
                         </c:otherwise>
                     </c:choose>
                     <div class="recipe-cost-card" id="recipeCostCard">
@@ -290,6 +295,7 @@
         if (button) { button.closest('.ingredient-row')?.remove(); recalculateCost(); }
     });
     recalculateCost();
+    document.getElementById('recipeFormError')?.focus();
 })();
 </script>
 </body>

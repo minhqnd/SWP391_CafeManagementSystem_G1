@@ -15,6 +15,10 @@ public class Ingredient implements Serializable {
     private BigDecimal minStockLevel = BigDecimal.ZERO;
     private BigDecimal lastPurchasePrice;
     private int usedInRecipesCount;
+    private boolean active = true;
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
     public Ingredient() {}
 

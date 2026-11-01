@@ -67,7 +67,7 @@
                                 Tài khoản <c:out value="${sessionScope.user.role}" /> hiện tại chỉ dùng cho nghiệp vụ nội bộ. Hãy đăng nhập bằng tài khoản CUSTOMER.
                             </c:when>
                             <c:otherwise>
-                                Bạn cần đăng nhập bằng tài khoản khách hàng để nhập địa chỉ giao hàng, dùng điểm Aura và chuyển sang bước thanh toán.
+                                Bạn có thể nhập trước thông tin giao hàng. Hãy đăng nhập bằng tài khoản khách hàng để xác nhận đơn, dùng điểm Aura và chuyển sang bước thanh toán.
                             </c:otherwise>
                         </c:choose>
                     </div>
@@ -88,9 +88,9 @@
 
             <div class="row g-4">
 
-                <%-- ===== Cột trái: Thông tin giao hàng (khoá khi chưa đăng nhập) ===== --%>
+                <%-- ===== Cột trái: Cho phép nhập trước; nút xác nhận và server vẫn yêu cầu tài khoản CUSTOMER ===== --%>
                 <div class="col-lg-7">
-                    <fieldset class="${isGuest ? 'checkout-locked' : ''}" ${isGuest ? 'disabled' : ''}>
+                    <fieldset>
 
                         <%-- Đặt hàng online chỉ có Giao tận nơi nên không hiện ô chọn hình thức nhận hàng --%>
                         <input type="hidden" name="fulfillment" value="DELIVERY">

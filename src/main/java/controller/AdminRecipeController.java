@@ -4,6 +4,7 @@ import dao.IngredientDAO;
 import dao.ProductDAO;
 import dao.ProductIngredientDAO;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,6 +16,7 @@ import model.RecipeProductSummary;
 import model.User;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -24,11 +26,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+@WebServlet(name = "AdminRecipeController", urlPatterns = {"/admin/recipes", "/admin/recipe/update"})
 public class AdminRecipeController extends HttpServlet {
 
-    private final ProductDAO productDAO = new ProductDAO();
-    private final IngredientDAO ingredientDAO = new IngredientDAO();
-    private final ProductIngredientDAO productIngredientDAO = new ProductIngredientDAO();
+    private final ProductDAO productDAO;
+    private final IngredientDAO ingredientDAO;
+    private final ProductIngredientDAO productIngredientDAO;
+
+    public AdminRecipeController() {
+        this(new ProductDAO(), new IngredientDAO(), new ProductIngredientDAO());
+    }
+
+    AdminRecipeController(ProductDAO productDAO, IngredientDAO ingredientDAO,
+                          ProductIngredientDAO productIngredientDAO) {
+        this.productDAO = productDAO;
+        this.ingredientDAO = ingredientDAO;
+        this.productIngredientDAO = productIngredientDAO;
+    }
+
+    private record RecipeDraft(int productId, List<Map<String, String>> rows) implements Serializable {}
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -103,6 +119,17 @@ public class AdminRecipeController extends HttpServlet {
             request.setAttribute("recipeCostComplete", recipeCostComplete);
             request.setAttribute("recipeHasIngredients", !recipeIngredients.isEmpty());
             request.setAttribute("missingCostIngredients", missingCostIngredients);
+            List<Map<String, String>> formRows = new ArrayList<>();
+            for (ProductIngredient line : recipeIngredients) {
+                formRows.add(Map.of("ingredientId", Integer.toString(line.getIngredientId()),
+                        "quantity", BigDecimal.valueOf(line.getQuantityRequired()).stripTrailingZeros().toPlainString()));
+            }
+            Object draft = session.getAttribute("recipeDraft");
+            session.removeAttribute("recipeDraft");
+            if (draft instanceof RecipeDraft submitted && submitted.productId() == selectedProductId) {
+                formRows = submitted.rows();
+            }
+            request.setAttribute("recipeFormRows", formRows);
             moveFlash(request, "recipeMessage");
             moveFlash(request, "recipeError");
             request.getRequestDispatcher("/admin-recipes.jsp").forward(request, response);
@@ -127,6 +154,10 @@ public class AdminRecipeController extends HttpServlet {
             return;
         }
         int productId = 0;
+        boolean saved = false;
+        session.removeAttribute("recipeError");
+        session.removeAttribute("recipeMessage");
+        session.removeAttribute("recipeDraft");
         try {
             if (!"save".equals(request.getParameter("action"))) {
                 throw new IllegalArgumentException("Thao tác công thức không hợp lệ.");
@@ -141,6 +172,7 @@ public class AdminRecipeController extends HttpServlet {
                     request.getParameterValues("ingredientId"),
                     request.getParameterValues("quantity"));
             productIngredientDAO.saveRecipe(productId, recipeIngredients);
+            saved = true;
             session.setAttribute("recipeMessage", "Đã lưu công thức cho món “" + product.getName() + "”.");
         } catch (IllegalArgumentException e) {
             session.setAttribute("recipeError", e.getMessage());
@@ -150,8 +182,25 @@ public class AdminRecipeController extends HttpServlet {
         }
 
         String redirect = request.getContextPath() + "/admin/recipes";
-        if (productId > 0) redirect += "?productId=" + productId;
+        if (!saved && productId > 0) {
+            session.setAttribute("recipeDraft", new RecipeDraft(productId, submittedRows(
+                    request.getParameterValues("ingredientId"), request.getParameterValues("quantity"))));
+            redirect += "?productId=" + productId;
+        }
         response.sendRedirect(redirect);
+    }
+
+    private List<Map<String, String>> submittedRows(String[] ingredientIds, String[] quantities) {
+        List<Map<String, String>> rows = new ArrayList<>();
+        int length = Math.max(ingredientIds == null ? 0 : ingredientIds.length,
+                quantities == null ? 0 : quantities.length);
+        for (int i = 0; i < length; i++) {
+            String id = ingredientIds != null && i < ingredientIds.length ? ingredientIds[i] : null;
+            String quantity = quantities != null && i < quantities.length ? quantities[i] : null;
+            rows.add(Map.of("ingredientId", id == null ? "" : id,
+                    "quantity", quantity == null ? "" : quantity));
+        }
+        return rows;
     }
 
     private List<ProductIngredient> parseIngredients(int productId, String[] ingredientIds, String[] quantities) {

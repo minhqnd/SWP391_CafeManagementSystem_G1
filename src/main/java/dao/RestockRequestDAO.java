@@ -9,7 +9,7 @@ import java.util.*;
 
 public class RestockRequestDAO extends BaseDAO{
     public List<Ingredient> getLowStockIngredients(){
-        List<Ingredient> list=new ArrayList<>();String sql="SELECT i.*,s.name supplier_name FROM ingredients i LEFT JOIN suppliers s ON s.id=i.supplier_id WHERE i.current_stock<=i.min_stock_level ORDER BY (i.min_stock_level-i.current_stock) DESC";
+        List<Ingredient> list=new ArrayList<>();String sql="SELECT i.*,s.name supplier_name FROM ingredients i LEFT JOIN suppliers s ON s.id=i.supplier_id WHERE i.is_active=1 AND i.current_stock<=i.min_stock_level ORDER BY (i.min_stock_level-i.current_stock) DESC";
         try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql);ResultSet rs=ps.executeQuery()){
             while(rs.next()){Ingredient i=new Ingredient(rs.getInt("id"),(Integer)rs.getObject("supplier_id"),rs.getString("name"),rs.getString("unit"),rs.getBigDecimal("current_stock"),rs.getBigDecimal("min_stock_level"));i.setSupplierName(rs.getString("supplier_name"));list.add(i);}
         }catch(Exception e){throw new IllegalStateException("Cannot load low stock",e);}return list;
@@ -27,6 +27,7 @@ public class RestockRequestDAO extends BaseDAO{
         if(items==null||items.isEmpty())throw new IllegalArgumentException("Đề xuất phải có ít nhất một nguyên liệu.");
         String initial="DRAFT".equals(status)?"DRAFT":"PENDING_APPROVAL";
         try(Connection c=getConnection()){c.setAutoCommit(false);try{
+            for(RestockItem item:items) IngredientDAO.requireActive(c,item.getIngredientId());
             int id;try(PreparedStatement ps=c.prepareStatement("INSERT INTO restock_requests(requester_id,status,reason,note) VALUES(?,?,?,?)",Statement.RETURN_GENERATED_KEYS)){ps.setInt(1,requesterId);ps.setString(2,initial);ps.setString(3,reason);ps.setString(4,note);ps.executeUpdate();try(ResultSet rs=ps.getGeneratedKeys()){if(!rs.next())throw new SQLException("Không tạo được đề xuất.");id=rs.getInt(1);}}
             try(PreparedStatement ps=c.prepareStatement("INSERT INTO restock_request_items(request_id,ingredient_id,quantity,item_note) VALUES(?,?,?,?)")){for(RestockItem i:items){if(i.getQuantity()==null||i.getQuantity().signum()<=0)throw new IllegalArgumentException("Số lượng đề xuất phải lớn hơn 0.");ps.setInt(1,id);ps.setInt(2,i.getIngredientId());ps.setBigDecimal(3,i.getQuantity());ps.setString(4,i.getItemNote());ps.addBatch();}ps.executeBatch();}
             c.commit();return id;}catch(Exception e){c.rollback();throw e;}}
@@ -46,6 +47,6 @@ public class RestockRequestDAO extends BaseDAO{
         }
     }
     public Map<String,Object> getRestockStats(){
-        Map<String,Object> m=new HashMap<>();try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement("SELECT (SELECT COUNT(*) FROM ingredients WHERE current_stock<=min_stock_level) low_stock,(SELECT COUNT(*) FROM restock_requests WHERE status='PENDING_APPROVAL') pending_count,(SELECT COUNT(*) FROM restock_requests WHERE status='APPROVED') approved_count,(SELECT COUNT(*) FROM restock_requests WHERE status='DRAFT') draft_count");ResultSet rs=ps.executeQuery()){if(rs.next()){m.put("lowStock",rs.getInt(1));m.put("pendingCount",rs.getInt(2));m.put("approvedCount",rs.getInt(3));m.put("draftCount",rs.getInt(4));}}catch(Exception e){throw new IllegalStateException(e);}return m;
+        Map<String,Object> m=new HashMap<>();try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement("SELECT (SELECT COUNT(*) FROM ingredients WHERE is_active=1 AND current_stock<=min_stock_level) low_stock,(SELECT COUNT(*) FROM restock_requests WHERE status='PENDING_APPROVAL') pending_count,(SELECT COUNT(*) FROM restock_requests WHERE status='APPROVED') approved_count,(SELECT COUNT(*) FROM restock_requests WHERE status='DRAFT') draft_count");ResultSet rs=ps.executeQuery()){if(rs.next()){m.put("lowStock",rs.getInt(1));m.put("pendingCount",rs.getInt(2));m.put("approvedCount",rs.getInt(3));m.put("draftCount",rs.getInt(4));}}catch(Exception e){throw new IllegalStateException(e);}return m;
     }
 }

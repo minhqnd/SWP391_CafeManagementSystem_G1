@@ -3,6 +3,21 @@
 -- Canonical MySQL 8.x schema and data snapshot (24 tables)
 -- Generated from aura_cafe_erp on 2026-10-28
 -- =====================================================
+-- WARNING: Running this entire file resets tables and reloads sample data.
+-- For an existing database, run ONLY the following optional upgrade block
+-- (without the enclosing comment markers). It preserves existing rows.
+/*
+USE aura_cafe_erp;
+SET @ingredient_active_ddl = IF(
+    EXISTS(SELECT 1 FROM information_schema.columns
+           WHERE table_schema = DATABASE() AND table_name = 'ingredients' AND column_name = 'is_active'),
+    'SELECT 1',
+    'ALTER TABLE ingredients ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE AFTER unit'
+);
+PREPARE ingredient_active_stmt FROM @ingredient_active_ddl;
+EXECUTE ingredient_active_stmt;
+DEALLOCATE PREPARE ingredient_active_stmt;
+*/
 -- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
 --
 -- Host: localhost    Database: aura_cafe_erp
@@ -219,6 +234,7 @@ CREATE TABLE `ingredients` (
   `supplier_id` int DEFAULT NULL,
   `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
   `unit` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `current_stock` decimal(12,3) NOT NULL DEFAULT '0.000',
   `min_stock_level` decimal(12,3) NOT NULL DEFAULT '0.000',
   PRIMARY KEY (`id`),
@@ -234,7 +250,7 @@ CREATE TABLE `ingredients` (
 
 LOCK TABLES `ingredients` WRITE;
 /*!40000 ALTER TABLE `ingredients` DISABLE KEYS */;
-INSERT INTO `ingredients` VALUES (1,1,'Coffee beans','gram',10000.000,2000.000),(2,2,'Fresh milk','ml',20000.000,5000.000),(3,2,'Peach syrup','ml',5000.000,1000.000),(4,2,'Black tea','gram',8000.000,1500.000),(5,2,'Tapioca pearls','gram',4000.000,1000.000),(6,3,'Cheesecake slice','piece',30.000,5.000),(7,2,'Orange','piece',100.000,20.000),(8,2,'Lemon','piece',80.000,15.000);
+INSERT INTO `ingredients` (`id`,`supplier_id`,`name`,`unit`,`current_stock`,`min_stock_level`) VALUES (1,1,'Coffee beans','gram',10000.000,2000.000),(2,2,'Fresh milk','ml',20000.000,5000.000),(3,2,'Peach syrup','ml',5000.000,1000.000),(4,2,'Black tea','gram',8000.000,1500.000),(5,2,'Tapioca pearls','gram',4000.000,1000.000),(6,3,'Cheesecake slice','piece',30.000,5.000),(7,2,'Orange','piece',100.000,20.000),(8,2,'Lemon','piece',80.000,15.000);
 /*!40000 ALTER TABLE `ingredients` ENABLE KEYS */;
 UNLOCK TABLES;
 

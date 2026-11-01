@@ -158,12 +158,11 @@ public class CounterOrderController extends HttpServlet {
         User customer = userDAO.findCustomerByPhone(phone.trim());
         if (customer != null) {
             String json = String.format(
-                    "{\"success\":true,\"customer\":{\"id\":%d,\"fullName\":\"%s\",\"phone\":\"%s\",\"email\":\"%s\",\"tierName\":\"%s\",\"totalPoints\":%d}}",
+                    "{\"success\":true,\"customer\":{\"id\":%d,\"fullName\":\"%s\",\"phone\":\"%s\",\"email\":\"%s\",\"totalPoints\":%d}}",
                     customer.getId(),
                     escapeJson(customer.getFullName()),
                     escapeJson(customer.getPhone() != null ? customer.getPhone() : ""),
                     escapeJson(customer.getEmail() != null ? customer.getEmail() : ""),
-                    escapeJson(customer.getTierName() != null ? customer.getTierName() : "MEMBER"),
                     customer.getTotalPoints()
             );
             sendJson(response, HttpServletResponse.SC_OK, json);
