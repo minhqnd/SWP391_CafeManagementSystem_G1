@@ -188,12 +188,6 @@
                                 Đơn đã pha
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link aura-nav-link"
-                               href="${pageContext.request.contextPath}/counter-orders">
-                                Đơn tại quầy
-                            </a>
-                        </li>
                     </c:when>
                     <c:otherwise>
 

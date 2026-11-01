@@ -1,9 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%--
-    Thanh header dùng chung cho các màn Thu ngân: Bán tại quầy (/cashier), Đơn tại quầy (/counter-orders),
+    Thanh header dùng chung cho các màn Thu ngân: Bán tại quầy (/cashier),
     Chốt ca / Bàn giao ca (/cashier/handover).
-    param.active : pos | orders | counter | close | handover
+    param.active : pos | orders | close | handover
     param.onPos  : true khi đặt trên màn Bán tại quầy - 2 mục đầu là nút chuyển tab ngay trên trang
                    (id tabBtnPos / tabBtnOrders dùng bởi switchMainTab), ở màn khác là link về /cashier.
     param.orderCount : số đơn hôm nay (chỉ màn Bán tại quầy có)
@@ -67,9 +67,6 @@
                 </a>
             </c:otherwise>
         </c:choose>
-        <a class="nav-tab-btn ${param.active eq 'counter' ? 'active' : ''}" href="${ctx}/counter-orders">
-            <span class="material-symbols-outlined">list_alt</span><span>Đơn tại quầy</span>
-        </a>
         <a class="nav-tab-btn ${param.active eq 'close' ? 'active' : ''}" href="${ctx}/cashier/handover?mode=close">
             <span class="material-symbols-outlined">calculate</span><span>Chốt ca</span>
         </a>
