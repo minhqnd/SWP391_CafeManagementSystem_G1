@@ -54,10 +54,10 @@
         .pill { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
         .pill-blue { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
         .pill-amber { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
-        .pill-pending { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+        .pill-pending { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
         .pill-processing { background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; }
         .pill-resolved { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
-        .pill-rejected { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .pill-rejected { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
         
         /* Content & Reply columns */
         .review-content { font-size: 12.5px; color: #1e293b; line-height: 1.45; font-weight: 500; }
@@ -134,7 +134,7 @@
             font-weight: 700;
             white-space: nowrap;
         }
-        .action-complete.rejected { color: #64748b; }
+        .action-complete.rejected { color: #059669; }
         
         /* Modal & Dialog */
         .modal-content { border: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.04); }
