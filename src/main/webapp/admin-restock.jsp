@@ -2,8 +2,15 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core"%><%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aura Café | Đề xuất nhập hàng</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"><style>body{background:#f7f7f7}.main{margin-left:190px;padding:24px}.box{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px}.aura{background:#a51225;color:#fff}@media(max-width:900px){.main{margin-left:0}}</style></head><body>
-<jsp:include page="/components/admin-sidebar.jsp"><jsp:param name="activeMenu" value="restock"/></jsp:include><main class="main"><div class="d-flex justify-content-between mb-4"><div><h1 class="h3 fw-bold">Đề xuất nhập hàng</h1><p class="text-muted">Nhu cầu nội bộ; chưa phải phiếu mua và không cập nhật tồn kho.</p></div><a class="btn btn-outline-dark" href="${ctx}/admin/purchases">Sang Phiếu nhập hàng</a></div>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="${ctx}/assets/css/admin-schedule.css" rel="stylesheet">
+<style>.box{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px}.aura{background:#a51225;color:#fff}.restock-mobile-nav{display:none}@media(max-width:768px){.restock-mobile-nav{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e7eb}}</style></head><body class="admin-body">
+<nav class="restock-mobile-nav" aria-label="Điều hướng quản trị"><a href="${ctx}/admin-dashboard.jsp">Aura Café · Admin</a><a href="${ctx}/login?action=logout">Đăng xuất</a></nav>
+<jsp:include page="/components/admin-sidebar.jsp"><jsp:param name="activeMenu" value="restock"/></jsp:include><main class="admin-main-wrapper"><div class="d-flex flex-wrap gap-2 justify-content-between mb-4"><div><h1 class="h3 fw-bold">Đề xuất nhập hàng</h1><p class="text-muted">Nhu cầu nội bộ; chưa phải phiếu mua và không cập nhật tồn kho.</p></div><a class="btn btn-outline-dark align-self-start" href="${ctx}/admin/purchases">Sang Phiếu nhập hàng</a></div>
 <c:if test="${not empty restockMessage}"><div class="alert alert-success"><c:out value="${restockMessage}"/></div></c:if><c:if test="${not empty restockError}"><div class="alert alert-danger"><c:out value="${restockError}"/></div></c:if>
 <div class="row g-3"><div class="col-lg-4"><section class="box"><h2 class="h5">Tạo đề xuất</h2><form method="post">
 <input type="hidden" name="csrfToken" value="${sessionScope.restockCsrfToken}"><label class="form-label">Nguyên liệu</label><select class="form-select mb-2" name="ingredientId" required><c:forEach var="i" items="${allIngredients}"><option value="${i.id}"><c:out value="${i.name}"/> (${i.unit})</option></c:forEach></select>

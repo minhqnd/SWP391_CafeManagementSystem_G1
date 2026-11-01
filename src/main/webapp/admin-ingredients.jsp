@@ -148,7 +148,7 @@
                     <c:forEach var="item" items="${ingredients}">
                         <tr>
                             <td class="text-danger fw-bold">#<c:out value="${item.id}" /></td>
-                            <td><strong class="text-dark"><c:out value="${item.name}" /></strong></td>
+                            <td><strong class="text-dark"><c:out value="${item.name}" /></strong><c:if test="${not item.active}"><span class="badge bg-secondary d-block mt-1">Ngừng sử dụng</span></c:if></td>
                             <td class="text-muted"><c:out value="${item.unit}" /></td>
                             <td><c:out value="${item.supplierName}" default="—" /></td>
                             <td class="text-end fw-bold">
@@ -186,14 +186,6 @@
                                         onclick="prepareEditIngredient(${item.id}, '<c:out value="${item.name}" />', '<c:out value="${item.unit}" />', ${item.supplierId != null ? item.supplierId : 0}, ${item.minStockLevel})">
                                     <span class="material-symbols-outlined fs-6 align-middle text-secondary">edit</span>
                                 </button>
-                                <form method="post" action="${ctx}/admin/ingredients" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa nguyên liệu này?');">
-                                    <input type="hidden" name="csrfToken" value="${sessionScope.ingredientCsrfToken}">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="${item.id}">
-                                    <button type="submit" class="btn btn-sm btn-light border text-danger" title="Xóa">
-                                        <span class="material-symbols-outlined fs-6 align-middle">delete</span>
-                                    </button>
-                                </form>
                             </td>
                         </tr>
                     </c:forEach>

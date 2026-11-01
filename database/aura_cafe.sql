@@ -3,6 +3,21 @@
 -- TOTAL: 25 TABLES
 -- MySQL 8.0.16+
 -- =====================================================
+-- WARNING: Running this entire file resets tables and reloads sample data.
+-- For an existing database, run ONLY the following optional upgrade block
+-- (without the enclosing comment markers). It preserves existing rows.
+/*
+USE aura_cafe_erp;
+SET @ingredient_active_ddl = IF(
+    EXISTS(SELECT 1 FROM information_schema.columns
+           WHERE table_schema = DATABASE() AND table_name = 'ingredients' AND column_name = 'is_active'),
+    'SELECT 1',
+    'ALTER TABLE ingredients ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE AFTER unit'
+);
+PREPARE ingredient_active_stmt FROM @ingredient_active_ddl;
+EXECUTE ingredient_active_stmt;
+DEALLOCATE PREPARE ingredient_active_stmt;
+*/
 SET NAMES utf8mb4;
 
 
@@ -643,6 +658,7 @@ CREATE TABLE ingredients (
     supplier_id INT NULL,
     name VARCHAR(150) NOT NULL,
     unit VARCHAR(20) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
     current_stock DECIMAL(12,3) NOT NULL DEFAULT 0,
     min_stock_level DECIMAL(12,3) NOT NULL DEFAULT 0,

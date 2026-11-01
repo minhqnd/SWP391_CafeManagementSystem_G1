@@ -119,7 +119,7 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     private User mapCustomer(ResultSet rs) throws SQLException {
         return new User(rs.getInt("id"), rs.getString("full_name"), rs.getString("phone"),
                 rs.getString("email"), rs.getString("role"), rs.getString("position"),
-                rs.getString("status"), "", "", "", rs.getInt("total_points"));
+                rs.getString("status"), "", "", rs.getInt("total_points"));
     }
 
     public CustomerActivity getCustomerActivity(int customerId) throws SQLException {

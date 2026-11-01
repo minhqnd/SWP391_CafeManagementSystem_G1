@@ -7,12 +7,43 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * DeliveryAreaDAO - Quận/Huyện quán giao tới + phí giao cố định từng quận (bảng delivery_areas).
  */
 public class DeliveryAreaDAO extends BaseDAO {
+
+    /**
+     * Khu vực mặc định khớp với database/aura_cafe.sql. Checkout dùng danh sách
+     * này khi một database cũ chưa có bảng delivery_areas hoặc truy vấn tạm thời
+     * thất bại, tránh khóa hoàn toàn luồng đặt hàng.
+     */
+    public static List<DeliveryArea> getDefaultAreas() {
+        return new ArrayList<>(Arrays.asList(
+                new DeliveryArea(0, "Hoàn Kiếm", 10000, true),
+                new DeliveryArea(0, "Ba Đình", 15000, true),
+                new DeliveryArea(0, "Hai Bà Trưng", 15000, true),
+                new DeliveryArea(0, "Đống Đa", 15000, true),
+                new DeliveryArea(0, "Tây Hồ", 20000, true),
+                new DeliveryArea(0, "Long Biên", 20000, true),
+                new DeliveryArea(0, "Thanh Xuân", 20000, true),
+                new DeliveryArea(0, "Hoàng Mai", 20000, true),
+                new DeliveryArea(0, "Cầu Giấy", 25000, true),
+                new DeliveryArea(0, "Nam Từ Liêm", 30000, true),
+                new DeliveryArea(0, "Bắc Từ Liêm", 30000, true),
+                new DeliveryArea(0, "Hà Đông", 30000, true)
+        ));
+    }
+
+    public static DeliveryArea findDefault(String district) {
+        if (district == null) return null;
+        for (DeliveryArea area : getDefaultAreas()) {
+            if (area.getDistrict().equalsIgnoreCase(district.trim())) return area;
+        }
+        return null;
+    }
 
     /** Các quận đang nhận giao (bước Checkout), phí thấp trước */
     public List<DeliveryArea> getActiveAreas() throws SQLException, ClassNotFoundException {

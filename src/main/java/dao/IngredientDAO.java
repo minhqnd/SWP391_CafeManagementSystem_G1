@@ -17,18 +17,20 @@ public class IngredientDAO extends BaseDAO {
 
     public List<Ingredient> getAllIngredients() {
         List<Ingredient> list = new ArrayList<>();
-        String sql = "SELECT id, name, unit FROM ingredients ORDER BY name ASC";
+        String sql = "SELECT id, name, unit, is_active FROM ingredients ORDER BY name ASC";
         
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             
             while (rs.next()) {
-                list.add(new Ingredient(
+                Ingredient item = new Ingredient(
                     rs.getInt("id"), 
                     rs.getString("name"), 
                     rs.getString("unit")
-                ));
+                );
+                item.setActive(rs.getBoolean("is_active"));
+                list.add(item);
             }
         } catch (Exception e) {
             throw new IllegalStateException("Could not load ingredients", e);
@@ -66,7 +68,7 @@ public class IngredientDAO extends BaseDAO {
         Map<Integer, BigDecimal> lastPrices = getLatestPurchasePrices();
 
         StringBuilder sql = new StringBuilder(
-            "SELECT i.id, i.supplier_id, i.name, i.unit, i.current_stock, i.min_stock_level, " +
+            "SELECT i.id, i.supplier_id, i.name, i.unit, i.is_active, i.current_stock, i.min_stock_level, " +
             "s.name AS supplier_name, " +
             "COALESCE(rec.recipe_count, 0) AS used_in_recipes " +
             "FROM ingredients i " +
@@ -108,6 +110,7 @@ public class IngredientDAO extends BaseDAO {
                         rs.getBigDecimal("min_stock_level")
                     );
                     item.setSupplierName(rs.getString("supplier_name"));
+                    item.setActive(rs.getBoolean("is_active"));
                     item.setUsedInRecipesCount(rs.getInt("used_in_recipes"));
                     item.setLastPurchasePrice(lastPrices.get(item.getId()));
                     list.add(item);
@@ -120,7 +123,7 @@ public class IngredientDAO extends BaseDAO {
     }
 
     public Ingredient getIngredientById(int id) {
-        String sql = "SELECT i.id, i.supplier_id, i.name, i.unit, i.current_stock, i.min_stock_level, " +
+        String sql = "SELECT i.id, i.supplier_id, i.name, i.unit, i.is_active, i.current_stock, i.min_stock_level, " +
                      "s.name AS supplier_name, " +
                      "COALESCE(rec.recipe_count, 0) AS used_in_recipes " +
                      "FROM ingredients i " +
@@ -146,6 +149,7 @@ public class IngredientDAO extends BaseDAO {
                         rs.getBigDecimal("min_stock_level")
                     );
                     item.setSupplierName(rs.getString("supplier_name"));
+                    item.setActive(rs.getBoolean("is_active"));
                     item.setUsedInRecipesCount(rs.getInt("used_in_recipes"));
                     Map<Integer, BigDecimal> lastPrices = getLatestPurchasePrices();
                     item.setLastPurchasePrice(lastPrices.get(item.getId()));
@@ -228,15 +232,33 @@ public class IngredientDAO extends BaseDAO {
         return false;
     }
 
-    public boolean deleteIngredient(int id) throws SQLException, ClassNotFoundException {
-        if (isIngredientUsedInRecipes(id)) {
-            throw new SQLException("Nguyên liệu đang được sử dụng trong công thức món, không thể xóa!");
-        }
-        String sql = "DELETE FROM ingredients WHERE id = ?";
+    public List<Ingredient> getActiveIngredientsWithDetails() {
+        return getAllIngredientsWithDetails(null, null).stream().filter(Ingredient::isActive).toList();
+    }
+
+    public boolean updateIngredientActive(int id, boolean active) throws SQLException, ClassNotFoundException {
+        if (id <= 0) throw new IllegalArgumentException("Mã nguyên liệu không hợp lệ.");
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement("UPDATE ingredients SET is_active = ? WHERE id = ?")) {
+            ps.setBoolean(1, active);
+            ps.setInt(2, id);
+            if (ps.executeUpdate() > 0) return true;
+            try (PreparedStatement exists = conn.prepareStatement("SELECT 1 FROM ingredients WHERE id = ?")) {
+                exists.setInt(1, id);
+                try (ResultSet rs = exists.executeQuery()) { return rs.next(); }
+            }
+        }
+    }
+
+    /** Locks the state until the caller commits its new purchase/restock/BOM. */
+    static void requireActive(Connection conn, int id) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT is_active FROM ingredients WHERE id = ? FOR UPDATE")) {
             ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next() || !rs.getBoolean("is_active")) {
+                    throw new SQLException("Nguyên liệu không tồn tại hoặc đã ngừng sử dụng. Hãy chọn nguyên liệu đang hoạt động.", "45000");
+                }
+            }
         }
     }
 
@@ -250,7 +272,7 @@ public class IngredientDAO extends BaseDAO {
         String sql = "SELECT " +
                      " (SELECT COUNT(*) FROM ingredients) AS total_ing, " +
                      " (SELECT COUNT(DISTINCT supplier_id) FROM ingredients WHERE supplier_id IS NOT NULL) AS total_sup, " +
-                     " (SELECT COUNT(*) FROM ingredients WHERE current_stock <= min_stock_level) AS low_stock, " +
+                     " (SELECT COUNT(*) FROM ingredients WHERE is_active = 1 AND current_stock <= min_stock_level) AS low_stock, " +
                      " (SELECT COUNT(*) FROM ingredients i " +
                      "  WHERE NOT EXISTS (SELECT 1 FROM product_ingredients pi WHERE pi.ingredient_id = i.id)) AS unused_recipes";
 

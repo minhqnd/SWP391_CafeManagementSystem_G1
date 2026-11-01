@@ -199,7 +199,7 @@
                                                                 <% } %>
                                                                 <div class="mb-3">
                                                                     <label class="form-label fw-medium" style="font-size: 0.85rem;">Email</label>
-                                                                    <input type="email"
+                                                                    <input type="text"
                                                                         class="form-control bg-light border-0 p-2"
                                                                         name="username"
                                                                         placeholder="email@domain.com"

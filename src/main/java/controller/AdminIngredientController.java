@@ -88,6 +88,8 @@ public class AdminIngredientController extends HttpServlet {
             return;
         }
 
+        session.removeAttribute("ingredientMessage");
+        session.removeAttribute("ingredientError");
         String action = request.getParameter("action");
         if (action == null) action = "";
 
@@ -137,10 +139,20 @@ public class AdminIngredientController extends HttpServlet {
                     }
                     break;
                 }
-                case "delete": {
+                case "toggle": {
                     int id = Integer.parseInt(request.getParameter("id"));
-                    ingredientDAO.deleteIngredient(id);
-                    session.setAttribute("ingredientMessage", "Xóa nguyên vật liệu thành công!");
+                    String rawActive = request.getParameter("active");
+                    if (!"true".equals(rawActive) && !"false".equals(rawActive)) {
+                        throw new NumberFormatException("Invalid active state");
+                    }
+                    boolean active = Boolean.parseBoolean(rawActive);
+                    if (ingredientDAO.updateIngredientActive(id, active)) {
+                        session.setAttribute("ingredientMessage", active
+                                ? "Đã hiện lại nguyên liệu. Có thể chọn cho công thức và phiếu nhập mới."
+                                : "Đã ngừng sử dụng nguyên liệu. Tồn kho, công thức và lịch sử cũ được giữ nguyên.");
+                    } else {
+                        session.setAttribute("ingredientError", "Không tìm thấy nguyên liệu. Hãy tải lại danh sách.");
+                    }
                     break;
                 }
                 default:
@@ -149,10 +161,22 @@ public class AdminIngredientController extends HttpServlet {
             }
         } catch (SQLException | ClassNotFoundException | NumberFormatException e) {
             getServletContext().log("Ingredient action error", e);
-            session.setAttribute("ingredientError", e.getMessage());
+            session.setAttribute("ingredientError", ingredientErrorMessage(e));
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/ingredients");
+    }
+
+    static String ingredientErrorMessage(Exception error) {
+        if (error instanceof SQLException sql) {
+            if ("45000".equals(sql.getSQLState())) return sql.getMessage();
+            if ("23000".equals(sql.getSQLState())) {
+                return "Không thể hoàn tất thao tác vì nguyên liệu còn liên kết với dữ liệu khác. Hãy tải lại danh sách và kiểm tra công thức, lịch sử kho hoặc phiếu nhập hàng.";
+            }
+            return "Không thể cập nhật nguyên liệu. Vui lòng thử lại hoặc kiểm tra kết nối cơ sở dữ liệu.";
+        }
+        if (error instanceof NumberFormatException) return "Mã nguyên liệu, số lượng hoặc ngưỡng tồn không hợp lệ.";
+        return "Không thể cập nhật nguyên liệu. Vui lòng liên hệ quản trị viên.";
     }
 
     private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {

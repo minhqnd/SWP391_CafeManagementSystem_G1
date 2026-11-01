@@ -12,42 +12,6 @@ import model.User;
 @WebServlet(name = "ProfileController", urlPatterns = {"/profile"})
 public class ProfileController extends HttpServlet {
 
-    private void calculateLoyaltyData(HttpServletRequest request, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        int points = user.getTotalPoints();
-        String nextTier = "Vàng";
-        String currentDisplayTier = "SILVER";
-        int nextPoints = 300;
-
-        if (points < 300) {
-            currentDisplayTier = "MEMBER";
-            nextTier = "Vàng";
-            nextPoints = 300;
-        } else if (points < 800) {
-            currentDisplayTier = "GOLD";
-            nextTier = "Kim Cương";
-            nextPoints = 800;
-        } else if (points < 1500) {
-            currentDisplayTier = "DIAMOND";
-            nextTier = "VIP";
-            nextPoints = 1500;
-        } else {
-            currentDisplayTier = "VIP";
-            nextTier = "Tối đa";
-            nextPoints = points;
-        }
-
-        int pointsNeeded = nextPoints - points;
-        int progressPercent = (int) Math.round((double) points / nextPoints * 100);
-        if (progressPercent > 100) progressPercent = 100;
-
-        request.setAttribute("pointsNeeded", pointsNeeded);
-        request.setAttribute("nextTierName", nextTier);
-        request.setAttribute("currentDisplayTier", currentDisplayTier);
-        request.setAttribute("nextPoints", nextPoints);
-        request.setAttribute("progressPercent", progressPercent);
-    }
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -59,8 +23,6 @@ public class ProfileController extends HttpServlet {
             return;
         }
 
-        calculateLoyaltyData(request, session);
-        
         dao.UserDAO userDAO = new dao.UserDAO();
         java.util.List<model.LoyaltyTransaction> history = userDAO.getLoyaltyHistoryByUserId(((User)session.getAttribute("user")).getId());
         request.setAttribute("loyaltyHistory", history);
@@ -144,8 +106,6 @@ public class ProfileController extends HttpServlet {
                 }
             }
         }
-        
-        calculateLoyaltyData(request, session);
         
         java.util.List<model.LoyaltyTransaction> history = new dao.UserDAO().getLoyaltyHistoryByUserId(((User)session.getAttribute("user")).getId());
         request.setAttribute("loyaltyHistory", history);

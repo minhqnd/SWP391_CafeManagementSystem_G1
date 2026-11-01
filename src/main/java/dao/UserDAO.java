@@ -32,16 +32,13 @@ public class UserDAO extends BaseDAO {
         }
         identifier = identifier.trim();
         password = password.trim();
+        String sql = "SELECT * FROM users WHERE (email = ? OR phone = ?)";
 
-        String sql = "SELECT * FROM users " +
-                     "WHERE (phone = ? OR email = ? OR SUBSTRING_INDEX(email, '@', 1) = ?)";
-
-        try (Connection conn = DBContext.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setString(1, identifier);
             ps.setString(2, identifier);
-            ps.setString(3, identifier);
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -82,7 +79,6 @@ public class UserDAO extends BaseDAO {
                         if (addressStr == null) addressStr = "";
                     }
 
-                    String tierName = "";
                     int totalPoints = hasColumn(rs, "total_points") ? rs.getInt("total_points") : 0;
 
                     return new User(
@@ -95,7 +91,6 @@ public class UserDAO extends BaseDAO {
                             status,
                             birthdayStr,
                             addressStr,
-                            tierName,
                             totalPoints
                     );
                 }
@@ -263,7 +258,6 @@ public class UserDAO extends BaseDAO {
                             rs.getString("status"),
                             "",
                             "",
-                            "",
                             rs.getInt("total_points")
                     );
                 }
@@ -282,7 +276,7 @@ public class UserDAO extends BaseDAO {
             try(ResultSet rs=ps.executeQuery()){
                 if(rs.next()) return new model.User(rs.getInt("id"),rs.getString("full_name"),rs.getString("phone"),
                         rs.getString("email"),rs.getString("role"),rs.getString("position"),rs.getString("status"),
-                        "","","",rs.getInt("total_points"));
+                        "","",rs.getInt("total_points"));
             }
         } catch(Exception e){e.printStackTrace();}
         return null;

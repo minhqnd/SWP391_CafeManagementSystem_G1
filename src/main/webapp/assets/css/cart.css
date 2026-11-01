@@ -402,8 +402,6 @@ body.aura-cart-page {
     padding: 1rem;
 }
 
-.checkout-locked .aura-card { opacity: 0.6; }
-
 .login-required {
     border: 1px dashed #e3a3aa;
     background: var(--aura-primary-soft);

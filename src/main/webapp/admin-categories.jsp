@@ -107,10 +107,6 @@
                                         <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="${category.id}">
                                         <c:choose><c:when test="${category.status eq 'ACTIVE'}"><input type="hidden" name="status" value="INACTIVE"><button class="btn btn-sm btn-outline-secondary" title="Tạm ẩn"><span class="material-symbols-outlined fs-6 align-middle">visibility_off</span></button></c:when><c:otherwise><input type="hidden" name="status" value="ACTIVE"><button class="btn btn-sm btn-outline-success" title="Hiện lại"><span class="material-symbols-outlined fs-6 align-middle">visibility</span></button></c:otherwise></c:choose>
                                     </form>
-                                    <form method="post" action="${ctx}/admin/categories" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa danh mục này?')">
-                                        <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="${category.id}">
-                                        <button class="btn btn-sm btn-outline-danger" title="Xóa"><span class="material-symbols-outlined fs-6 align-middle">delete</span></button>
-                                    </form>
                                 </td>
                             </tr>
                         </c:forEach>

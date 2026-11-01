@@ -67,7 +67,7 @@
                                 Tài khoản <c:out value="${sessionScope.user.role}" /> hiện tại chỉ dùng cho nghiệp vụ nội bộ. Hãy đăng nhập bằng tài khoản CUSTOMER.
                             </c:when>
                             <c:otherwise>
-                                Bạn cần đăng nhập bằng tài khoản khách hàng để nhập địa chỉ giao hàng, dùng điểm Aura và chuyển sang bước thanh toán.
+                                Bạn có thể nhập trước thông tin giao hàng. Hãy đăng nhập bằng tài khoản khách hàng để xác nhận đơn, dùng điểm Aura và chuyển sang bước thanh toán.
                             </c:otherwise>
                         </c:choose>
                     </div>
@@ -88,9 +88,9 @@
 
             <div class="row g-4">
 
-                <%-- ===== Cột trái: Thông tin giao hàng (khoá khi chưa đăng nhập) ===== --%>
+                <%-- ===== Cột trái: Cho phép nhập trước; nút xác nhận và server vẫn yêu cầu tài khoản CUSTOMER ===== --%>
                 <div class="col-lg-7">
-                    <fieldset class="${isGuest ? 'checkout-locked' : ''}" ${isGuest ? 'disabled' : ''}>
+                    <fieldset>
 
                         <!-- Hình thức nhận hàng (SRS 2.3.2) -->
                         <div class="aura-card p-3 p-md-4 mb-4">
@@ -148,6 +148,12 @@
                                                 </option>
                                             </c:forEach>
                                         </select>
+                                        <c:if test="${usingDefaultDeliveryAreas}">
+                                            <div class="form-text text-warning">Đang dùng bảng phí giao hàng mặc định.</div>
+                                        </c:if>
+                                        <c:if test="${empty deliveryAreas}">
+                                            <div class="form-text text-danger">Hiện chưa tải được khu vực giao hàng. Vui lòng thử lại sau hoặc liên hệ quán.</div>
+                                        </c:if>
                                     </div>
                                     <div class="col-md-4" data-show-for="DELIVERY">
                                         <label for="ward" class="form-label small fw-semibold mb-1">Phường / Xã *</label>

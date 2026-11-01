@@ -159,7 +159,12 @@ public class CheckoutController extends HttpServlet {
                 }
             } catch (java.sql.SQLException | ClassNotFoundException e) {
                 getServletContext().log("Cannot load delivery area", e);
-                error = "Chưa tính được phí giao hàng. Vui lòng thử lại sau.";
+                DeliveryArea fallbackArea = DeliveryAreaDAO.findDefault(district);
+                if (fallbackArea == null) {
+                    error = "Quán chưa giao tới " + district + ". Vui lòng chọn quận khác.";
+                } else {
+                    areaFee = fallbackArea.getDeliveryFee();
+                }
             }
         }
         cart.setAreaDeliveryFee(areaFee);
@@ -269,6 +274,7 @@ public class CheckoutController extends HttpServlet {
         String defaultPhone = user != null && user.getPhone() != null && user.getPhone().matches(PHONE_PATTERN)
                 ? user.getPhone()
                 : "";
+        String defaultAddress = user != null && user.getAddress() != null ? user.getAddress() : "";
 
         request.setAttribute("cart", cart);
         try {
@@ -284,7 +290,7 @@ public class CheckoutController extends HttpServlet {
         request.setAttribute("recipientPhone", paramOrDefault(request, "recipientPhone", defaultPhone));
         request.setAttribute("district", paramOrDefault(request, "district", ""));
         request.setAttribute("ward", paramOrDefault(request, "ward", ""));
-        request.setAttribute("addressDetail", paramOrDefault(request, "addressDetail", ""));
+        request.setAttribute("addressDetail", paramOrDefault(request, "addressDetail", defaultAddress));
         request.setAttribute("tableNumber", paramOrDefault(request, "tableNumber", ""));
         request.setAttribute("timeOption", paramOrDefault(request, "timeOption", "ASAP"));
         request.setAttribute("scheduledTime", paramOrDefault(request, "scheduledTime", ""));
@@ -293,7 +299,8 @@ public class CheckoutController extends HttpServlet {
             request.setAttribute("deliveryAreas", deliveryAreaDAO.getActiveAreas());
         } catch (java.sql.SQLException | ClassNotFoundException e) {
             getServletContext().log("Cannot load delivery areas", e);
-            request.setAttribute("deliveryAreas", java.util.Collections.emptyList());
+            request.setAttribute("deliveryAreas", DeliveryAreaDAO.getDefaultAreas());
+            request.setAttribute("usingDefaultDeliveryAreas", true);
         }
         request.setAttribute("city", CITY);
         request.setAttribute("storeAddress", STORE_ADDRESS);

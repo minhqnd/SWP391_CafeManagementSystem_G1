@@ -10,6 +10,10 @@
     <servlet>
         <servlet-name>AdminProductsController</servlet-name>
         <servlet-class>controller.AdminProductsController</servlet-class>
+        <multipart-config>
+            <max-file-size>5242880</max-file-size>
+            <max-request-size>6291456</max-request-size>
+        </multipart-config>
     </servlet>
     <servlet-mapping>
         <servlet-name>AdminProductsController</servlet-name>
