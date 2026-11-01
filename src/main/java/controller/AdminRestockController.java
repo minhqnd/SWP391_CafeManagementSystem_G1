@@ -21,7 +21,7 @@ public class AdminRestockController extends HttpServlet{
         if(!ScaffoldAccess.requireAdmin(r,p))return;HttpSession s=r.getSession();if(s.getAttribute("restockCsrfToken")==null)s.setAttribute("restockCsrfToken",UUID.randomUUID().toString());
         move(s,r,"restockMessage");move(s,r,"restockError");
         r.setAttribute("lowStockList",dao.getLowStockIngredients());r.setAttribute("requests",dao.getRestockRequests("ALL"));
-        r.setAttribute("allIngredients",ingredientDAO.getAllIngredientsWithDetails(null,null));r.setAttribute("stats",dao.getRestockStats());
+        r.setAttribute("allIngredients",ingredientDAO.getActiveIngredientsWithDetails());r.setAttribute("stats",dao.getRestockStats());
         r.getRequestDispatcher("/admin-restock.jsp").forward(r,p);
     }
     @Override protected void doPost(HttpServletRequest r,HttpServletResponse p)throws IOException{

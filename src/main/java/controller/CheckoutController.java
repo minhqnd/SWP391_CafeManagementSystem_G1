@@ -247,6 +247,7 @@ public class CheckoutController extends HttpServlet {
         String defaultPhone = user != null && user.getPhone() != null && user.getPhone().matches(PHONE_PATTERN)
                 ? user.getPhone()
                 : "";
+        String defaultAddress = user != null && user.getAddress() != null ? user.getAddress() : "";
 
         request.setAttribute("cart", cart);
         try {
@@ -262,7 +263,7 @@ public class CheckoutController extends HttpServlet {
         request.setAttribute("recipientPhone", paramOrDefault(request, "recipientPhone", defaultPhone));
         request.setAttribute("district", paramOrDefault(request, "district", ""));
         request.setAttribute("ward", paramOrDefault(request, "ward", ""));
-        request.setAttribute("addressDetail", paramOrDefault(request, "addressDetail", ""));
+        request.setAttribute("addressDetail", paramOrDefault(request, "addressDetail", defaultAddress));
         request.setAttribute("tableNumber", paramOrDefault(request, "tableNumber", ""));
         request.setAttribute("timeOption", paramOrDefault(request, "timeOption", "ASAP"));
         request.setAttribute("scheduledTime", paramOrDefault(request, "scheduledTime", ""));

@@ -41,3 +41,7 @@ node_modules/
 .dev.vars
 dist/
 
+### Local HTTP test artifacts ###
+/cookie.txt
+/output.json
+

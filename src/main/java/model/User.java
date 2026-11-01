@@ -14,14 +14,13 @@ public class User implements Serializable {
     private String status;
     private String birthday; // Stored as YYYY-MM-DD or standard Date string
     private String address;
-    private String tierName;
     private int totalPoints;
     private String hireDate;       // Ngày vào làm dạng YYYY-MM-DD
 
     public User() {
     }
 
-    public User(int id, String fullName, String phone, String email, String role, String position, String status, String birthday, String address, String tierName, int totalPoints) {
+    public User(int id, String fullName, String phone, String email, String role, String position, String status, String birthday, String address, int totalPoints) {
         this.id = id;
         this.fullName = fullName;
         this.phone = phone;
@@ -31,7 +30,6 @@ public class User implements Serializable {
         this.status = status;
         this.birthday = birthday;
         this.address = address;
-        this.tierName = tierName;
         this.totalPoints = totalPoints;
     }
 
@@ -127,14 +125,6 @@ public class User implements Serializable {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public String getTierName() {
-        return tierName;
-    }
-
-    public void setTierName(String tierName) {
-        this.tierName = tierName;
     }
 
     public int getTotalPoints() {

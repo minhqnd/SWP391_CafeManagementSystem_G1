@@ -4,6 +4,7 @@ import dao.CategoryDAO;
 import dao.ProductDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+@WebServlet(name = "AdminProductsController", urlPatterns = {"/admin/products"})
 @MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 6 * 1024 * 1024)
 public class AdminProductsController extends HttpServlet {
     private static final long MAX_IMAGE_SIZE = 5L * 1024 * 1024;

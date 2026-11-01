@@ -6,10 +6,6 @@
             <c:if test="${empty sessionScope.user}">
                 <c:redirect url="/?login=true" />
             </c:if>
-            <c:if test="${empty currentDisplayTier}">
-                <c:redirect url="/profile" />
-            </c:if>
-
             <!DOCTYPE html>
             <html lang="vi">
 

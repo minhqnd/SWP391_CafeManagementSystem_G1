@@ -1,12 +1,18 @@
 package dao;
 
 import model.Category;
+import context.DBContext;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,17 +28,30 @@ public class CategoryDAOTest {
 
     @Test
     @DisplayName("Test get all active categories with product count")
-    void testGetAllActiveCategoriesWithCount() {
+    void testGetAllActiveCategoriesWithCount() throws Exception {
+        Map<Integer, Integer> expectedCounts = new HashMap<>();
+        String sql = "SELECT c.id, (SELECT COUNT(*) FROM products p "
+                + "WHERE p.category_id=c.id AND p.is_available=1) AS expected_count "
+                + "FROM categories c WHERE c.status='ACTIVE'";
+        try (Connection connection = DBContext.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet results = statement.executeQuery()) {
+            while (results.next()) {
+                expectedCounts.put(results.getInt("id"), results.getInt("expected_count"));
+            }
+        }
         List<Category> categories = categoryDAO.getAllActiveCategoriesWithCount();
         assertNotNull(categories, "Category list should not be null");
-        Assumptions.assumeTrue(!categories.isEmpty(), "Skipping assertions because database is not seeded or unavailable in CI environment");
-        assertEquals(6, categories.size(), "Should have 6 active categories matching UI");
+        assertEquals(expectedCounts.size(), categories.size(), "Should return every active category in the current database");
 
         for (Category c : categories) {
             assertEquals("ACTIVE", c.getStatus());
             assertNotNull(c.getName());
-            assertTrue(c.getProductCount() >= 0, "Product count must be non-negative");
+            Integer expectedCount = expectedCounts.remove(c.getId());
+            assertNotNull(expectedCount, "Unexpected or duplicate category ID: " + c.getId());
+            assertEquals(expectedCount.intValue(), c.getProductCount(), "Available product count must match the database");
         }
+        assertTrue(expectedCounts.isEmpty(), "No active categories should be omitted");
     }
 
     @Test
