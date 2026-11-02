@@ -103,6 +103,7 @@
                                 <td><c:choose><c:when test="${category.status eq 'ACTIVE'}"><span class="badge rounded-pill text-bg-success">Hoạt động</span></c:when><c:otherwise><span class="badge rounded-pill text-bg-secondary">Tạm ẩn</span></c:otherwise></c:choose></td>
                                 <td class="text-end text-nowrap">
                                     <a class="btn btn-sm btn-outline-primary" href="${ctx}/admin/categories?editId=${category.id}" title="Sửa"><span class="material-symbols-outlined fs-6 align-middle">edit</span></a>
+                                    <%-- BF11 - ẨN/HIỆN: POST action=toggle -> AdminCategoriesController.toggle() -> UPDATE status. --%>
                                     <form method="post" action="${ctx}/admin/categories" class="d-inline">
                                         <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="${category.id}">
                                         <c:choose><c:when test="${category.status eq 'ACTIVE'}"><input type="hidden" name="status" value="INACTIVE"><button class="btn btn-sm btn-outline-secondary" title="Tạm ẩn"><span class="material-symbols-outlined fs-6 align-middle">visibility_off</span></button></c:when><c:otherwise><input type="hidden" name="status" value="ACTIVE"><button class="btn btn-sm btn-outline-success" title="Hiện lại"><span class="material-symbols-outlined fs-6 align-middle">visibility</span></button></c:otherwise></c:choose>
@@ -123,6 +124,7 @@
                     <h2 class="h6 fw-bold mb-0"><c:choose><c:when test="${not empty selectedCategory}">Sửa danh mục</c:when><c:otherwise>Thêm danh mục mới</c:otherwise></c:choose></h2>
                     <c:if test="${not empty selectedCategory}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedCategory.id}" /></span></c:if>
                 </div>
+                <%-- BF11 - THÊM/SỬA: POST action=save và ID; multipart gửi ảnh -> Controller kiểm tra -> CategoryDAO lưu. --%>
                 <form method="post" action="${ctx}/admin/categories" enctype="multipart/form-data">
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="save">
                     <input type="hidden" name="id" value="${empty selectedCategory ? 0 : selectedCategory.id}">

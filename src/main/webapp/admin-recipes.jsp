@@ -181,6 +181,8 @@
                         <div class="small mt-1">Công thức chưa được lưu. Hãy sửa dữ liệu bên dưới rồi thử lại.</div>
                     </div>
                 </c:if>
+                <%-- BF11 - LƯU BOM: POST productId, ingredientId[], quantity[] -> AdminRecipeController -> saveRecipe(). --%>
+                <%-- Nếu lỗi: recipeDraft giữ dữ liệu vừa nhập, recipeError được hiển thị trong popup để sửa lại. --%>
                 <form method="post" action="${ctx}/admin/recipes" class="recipe-editor" id="recipeForm">
                     <input type="hidden" name="action" value="save">
                     <input type="hidden" name="productId" value="${selectedProduct.id}">
@@ -249,6 +251,7 @@
     const money = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
 
     function recalculateCost() {
+        // BF11: chỉ cập nhật số tiền xem trước từ lượng nhập và giá đã nạp; server tính lại khi tải trang.
         if (!rows || !costValue) return;
         let total = 0;
         let hasLine = false;

@@ -94,6 +94,8 @@ public class ShopSettingDAO extends BaseDAO {
 
     /** Lưu toàn bộ cấu hình trong 1 transaction. Trả về false nếu lỗi (VD chưa tạo bảng shop_settings). */
     public boolean saveSettings(ShopSettings settings) {
+        // BF12: Controller đã kiểm tra quy tắc; DAO lưu các khóa cấu hình theo dạng key/value.
+        // Khóa đã có thì UPDATE, chưa có thì INSERT; các khóa được lưu cùng một transaction.
         String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) "
                 + "ON DUPLICATE KEY UPDATE setting_value = ?";
 

@@ -19,6 +19,7 @@ public class ProductDAO extends BaseDAO {
 
     /** All products for the admin catalog, including temporarily unavailable items. */
     public List<Product> getProductsForAdmin(Integer categoryId, String keyword) throws SQLException, ClassNotFoundException {
+        // BF11: quản trị cần thấy cả món đang bán/ngừng bán để sửa hoặc bật lại; không giống bộ lọc công khai.
         List<Product> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE 1 = 1");
         List<Object> params = new ArrayList<>();
@@ -69,6 +70,7 @@ public class ProductDAO extends BaseDAO {
     public boolean saveProduct(Product product, byte[] imageData, String contentType,
                                String fileName, boolean removeImage)
             throws SQLException, ClassNotFoundException {
+        // BF11: lưu products (gồm variants_config) và product_images cùng transaction, lỗi thì rollback.
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -96,6 +98,7 @@ public class ProductDAO extends BaseDAO {
     }
 
     private boolean saveProduct(Connection conn, Product product) throws SQLException {
+        // BF11: id>0 UPDATE, tạo mới thì INSERT rồi nhận ID để lưu ảnh vào đúng món.
         if (product.getId() > 0) {
             String sql = "UPDATE products SET category_id = ?, name = ?, base_price = ?, variants_config = ?, description = ?, is_available = ? WHERE id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -157,6 +160,7 @@ public class ProductDAO extends BaseDAO {
     }
 
     public boolean updateProductAvailability(int id, boolean available) throws SQLException, ClassNotFoundException {
+        // BF11: nút mắt chỉ đổi is_available; không xóa món hay các order_items đã tham chiếu.
         try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE products SET is_available = ? WHERE id = ?")) {
             ps.setBoolean(1, available);
             ps.setInt(2, id);
@@ -350,6 +354,7 @@ public class ProductDAO extends BaseDAO {
     }
 
     public Product getProductById(int id) {
+        // BF11: lấy thông tin/JSON cấu hình của một món; hàm này chỉ lọc ID, không tự lọc is_available.
         String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                      "FROM products p " +
                      "JOIN categories c ON p.category_id = c.id " +
@@ -415,6 +420,8 @@ public class ProductDAO extends BaseDAO {
     }
 
     public List<Product> getBestSellingProducts(int limit) {
+        // BF10/BF11: index.jsp lấy món đang bán, xếp theo lượng bán ở các trạng thái đơn trong SQL.
+        // Đọc điều kiện WHERE thực tế: hàm này lọc is_available, không có điều kiện category.status.
         List<Product> list = new ArrayList<>();
         String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image, COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity ELSE 0 END), 0) as total_sold " +
                      "FROM products p " +

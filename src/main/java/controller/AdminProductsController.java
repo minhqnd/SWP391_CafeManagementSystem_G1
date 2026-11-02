@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+// BF11 - SẢN PHẨM: admin-products.jsp -> GET danh sách/lọc/editId; POST save hoặc toggle.
 @WebServlet(name = "AdminProductsController", urlPatterns = {"/admin/products"})
 @MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 6 * 1024 * 1024)
 public class AdminProductsController extends HttpServlet {
@@ -39,6 +40,7 @@ public class AdminProductsController extends HttpServlet {
         List<Category> categories = new ArrayList<>();
         try {
             categories = categoryDAO.getAllCategoriesWithCount();
+            // BF11: lọc theo categoryId và q; editId chọn món để nạp selectedProduct vào form sửa.
             Integer categoryId = parseOptionalId(request.getParameter("categoryId"));
             String keyword = request.getParameter("q");
             List<Product> products = productDAO.getProductsForAdmin(categoryId, keyword);
@@ -86,6 +88,7 @@ public class AdminProductsController extends HttpServlet {
             return;
         }
         try {
+            // BF11: form gửi action=save để thêm/sửa, action=toggle để đổi trạng thái đang bán.
             String action = request.getParameter("action");
             if ("save".equals(action)) save(request, session);
             else if ("toggle".equals(action)) toggle(request, session);
@@ -107,6 +110,8 @@ public class AdminProductsController extends HttpServlet {
 
     private void save(HttpServletRequest request, HttpSession session)
             throws SQLException, ClassNotFoundException, ServletException, IOException {
+        // BF11 - KIỂM TRA: tên, danh mục tồn tại, giá không âm, ảnh hợp lệ rồi mới lưu.
+        // id=0 thêm mới; id>0 sửa món và giữ trạng thái bán/hướng dẫn công thức đã có.
         int id = parseId(request.getParameter("id"), true);
         int categoryId = parseId(request.getParameter("categoryId"), false);
         String name = trimToNull(request.getParameter("name"));
@@ -159,6 +164,7 @@ public class AdminProductsController extends HttpServlet {
         product.setDescription(description);
         product.setImageUrl(null);
         product.setAvailable(available);
+        // Size và topping là cấu hình JSON trong products.variants_config, không phải dòng BOM.
         product.setVariantsConfig(buildVariantsConfig(request, recipeInstructions));
         if (!productDAO.saveProduct(product, imageData, imageType, imageName, removeImage)) {
             throw new IllegalArgumentException("Không tìm thấy sản phẩm cần cập nhật.");
@@ -167,6 +173,7 @@ public class AdminProductsController extends HttpServlet {
     }
 
     private String buildVariantsConfig(HttpServletRequest request, String recipeInstructions) {
+        // BF11 - SIZE/TOPPING: đọc các mảng tên/giá từ form, kiểm tra phụ thu rồi dựng JSON lưu cùng món.
         String[] names = request.getParameterValues("sizeName");
         String[] deltas = request.getParameterValues("sizeDelta");
         String[] toppingNames = request.getParameterValues("toppingName");
@@ -232,6 +239,7 @@ public class AdminProductsController extends HttpServlet {
     }
 
     private void toggle(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
+        // BF11 - NÚT MẮT: đổi is_available, không DELETE sản phẩm; lịch sử đơn vẫn còn.
         int id = parseId(request.getParameter("id"), false);
         boolean available = "true".equals(request.getParameter("available"));
         if (!productDAO.updateProductAvailability(id, available)) throw new IllegalArgumentException("Không tìm thấy sản phẩm.");

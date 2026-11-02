@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
+// BF10 - ĐĂNG NHẬP/ĐĂNG XUẤT: POST nhận form; GET mở popup hoặc xử lý action=logout.
 @WebServlet(name = "LoginController", urlPatterns = {"/login"})
 public class LoginController extends HttpServlet {
 
@@ -27,6 +28,7 @@ public class LoginController extends HttpServlet {
         // Xử lý Đăng xuất
         String action = request.getParameter("action");
         if ("logout".equals(action)) {
+            // BF10: hủy phiên chứa user; các trang bảo vệ phải kiểm tra lại khi truy cập lần sau.
             session.invalidate(); // Xóa session
             // Redirect về trang chủ thay vì /login
             response.sendRedirect(request.getContextPath() + "/");
@@ -65,11 +67,13 @@ public class LoginController extends HttpServlet {
         boolean hasRedirect = RedirectUtil.isSafeLocalPath(redirect);
 
         // Gọi DAO để xác thực
+        // BF10: DAO trả User nếu đúng thông tin và ACTIVE; trả null nếu không xác thực được.
         User loginUser = userDAO.login(userIdentifier, pass);
 
         if (loginUser != null) {
             // Renew the session after authentication so an older role/CSRF state cannot leak
             // into the newly authenticated account. The anonymous shopping cart is safe to keep.
+            // BF10: tạo phiên mới sau đăng nhập, chỉ mang giỏ hàng sang và xóa điểm của danh tính cũ.
             HttpSession oldSession = request.getSession(false);
             Cart cart = null;
             if (oldSession != null) {
@@ -105,6 +109,7 @@ public class LoginController extends HttpServlet {
 
     // Hàm helper để chia luồng redirect tùy thuộc vào Role và Position
     private void redirectByUser(User user, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        // BF10 - PHÂN LUỒNG: ADMIN -> quản trị; STAFF theo vị trí; CUSTOMER -> trang chủ.
         String role = user.getRole();
         String position = user.getPosition();
         

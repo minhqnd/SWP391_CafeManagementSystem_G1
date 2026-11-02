@@ -16,6 +16,7 @@ import model.Ingredient;
 public class IngredientDAO extends BaseDAO {
 
     public List<Ingredient> getAllIngredients() {
+        // BF11: lấy tên, đơn vị và trạng thái cho form BOM; JSP quyết định lựa chọn thêm mới/giữ dòng cũ.
         List<Ingredient> list = new ArrayList<>();
         String sql = "SELECT id, name, unit, is_active FROM ingredients ORDER BY name ASC";
         
@@ -40,6 +41,8 @@ public class IngredientDAO extends BaseDAO {
 
     /** Latest received purchase unit price per ingredient. Draft and ordered POs are not inventory costs. */
     public Map<Integer, BigDecimal> getLatestPurchasePrices() {
+        // BF11 - NGUỒN GIÁ VỐN: chỉ phiếu RECEIVED; ROW_NUMBER chọn lần nhập mới nhất từng nguyên liệu.
+        // Map trả ingredientId -> unit_price; thiếu giá thì Controller/JSP đánh dấu chưa đủ giá vốn.
         Map<Integer, BigDecimal> prices = new HashMap<>();
         String sql = "SELECT ingredient_id, unit_price FROM (" +
                      "  SELECT poi.ingredient_id, poi.unit_price, " +

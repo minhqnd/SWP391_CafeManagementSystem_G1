@@ -193,6 +193,7 @@
                                                                 <h2 class="fs-4 fw-semibold mb-1">Chào mừng trở lại</h2>
                                                                 <p class="text-muted" style="font-size: 0.85rem;">Vui lòng nhập định danh tài khoản</p>
                                                             </div>
+                                                            <%-- BF10 - ĐĂNG NHẬP: POST /login -> LoginController.doPost() -> UserDAO.login() -> session user. --%>
                                                             <form action="${pageContext.request.contextPath}/login" method="POST">
                                                                 <% if (authRedirect !=null) { %>
                                                                     <input type="hidden" name="redirect" value="<%= authRedirect %>">
@@ -233,6 +234,7 @@
                                                                 <h2 class="fs-4 fw-semibold mb-1">Khôi phục quyền truy cập</h2>
                                                                 <p class="text-muted" style="font-size: 0.85rem;">Hệ thống sẽ cấp lại mật khẩu ngẫu nhiên qua Email của bạn</p>
                                                             </div>
+                                                            <%-- BF10 - QUÊN MẬT KHẨU: POST email -> ForgotPasswordController -> gửi OTP và lưu phiên khôi phục. --%>
                                                             <form action="${pageContext.request.contextPath}/forgot-password" method="POST">
                                                                 <div class="mb-3">
                                                                     <label class="form-label fw-medium" style="font-size: 0.85rem;">Email đã liên kết</label>
@@ -274,6 +276,7 @@
                                                             <p class="text-muted" style="font-size: 0.85rem;">Đăng ký
                                                                 thành viên để nhận ưu đãi và tích điểm</p>
                                                         </div>
+                                                        <%-- BF10 - ĐĂNG KÝ: POST thông tin -> RegisterController -> kiểm tra trùng -> UserDAO.register(). --%>
                                                         <form action="${pageContext.request.contextPath}/register"
                                                             method="POST">
                                                             <% if (authRedirect !=null) { %>
@@ -343,6 +346,7 @@
                                                             <h2 class="fs-4 fw-semibold mb-1">Xác thực Email</h2>
                                                             <p class="text-muted" style="font-size: 0.85rem;">Nhập mã OTP đã được gửi đến email của bạn</p>
                                                         </div>
+                                                        <%-- BF10 - OTP: POST mã -> VerifyOtpController; đúng mới cho sang tab đặt mật khẩu, chưa UPDATE users. --%>
                                                         <form action="${pageContext.request.contextPath}/verify-otp" method="POST">
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Mã xác thực (OTP)</label>
@@ -362,7 +366,8 @@
                                                             </div>
                                                             <button type="submit"
                                                                 class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
-                                                                style="background-color: var(--primary-container); height: 48px;">
+                                                                style="background-color: var(--primary-container)
+                                                                ; height: 48px;">
                                                                 Xác nhận OTP <span class="material-symbols-outlined fs-5">check_circle</span>
                                                             </button>
                                                             <div class="d-flex justify-content-between align-items-center mt-3">
@@ -393,6 +398,7 @@
                                                             <h2 class="fs-4 fw-semibold mb-1">Thiết lập mật khẩu mới</h2>
                                                             <p class="text-muted" style="font-size: 0.85rem;">Vui lòng tạo mật khẩu mới cho tài khoản của bạn</p>
                                                         </div>
+                                                        <%-- BF10 - RESET: POST mật khẩu mới -> ResetPasswordController -> UserDAO.updatePassword() -> tab login. --%>
                                                         <form action="${pageContext.request.contextPath}/reset-password" method="POST">
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Mật khẩu mới</label>
@@ -435,6 +441,7 @@
             }
 
             function showForgotSubView() {
+                // BF10: chỉ chuyển phần hiển thị trong popup; chưa gửi yêu cầu quên mật khẩu xuống server.
                 var loginView = document.getElementById('subview-login');
                 var forgotView = document.getElementById('subview-forgot');
                 if (loginView) loginView.style.display = 'none';

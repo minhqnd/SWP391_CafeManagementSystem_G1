@@ -16,6 +16,7 @@ public class CategoryDAO extends BaseDAO {
 
     /** Returns every category, including inactive ones, with the number of linked products. */
     public List<Category> getAllCategoriesWithCount() {
+        // BF11: danh sách quản trị gồm mọi trạng thái và số món; khác danh sách công khai chỉ ACTIVE.
         List<Category> list = new ArrayList<>();
         String sql = "SELECT c.id, c.name, c.status, c.image_url, "
                 + "(ci.category_id IS NOT NULL) AS has_stored_image, COUNT(p.id) AS product_count "
@@ -77,6 +78,7 @@ public class CategoryDAO extends BaseDAO {
     public boolean saveCategory(Category category, byte[] imageData, String contentType,
                                 String fileName, boolean removeImage)
             throws SQLException, ClassNotFoundException {
+        // BF11: lưu categories và category_images cùng transaction; lỗi ảnh thì hoàn tác cả danh mục.
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -104,6 +106,7 @@ public class CategoryDAO extends BaseDAO {
     }
 
     private boolean saveCategory(Connection conn, Category category) throws SQLException {
+        // id>0 UPDATE; id=0 INSERT và lấy generated key để liên kết ảnh theo category_id.
         if (category.getId() > 0) {
             String sql = "UPDATE categories SET name = ?, status = ? WHERE id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -164,6 +167,7 @@ public class CategoryDAO extends BaseDAO {
     }
 
     public boolean updateCategoryStatus(int id, String status) throws SQLException, ClassNotFoundException {
+        // BF11: chỉ UPDATE status, không xóa danh mục/sản phẩm.
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement("UPDATE categories SET status = ? WHERE id = ?")) {
             ps.setString(1, status);
@@ -180,6 +184,7 @@ public class CategoryDAO extends BaseDAO {
     }
 
     public List<Category> getAllActiveCategoriesWithCount() {
+        // BF10/BF11: danh mục công khai lấy ACTIVE; dùng ở trang chủ và menu.
         List<Category> list = new ArrayList<>();
         String sql = "SELECT c.id, c.name, c.status, c.image_url, " +
                      "(ci.category_id IS NOT NULL) AS has_stored_image, COUNT(p.id) AS product_count " +

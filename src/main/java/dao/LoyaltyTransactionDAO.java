@@ -21,6 +21,7 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public List<LoyaltyTransaction> findRecent(int limit) throws SQLException {
+        // BF12: nhật ký chung trên trang Admin, không lọc riêng theo khách đang tra cứu.
         return findDetailed("", null, limit);
     }
 
@@ -50,6 +51,7 @@ public class LoyaltyTransactionDAO extends BaseDAO {
                     row.setCustomerName(rs.getString("full_name"));
                     row.setCustomerPhone(rs.getString("phone"));
                     row.setOrderCode(rs.getString("order_code"));
+                    // Tính ngược số dư theo lịch sử mới nhất trước; balanceAfter không phải cột lưu trong DB.
                     row.setBalanceAfter(balanceAfter);
                     runningBalance.put(ownerId, balanceAfter - row.getPointsChange());
                     rows.add(row);
@@ -92,6 +94,8 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public User findCustomerByPhone(String phone) throws SQLException {
+        // BF12 - TRA CỨU: chỉ tìm CUSTOMER; PreparedStatement gắn phone vào dấu ? như dữ liệu.
+        // Trả User nếu tìm thấy, null nếu không; Controller quyết định hiển thị gì trên JSP.
         String sql = "SELECT id, full_name, phone, email, role, position, status, total_points "
                 + "FROM users WHERE role='CUSTOMER' AND phone=? LIMIT 1";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -139,6 +143,8 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public boolean adjustPoints(int customerId, int pointsChange) throws SQLException {
+        // BF12 - LƯU ĐIỀU CHỈNH: số dư ở users, lịch sử ở loyalty_transactions.
+        // Điều chỉnh thủ công dùng ADJUST và không gắn đơn hàng (order_id = NULL).
         if (pointsChange == 0) throw new IllegalArgumentException("Số điểm điều chỉnh phải khác 0.");
         String lockSql = "SELECT total_points FROM users WHERE id=? AND role='CUSTOMER' FOR UPDATE";
         String updateSql = "UPDATE users SET total_points=? WHERE id=?";
@@ -146,9 +152,11 @@ public class LoyaltyTransactionDAO extends BaseDAO {
                 + "VALUES (?,NULL,?,'ADJUST')";
         try (Connection conn = getConnection()) {
             boolean oldAutoCommit = conn.getAutoCommit();
+            // Bắt đầu transaction: cập nhật số dư và thêm lịch sử phải cùng thành công.
             conn.setAutoCommit(false);
             try {
                 int current;
+                // FOR UPDATE khóa dòng khách đến cuối transaction, tránh sửa trên số dư cũ khi đồng thời.
                 try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
                     ps.setInt(1, customerId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -156,22 +164,27 @@ public class LoyaltyTransactionDAO extends BaseDAO {
                         current = rs.getInt(1);
                     }
                 }
+                // Nhánh "balance not negative?": lấy số dư DB + biến động, không tin số dư từ trình duyệt.
                 long next = (long) current + pointsChange;
                 if (next < 0) throw new IllegalArgumentException("Không thể trừ nhiều hơn số điểm hiện có.");
                 if (next > Integer.MAX_VALUE) throw new IllegalArgumentException("Số điểm vượt giới hạn cho phép.");
+                // Bước 1: cập nhật số dư mới theo ID khách hàng.
                 try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                     ps.setInt(1, (int) next);
                     ps.setInt(2, customerId);
                     ps.executeUpdate();
                 }
+                // Bước 2: ghi biến động có dấu (+/-) để truy vết lý do thay đổi số dư.
                 try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
                     ps.setInt(1, customerId);
                     ps.setInt(2, pointsChange);
                     ps.executeUpdate();
                 }
+                // Chỉ chốt khi cả hai bước thành công; trả kết quả về Controller.
                 conn.commit();
                 return true;
             } catch (Exception e) {
+                // Có lỗi thì hoàn tác transaction và ném lỗi lên Controller để báo trên JSP.
                 conn.rollback();
                 if (e instanceof SQLException) throw (SQLException) e;
                 if (e instanceof RuntimeException) throw (RuntimeException) e;

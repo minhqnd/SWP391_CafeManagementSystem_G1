@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+// BF11 - CÔNG THỨC: GET nạp món/BOM/giá vốn; POST kiểm tra các dòng rồi lưu product_ingredients.
 @WebServlet(name = "AdminRecipeController", urlPatterns = {"/admin/recipes", "/admin/recipe/update"})
 public class AdminRecipeController extends HttpServlet {
 
@@ -68,6 +69,7 @@ public class AdminRecipeController extends HttpServlet {
             List<ProductIngredient> recipeIngredients = selectedProduct == null
                     ? List.of()
                     : allRecipeIngredients.getOrDefault(selectedProductId, List.of());
+            // BF11 - GIÁ VỐN: lấy đơn giá nhập mới nhất đã RECEIVED; chưa có giá thì đánh dấu thiếu.
             Map<Integer, BigDecimal> ingredientUnitCosts = ingredientDAO.getLatestPurchasePrices();
             BigDecimal recipeCost = BigDecimal.ZERO;
             List<String> missingCostIngredients = new ArrayList<>();
@@ -76,6 +78,7 @@ public class AdminRecipeController extends HttpServlet {
                 if (unitCost == null) {
                     missingCostIngredients.add(recipeIngredient.getIngredientName());
                 } else {
+                    // Giá vốn nguyên liệu/phần = tổng (định lượng BOM x đơn giá theo cùng đơn vị).
                     recipeCost = recipeCost.add(unitCost.multiply(BigDecimal.valueOf(recipeIngredient.getQuantityRequired())));
                 }
             }
@@ -124,6 +127,7 @@ public class AdminRecipeController extends HttpServlet {
                 formRows.add(Map.of("ingredientId", Integer.toString(line.getIngredientId()),
                         "quantity", BigDecimal.valueOf(line.getQuantityRequired()).stripTrailingZeros().toPlainString()));
             }
+            // Lưu sai dữ liệu -> dùng lại bản nháp vừa gửi, không tự thay bằng BOM cũ trong DB.
             Object draft = session.getAttribute("recipeDraft");
             session.removeAttribute("recipeDraft");
             if (draft instanceof RecipeDraft submitted && submitted.productId() == selectedProductId) {
@@ -167,6 +171,7 @@ public class AdminRecipeController extends HttpServlet {
             Product product = productDAO.getProductForAdmin(productId);
             if (product == null) throw new IllegalArgumentException("Không tìm thấy sản phẩm cần cập nhật công thức.");
 
+            // BF11 - LƯU CÔNG THỨC: Controller kiểm tra từng dòng trước khi DAO thay thế BOM.
             List<ProductIngredient> recipeIngredients = parseIngredients(
                     productId,
                     request.getParameterValues("ingredientId"),
@@ -182,6 +187,7 @@ public class AdminRecipeController extends HttpServlet {
         }
 
         String redirect = request.getContextPath() + "/admin/recipes";
+        // Lỗi: giữ nguyên dữ liệu nhập và mở lại đúng popup có thông báo; thành công: về danh sách.
         if (!saved && productId > 0) {
             session.setAttribute("recipeDraft", new RecipeDraft(productId, submittedRows(
                     request.getParameterValues("ingredientId"), request.getParameterValues("quantity"))));
@@ -204,6 +210,8 @@ public class AdminRecipeController extends HttpServlet {
     }
 
     private List<ProductIngredient> parseIngredients(int productId, String[] ingredientIds, String[] quantities) {
+        // BF11 - "Ingredient lines valid and unique?": đủ cặp ID/định lượng, lượng dương,
+        // tối đa 3 chữ số thập phân và mỗi nguyên liệu chỉ xuất hiện một lần trong công thức.
         List<ProductIngredient> result = new ArrayList<>();
         if (ingredientIds == null && quantities == null) return result;
         if (ingredientIds == null || quantities == null || ingredientIds.length != quantities.length) {

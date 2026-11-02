@@ -5,6 +5,7 @@ import java.util.List;
 
 /** View data for one product card on the admin recipe screen. */
 public class RecipeProductSummary {
+    // BF11: dữ liệu hiển thị một thẻ món/BOM/giá vốn; model này không tự truy vấn database.
     private final Product product;
     private final List<IngredientLine> ingredientLines;
     private final BigDecimal recipeCost;
@@ -38,6 +39,7 @@ public class RecipeProductSummary {
         public double getQuantity() { return ingredient.getQuantityRequired(); }
         public boolean isCostAvailable() { return unitCost != null; }
         public BigDecimal getLineCost() {
+            // BF11: chi phí một dòng = lượng cần cho một phần x đơn giá nhập; thiếu giá trả null.
             return unitCost == null
                     ? null
                     : unitCost.multiply(BigDecimal.valueOf(ingredient.getQuantityRequired()));
