@@ -244,7 +244,7 @@
                             </div>
                             <div>
                                 <c:choose>
-                                    <c:when test="${tx.transactionType eq 'OUT_ORDER' or tx.transactionType eq 'SPOILAGE'}">
+                                    <c:when test="${tx.decrease}">
                                         <span class="tx-qty-neg">${tx.formattedQuantity}</span>
                                     </c:when>
                                     <c:otherwise>
