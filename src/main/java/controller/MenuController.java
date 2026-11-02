@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
+// BF11 - XEM CÔNG KHAI: GET /menu xem/lọc; GET ?action=detail&id=... trả JSON cho popup.
 @WebServlet(name = "MenuController", urlPatterns = {"/menu"})
 public class MenuController extends HttpServlet {
 
@@ -68,6 +69,7 @@ public class MenuController extends HttpServlet {
 
     private void handleProductDetailApi(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
+        // JSON API chỉ cung cấp dữ liệu món cho giao diện; không thêm món vào giỏ ở hàm này.
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
 

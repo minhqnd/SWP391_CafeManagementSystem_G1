@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpSession;
 import utils.EmailUtil;
 import java.io.IOException;
 
+// BF10 - GỬI LẠI OTP: dùng forgotEmail trong session; chờ đủ 60 giây giữa các lần gửi lại.
 @WebServlet(name = "ResendOtpController", urlPatterns = {"/resend-otp"})
 public class ResendOtpController extends HttpServlet {
 
@@ -42,6 +43,7 @@ public class ResendOtpController extends HttpServlet {
         boolean isSent = EmailUtil.sendOTP(forgotEmail, newOtp);
         
         // Luôn luôn cập nhật mã mới vào Session để phục vụ test
+        // Mã mới thay mã cũ trong phiên; VerifyOtpController chỉ so sánh với mã đang lưu này.
         session.setAttribute("forgotOtp", newOtp);
         session.setAttribute("lastOtpSentTime", currentTime);
         

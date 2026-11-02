@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
+// BF10 - XÁC MINH OTP: nhận POST /verify-otp, so với mã của phiên yêu cầu khôi phục.
 @WebServlet(name = "VerifyOtpController", urlPatterns = {"/verify-otp"})
 public class VerifyOtpController extends HttpServlet {
 
@@ -30,6 +31,8 @@ public class VerifyOtpController extends HttpServlet {
             return;
         }
 
+        // Đúng mã -> xóa OTP đã dùng, đánh dấu quyền reset; chưa cập nhật mật khẩu ở bước này.
+        // Hiện hàm kiểm tra trạng thái session và khớp mã, chưa có kiểm tra TTL riêng cho OTP.
         if (sessionOtp.equals(inputOtp)) {
             // OTP matches, allow resetting password
             session.removeAttribute("forgotOtp");

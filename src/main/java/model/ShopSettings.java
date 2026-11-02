@@ -80,11 +80,13 @@ public class ShopSettings implements Serializable {
     public String getPaymentAccountName(){return paymentAccountName;} public void setPaymentAccountName(String v){if(v!=null&&!v.isBlank())paymentAccountName=v;}
 
     public int calculateEarnedPoints(double goodsAmountAfterDiscount) {
+        // BF12 - TÍCH ĐIỂM: lấy tiền hàng sau giảm / mức tiền cho 1 điểm, làm tròn xuống.
         if (goodsAmountAfterDiscount <= 0 || pointsEarnUnit <= 0) return 0;
         return (int) Math.floor(goodsAmountAfterDiscount / pointsEarnUnit);
     }
     /** Số tiền giảm khi dùng số điểm này - chỉ tính các mốc trọn vẹn (VD mốc 50: 120 điểm = 2 mốc) */
     public double getPointsDiscount(int points) {
+        // BF12 - ĐỔI ĐIỂM: chỉ tính mốc trọn vẹn, VD mốc 10 thì 25 điểm tính 2 mốc.
         if (points <= 0 || pointsStep <= 0) {
             return 0;
         }
@@ -96,6 +98,7 @@ public class ShopSettings implements Serializable {
      * không vượt quá số điểm khách đang có và số tiền giảm không vượt quá tiền hàng.
      */
     public int getMaxRedeemablePoints(int availablePoints, double subtotal) {
+        // BF12: lấy giới hạn nhỏ hơn giữa số mốc khách đủ điểm và số mốc tiền hàng đủ để giảm.
         if (pointsStep <= 0 || pointsStepValue <= 0 || availablePoints <= 0 || subtotal <= 0) {
             return 0;
         }

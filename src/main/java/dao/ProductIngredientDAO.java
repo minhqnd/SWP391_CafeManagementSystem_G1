@@ -8,6 +8,8 @@ import model.ProductIngredient;
 public class ProductIngredientDAO extends BaseDAO {
 
     public void saveRecipe(int productId, List<ProductIngredient> ingredients) throws Exception {
+        // BF11 - BOM: thay toàn bộ dòng product_ingredients của một món trong cùng transaction.
+        // Đây là lưu định mức; KHÔNG trừ tồn kho khi Admin bấm Lưu công thức.
         String deleteOldBomSql = "DELETE FROM product_ingredients WHERE product_id = ?";
         String insertBomSql = "INSERT INTO product_ingredients (product_id, ingredient_id, quantity_required) VALUES (?, ?, ?)";
         
@@ -19,6 +21,7 @@ public class ProductIngredientDAO extends BaseDAO {
                  PreparedStatement psInsert = conn.prepareStatement(insertBomSql)) {
 
                 // Replace the existing BOM for this product.
+                // Cho giữ nguyên liệu ngừng sử dụng đã có ở BOM cũ; nguyên liệu thêm mới phải ACTIVE.
                 java.util.Set<Integer> oldIds = new java.util.HashSet<>();
                 try (PreparedStatement old = conn.prepareStatement("SELECT ingredient_id FROM product_ingredients WHERE product_id = ?")) {
                     old.setInt(1, productId);
@@ -32,6 +35,7 @@ public class ProductIngredientDAO extends BaseDAO {
                     }
                 }
 
+                // Xóa BOM cũ rồi thêm BOM mới; nếu INSERT lỗi thì rollback khôi phục dữ liệu cũ.
                 psDelete.setInt(1, productId);
                 psDelete.executeUpdate();
 
@@ -57,6 +61,7 @@ public class ProductIngredientDAO extends BaseDAO {
     }
 
     public List<ProductIngredient> getIngredientsByProductId(int productId) {
+        // BF11: JOIN ingredients lấy tên/đơn vị cho các dòng định lượng của đúng món.
         List<ProductIngredient> list = new java.util.ArrayList<>();
         String sql = "SELECT pi.product_id, pi.ingredient_id, pi.quantity_required, i.name AS ingredient_name, i.unit "
                    + "FROM product_ingredients pi "
@@ -84,6 +89,7 @@ public class ProductIngredientDAO extends BaseDAO {
     }
 
     public java.util.Map<Integer, List<ProductIngredient>> getAllProductIngredientsMap() {
+        // BF11: đọc BOM toàn bộ món một lần, gom theo productId để dựng các thẻ trên trang công thức.
         java.util.Map<Integer, List<ProductIngredient>> map = new java.util.LinkedHashMap<>();
         String sql = "SELECT pi.product_id, pi.ingredient_id, pi.quantity_required, i.name AS ingredient_name, i.unit "
                    + "FROM product_ingredients pi "

@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
+// BF11 - DANH MỤC: admin-categories.jsp -> GET xem/sửa, POST action=save/toggle.
 @WebServlet(name = "AdminCategoriesController", urlPatterns = {"/admin/categories"})
 @MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 6 * 1024 * 1024)
 public class AdminCategoriesController extends HttpServlet {
@@ -36,6 +37,7 @@ public class AdminCategoriesController extends HttpServlet {
         moveFlash(session, request, "categoryMessage");
         moveFlash(session, request, "categoryError");
         try {
+            // BF11 - MỞ TRANG: lấy danh sách và thống kê, gán request để JSP hiển thị.
             List<Category> categories = categoryDAO.getAllCategoriesWithCount();
             request.setAttribute("categories", categories);
             request.setAttribute("categoryTotal", categories.size());
@@ -43,6 +45,7 @@ public class AdminCategoriesController extends HttpServlet {
             request.setAttribute("categoryInactive", categories.stream().filter(c -> "INACTIVE".equals(c.getStatus())).count());
             request.setAttribute("productTotal", categoryDAO.getProductCount());
 
+            // Nút bút chì gửi editId bằng GET; selectedCategory điền dữ liệu cũ vào form bên phải.
             String editId = request.getParameter("editId");
             if (editId != null && !editId.isBlank()) {
                 try {
@@ -74,6 +77,7 @@ public class AdminCategoriesController extends HttpServlet {
             return;
         }
 
+        // BF11 - NHẬN FORM: save thêm/sửa, toggle ẩn/hiện; nhánh delete cũ còn ở backend nhưng UI không có nút.
         String action = request.getParameter("action");
         try {
             if ("save".equals(action)) {
@@ -106,6 +110,7 @@ public class AdminCategoriesController extends HttpServlet {
 
     private void save(HttpServletRequest request, HttpSession session)
             throws SQLException, ClassNotFoundException, ServletException, IOException {
+        // BF11 - LƯU: id=0 tạo mới, id>0 cập nhật; form multipart gửi kèm ảnh dưới dạng Part.
         int id = parseId(request.getParameter("id"), true);
         String name = trimToNull(request.getParameter("name"));
         String status = request.getParameter("status");
@@ -115,6 +120,7 @@ public class AdminCategoriesController extends HttpServlet {
         String imageType = null;
         String imageName = null;
 
+        // Kiểm tra tên, ảnh tối đa 5 MB, loại MIME/chữ ký ảnh, trạng thái và tên trùng trước khi gọi DAO.
         if (name == null || name.length() > 100) throw new IllegalArgumentException("Tên danh mục bắt buộc và tối đa 100 ký tự.");
         if (imagePart != null && imagePart.getSize() > 0) {
             if (imagePart.getSize() > MAX_IMAGE_SIZE) {
@@ -143,6 +149,7 @@ public class AdminCategoriesController extends HttpServlet {
     }
 
     private void toggle(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
+        // BF11 - NÚT MẮT: đổi ACTIVE/INACTIVE, không xóa dòng danh mục hay lịch sử liên quan.
         int id = parseId(request.getParameter("id"), false);
         String status = request.getParameter("status");
         if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) throw new IllegalArgumentException("Trạng thái không hợp lệ.");

@@ -265,9 +265,11 @@
         <jsp:param name="activePage" value="home" />
     </jsp:include>
 
+    <%-- BF10/BF11 - TRANG CHỦ: hiện gọi DAO trực tiếp trong JSP, không đi qua HomeController. --%>
     <!-- Fetch Data for Hero and Best Sellers -->
     <%
         ProductDAO productDAO = new ProductDAO();
+        // BF10: lấy tối đa 4 món nổi bật; món đầu dùng cho hero, danh sách dùng cho thẻ sản phẩm.
         List<Product> productsList = productDAO.getBestSellingProducts(4);
         request.setAttribute("bestSellerProducts", productsList);
         if (productsList != null && !productsList.isEmpty()) {
@@ -278,6 +280,7 @@
 
     <%
         CategoryDAO categoryDAO = new CategoryDAO();
+        // BF11: danh sách danh mục bên khách chỉ lấy ACTIVE; đọc cấu hình cửa hàng cho thông tin trang chủ.
         List<Category> landingCategories = categoryDAO.getAllActiveCategoriesWithCount();
         request.setAttribute("landingCategories", landingCategories);
         ShopSettings homeSettings = new ShopSettingDAO().getSettings();

@@ -27,6 +27,8 @@ public class UserDAO extends BaseDAO {
     }
 
     public User login(String identifier, String password) {
+        // BF10: xác thực và dựng User trả về LoginController để tạo session.
+        // Lưu ý code hiện tìm theo email HOẶC phone; không mô tả backend này là email-only.
         if (identifier == null || password == null) {
             return null;
         }
@@ -48,6 +50,8 @@ public class UserDAO extends BaseDAO {
                         return null; 
                     }
 
+                    // Lưu ý: tên cột là password_hash nhưng hiện so trực tiếp và có nhánh demo_hash.
+                    // Đây chưa phải xác minh mật khẩu bằng thuật toán hash an toàn.
                     String dbHash = rs.getString("password_hash");
                     boolean passwordMatches = false;
                     if (dbHash != null) {
@@ -102,6 +106,8 @@ public class UserDAO extends BaseDAO {
     }
 
     public boolean register(User user, String password) {
+        // BF10: INSERT tài khoản ACTIVE; Controller đã đặt role CUSTOMER cho đăng ký từ web.
+        // Kết quả true/false được Controller chuyển thành thông báo; mật khẩu hiện chưa hash.
         String sql = "INSERT INTO users (full_name, phone, email, role, position, status, password_hash) " +
                      "VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?)";
 
@@ -124,6 +130,7 @@ public class UserDAO extends BaseDAO {
         return false;
     }
     public boolean checkEmailExists(String email) {
+        // BF10: kiểm tra email có bản ghi users để chống trùng hoặc xác định luồng quên mật khẩu.
         String sql = "SELECT id FROM users WHERE email = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -138,6 +145,7 @@ public class UserDAO extends BaseDAO {
     }
 
     public boolean checkPhoneExists(String phone) {
+        // BF10: kiểm tra trùng số điện thoại khi đăng ký, không đồng nghĩa đây là thao tác đăng nhập.
         if (phone == null || phone.trim().isEmpty()) {
             return false;
         }
@@ -155,6 +163,7 @@ public class UserDAO extends BaseDAO {
     }
 
     public boolean updatePassword(String email, String newPassword) {
+        // BF10: dùng chung cho reset sau OTP và đổi mật khẩu trong hồ sơ; UPDATE theo email.
         String sql = "UPDATE users SET password_hash = ? WHERE email = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -167,6 +176,7 @@ public class UserDAO extends BaseDAO {
         return false;
     }
     public String updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
+        // BF10: UPDATE đúng ID của phiên đăng nhập; lỗi khóa duy nhất được đổi thành thông báo trùng.
         String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ? WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -211,6 +221,7 @@ public class UserDAO extends BaseDAO {
     }
 
     public java.util.List<model.LoyaltyTransaction> getLoyaltyHistoryByUserId(int userId) {
+        // BF10/BF12: đọc lịch sử riêng theo customer_id; ProfileController đặt vào loyaltyHistory cho JSP.
         java.util.List<model.LoyaltyTransaction> list = new java.util.ArrayList<>();
         String sql = "SELECT id, customer_id, order_id, points_change, transaction_type, created_at " +
                      "FROM loyalty_transactions WHERE customer_id = ? ORDER BY created_at DESC";

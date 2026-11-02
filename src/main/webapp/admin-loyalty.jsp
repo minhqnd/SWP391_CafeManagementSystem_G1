@@ -94,6 +94,7 @@
     </section>
 
     <div class="content-grid">
+        <%-- BF12 - LƯU QUY TẮC: POST /admin/loyalty -> doPost() -> updateRules() -> ShopSettingDAO. --%>
         <form class="loyalty-panel content-card" method="post" action="${ctx}/admin/loyalty">
             <input type="hidden" name="action" value="updateRules">
             <input type="hidden" name="csrfToken" value="${sessionScope.loyaltyCsrfToken}">
@@ -122,6 +123,7 @@
 
         <section class="loyalty-panel content-card">
             <h2 class="section-title">Tra cứu &amp; điều chỉnh điểm</h2>
+            <%-- BF12 - TRA CỨU: GET gửi phone -> doGet() -> findCustomerByPhone() -> activeCustomer. --%>
             <form class="search-form" method="get" action="${ctx}/admin/loyalty">
                 <input class="loyalty-input" name="phone" value="${fn:escapeXml(searchPhone)}" aria-label="Số điện thoại" placeholder="Nhập số điện thoại..." required>
                 <button class="search-btn" type="submit">Tra cứu</button>
@@ -131,6 +133,7 @@
               <div class="customer-box">
                 <h3><c:out value="${activeCustomer.fullName}" /></h3>
                 <p class="customer-contact"><c:out value="${activeCustomer.phone}" /> • <c:out value="${activeCustomer.email}" /></p>
+                <%-- Hiển thị User do Controller gán vào request; JSP không trực tiếp truy vấn DB. --%>
                 <div class="customer-metrics">
                     <div class="customer-metric"><span>Điểm hiện có</span><strong style="color:#a51225"><fmt:formatNumber value="${activeCustomer.totalPoints}" pattern="#,##0" /></strong><small>= <fmt:formatNumber value="${customerPointValue}" pattern="#,##0" />đ</small></div>
                     <div class="customer-metric"><span>Tổng chi tiêu</span><strong><fmt:formatNumber value="${customerActivity.totalSpent}" pattern="#,##0" />đ</strong><small><c:choose><c:when test="${not empty customerActivity.lastOrderAt}">Đơn gần nhất <fmt:formatDate value="${customerActivity.lastOrderAt}" pattern="dd/MM/yyyy HH:mm" /></c:when><c:otherwise>Chưa có đơn</c:otherwise></c:choose></small></div>
@@ -139,6 +142,7 @@
                     <button class="adjust-btn adjust-add" type="button" onclick="submitAdjustment('add')">Cộng điểm</button>
                     <button class="adjust-btn adjust-subtract" type="button" onclick="submitAdjustment('subtract')">Trừ điểm</button>
                 </div>
+                <%-- BF12 - CỘNG/TRỪ: JavaScript điền form -> doPost() action=adjust -> adjustPoints(). --%>
                 <form id="adjustPointsForm" method="post" action="${ctx}/admin/loyalty">
                     <input type="hidden" name="action" value="adjust">
                     <input type="hidden" name="csrfToken" value="${sessionScope.loyaltyCsrfToken}">
@@ -158,6 +162,7 @@
             <table class="log-table">
                 <thead><tr><th>ID</th><th>Thời gian</th><th>Khách hàng</th><th>Loại</th><th class="text-end">Điểm biến động</th><th class="text-end">Số dư sau</th><th>Đơn hàng</th></tr></thead>
                 <tbody>
+                <%-- Nhật ký chung từ loyaltyDAO.findRecent(50), gồm cả giao dịch của khách khác. --%>
                 <c:forEach var="tx" items="${transactions}">
                     <tr>
                         <td class="mono text-muted">#${tx.id}</td>
@@ -177,6 +182,7 @@
 </main>
 <script>
     function submitAdjustment(type) {
+        // Chỉ nhận số và gửi form; kiểm tra số dư và lưu DB nằm ở Controller/DAO, không ở JavaScript.
         const label = type === 'add' ? 'cộng' : 'trừ';
         const raw = window.prompt('Nhập số điểm muốn ' + label + ':', '10');
         if (raw === null) return;

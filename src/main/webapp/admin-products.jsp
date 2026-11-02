@@ -97,6 +97,7 @@
     <div class="row g-4 align-items-start product-layout">
         <section class="col-12 col-xl-8">
             <div class="product-card p-3 mb-3">
+                <%-- BF11 - LỌC: GET categoryId/q -> AdminProductsController.doGet() -> ProductDAO.getProductsForAdmin(). --%>
                 <form method="get" action="${ctx}/admin/products" class="row g-2 align-items-center">
                     <div class="col-12 col-lg-5"><input name="q" value="${fn:escapeXml(searchKeyword)}" class="form-control form-control-sm" placeholder="Tìm tên, mã, mô tả..."></div>
                     <div class="col-12 col-sm-8 col-lg-4">
@@ -149,6 +150,7 @@
             <div><h2 class="h6 fw-bold mb-0"><c:choose><c:when test="${not empty selectedProduct}">Sửa sản phẩm</c:when><c:otherwise>Thêm sản phẩm mới</c:otherwise></c:choose></h2><p class="small text-muted mb-0 mt-1">Danh mục, giá và ảnh tại đây sẽ dùng trên menu khách hàng.</p></div>
             <c:if test="${not empty selectedProduct}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedProduct.id}" /></span></c:if>
         </div>
+        <%-- BF11 - LƯU MÓN: POST tên/danh mục/giá/ảnh và các mảng size/topping; Controller dựng variants_config. --%>
         <form id="productForm" method="post" action="${ctx}/admin/products" enctype="multipart/form-data">
             <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="${empty selectedProduct ? 0 : selectedProduct.id}">
             <input type="hidden" id="variantsConfig" value="${fn:escapeXml(selectedProduct.variantsConfig)}">

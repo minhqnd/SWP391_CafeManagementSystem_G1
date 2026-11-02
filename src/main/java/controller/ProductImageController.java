@@ -9,6 +9,7 @@ import model.ProductImage;
 
 import java.io.IOException;
 
+// BF11 - ĐỌC ẢNH: thẻ img gọi GET /product-image?id=... -> DAO đọc BLOB -> response ghi byte ảnh, không forward JSP.
 @WebServlet(name = "ProductImageController", urlPatterns = {"/product-image"})
 public class ProductImageController extends HttpServlet {
     private final ProductDAO productDAO = new ProductDAO();

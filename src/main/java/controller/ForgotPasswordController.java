@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+// BF10 - QUÊN MẬT KHẨU: nhận email từ popup -> kiểm tra users -> gửi OTP -> mở tab otp.
 @WebServlet(name = "ForgotPasswordController", urlPatterns = { "/forgot-password" })
 public class ForgotPasswordController extends HttpServlet {
 
@@ -43,6 +44,8 @@ public class ForgotPasswordController extends HttpServlet {
 
         // LUÔN LUÔN cho phép đi tiếp để phục vụ quá trình test/làm đồ án (có thể lấy
         // OTP trong Console)
+        // Phiên giữ email, mã OTP và thời điểm gửi để VerifyOtp/ResendOtp dùng ở bước sau.
+        // Lưu ý bản hiện tại có fallback hiển thị OTP khi gửi mail lỗi; không phải cơ chế dùng production.
         request.getSession().setAttribute("forgotEmail", email);
         request.getSession().setAttribute("forgotOtp", otp);
         request.getSession().setAttribute("lastOtpSentTime", System.currentTimeMillis());

@@ -9,6 +9,7 @@ import model.CategoryImage;
 
 import java.io.IOException;
 
+// BF11 - ĐỌC ẢNH: GET /category-image?id=... trả BLOB ảnh từ category_images, không trả trang HTML.
 @WebServlet(name = "CategoryImageController", urlPatterns = {"/category-image"})
 public class CategoryImageController extends HttpServlet {
     private final CategoryDAO categoryDAO = new CategoryDAO();

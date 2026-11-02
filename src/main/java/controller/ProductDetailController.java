@@ -35,6 +35,8 @@ public class ProductDetailController extends HttpServlet {
 
         try {
             int productId = Integer.parseInt(idParam.trim());
+            // BF11: nhận ID từ URL -> DAO trả Product -> gán request -> product-detail.jsp.
+            // getProductById chỉ lọc ID; không coi thông báo "ngừng kinh doanh" là kiểm tra trạng thái ở đây.
             Product product = productDAO.getProductById(productId);
 
             if (product == null) {
