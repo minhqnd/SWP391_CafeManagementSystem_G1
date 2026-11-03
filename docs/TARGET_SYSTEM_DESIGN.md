@@ -78,24 +78,24 @@
 
 ## 5. Kho, đề xuất nhập và phiếu nhập
 
+Chi tiết triển khai hiện tại: [Luồng đề xuất và kiểm nhận nguyên liệu](INVENTORY_WORKFLOW.md).
+
 ### Restock Request
 
 - Là đề nghị nội bộ khi nguyên liệu thiếu.
 - Bảng riêng: `restock_requests`, `restock_request_items`.
-- Trạng thái: `DRAFT → PENDING_APPROVAL → APPROVED | REJECTED | CANCELLED`.
+- Trạng thái: `DRAFT → PENDING_APPROVAL → APPROVED | REJECTED | CHANGES_REQUESTED | CANCELLED`.
 - APPROVED có thể được chuyển thành Purchase Order.
 
 ### Purchase Order
 
 - Là đơn mua chính thức gửi nhà cung cấp.
 - Bảng: `purchase_orders`, `purchase_order_items`.
-- Trạng thái: `DRAFT → ORDERED → RECEIVED` hoặc `CANCELLED`.
-- Khi RECEIVED:
-  1. Khóa PO.
-  2. Cộng `ingredients.current_stock`.
-  3. Ghi `inventory_transactions(IN_PURCHASE)`.
-  4. Giá cost gần nhất lấy từ `purchase_order_items.unit_price`.
-  5. Commit cùng transaction.
+- Trạng thái: `DRAFT → ORDERED → PARTIALLY_RECEIVED → RECEIVED`; có thể `CANCELLED` trước nhận hoặc `CLOSED` để đóng phần còn thiếu.
+- Mỗi lần nhận hàng lập phiếu kiểm nhận riêng; Admin duyệt mới cộng lượng thực nhận được chấp nhận.
+- Khóa PO và phiếu, cộng kho, ghi IN_PURCHASE, cập nhật tiến độ nhận và lịch sử trong cùng transaction.
+- Hàng thừa cần xác nhận rõ; giao thiếu có thể giao bổ sung. Sau nhận dùng phiếu điều chỉnh có lý do, không sửa đè phiếu gốc.
+- Giá cost gần nhất lấy từ đơn đã có nhận thực (gồm PARTIALLY_RECEIVED/CLOSED), hoặc dữ liệu RECEIVED cũ.
 - `purchase_orders` có cột `note`.
 
 ### Cost nguyên liệu
