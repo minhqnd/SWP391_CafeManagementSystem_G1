@@ -184,6 +184,33 @@ test("same product ID but different snapshot name or customization stays separat
     assert.equal(kds.groupKey({ ...a, customization: null }), kds.groupKey({ ...a, customization: "{}" }));
 });
 
+test("order checkboxes combine identical options and quantities only within the same order", () => {
+    const orders = sample();
+    const order = orders[0];
+    order.items.push({ ...order.items[0], itemId: 23, quantity: 3,
+        customization: '{"size":"M","ice":"ít"}' });
+    const groups = kds.orderItemGroups(order);
+    assert.equal(groups.length, 2);
+    assert.equal(groups[0].quantity, 5);
+    assert.deepEqual(groups[0].itemIds, [21, 23]);
+    assert.deepEqual(groups[1].itemIds, [22]);
+    kds.markItems(orders, groups[0].itemIds, true);
+    assert.equal(kds.groupComplete(groups[0]), true);
+    assert.deepEqual(kds.progress(order), { done: 5, total: 6, remaining: 1 });
+    assert.equal(kds.progress(orders[1]).done, 0);
+    kds.markItems(orders, groups[0].itemIds, false);
+    assert.equal(kds.progress(order).done, 0);
+});
+
+test("different sugar, ice, toppings and notes retain separate order checkboxes", () => {
+    const item = sample()[0].items[0];
+    const base = { size: "M", sugar: "50%", ice: "50%", toppings: ["A"], note: "Ly riêng" };
+    const variants = [base, { ...base, sugar: "100%" }, { ...base, ice: "100%" },
+        { ...base, toppings: ["B"] }, { ...base, note: "Mang đi" }];
+    assert.equal(kds.orderItemGroups({ items: variants.map((customization, index) =>
+        ({ ...item, itemId: index + 1, customization: JSON.stringify(customization) })) }).length, 5);
+});
+
 test("partial cups have stable IDs, independent states and accurate order totals", () => {
     const orders = sample();
     const item = orders[1].items[0];
@@ -274,6 +301,7 @@ test("UI syncs modal, cards and groups; blocks early finish and rolls back faile
         notes: "50% đường, Ít đá, Lưu ý: Ly cá nhân",
         topping: "Sốt caramel thêm, Kem whipping",
     });
+    serverOrders[0].items.push({ ...serverOrders[0].items[0], itemId: 12, quantity: 2 });
     const body = new Node("body");
     body.dataset = { baristaView: "active", contextPath: "", csrfToken: "token" };
     const nodes = Object.fromEntries(
@@ -304,7 +332,11 @@ test("UI syncs modal, cards and groups; blocks early finish and rolls back faile
             const params = Object.fromEntries(config.body);
             posts.push(params);
             if (fail) return { ok: false, json: async () => ({ message: "Save failed" }) };
-            if (params.action === "update-items") serverOrders[0].items[0].isPrepared = params.isPrepared === "true";
+            if (params.action === "update-items") {
+                const ids = params.itemIds.split(",").map(Number);
+                serverOrders[0].items.filter((item) => ids.includes(item.itemId))
+                    .forEach((item) => { item.isPrepared = params.isPrepared === "true"; });
+            }
             if (params.action === "update-order-status") serverOrders[0].status = "READY";
             return { ok: true, json: async () => ({ success: true }) };
         }
@@ -319,13 +351,15 @@ test("UI syncs modal, cards and groups; blocks early finish and rolls back faile
         input.events.change();
     };
     await settle();
+    assert.equal(walk(nodes["order-list"]).filter((n) => n.tag === "input").length, 1);
+    assert.equal(walk(nodes["order-list"]).find((n) => n.className === "item-quantity").textContent, "×5");
     assert.equal(find("complete-1").disabled, true);
     find("complete-1").events.click();
     assert.equal(posts.length, 0);
     find("open-7").events.click();
     const dialog = walk(body).find((n) => n.tag === "dialog");
     assert.equal(dialog.open, true);
-    assert.equal(walk(dialog).filter((n) => n.tag === "input").length, 3);
+    assert.equal(walk(dialog).filter((n) => n.tag === "input").length, 5);
     assert.equal(walk(dialog).filter((n) => n.tag === "progress").length, 0);
     const firstCard = walk(dialog).find((n) => n.className === "group-line");
     const details = firstCard.children.find((n) => n.className === "cup-details");
@@ -341,12 +375,7 @@ test("UI syncs modal, cards and groups; blocks early finish and rolls back faile
     );
     assert.equal(firstCard.children[0].children[0].textContent, "#1");
     change("modal-11:0", true);
-    assert.equal(find("cup-11:0").checked, true);
-    assert.equal(
-        walk(nodes["order-list"]).some((n) => n.className === "prepared-toggle is-prepared"),
-        true,
-    );
-    assert.equal(find("cup-11:1").checked, false);
+    assert.equal(find("item-11").checked, false);
     assert.equal(find("group-7").checked, false);
     assert.equal(posts.length, 0);
     await poll();
@@ -354,18 +383,24 @@ test("UI syncs modal, cards and groups; blocks early finish and rolls back faile
     dialog.close();
     find("open-7").events.click();
     assert.equal(find("modal-11:0").checked, true);
-    change("cup-11:1", true);
-    assert.equal(find("modal-11:1").checked, true);
     fail = true;
-    change("modal-11:2", true);
+    change("item-11", true);
     await settle();
+    assert.equal(posts.at(-1).itemIds, "11,12");
+    assert.equal(find("item-11").checked, false);
     assert.equal(find("modal-11:2").checked, false);
     assert.equal(find("modal-11:0").checked, true);
     assert.equal(find("complete-1").disabled, true);
     fail = false;
-    change("modal-11:2", true);
+    change("item-11", true);
     await settle();
+    assert.equal(find("item-11").checked, true);
+    assert.equal(serverOrders[0].items.every((item) => item.isPrepared), true);
+    assert.equal(walk(dialog).filter((n) => n.tag === "input").every((n) => n.checked), true);
+    assert.equal(walk(nodes["order-list"]).some((n) => n.textContent === "5/5 ly đã pha"), true);
     assert.equal(find("complete-1").disabled, false);
+    await poll();
+    assert.equal(find("item-11").checked, true);
     assert.equal(find("group-7"), undefined);
     assert.equal(dialog.open, true);
     assert.equal(serverOrders[0].status, "CONFIRMED");
@@ -376,14 +411,14 @@ test("UI syncs modal, cards and groups; blocks early finish and rolls back faile
     await settle();
     assert.equal(find("group-7"), undefined);
     assert.equal(dialog.open, true);
-    change("cup-11:1", false);
+    change("item-11", false);
     await settle();
     assert.equal(find("group-7").checked, false);
     assert.equal(find("modal-11:1").checked, false);
-    assert.equal(find("modal-11:0").checked, true);
+    assert.equal(find("modal-11:0").checked, false);
     change("group-7", false);
     await settle();
-    assert.equal(find("cup-11:0").checked, false);
+    assert.equal(find("item-11").checked, false);
     dialog.close();
     change("group-7", true);
     await settle();

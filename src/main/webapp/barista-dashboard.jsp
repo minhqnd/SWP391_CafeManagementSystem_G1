@@ -69,6 +69,18 @@
     function groupKey(item) {
         return JSON.stringify([item.productId, item.productName, canonical(options(item.customization))]);
     }
+    function orderItemGroups(order) {
+        const result = new Map();
+        order.items.forEach((item) => {
+            const key = groupKey(item);
+            if (!result.has(key)) result.set(key, { item, quantity: 0, itemIds: [], lines: [] });
+            const group = result.get(key);
+            group.quantity += item.quantity;
+            group.itemIds.push(item.itemId);
+            group.lines.push({ item });
+        });
+        return [...result.values()];
+    }
     function activeOrders(orders) {
         return orders
             .filter((o) => ["CONFIRMED", "PREPARING"].includes(o.status))
@@ -163,6 +175,7 @@
         reconcile,
         options,
         groupKey,
+        orderItemGroups,
         productKey,
         activeOrders,
         completedOrders,
@@ -348,30 +361,33 @@
         if (person) heading.append(element("p", "order-person", person));
         card.append(heading);
         const items = element("ul", "item-list");
-        order.items.forEach((item) => {
+        const rows = completed
+            ? order.items.map((item) => ({ item, quantity: item.quantity }))
+            : orderItemGroups(order);
+        rows.forEach((group) => {
+            const item = group.item;
+            const prepared = !completed && groupComplete(group);
             const row = element(
                 "li",
-                "order-item" + (!completed && cups(item).every((cup) => cup.prepared) ? " is-prepared" : ""),
+                "order-item" + (prepared ? " is-prepared" : ""),
             );
             const top = element("div", "item-top");
             top.append(
-                element("span", "item-quantity", "×" + item.quantity),
+                element("span", "item-quantity", "×" + group.quantity),
                 element("span", "item-name", item.productName),
             );
             row.append(top, tags(item));
             if (!completed) {
                 const toggles = element("div", "cup-toggles");
-                cups(item).forEach((cup) => {
-                    const toggle = checkbox(
-                        cup.prepared,
-                        "cup-" + cup.key,
-                        (value) => updateCups(item, cup.index, value),
-                        "Đã pha ly " + (cup.index + 1) + " " + item.productName,
-                        "Đã pha",
-                    );
-                    if (cup.prepared) toggle.className += " is-prepared";
-                    toggles.append(toggle);
-                });
+                const toggle = checkbox(
+                    prepared,
+                    "item-" + item.itemId,
+                    (value) => updateItems(group.itemIds, value),
+                    "Đã pha " + group.quantity + " " + item.productName,
+                    "Đã pha",
+                );
+                if (prepared) toggle.className += " is-prepared";
+                toggles.append(toggle);
                 row.append(toggles);
             }
             items.append(row);
