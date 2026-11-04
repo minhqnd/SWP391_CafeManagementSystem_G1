@@ -90,7 +90,7 @@
         <%-- ============ BƯỚC 2: ĐANG GIAO - GIAO XONG + THU COD, BÁO SỰ CỐ (UC27, UC28, UC29) ============ --%>
         <c:when test="${tab eq 'delivering'}">
             <p class="guide">Giao tới khách rồi bấm <b>Đã giao xong</b>. Đơn thu tiền mặt phải tick <b>đã thu đủ tiền</b> trước.
-                Không giao được thì bấm <b>Gặp sự cố</b>.</p>
+                Không giao được thì bấm <b>Gặp sự cố</b>: đơn sẽ bị <b>huỷ</b> và mang hàng về quán.</p>
             <c:if test="${empty activeDeliveries}">
                 <div class="empty"><span class="material-symbols-outlined">two_wheeler</span>
                     Bạn chưa nhận đơn nào. Sang <a href="${ctx}/delivery?tab=available">bước 1</a> để nhận đơn.</div>
@@ -149,7 +149,7 @@
                         <c:forEach var="issue" items="${d.issues}">
                             <p class="issue"><b>${issue.issueTypeLabel}</b> · ${issue.createdAtDisplay}<br><c:out value="${issue.description}" /></p>
                         </c:forEach>
-                        <form method="post" action="${ctx}/delivery">
+                        <form method="post" action="${ctx}/delivery" data-confirm="Báo sự cố sẽ HUỶ đơn #${fn:escapeXml(d.orderCode)} (không giao nữa). Tiếp tục?">
                             <input type="hidden" name="csrfToken" value="${csrf}">
                             <input type="hidden" name="action" value="report">
                             <input type="hidden" name="id" value="${d.id}">
@@ -159,7 +159,7 @@
                             </select>
                             <textarea name="description" rows="2" maxlength="500" required aria-label="Mô tả sự cố"
                                       placeholder="VD: Gọi 3 lần không nghe máy, đã chờ 10 phút..."></textarea>
-                            <button type="submit" class="btn danger"><span class="material-symbols-outlined">send</span>Gửi cho quản lý</button>
+                            <button type="submit" class="btn danger"><span class="material-symbols-outlined">cancel</span>Báo sự cố &amp; huỷ đơn</button>
                         </form>
                     </details>
                 </article>

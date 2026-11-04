@@ -155,6 +155,7 @@ public class Delivery implements Serializable {
             case "ACCEPTED": return "Đã nhận đơn";
             case "DELIVERING": return "Đang giao";
             case "DELIVERED": return "Đã giao";
+            case "FAILED": return "Giao thất bại (đã huỷ đơn)";
             default: return status;
         }
     }

@@ -205,11 +205,12 @@ public class DeliveryController extends HttpServlet {
             throw new IllegalArgumentException("Vui lòng chọn loại sự cố.");
         }
         String description = normalizeText(request.getParameter("description"), "Mô tả sự cố");
-        if (!deliveryDAO.reportIssue(delivery.getId(), shipperId, type, description)) {
+        int result = deliveryDAO.reportIssue(delivery.getId(), shipperId, type, description);
+        if (result == DeliveryDAO.NOT_ALLOWED) {
             throw new IllegalStateException("Chỉ báo sự cố cho đơn chưa giao xong.");
         }
-        session.setAttribute("deliverySuccessMsg", "Đã gửi báo cáo sự cố cho đơn #" + delivery.getOrderCode()
-                + ". Quản lý sẽ liên hệ xử lý.");
+        session.setAttribute("deliverySuccessMsg", "Đã báo sự cố và huỷ đơn #" + delivery.getOrderCode()
+                + ". Mang hàng về quán" + (delivery.isCod() ? ", không thu tiền của khách." : "."));
     }
 
     private void handOverCod(HttpServletRequest request, HttpSession session, int shipperId)
