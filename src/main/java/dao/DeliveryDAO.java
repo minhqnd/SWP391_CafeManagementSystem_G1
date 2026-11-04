@@ -296,19 +296,70 @@ public class DeliveryDAO extends BaseDAO {
         }
     }
 
-    /** UC29: báo sự cố cho đơn chưa giao xong */
-    public boolean reportIssue(int id, int shipperId, String issueType, String description)
+    /**
+     * UC29: báo sự cố = giao không thành công, huỷ đơn luôn. Trong 1 transaction:
+     * - ghi delivery_issues, deliveries -> FAILED, orders -> CANCELLED
+     * - đơn COD: khoản tiền mặt chưa thu -> FAILED (shipper không thu tiền)
+     * - hoàn điểm Aura khách đã dùng (REFUND), thu hồi điểm đã cộng (ADJUST)
+     * Hệ thống không xử lý hoàn tiền; nguyên liệu đã pha không hoàn kho (đồ uống đã làm ra).
+     * Trả về OK, hoặc NOT_ALLOWED nếu đơn không thuộc shipper này hoặc đã giao xong / đã huỷ.
+     */
+    public int reportIssue(int id, int shipperId, String issueType, String description)
             throws SQLException, ClassNotFoundException {
-        String sql = "INSERT INTO delivery_issues (delivery_id, issue_type, description) " +
-                     "SELECT d.id, ?, ? FROM deliveries d " +
-                     "WHERE d.id = ? AND d.shipper_id = ? AND d.status IN ('ASSIGNED', 'ACCEPTED', 'DELIVERING')";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, issueType);
-            ps.setString(2, description);
-            ps.setInt(3, id);
-            ps.setInt(4, shipperId);
-            return ps.executeUpdate() > 0;
+        String lockSql = "SELECT d.order_id, o.customer_id FROM deliveries d JOIN orders o ON o.id = d.order_id " +
+                         "WHERE d.id = ? AND d.shipper_id = ? AND d.status IN ('ASSIGNED', 'ACCEPTED', 'DELIVERING') " +
+                         "AND o.status NOT IN ('COMPLETED', 'CANCELLED') FOR UPDATE";
+        String issueSql = "INSERT INTO delivery_issues (delivery_id, issue_type, description) VALUES (?, ?, ?)";
+        String failDeliverySql = "UPDATE deliveries SET status = 'FAILED' WHERE id = ?";
+        String cancelOrderSql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ?";
+        String codFailedSql = "UPDATE payments SET status = 'FAILED', " +
+                              "payment_note = CONCAT(COALESCE(payment_note, ''), ' [Giao thất bại - không thu tiền]') " +
+                              "WHERE order_id = ? AND status = 'PENDING'";
+
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                int orderId;
+                Integer customerId;
+                try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
+                    ps.setInt(1, id);
+                    ps.setInt(2, shipperId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return NOT_ALLOWED;
+                        }
+                        orderId = rs.getInt("order_id");
+                        customerId = rs.getObject("customer_id", Integer.class);
+                    }
+                }
+                try (PreparedStatement ps = conn.prepareStatement(issueSql)) {
+                    ps.setInt(1, id);
+                    ps.setString(2, issueType);
+                    ps.setString(3, description);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = conn.prepareStatement(failDeliverySql)) {
+                    ps.setInt(1, id);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = conn.prepareStatement(cancelOrderSql)) {
+                    ps.setInt(1, orderId);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = conn.prepareStatement(codFailedSql)) {
+                    ps.setInt(1, orderId);
+                    ps.executeUpdate();
+                }
+                if (customerId != null) {
+                    PaymentDAO.reversePointsOnCancel(conn, customerId, orderId);
+                }
+                conn.commit();
+                return OK;
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            }
         }
     }
 

@@ -148,19 +148,34 @@ public class PaymentDAO extends BaseDAO {
                     ps.setInt(6,payment.getId()); ps.executeUpdate();
                 }
                 int earned=0;
-                if (success) {
-                    if (!"PENDING".equals(orderStatus)) {
-                        conn.rollback(); return new CallbackResult(false,false,0,orderId,orderCode,"Order is no longer payable");
-                    }
+                String message=success?"Payment confirmed":"Payment failed";
+                if (success && "PENDING".equals(orderStatus)) {
                     try (PreparedStatement ps=conn.prepareStatement(
                             "UPDATE orders SET status='CONFIRMED' WHERE id=? AND status='PENDING'")) {
                         ps.setInt(1,orderId);
                         if(ps.executeUpdate()!=1){conn.rollback();return new CallbackResult(false,false,0,orderId,orderCode,"Order state changed");}
                     }
                     earned=earnPointsOnce(conn,customerId,orderId,goodsAfterDiscount,pointsEarnUnit);
+                } else if (success && isOpenCodOrder(conn,orderId,orderStatus)) {
+                    // Khách đã chọn COD nhưng vẫn chuyển khoản (QR quét trước đó): tính là đã trả trước,
+                    // huỷ khoản COD và shipper không thu tiền nữa
+                    try (PreparedStatement ps=conn.prepareStatement(
+                            "UPDATE payments SET status='FAILED',payment_note=CONCAT(COALESCE(payment_note,''),' [Khách đã chuyển khoản]') " +
+                            "WHERE order_id=? AND payment_method='CASH' AND status='PENDING'")) {
+                        ps.setInt(1,orderId); ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps=conn.prepareStatement(
+                            "UPDATE deliveries SET cod_amount=0 WHERE order_id=? AND status IN ('ASSIGNED','ACCEPTED','DELIVERING')")) {
+                        ps.setInt(1,orderId); ps.executeUpdate();
+                    }
+                    earned=earnPointsOnce(conn,customerId,orderId,goodsAfterDiscount,pointsEarnUnit);
+                    message="Payment confirmed for COD order (no cash to collect)";
+                } else if (success) {
+                    // Đơn đã huỷ / đã hoàn tất: không nhận thanh toán nữa (hệ thống không xử lý hoàn tiền)
+                    conn.rollback(); return new CallbackResult(false,false,0,orderId,orderCode,"Order is no longer payable");
                 }
                 conn.commit();
-                return new CallbackResult(true,success,earned,orderId,orderCode,success?"Payment confirmed":"Payment failed");
+                return new CallbackResult(true,success,earned,orderId,orderCode,message);
             } catch(Exception e){conn.rollback();throw e;}
         } catch(Exception e){
             return new CallbackResult(false,false,0,0,orderCode,e.getMessage());
@@ -186,7 +201,65 @@ public class PaymentDAO extends BaseDAO {
         return points;
     }
 
+    /** Đơn đã chốt COD, chưa giao xong và chưa huỷ (shipper chưa thu tiền) */
+    private static boolean isOpenCodOrder(Connection conn,int orderId,String orderStatus)throws java.sql.SQLException{
+        if(!"CONFIRMED".equals(orderStatus)&&!"PREPARING".equals(orderStatus)
+                &&!"READY".equals(orderStatus)&&!"DELIVERING".equals(orderStatus)) return false;
+        try(PreparedStatement ps=conn.prepareStatement(
+                "SELECT 1 FROM payments WHERE order_id=? AND payment_method='CASH' AND status='PENDING' LIMIT 1")){
+            ps.setInt(1,orderId);try(ResultSet rs=ps.executeQuery()){return rs.next();}
+        }
+    }
+
+    /**
+     * Huỷ đơn sau khi đã trừ / cộng điểm Aura: hoàn điểm khách đã dùng (REFUND) và thu hồi điểm đã cộng (ADJUST âm).
+     * Chỉ làm 1 lần cho mỗi đơn; thu hồi không quá số điểm khách còn để số dư không âm.
+     */
+    public static void reversePointsOnCancel(Connection conn,int customerId,int orderId)throws java.sql.SQLException{
+        int used=sumPoints(conn,orderId,"REDEEM");          // số âm
+        int refunded=sumPoints(conn,orderId,"REFUND");
+        if(used<0 && refunded==0){
+            addPoints(conn,customerId,orderId,-used,"REFUND");
+        }
+        int earned=sumPoints(conn,orderId,"EARN");
+        int adjusted=sumPoints(conn,orderId,"ADJUST");
+        if(earned>0 && adjusted==0){
+            int balance;
+            try(PreparedStatement ps=conn.prepareStatement("SELECT total_points FROM users WHERE id=? FOR UPDATE")){
+                ps.setInt(1,customerId);try(ResultSet rs=ps.executeQuery()){balance=rs.next()?rs.getInt(1):0;}
+            }
+            int revoke=Math.min(earned,balance);
+            if(revoke>0) addPoints(conn,customerId,orderId,-revoke,"ADJUST");
+        }
+    }
+
+    private static int sumPoints(Connection conn,int orderId,String type)throws java.sql.SQLException{
+        try(PreparedStatement ps=conn.prepareStatement(
+                "SELECT COALESCE(SUM(points_change),0) FROM loyalty_transactions WHERE order_id=? AND transaction_type=?")){
+            ps.setInt(1,orderId);ps.setString(2,type);
+            try(ResultSet rs=ps.executeQuery()){return rs.next()?rs.getInt(1):0;}
+        }
+    }
+
+    private static void addPoints(Connection conn,int customerId,int orderId,int change,String type)throws java.sql.SQLException{
+        try(PreparedStatement ps=conn.prepareStatement(
+                "INSERT INTO loyalty_transactions(customer_id,order_id,points_change,transaction_type) VALUES(?,?,?,?)")){
+            ps.setInt(1,customerId);ps.setInt(2,orderId);ps.setInt(3,change);ps.setString(4,type);ps.executeUpdate();
+        }
+        try(PreparedStatement ps=conn.prepareStatement("UPDATE users SET total_points=total_points+? WHERE id=?")){
+            ps.setInt(1,change);ps.setInt(2,customerId);ps.executeUpdate();
+        }
+    }
+
     public Payment getPaymentByOrderId(int orderId){ return findLatestPayment(orderId); }
+
+    /** Khoản thanh toán thể hiện trên hoá đơn: ưu tiên khoản đã trả, rồi khoản đang chờ, cuối cùng mới tới khoản lỗi */
+    public Payment getBillPayment(int orderId){
+        try(Connection conn=getConnection();PreparedStatement ps=conn.prepareStatement(
+                "SELECT * FROM payments WHERE order_id=? ORDER BY FIELD(status,'SUCCESS','PENDING','FAILED'), id DESC LIMIT 1")){
+            ps.setInt(1,orderId);try(ResultSet rs=ps.executeQuery()){return rs.next()?map(rs):null;}
+        }catch(Exception e){return null;}
+    }
 
     public Payment findLatestPayment(int orderId){
         try(Connection conn=getConnection()){return findLatestPayment(conn,orderId);}catch(Exception e){return null;}

@@ -922,7 +922,6 @@
                                 <c:if test="${o.pointsUsed > 0}">Nếu hủy đơn, bạn được hoàn lại ${o.pointsUsed} điểm Aura đã dùng.</c:if>
                             </c:if>
                             <c:if test="${o.cancelled}">
-                                <span class="text-muted">Đơn hàng đã được hủy an toàn.</span>
                                 <c:if test="${empty o.paidAt && o.discountAmount > 0}">Điểm Aura đã dùng cho đơn đã được hoàn lại.</c:if>
                             </c:if>
                             <c:if test="${o.completed}">

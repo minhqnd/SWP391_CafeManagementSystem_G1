@@ -163,7 +163,7 @@ CREATE TABLE `deliveries` (
   `id` int NOT NULL AUTO_INCREMENT,
   `order_id` int NOT NULL,
   `shipper_id` int NOT NULL,
-  `status` enum('ASSIGNED','ACCEPTED','DELIVERING','DELIVERED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ASSIGNED',
+  `status` enum('ASSIGNED','ACCEPTED','DELIVERING','DELIVERED','FAILED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ASSIGNED',
   `cod_amount` decimal(12,2) NOT NULL DEFAULT '0.00',
   `cod_collected` decimal(12,2) DEFAULT NULL,
   `cod_handed_over_at` datetime DEFAULT NULL,
