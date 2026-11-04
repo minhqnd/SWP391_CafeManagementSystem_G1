@@ -125,6 +125,7 @@
                                             data-name="${fn:escapeXml(item.userName)}"
                                             data-shift="${fn:escapeXml(item.shiftDisplayName)} (${fn:escapeXml(item.shiftTime)})"
                                             data-status="${item.status}"
+                                            data-overnight="${item.overnightShift}"
                                             data-check-in="${empty item.checkInTime ? '' : item.checkInFormatted}"
                                             data-check-out="${empty item.checkOutTime ? '' : item.checkOutFormatted}"
                                             data-note="${fn:escapeXml(item.note)}">
@@ -283,6 +284,7 @@
                     checkInInput.value = button.dataset.checkIn;
                     checkOutInput.value = button.dataset.checkOut;
                     noteInput.value = button.dataset.note || '';
+                    form.dataset.overnight = button.dataset.overnight;
                     applyStatusRules(false);
                     updateNoteCount();
                 });
@@ -295,7 +297,9 @@
                 checkOutInput.setCustomValidity('');
                 timeFeedback.textContent = 'Vui lòng nhập giờ ra.';
 
+                // Ca qua đêm (VD 23:00 - 02:00): giờ ra nhỏ hơn giờ vào là sáng hôm sau, server tự kiểm tra
                 if (statusInput.value === 'COMPLETED' && checkInInput.value && checkOutInput.value
+                        && form.dataset.overnight !== 'true'
                         && checkOutInput.value <= checkInInput.value) {
                     checkOutInput.setCustomValidity('Giờ ra phải sau giờ vào.');
                     timeFeedback.textContent = 'Giờ ra phải sau giờ vào.';

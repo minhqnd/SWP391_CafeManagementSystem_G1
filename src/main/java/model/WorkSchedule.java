@@ -20,6 +20,7 @@ public class WorkSchedule implements Serializable {
     private int shiftId;      // work_shifts.id - ca thuộc tuần chứa workDate
     private String shiftName; // Tên ca lấy từ work_shifts (VD "Ca sáng")
     private java.time.LocalTime shiftStart; // Giờ bắt đầu ca của đúng tuần đó (tính đi muộn)
+    private java.time.LocalTime shiftEnd;   // Giờ kết thúc ca; nhỏ hơn giờ bắt đầu = ca qua đêm
     private Timestamp checkInTime;
     private Timestamp checkOutTime;
     private Double startingCash;
@@ -80,6 +81,28 @@ public class WorkSchedule implements Serializable {
 
     public java.time.LocalTime getShiftStart() { return shiftStart; }
     public void setShiftStart(java.time.LocalTime shiftStart) { this.shiftStart = shiftStart; }
+
+    public java.time.LocalTime getShiftEnd() { return shiftEnd; }
+    public void setShiftEnd(java.time.LocalTime shiftEnd) { this.shiftEnd = shiftEnd; }
+
+    /** Ca qua đêm (VD 23:00 - 02:00): kết thúc vào sáng ngày hôm sau của workDate */
+    public boolean isOvernightShift() { return WorkShift.isOvernight(shiftStart, shiftEnd); }
+
+    /**
+     * Một giờ HH:mm trong ca này rơi vào ngày nào: ca thường là workDate; ca qua đêm thì
+     * giờ thuộc nửa sau (gần giờ kết thúc hơn giờ bắt đầu) được tính sang ngày hôm sau.
+     * VD ca 23:00 - 02:00 ngày 04/11: 22:50 và 23:30 là 04/11, 01:30 là 05/11.
+     */
+    public java.time.LocalDateTime atShiftTime(java.time.LocalTime time) {
+        java.time.LocalDate date = workDate.toLocalDate();
+        if (isOvernightShift()) {
+            int start = shiftStart.toSecondOfDay();
+            int end = shiftEnd.toSecondOfDay();
+            int cutoff = end + (start - end) / 2; // giữa giờ kết thúc và giờ bắt đầu của hôm sau
+            if (time.toSecondOfDay() < cutoff) date = date.plusDays(1);
+        }
+        return java.time.LocalDateTime.of(date, time);
+    }
 
     public Timestamp getCheckInTime() { return checkInTime; }
     public void setCheckInTime(Timestamp checkInTime) { this.checkInTime = checkInTime; }

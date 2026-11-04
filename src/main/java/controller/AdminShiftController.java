@@ -116,7 +116,8 @@ public class AdminShiftController extends HttpServlet {
         }
         LocalTime start = parseTime(form.get("startTime"), "Giờ bắt đầu");
         LocalTime end = parseTime(form.get("endTime"), "Giờ kết thúc");
-        if (!end.isAfter(start)) throw new IllegalArgumentException("Giờ kết thúc phải sau giờ bắt đầu.");
+        // Giờ kết thúc nhỏ hơn giờ bắt đầu = ca qua đêm, kết thúc sáng hôm sau (VD 23:00 - 02:00)
+        if (end.equals(start)) throw new IllegalArgumentException("Giờ kết thúc không được trùng giờ bắt đầu.");
 
         if (workShiftDAO.nameExists(weekStart, name, id)) {
             throw new IllegalArgumentException("Tuần này đã có ca tên \"" + name + "\".");

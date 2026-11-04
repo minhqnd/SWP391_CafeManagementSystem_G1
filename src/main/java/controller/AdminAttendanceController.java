@@ -111,11 +111,13 @@ public class AdminAttendanceController extends HttpServlet {
             String note = normalizeNote(request.getParameter("note"));
             LocalTime checkIn = parseOptionalTime(request.getParameter("checkInTime"), "Giờ vào");
             LocalTime checkOut = parseOptionalTime(request.getParameter("checkOutTime"), "Giờ ra");
-            validateAttendance(status, checkIn, checkOut);
+            // Ca qua đêm (VD 23:00 - 02:00): giờ ra 01:50 được hiểu là sáng hôm sau
+            LocalDateTime checkInAt = checkIn == null ? null : schedule.atShiftTime(checkIn);
+            LocalDateTime checkOutAt = checkOut == null ? null : schedule.atShiftTime(checkOut);
+            validateAttendance(status, checkInAt, checkOutAt);
 
-            LocalDate workDate = schedule.getWorkDate().toLocalDate();
-            Timestamp checkInTimestamp = toTimestamp(workDate, checkIn);
-            Timestamp checkOutTimestamp = toTimestamp(workDate, checkOut);
+            Timestamp checkInTimestamp = checkInAt == null ? null : Timestamp.valueOf(checkInAt);
+            Timestamp checkOutTimestamp = checkOutAt == null ? null : Timestamp.valueOf(checkOutAt);
 
             boolean updated = workScheduleDAO.updateAttendance(
                     scheduleId, checkInTimestamp, checkOutTimestamp, status, note);
@@ -145,15 +147,16 @@ public class AdminAttendanceController extends HttpServlet {
             return;
         }
 
-        LocalTime checkIn = schedule.getCheckInTime().toLocalDateTime().toLocalTime();
-        long lateMinutes = Duration.between(shiftStart, checkIn).toMinutes();
+        // So theo ngày + giờ để ca qua đêm cũng đúng (VD ca 23:00, vào 00:10 hôm sau = muộn 70 phút)
+        LocalDateTime shiftStartAt = LocalDateTime.of(schedule.getWorkDate().toLocalDate(), shiftStart);
+        long lateMinutes = Duration.between(shiftStartAt, schedule.getCheckInTime().toLocalDateTime()).toMinutes();
         if (lateMinutes > 0) {
             schedule.setLate(true);
             schedule.setLateMinutes((int) Math.min(lateMinutes, Integer.MAX_VALUE));
         }
     }
 
-    private void validateAttendance(String status, LocalTime checkIn, LocalTime checkOut) {
+    private void validateAttendance(String status, LocalDateTime checkIn, LocalDateTime checkOut) {
         if ("SCHEDULED".equals(status) || "ABSENT".equals(status)) {
             if (checkIn != null || checkOut != null) {
                 throw new IllegalArgumentException(
@@ -208,9 +211,6 @@ public class AdminAttendanceController extends HttpServlet {
         }
     }
 
-    private Timestamp toTimestamp(LocalDate date, LocalTime time) {
-        return time == null ? null : Timestamp.valueOf(LocalDateTime.of(date, time));
-    }
 
     private int parsePositiveId(String rawId) {
         try {

@@ -254,10 +254,11 @@ public class CashierShiftHandoverController extends HttpServlet {
         }
     }
 
+    /** Ca thuộc ngày date; ca qua đêm (VD 23:00 - 02:00) còn tính cả sáng hôm sau để thu ngân chốt ca */
     private boolean isShiftOnDate(WorkSchedule schedule, LocalDate date) {
-        return schedule != null
-                && schedule.getWorkDate() != null
-                && schedule.getWorkDate().toLocalDate().equals(date);
+        if (schedule == null || schedule.getWorkDate() == null) return false;
+        LocalDate workDate = schedule.getWorkDate().toLocalDate();
+        return workDate.equals(date) || (schedule.isOvernightShift() && workDate.plusDays(1).equals(date));
     }
 
     private int parsePositiveId(String rawValue) {

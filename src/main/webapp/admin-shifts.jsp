@@ -48,6 +48,10 @@
                     <span class="shift-table-ref">Bảng: <strong>work_shifts</strong></span>
                     <h1>Khung giờ ca làm việc</h1>
                     <p>Mỗi tuần có bộ ca riêng. Sửa giờ ca của tuần này không làm thay đổi các tuần trước.</p>
+                    <p class="shift-overnight-hint">
+                        <span class="material-symbols-outlined" aria-hidden="true">dark_mode</span>
+                        Ca qua đêm: chọn giờ kết thúc <b>nhỏ hơn</b> giờ bắt đầu, VD <b>23:00 → 02:00</b> là ca kết thúc lúc 2 giờ sáng hôm sau.
+                    </p>
                 </div>
                 <c:if test="${not isPastWeek}">
                     <button type="button" class="shift-add-button" id="shiftAddButton"
@@ -86,6 +90,7 @@
                                     <th scope="col">Tên ca</th>
                                     <th scope="col">Bắt đầu</th>
                                     <th scope="col">Kết thúc</th>
+                                    <th scope="col">Thời lượng</th>
                                     <c:if test="${not isPastWeek}"><th scope="col" class="text-end">Thao tác</th></c:if>
                                 </tr>
                             </thead>
@@ -94,7 +99,10 @@
                                     <tr>
                                         <td class="shift-name-cell"><c:out value="${shift.shiftName}" /></td>
                                         <td class="shift-time-cell">${shift.startTimeText}</td>
-                                        <td class="shift-time-cell">${shift.endTimeText}</td>
+                                        <td class="shift-time-cell">${shift.endTimeText}
+                                            <c:if test="${shift.overnight}"><span class="shift-next-day" title="Ca qua đêm, kết thúc vào sáng hôm sau">hôm sau</span></c:if>
+                                        </td>
+                                        <td class="shift-duration-cell">${shift.durationText}</td>
                                         <c:if test="${not isPastWeek}">
                                             <td class="text-end text-nowrap">
                                                 <button type="button" class="shift-action-button shift-edit-button"
@@ -200,6 +208,8 @@
                                 <div class="invalid-feedback" id="shiftEditEndFeedback">Vui lòng nhập giờ kết thúc.</div>
                             </div>
                         </div>
+                        <p class="shift-time-preview" id="shiftTimePreview" aria-live="polite"></p>
+                        <p class="shift-form-hint">Giờ kết thúc nhỏ hơn giờ bắt đầu = ca qua đêm (VD 23:00 → 02:00 sáng hôm sau).</p>
                     </div>
 
                     <div class="modal-footer shift-modal-footer">
@@ -235,8 +245,31 @@
             const startInput = byId('shiftEditStart');
             const endInput = byId('shiftEditEnd');
             const endFeedback = byId('shiftEditEndFeedback');
+            const preview = byId('shiftTimePreview');
             const END_REQUIRED = 'Vui lòng nhập giờ kết thúc.';
-            const END_AFTER_START = 'Giờ kết thúc phải sau giờ bắt đầu.';
+            const END_SAME_AS_START = 'Giờ kết thúc không được trùng giờ bắt đầu.';
+
+            // Xem trước: ca dài bao lâu, kết thúc cùng ngày hay sáng hôm sau
+            const toMinutes = (value) => { const [h, m] = value.split(':').map(Number); return h * 60 + m; };
+            const updatePreview = () => {
+                preview.className = 'shift-time-preview';
+                if (!startInput.value || !endInput.value) { preview.textContent = ''; return; }
+                if (startInput.value === endInput.value) {
+                    preview.textContent = END_SAME_AS_START;
+                    preview.classList.add('is-error');
+                    return;
+                }
+                let minutes = toMinutes(endInput.value) - toMinutes(startInput.value);
+                const overnight = minutes < 0;
+                if (overnight) minutes += 24 * 60;
+                const hours = Math.floor(minutes / 60), rest = minutes % 60;
+                const length = hours === 0 ? rest + ' phút' : hours + ' tiếng' + (rest ? ' ' + rest + ' phút' : '');
+                preview.textContent = 'Ca dài ' + length + ' · kết thúc ' + endInput.value
+                        + (overnight ? ' sáng hôm sau (ca qua đêm)' : ' cùng ngày');
+                if (overnight) preview.classList.add('is-overnight');
+            };
+            startInput.addEventListener('input', updatePreview);
+            endInput.addEventListener('input', updatePreview);
 
             const open = (isEdit, values) => {
                 form.classList.remove('was-validated');
@@ -251,6 +284,7 @@
                 endInput.value = values.end || '';
                 byId('shiftEditTitle').textContent = isEdit ? 'Sửa ca' : 'Thêm ca';
                 byId('shiftEditSubmit').textContent = isEdit ? 'Lưu thay đổi' : 'Thêm ca';
+                updatePreview();
             };
 
             const addButton = byId('shiftAddButton');
@@ -263,9 +297,9 @@
             form.addEventListener('submit', (event) => {
                 endInput.setCustomValidity('');
                 endFeedback.textContent = END_REQUIRED;
-                if (startInput.value && endInput.value && endInput.value <= startInput.value) {
-                    endInput.setCustomValidity(END_AFTER_START);
-                    endFeedback.textContent = END_AFTER_START;
+                if (startInput.value && endInput.value && endInput.value === startInput.value) {
+                    endInput.setCustomValidity(END_SAME_AS_START);
+                    endFeedback.textContent = END_SAME_AS_START;
                 }
                 if (!form.checkValidity()) {
                     event.preventDefault();
@@ -278,6 +312,7 @@
 
             // Server báo lỗi: mở lại modal với dữ liệu vừa nhập
             if (modalEl.dataset.reopen === 'true') {
+                updatePreview();
                 bootstrap.Modal.getOrCreateInstance(modalEl).show();
             }
         })();

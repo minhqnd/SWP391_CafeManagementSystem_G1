@@ -58,13 +58,62 @@ public class WorkShift implements Serializable {
         return endTime == null ? "" : endTime.format(TIME_FORMAT);
     }
 
-    /** VD "07:00-12:00" */
+    /**
+     * Ca qua đêm: giờ kết thúc nhỏ hơn giờ bắt đầu nghĩa là ca kết thúc vào sáng hôm sau
+     * (VD 23:00 - 02:00). Ca luôn tính theo ngày bắt đầu (work_date của lịch phân ca).
+     */
+    public boolean isOvernight() {
+        return isOvernight(startTime, endTime);
+    }
+
+    public static boolean isOvernight(LocalTime start, LocalTime end) {
+        return start != null && end != null && end.isBefore(start);
+    }
+
+    /** Số phút của ca (ca qua đêm tính sang ngày hôm sau), VD 23:00 - 02:00 = 180 */
+    public int getDurationMinutes() {
+        if (startTime == null || endTime == null) return 0;
+        int minutes = toMinutes(endTime) - toMinutes(startTime);
+        return minutes <= 0 ? minutes + MINUTES_PER_DAY : minutes;
+    }
+
+    /** VD "5 tiếng", "4 tiếng 30 phút", "45 phút" */
+    public String getDurationText() {
+        int minutes = getDurationMinutes();
+        int hours = minutes / 60;
+        int rest = minutes % 60;
+        if (hours == 0) return rest + " phút";
+        return rest == 0 ? hours + " tiếng" : hours + " tiếng " + rest + " phút";
+    }
+
+    /** VD "07:00-12:00", ca qua đêm "23:00-02:00 hôm sau" */
     public String getTimeRange() {
-        return getStartTimeText() + "-" + getEndTimeText();
+        return getStartTimeText() + "-" + getEndTimeText() + (isOvernight() ? " hôm sau" : "");
     }
 
     /** VD "Ca sáng (07:00-12:00)" */
     public String getLabel() {
         return shiftName + " (" + getTimeRange() + ")";
+    }
+
+    /**
+     * Hai ca có chồng giờ không. Khung ca áp dụng cho mọi ngày trong tuần, nên ca qua đêm
+     * (VD 23:00 - 02:00) còn chồng với ca sáng sớm của ngày hôm sau (VD 01:00 - 06:00).
+     */
+    public boolean overlaps(WorkShift other) {
+        int start = toMinutes(startTime);
+        int end = start + getDurationMinutes();
+        int otherStart = toMinutes(other.startTime);
+        int otherEnd = otherStart + other.getDurationMinutes();
+        for (int shift = -MINUTES_PER_DAY; shift <= MINUTES_PER_DAY; shift += MINUTES_PER_DAY) {
+            if (start < otherEnd + shift && otherStart + shift < end) return true;
+        }
+        return false;
+    }
+
+    private static final int MINUTES_PER_DAY = 24 * 60;
+
+    private static int toMinutes(LocalTime time) {
+        return time.getHour() * 60 + time.getMinute();
     }
 }
