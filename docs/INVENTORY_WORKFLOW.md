@@ -44,4 +44,4 @@ Không giảm quá số lượng nhận còn lại của dòng phiếu hoặc l�
 
 Mọi thay đổi DB nằm trong `database/aura_cafe.sql`. Đầu file có khối nâng cấp tùy chọn giữ dữ liệu; toàn bộ file vẫn là bản reset và nạp dữ liệu mẫu, không chạy cả file lên DB đang dùng nếu cần giữ dữ liệu.
 
-Test MySQL độc lập: `InventoryWorkflowIntegrationTest` chỉ chạy khi truyền `-Dinventory.test.url=jdbc:mysql://.../schema_thu_nghiem`. Test dùng root không mật khẩu và tạo dữ liệu riêng; chỉ trỏ vào database thử nghiệm. Không dùng cấu hình DB ứng dụng để chạy test này.
+Test MySQL độc lập: `InventoryWorkflowIntegrationTest` chỉ chạy khi truyền `-Dinventory.test.url=jdbc:mysql://.../schema_thu_nghiem`. Tài khoản test lấy từ `inventory.test.user` / `inventory.test.password`, hoặc `DB_USER` / `DB_PASSWORD` (mặc định root không mật khẩu). Test tạo dữ liệu riêng; chỉ truyền URL database thử nghiệm. CI chạy trên MySQL service tách riêng, cùng schema được seed trong job.

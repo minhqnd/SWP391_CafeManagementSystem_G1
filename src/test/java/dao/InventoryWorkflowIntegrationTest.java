@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Opt-in: use only an isolated MySQL schema, never the application's configured DB. */
 @EnabledIfSystemProperty(named="inventory.test.url",matches=".+")
 class InventoryWorkflowIntegrationTest {
-    Connection connection()throws SQLException{return DriverManager.getConnection(System.getProperty("inventory.test.url"),"root","");}
+    Connection connection()throws SQLException{return DriverManager.getConnection(System.getProperty("inventory.test.url"), System.getProperty("inventory.test.user",System.getenv().getOrDefault("DB_USER","root")), System.getProperty("inventory.test.password",System.getenv().getOrDefault("DB_PASSWORD","")));}
     RestockRequestDAO requests=new RestockRequestDAO(){@Override protected Connection getConnection()throws SQLException{return connection();}};
     PurchaseOrderDAO orders=new PurchaseOrderDAO(){@Override protected Connection getConnection()throws SQLException{return connection();}};
     PurchaseReceiptDAO receipts=new PurchaseReceiptDAO(){@Override protected Connection getConnection()throws SQLException{return connection();}};

@@ -11,10 +11,10 @@ import java.sql.ResultSetMetaData;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
-class UserLoginEmailOnlyTest {
+class UserLoginIdentifierTest {
     private int connections;
     private String sql;
-    private String email;
+    private final Map<Integer,String> bindings = new java.util.HashMap<>();
     private String status = "ACTIVE";
     private boolean found = true;
 
@@ -27,11 +27,11 @@ class UserLoginEmailOnlyTest {
                     sql = (String) a[0];
                     return mock(PreparedStatement.class, (sp,sm,sa) -> {
                         if (sm.getName().equals("setString")) {
-                            assertEquals(1, sa[0]); email = (String) sa[1];
+                            bindings.put((Integer)sa[0], (String)sa[1]);
                         }
                         if (sm.getName().equals("executeQuery")) {
                             return mock(ResultSet.class, (rp,rm,ra) -> switch (rm.getName()) {
-                                case "next" -> found;
+                                case "next" -> found && ("test@example.com".equals(bindings.get(1)) || "0909000101".equals(bindings.get(2)));
                                 case "getInt" -> 7;
                                 case "getString" -> Map.of("status", status, "password_hash", "test-secret",
                                         "full_name", "Test Customer", "phone", "0909000101",
@@ -48,18 +48,20 @@ class UserLoginEmailOnlyTest {
         };
     }
 
-    @Test void rejectsPhoneAndPrefixBeforeConnecting() {
-        for (String value : new String[]{"0909000101", "test", "", "test@", "test example@example.com"}) {
+    @Test void rejectsUnknownIdentifiers() {
+        for (String value : new String[]{"unknown", "", "test@", "missing@example.com", "0909999999"}) {
             assertNull(dao().login(value, "test-secret"));
         }
-        assertEquals(0, connections);
     }
-    @Test void authenticatesByEmailOnlyAndKeepsRegisteredPhone() {
-        User user = dao().login(" test@example.com ", "test-secret");
-        assertNotNull(user);
-        assertEquals("SELECT * FROM users WHERE email = ?", sql);
-        assertEquals("test@example.com", email);
-        assertEquals("0909000101", user.getPhone());
+    @Test void authenticatesByEmailOrPhoneAndKeepsRegisteredPhone() {
+        for (String identifier : new String[]{" test@example.com ", " 0909000101 "}) {
+            User user = dao().login(identifier, "test-secret");
+            assertNotNull(user);
+            assertEquals("SELECT * FROM users WHERE (email = ? OR phone = ?)", sql);
+            assertEquals(identifier.trim(), bindings.get(1));
+            assertEquals(identifier.trim(), bindings.get(2));
+            assertEquals("0909000101", user.getPhone());
+        }
     }
     @Test void rejectsWrongPassword() {
         assertNull(dao().login("test@example.com", "wrong"));
