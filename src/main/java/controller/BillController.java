@@ -34,42 +34,39 @@ public class BillController extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
 
-        String orderIdStr = request.getParameter("orderId");
-        int orderId = -1;
+        // Hoá đơn có tên, SĐT, địa chỉ khách: bắt buộc đăng nhập
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/?login=true");
+            return;
+        }
+        boolean isStaff = "ADMIN".equalsIgnoreCase(user.getRole()) || "STAFF".equalsIgnoreCase(user.getRole());
 
+        int orderId = -1;
+        String orderIdStr = request.getParameter("orderId");
         if (orderIdStr != null && !orderIdStr.trim().isEmpty()) {
             try {
                 orderId = Integer.parseInt(orderIdStr.trim());
             } catch (NumberFormatException ignored) {}
         }
 
-        if (orderId <= 0) {
-            List<Order> recent = orderDAO.getRecentOrders(1);
-            if (!recent.isEmpty()) {
-                orderId = recent.get(0).getId();
-            } else {
-                response.sendRedirect(request.getContextPath() + "/menu");
-                return;
-            }
-        }
-
-        // Lấy thông tin đơn hàng
-        Order order = orderDAO.getOrderById(orderId);
+        // Không có mã đơn thì về danh sách đơn (không tự mở đơn mới nhất của người khác)
+        Order order = orderId > 0 ? orderDAO.getOrderById(orderId) : null;
         if (order == null) {
-            session.setAttribute("errorMsg", "Không tìm thấy hóa đơn cho đơn hàng #" + orderId);
-            response.sendRedirect(request.getContextPath() + "/menu");
+            session.setAttribute("ordersError", "Không tìm thấy hóa đơn cần xem.");
+            response.sendRedirect(request.getContextPath() + (isStaff ? "/" : "/orders"));
             return;
         }
 
-        // Kiểm tra phân quyền truy cập hóa đơn (Nếu đăng nhập là Customer thì chỉ xem đơn của mình, trừ khi là Admin/Staff)
-        if (user != null && order.getCustomerId() != null 
-                && !"ADMIN".equalsIgnoreCase(user.getRole()) 
-                && !"STAFF".equalsIgnoreCase(user.getRole()) 
-                && !"CASHIER".equalsIgnoreCase(user.getRole()) 
-                && user.getId() != order.getCustomerId().intValue()) {
-            session.setAttribute("errorMsg", "Bạn không có quyền truy cập hóa đơn của đơn hàng này!");
+        // Khách chỉ xem hoá đơn của chính mình; Admin / nhân viên xem được mọi hoá đơn
+        if (!isStaff && (order.getCustomerId() == null || user.getId() != order.getCustomerId().intValue())) {
+            session.setAttribute("ordersError", "Bạn không có quyền truy cập hóa đơn của đơn hàng này!");
             response.sendRedirect(request.getContextPath() + "/orders");
             return;
+        }
+
+        // Thanh toán QR xong trang thanh toán chuyển sang đây: lúc này mới bỏ các món đã trả khỏi giỏ
+        if (order.isPaid()) {
+            CheckoutController.removePaidItems(session, orderId);
         }
 
         // Lấy danh sách chi tiết các món trong đơn hàng
@@ -79,14 +76,27 @@ public class BillController extends HttpServlet {
         }
 
         // Lấy thông tin giao dịch thanh toán
-        Payment payment = paymentDAO.getPaymentByOrderId(orderId);
+        Payment payment = paymentDAO.getBillPayment(orderId);
 
         // Gán dữ liệu sang View
         request.setAttribute("order", order);
         request.setAttribute("orderDetails", orderDetails);
         request.setAttribute("payment", payment);
+        request.setAttribute("billStatus", billStatus(order, payment));
 
         // Chuyển tiếp tới giao diện bill.jsp
         request.getRequestDispatcher("/bill.jsp").forward(request, response);
+    }
+
+    /**
+     * Nhãn trạng thái trên hoá đơn theo thanh toán thực tế:
+     * PAID đã trả, COD trả khi nhận hàng (chưa thu), UNPAID chờ thanh toán, CANCELLED đã huỷ
+     */
+    static String billStatus(Order order, Payment payment) {
+        String payStatus = payment == null ? "" : payment.getStatus();
+        if (order.isCancelled()) return "CANCELLED";
+        if ("SUCCESS".equals(payStatus)) return "PAID";
+        if ("PENDING".equals(payStatus) && "CASH".equals(payment.getPaymentMethod())) return "COD";
+        return "UNPAID";
     }
 }
