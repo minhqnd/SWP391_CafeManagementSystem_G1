@@ -41,10 +41,11 @@ public class InventoryDAO extends BaseDAO {
         List<InventoryTransaction> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
             "SELECT t.id, t.ingredient_id, t.transaction_type, t.quantity, " +
-            "t.reference_type, t.reference_id, t.reason, t.created_at, " +
+            "t.reference_type, t.reference_id, t.reason, t.created_at, a.quantity_delta AS adjustment_delta, " +
             "i.name AS ingredient_name, i.unit " +
             "FROM inventory_transactions t " +
-            "JOIN ingredients i ON t.ingredient_id = i.id WHERE 1=1 "
+            "JOIN ingredients i ON t.ingredient_id = i.id " +
+            "LEFT JOIN purchase_receipt_adjustments a ON t.reference_type = 'RECEIPT_ADJUSTMENT' AND a.id = t.reference_id WHERE 1=1 "
         );
 
         List<Object> params = new ArrayList<>();
@@ -76,6 +77,7 @@ public class InventoryDAO extends BaseDAO {
                     tx.setIngredientName(rs.getString("ingredient_name"));
                     tx.setUnit(rs.getString("unit"));
                     tx.setReason(rs.getString("reason"));
+                    tx.setAdjustmentDelta(rs.getBigDecimal("adjustment_delta"));
                     list.add(tx);
                 }
             }

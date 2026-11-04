@@ -42,6 +42,7 @@ class IngredientActiveTest {
                 return mock(ResultSet.class, (rp,rm,ra) -> switch (rm.getName()) {
                     case "next" -> { boolean next = first[0] && row; first[0] = false; yield next; }
                     case "getBoolean" -> active;
+                    case "getString" -> sql.contains("FROM users") ? ("role".equals(ra[0]) ? "ADMIN" : "ACTIVE") : "ACTIVE";
                     case "getInt" -> 8;
                     default -> null;
                 });

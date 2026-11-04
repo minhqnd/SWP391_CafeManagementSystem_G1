@@ -1,6 +1,6 @@
 -- =====================================================
 -- AURA CAFE ERP - CONSOLIDATED DATABASE
--- Canonical MySQL 8.x schema and data snapshot (24 tables)
+-- Canonical MySQL 8.x schema and data snapshot (28 tables)
 -- Generated from aura_cafe_erp on 2026-10-28
 -- =====================================================
 -- WARNING: Running this entire file resets tables and reloads sample data.
@@ -17,6 +17,42 @@ SET @ingredient_active_ddl = IF(
 PREPARE ingredient_active_stmt FROM @ingredient_active_ddl;
 EXECUTE ingredient_active_stmt;
 DEALLOCATE PREPARE ingredient_active_stmt;
+
+ALTER TABLE restock_requests MODIFY status ENUM('DRAFT','PENDING_APPROVAL','CHANGES_REQUESTED','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'DRAFT';
+ALTER TABLE purchase_orders MODIFY status ENUM('DRAFT','ORDERED','PARTIALLY_RECEIVED','RECEIVED','CLOSED','CANCELLED') NOT NULL DEFAULT 'DRAFT';
+ALTER TABLE inventory_transactions MODIFY reference_type ENUM('ORDER','PURCHASE_ORDER','RECEIPT_ADJUSTMENT','ADJUSTMENT') NOT NULL DEFAULT 'ADJUSTMENT';
+CREATE TABLE IF NOT EXISTS inventory_workflow_history (
+ id INT AUTO_INCREMENT PRIMARY KEY,
+ entity_type VARCHAR(30) NOT NULL, entity_id INT NOT NULL,
+ actor_id INT NOT NULL, action VARCHAR(30) NOT NULL,
+ details TEXT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY (actor_id) REFERENCES users(id), INDEX (entity_type,entity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS purchase_receipts (
+ id INT AUTO_INCREMENT PRIMARY KEY, po_id INT NOT NULL, receiver_id INT NOT NULL,
+ submission_key VARCHAR(36) NOT NULL UNIQUE,
+ status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
+ note VARCHAR(500) NOT NULL, reviewer_id INT NULL, review_note VARCHAR(500),
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, reviewed_at DATETIME NULL,
+ FOREIGN KEY (po_id) REFERENCES purchase_orders(id),
+ FOREIGN KEY (receiver_id) REFERENCES users(id), FOREIGN KEY (reviewer_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS purchase_receipt_items (
+ id INT AUTO_INCREMENT PRIMARY KEY, receipt_id INT NOT NULL, po_item_id INT NOT NULL,
+ delivered_quantity DECIMAL(12,3) NOT NULL, accepted_quantity DECIMAL(12,3) NOT NULL,
+ UNIQUE (receipt_id,po_item_id),
+ FOREIGN KEY (receipt_id) REFERENCES purchase_receipts(id), FOREIGN KEY (po_item_id) REFERENCES purchase_order_items(id),
+ CHECK (delivered_quantity >= 0 AND accepted_quantity >= 0 AND accepted_quantity <= delivered_quantity)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS purchase_receipt_adjustments (
+ id INT AUTO_INCREMENT PRIMARY KEY, receipt_item_id INT NOT NULL, actor_id INT NOT NULL,
+ submission_key VARCHAR(36) NOT NULL UNIQUE,
+ quantity_delta DECIMAL(12,3) NOT NULL, reason VARCHAR(500) NOT NULL,
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY (receipt_item_id) REFERENCES purchase_receipt_items(id), FOREIGN KEY (actor_id) REFERENCES users(id),
+ CHECK (quantity_delta <> 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 */
 -- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
 --
@@ -266,7 +302,7 @@ CREATE TABLE `inventory_transactions` (
   `ingredient_id` int NOT NULL,
   `transaction_type` enum('IN_PURCHASE','OUT_ORDER','ADJUSTMENT','SPOILAGE') COLLATE utf8mb4_unicode_ci NOT NULL,
   `quantity` decimal(12,3) NOT NULL,
-  `reference_type` enum('ORDER','PURCHASE_ORDER','ADJUSTMENT') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ADJUSTMENT',
+  `reference_type` enum('ORDER','PURCHASE_ORDER','RECEIPT_ADJUSTMENT','ADJUSTMENT') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ADJUSTMENT',
   `reference_id` int DEFAULT NULL,
   `reason` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -581,7 +617,7 @@ CREATE TABLE `purchase_orders` (
   `creator_id` int NOT NULL,
   `restock_request_id` int DEFAULT NULL,
   `total_cost` decimal(12,2) NOT NULL DEFAULT '0.00',
-  `status` enum('DRAFT','ORDERED','RECEIVED','CANCELLED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'DRAFT',
+  `status` enum('DRAFT','ORDERED','PARTIALLY_RECEIVED','RECEIVED','CLOSED','CANCELLED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'DRAFT',
   `note` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ordered_at` datetime DEFAULT NULL,
@@ -649,7 +685,7 @@ CREATE TABLE `restock_requests` (
   `id` int NOT NULL AUTO_INCREMENT,
   `requester_id` int NOT NULL,
   `reviewer_id` int DEFAULT NULL,
-  `status` enum('DRAFT','PENDING_APPROVAL','APPROVED','REJECTED','CANCELLED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'DRAFT',
+  `status` enum('DRAFT','PENDING_APPROVAL','CHANGES_REQUESTED','APPROVED','REJECTED','CANCELLED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'DRAFT',
   `reason` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `note` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `review_note` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -887,3 +923,36 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-10-28 23:12:14
+
+-- Receiving workflow tables
+CREATE TABLE IF NOT EXISTS inventory_workflow_history (
+ id INT AUTO_INCREMENT PRIMARY KEY,
+ entity_type VARCHAR(30) NOT NULL, entity_id INT NOT NULL,
+ actor_id INT NOT NULL, action VARCHAR(30) NOT NULL,
+ details TEXT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY (actor_id) REFERENCES users(id), INDEX (entity_type,entity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS purchase_receipts (
+ id INT AUTO_INCREMENT PRIMARY KEY, po_id INT NOT NULL, receiver_id INT NOT NULL,
+ submission_key VARCHAR(36) NOT NULL UNIQUE,
+ status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
+ note VARCHAR(500) NOT NULL, reviewer_id INT NULL, review_note VARCHAR(500),
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, reviewed_at DATETIME NULL,
+ FOREIGN KEY (po_id) REFERENCES purchase_orders(id),
+ FOREIGN KEY (receiver_id) REFERENCES users(id), FOREIGN KEY (reviewer_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS purchase_receipt_items (
+ id INT AUTO_INCREMENT PRIMARY KEY, receipt_id INT NOT NULL, po_item_id INT NOT NULL,
+ delivered_quantity DECIMAL(12,3) NOT NULL, accepted_quantity DECIMAL(12,3) NOT NULL,
+ UNIQUE (receipt_id,po_item_id),
+ FOREIGN KEY (receipt_id) REFERENCES purchase_receipts(id), FOREIGN KEY (po_item_id) REFERENCES purchase_order_items(id),
+ CHECK (delivered_quantity >= 0 AND accepted_quantity >= 0 AND accepted_quantity <= delivered_quantity)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS purchase_receipt_adjustments (
+ id INT AUTO_INCREMENT PRIMARY KEY, receipt_item_id INT NOT NULL, actor_id INT NOT NULL,
+ submission_key VARCHAR(36) NOT NULL UNIQUE,
+ quantity_delta DECIMAL(12,3) NOT NULL, reason VARCHAR(500) NOT NULL,
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY (receipt_item_id) REFERENCES purchase_receipt_items(id), FOREIGN KEY (actor_id) REFERENCES users(id),
+ CHECK (quantity_delta <> 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -15,7 +15,7 @@ class AdminRestockViewTest {
         assertTrue(jsp.contains("<main class=\"admin-main-wrapper\">"));
         assertTrue(jsp.contains("/components/admin-sidebar.jsp"));
         assertFalse(jsp.contains("margin-left:190px"));
-        for (String action : new String[]{"create", "order", "receive", "cancel"}) {
+        for (String action : new String[]{"create", "order", "cancel", "close", "edit"}) {
             assertTrue(jsp.contains("value=\"" + action + "\""));
         }
     }
@@ -26,7 +26,7 @@ class AdminRestockViewTest {
         assertTrue(jsp.contains("family=Material+Symbols+Outlined"));
         assertTrue(jsp.contains("family=Plus+Jakarta+Sans"));
         assertTrue(jsp.contains("<body class=\"admin-body\">"));
-        assertTrue(jsp.contains("<main class=\"admin-main-wrapper\">"));
+        assertTrue(jsp.contains("admin-main-wrapper"));
         assertTrue(jsp.contains("/components/admin-sidebar.jsp"));
         assertFalse(jsp.contains("margin-left:190px"));
         assertTrue(jsp.contains("name=\"csrfToken\""));

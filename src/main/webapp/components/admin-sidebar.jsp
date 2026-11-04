@@ -97,6 +97,7 @@
                     <span>Phiếu nhập hàng</span>
                 </a>
             </li>
+            <li class="nav-item"><a href="${ctx}/admin/purchase-receipts" class="nav-link"><span class="material-symbols-outlined">fact_check</span><span>Kiểm nhận hàng</span></a></li>
         </ul>
 
         <!-- GROUP: NHÂN SỰ & CA LÀM -->

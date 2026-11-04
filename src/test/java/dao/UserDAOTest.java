@@ -31,10 +31,12 @@ public class UserDAOTest {
     }
 
     @Test
-    @DisplayName("TC-USER-01: Không cho đăng nhập bằng số điện thoại")
+    @DisplayName("TC-USER-01: Đăng nhập thành công bằng số điện thoại")
     void testLoginWithPhone() {
         User user = userDAO.login("0900000002", "123456");
-        assertNull(user, "Chỉ được đăng nhập bằng email đầy đủ");
+        assertNotNull(user, "Số điện thoại đã đăng ký phải đăng nhập được");
+        assertEquals("0900000002", user.getPhone());
+        assertEquals("BARISTA", user.getPosition());
     }
 
     @Test

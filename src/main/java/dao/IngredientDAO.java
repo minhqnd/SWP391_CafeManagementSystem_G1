@@ -50,10 +50,11 @@ public class IngredientDAO extends BaseDAO {
                      "             ORDER BY COALESCE(tx.created_at, po.created_at) DESC, " +
                      "                      COALESCE(tx.id, 0) DESC, poi.id DESC) AS row_num " +
                      "  FROM purchase_order_items poi " +
-                     "  JOIN purchase_orders po ON po.id = poi.po_id AND po.status = 'RECEIVED' " +
+                     "  JOIN purchase_orders po ON po.id = poi.po_id AND po.status IN ('PARTIALLY_RECEIVED','RECEIVED','CLOSED') " +
                      "  LEFT JOIN inventory_transactions tx " +
                      "    ON tx.reference_type = 'PURCHASE_ORDER' AND tx.reference_id = po.id " +
                      "   AND tx.ingredient_id = poi.ingredient_id AND tx.transaction_type = 'IN_PURCHASE'" +
+                     "  WHERE tx.id IS NOT NULL OR po.status = 'RECEIVED'" +
                      ") ranked WHERE row_num = 1";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
