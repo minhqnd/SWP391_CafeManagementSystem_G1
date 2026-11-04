@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+// BF10 - ĐĂNG KÝ: popup auth_modal.jsp gửi POST /register; đây không phải trang GET riêng.
 @WebServlet(name = "RegisterController", urlPatterns = {"/register"})
 public class RegisterController extends HttpServlet {
 
@@ -75,6 +76,7 @@ public class RegisterController extends HttpServlet {
         }
 
         // Kiểm tra số điện thoại đã tồn tại chưa
+        // Kiểm tra trùng trước khi INSERT; DAO trả boolean, Controller chọn thông báo và tab mở lại.
         if (userDAO.checkPhoneExists(phone)) {
             request.getSession().setAttribute("errorMsg", "Số điện thoại đã tồn tại trong hệ thống.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
@@ -100,8 +102,10 @@ public class RegisterController extends HttpServlet {
         newUser.setRole(dbRole);
         newUser.setPosition(dbPosition);
 
+        // Đầu vào hợp lệ -> DAO thêm users với vai trò CUSTOMER; không lấy role từ form.
         boolean isSuccess = userDAO.register(newUser, password);
 
+        // KẾT QUẢ: redirect về trang gốc kèm tab=login/register để popup hiển thị đúng bước.
         if (isSuccess) {
             request.getSession().setAttribute("successMsg", "Đăng ký thành công! Vui lòng đăng nhập.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=login");

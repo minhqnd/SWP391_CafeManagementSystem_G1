@@ -2,7 +2,6 @@ package controller;
 
 import model.Cart;
 import model.CartItem;
-import model.ShopSettings;
 import model.User;
 import service.CartService;
 
@@ -14,15 +13,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * CartController - Giỏ hàng lưu trong session (không bắt buộc đăng nhập)
  * GET  /cart      : Xem giỏ hàng
- * POST /cart      : Tăng/giảm số lượng, chọn món, xoá món, dùng điểm Aura (theo mốc điểm)
+ * POST /cart      : Tăng/giảm số lượng, chọn món, xoá món
  * POST /cart/add  : Thêm món từ trang Menu / Chi tiết món / Trang chủ (trả về JSON)
  * GET/POST /cart/api : Như /cart nhưng trả về JSON (popup giỏ hàng)
  */
@@ -93,7 +90,16 @@ public class CartController extends HttpServlet {
         } else if ("removeSelected".equals(action)) {
             cart.removeSelectedItems();
         } else if ("usePoints".equals(action)) {
-            usePoints(session, cart, parseInt(request.getParameter("points"), -1));
+            Integer customerId = getCustomerId(session);
+            if (customerId == null) {
+                session.setAttribute("cartError", "Vui lòng đăng nhập bằng tài khoản khách hàng để dùng điểm Aura.");
+            } else {
+                cartService.refreshCart(cart, customerId);
+                cart.setPointsUsed(parseInt(request.getParameter("pointsUsed"), 0));
+                if (!cartService.refreshCart(cart, customerId)) {
+                    session.setAttribute("cartError", pointsAdjustedMessage(cart));
+                }
+            }
         }
 
         if ("/cart/api".equals(request.getServletPath()) || "json".equals(request.getParameter("format"))) {
@@ -184,49 +190,6 @@ public class CartController extends HttpServlet {
         response.getWriter().write("{\"success\":true,\"totalItems\":" + cart.getTotalQuantity() + "}");
     }
 
-    /**
-     * Dùng điểm Aura trừ thẳng vào tiền hàng, chỉ theo các mốc chẵn do Admin cài đặt
-     * (VD mốc 50 điểm: 50, 100, 150...). points = 0: bỏ dùng điểm.
-     */
-    private void usePoints(HttpSession session, Cart cart, int points) {
-        Integer customerId = getCustomerId(session);
-        if (customerId == null) {
-            session.setAttribute("cartError", "Vui lòng đăng nhập để dùng điểm Aura.");
-            return;
-        }
-        if (points == 0) {
-            cart.setPointsUsed(0);
-            session.setAttribute("cartMessage", "Đã bỏ dùng điểm Aura cho đơn này.");
-            return;
-        }
-
-        // Lấy số điểm hiện có, tiền hàng và mốc điểm mới nhất trước khi kiểm tra
-        cartService.refreshCart(cart, customerId);
-        ShopSettings settings = cart.getSettings();
-        int step = settings.getPointsStep();
-
-        if (points < 0 || step <= 0 || points % step != 0) {
-            session.setAttribute("cartError", "Điểm Aura chỉ được dùng theo mốc " + step + " điểm ("
-                    + step + ", " + (2 * step) + ", " + (3 * step) + "...).");
-            return;
-        }
-        if (points > cart.getAvailablePoints()) {
-            session.setAttribute("cartError", "Bạn chỉ có " + cart.getAvailablePoints() + " điểm Aura.");
-            return;
-        }
-        if (points > cart.getMaxRedeemablePoints()) {
-            session.setAttribute("cartError", cart.getMaxRedeemablePoints() > 0
-                    ? "Đơn này dùng tối đa " + cart.getMaxRedeemablePoints() + " điểm (số tiền giảm không vượt quá tiền hàng)."
-                    : "Tiền hàng chưa đủ để dùng mốc " + step + " điểm (giảm " + formatMoney(settings.getPointsStepValue()) + ").");
-            return;
-        }
-
-        cart.setPointsUsed(points);
-        session.setAttribute("cartMessage", "Đã dùng " + points + " điểm Aura, giảm "
-                + formatMoney(settings.getPointsDiscount(points)) + ".");
-    }
-
-    /** Thông báo khi số điểm đang dùng bị giảm do giỏ hàng / số điểm / mốc điểm thay đổi */
     static String pointsAdjustedMessage(Cart cart) {
         return cart.getPointsUsed() > 0
                 ? "Số điểm Aura dùng cho đơn đã được điều chỉnh còn " + cart.getPointsUsed()
@@ -246,7 +209,11 @@ public class CartController extends HttpServlet {
     /** Khách đang đăng nhập (null nếu chưa) - chỉ khách đăng nhập mới dùng được điểm Aura */
     static Integer getCustomerId(HttpSession session) {
         User user = (User) session.getAttribute("user");
-        return user != null ? user.getId() : null;
+        return isCustomer(user) ? user.getId() : null;
+    }
+
+    static boolean isCustomer(User user) {
+        return user != null && "CUSTOMER".equalsIgnoreCase(user.getRole());
     }
 
     /** Chuyển thông báo 1 lần (flash) từ session sang request sau khi redirect */
@@ -258,11 +225,7 @@ public class CartController extends HttpServlet {
         }
     }
 
-    static String formatMoney(double amount) {
-        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-        symbols.setGroupingSeparator('.');
-        return new DecimalFormat("#,##0", symbols).format(amount) + "đ";
-    }
+
 
     private int parseInt(String value, int defaultValue) {
         try {

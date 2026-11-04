@@ -9,44 +9,9 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import model.User;
 
+// BF10/BF12 - HỒ SƠ: GET xem thông tin/lịch sử; POST action=update hoặc changePassword.
 @WebServlet(name = "ProfileController", urlPatterns = {"/profile"})
 public class ProfileController extends HttpServlet {
-
-    private void calculateLoyaltyData(HttpServletRequest request, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        int points = user.getTotalPoints();
-        String nextTier = "Vàng";
-        String currentDisplayTier = "SILVER";
-        int nextPoints = 300;
-
-        if (points < 300) {
-            currentDisplayTier = "MEMBER";
-            nextTier = "Vàng";
-            nextPoints = 300;
-        } else if (points < 800) {
-            currentDisplayTier = "GOLD";
-            nextTier = "Kim Cương";
-            nextPoints = 800;
-        } else if (points < 1500) {
-            currentDisplayTier = "DIAMOND";
-            nextTier = "VIP";
-            nextPoints = 1500;
-        } else {
-            currentDisplayTier = "VIP";
-            nextTier = "Tối đa";
-            nextPoints = points;
-        }
-
-        int pointsNeeded = nextPoints - points;
-        int progressPercent = (int) Math.round((double) points / nextPoints * 100);
-        if (progressPercent > 100) progressPercent = 100;
-
-        request.setAttribute("pointsNeeded", pointsNeeded);
-        request.setAttribute("nextTierName", nextTier);
-        request.setAttribute("currentDisplayTier", currentDisplayTier);
-        request.setAttribute("nextPoints", nextPoints);
-        request.setAttribute("progressPercent", progressPercent);
-    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -59,8 +24,8 @@ public class ProfileController extends HttpServlet {
             return;
         }
 
-        calculateLoyaltyData(request, session);
-        
+        // BF12 - PHÍA KHÁCH: đọc lịch sử theo ID trong session, không theo ID do người dùng gửi lên.
+        // Lưu ý: đoạn này chỉ tải lại lịch sử; số dư trong profile.jsp hiện lấy từ sessionScope.user.
         dao.UserDAO userDAO = new dao.UserDAO();
         java.util.List<model.LoyaltyTransaction> history = userDAO.getLoyaltyHistoryByUserId(((User)session.getAttribute("user")).getId());
         request.setAttribute("loyaltyHistory", history);
@@ -83,6 +48,7 @@ public class ProfileController extends HttpServlet {
 
         User user = (User) session.getAttribute("user");
         
+        // BF10: chọn thao tác; ID chủ hồ sơ lấy từ user trong session, không lấy ID từ form.
         String action = request.getParameter("action");
         if ("update".equals(action)) {
             String fullName = request.getParameter("fullName");
@@ -106,9 +72,11 @@ public class ProfileController extends HttpServlet {
                 request.setAttribute("errorMsg", "Địa chỉ email không hợp lệ!");
             } else {
                 dao.UserDAO userDAO = new dao.UserDAO();
+                // Controller kiểm tra định dạng -> DAO UPDATE users WHERE id=? -> trả success hoặc lỗi.
                 String updateResult = userDAO.updateUserProfile(user.getId(), fullName, phone, email, birthday, address);
                 
                 if ("success".equals(updateResult)) {
+                    // DB lưu thành công mới cập nhật User trong session để JSP hiển thị thông tin mới.
                     user.setFullName(fullName);
                     user.setPhone(phone);
                     user.setEmail(email);
@@ -121,6 +89,7 @@ public class ProfileController extends HttpServlet {
                 }
             }
         } else if ("changePassword".equals(action)) {
+            // BF10 - ĐỔI MẬT KHẨU: khác quên mật khẩu; phải xác minh mật khẩu hiện tại, không dùng OTP.
             String oldPassword = request.getParameter("oldPassword");
             String newPassword = request.getParameter("newPassword");
             String confirmPassword = request.getParameter("confirmPassword");
@@ -145,8 +114,7 @@ public class ProfileController extends HttpServlet {
             }
         }
         
-        calculateLoyaltyData(request, session);
-        
+        // Sau POST: tải lại lịch sử/quy tắc và forward JSP, mang theo thông báo trong request.
         java.util.List<model.LoyaltyTransaction> history = new dao.UserDAO().getLoyaltyHistoryByUserId(((User)session.getAttribute("user")).getId());
         request.setAttribute("loyaltyHistory", history);
         

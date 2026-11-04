@@ -125,6 +125,7 @@
                                             data-name="${fn:escapeXml(item.userName)}"
                                             data-shift="${fn:escapeXml(item.shiftDisplayName)} (${fn:escapeXml(item.shiftTime)})"
                                             data-status="${item.status}"
+                                            data-overnight="${item.overnightShift}"
                                             data-check-in="${empty item.checkInTime ? '' : item.checkInFormatted}"
                                             data-check-out="${empty item.checkOutTime ? '' : item.checkOutFormatted}"
                                             data-note="${fn:escapeXml(item.note)}">
@@ -240,6 +241,19 @@
                 noteCount.textContent = `${noteInput.value.length}/500`;
             };
 
+            // Giờ vào/ra bị xoá khi đổi sang trạng thái không dùng tới - nhớ lại để điền lại nếu đổi về
+            // (VD: Hoàn thành -> lỡ chọn Vắng mặt -> chọn lại Hoàn thành thì không mất giờ vào/ra)
+            const savedTimes = new Map();
+
+            const clearOrRestore = (input) => {
+                if (input.disabled) {
+                    if (input.value) savedTimes.set(input, input.value);
+                    input.value = '';
+                } else if (!input.value && savedTimes.has(input)) {
+                    input.value = savedTimes.get(input);
+                }
+            };
+
             const applyStatusRules = (clearIncompatibleValues) => {
                 const status = statusInput.value;
                 const hasNoAttendance = status === 'SCHEDULED' || status === 'ABSENT';
@@ -251,11 +265,9 @@
                 checkInInput.required = isPresent || isCompleted;
                 checkOutInput.required = isCompleted;
 
-                if (clearIncompatibleValues && hasNoAttendance) {
-                    checkInInput.value = '';
-                    checkOutInput.value = '';
-                } else if (clearIncompatibleValues && isPresent) {
-                    checkOutInput.value = '';
+                if (clearIncompatibleValues) {
+                    clearOrRestore(checkInInput);
+                    clearOrRestore(checkOutInput);
                 }
                 checkOutInput.setCustomValidity('');
                 timeFeedback.textContent = 'Vui lòng nhập giờ ra.';
@@ -264,6 +276,7 @@
             document.querySelectorAll('.attendance-edit-button').forEach((button) => {
                 button.addEventListener('click', () => {
                     form.classList.remove('was-validated');
+                    savedTimes.clear();
                     idInput.value = button.dataset.id;
                     employeeLabel.textContent = button.dataset.name;
                     shiftLabel.textContent = button.dataset.shift;
@@ -271,6 +284,7 @@
                     checkInInput.value = button.dataset.checkIn;
                     checkOutInput.value = button.dataset.checkOut;
                     noteInput.value = button.dataset.note || '';
+                    form.dataset.overnight = button.dataset.overnight;
                     applyStatusRules(false);
                     updateNoteCount();
                 });
@@ -283,7 +297,9 @@
                 checkOutInput.setCustomValidity('');
                 timeFeedback.textContent = 'Vui lòng nhập giờ ra.';
 
+                // Ca qua đêm (VD 23:00 - 02:00): giờ ra nhỏ hơn giờ vào là sáng hôm sau, server tự kiểm tra
                 if (statusInput.value === 'COMPLETED' && checkInInput.value && checkOutInput.value
+                        && form.dataset.overnight !== 'true'
                         && checkOutInput.value <= checkInInput.value) {
                     checkOutInput.setCustomValidity('Giờ ra phải sau giờ vào.');
                     timeFeedback.textContent = 'Giờ ra phải sau giờ vào.';

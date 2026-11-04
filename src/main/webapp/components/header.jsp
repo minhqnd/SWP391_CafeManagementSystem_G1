@@ -91,9 +91,44 @@
     .user-item-btn.logout-btn:hover .item-icon {
         color: #dc2626;
     }
+
+    /* Homepage header styled as a compact storefront */
+    .aura-home-navbar { padding:0 !important; min-height:64px; }
+    .aura-home-navbar > .container-fluid { max-width:960px; min-height:64px; margin:0 auto; padding-left:12px !important; padding-right:12px !important; display:flex; align-items:center; }
+    .aura-home-navbar .navbar-brand { margin:0 24px 0 0 !important; }
+    .aura-home-navbar .navbar-brand .bg-danger { border-radius:7px !important; }
+    .aura-home-search { width:min(360px, 36vw); margin:0 auto; display:flex; align-items:center; height:36px; background:#f2f2f2; border:1px solid #e7e7e7; border-radius:20px; overflow:hidden; }
+    .aura-home-search input { flex:1; min-width:0; border:0; outline:0; background:transparent; padding:0 14px; font-size:.78rem; color:#495057; }
+    .aura-home-search button { width:42px; height:100%; border:0; background:#e8dfd5; color:#1769cc; display:grid; place-items:center; }
+    .aura-home-navbar #mainNavbar { flex-grow:0; }
+    .aura-home-secondary { min-height:40px; background:#b32830; }
+    .aura-home-secondary .container { max-width:960px; min-height:40px; display:flex; align-items:stretch; gap:0; position:relative; }
+    .aura-home-secondary .menu-category-dropdown { display:none; position:absolute; z-index:1060; top:100%; left:0; width:220px; max-height:min(70vh, 440px); overflow-y:auto; background:#fff; border:1px solid #dedede; border-top:0; box-shadow:0 8px 20px rgba(20,20,20,.16); }
+    .aura-home-secondary .menu-category-dropdown.show { display:block; }
+    .aura-home-secondary .menu-category-option { min-height:36px; display:flex; align-items:center; gap:8px; padding:7px 10px; color:#27313d; text-decoration:none; font-size:.78rem; font-weight:500; border-bottom:1px solid #f0f0f0; }
+    .aura-home-secondary .menu-category-option:hover, .aura-home-secondary .menu-category-option.active { color:#a51f28; background:#fff5f4; }
+    .aura-home-secondary .menu-category-option .material-symbols-outlined { font-size:18px; }
+    .aura-home-secondary .menu-category-option img { width:30px; height:28px; flex:0 0 30px; object-fit:cover; border-radius:4px; background:#f4ece7; }
+    .aura-home-secondary .menu-category-option > span:nth-child(2) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .aura-home-secondary .menu-category-count { margin-left:auto; color:#818995; font-size:.7rem; }
+    .aura-home-secondary a { min-height:40px; display:inline-flex; align-items:center; gap:7px; padding:0 13px; color:#fff; text-decoration:none; font-size:.82rem; font-weight:600; white-space:nowrap; }
+    .aura-home-secondary a:hover, .aura-home-secondary a.active-home-nav { background:#9e2028; color:#fff; }
+    .aura-home-secondary .home-category-static { background:#fff; color:#a51f28; border-radius:4px 4px 0 0; min-width:172px; }
+    .aura-home-secondary .home-category-static:hover { background:#fff; color:#8e111d; }
+    @media(max-width:991.98px) {
+        .aura-home-navbar > .container-fluid { max-width:100%; }
+        .aura-home-search { width:min(300px, 35vw); }
+        .aura-home-secondary .container { max-width:100%; overflow-x:auto; }
+    }
+    @media(max-width:575.98px) {
+        .aura-home-navbar > .container-fluid { flex-wrap:wrap; padding-top:8px; padding-bottom:8px; }
+        .aura-home-navbar .navbar-brand { margin-right:auto !important; }
+        .aura-home-search { order:3; width:100%; margin:8px 0 0; }
+        .aura-home-navbar #mainNavbar { margin-left:auto; }
+    }
 </style>
 
-<nav class="navbar navbar-expand-lg aura-navbar py-3">
+<nav class="navbar navbar-expand-lg aura-navbar py-3 ${param.navbarMode != 'barista' ? 'aura-home-navbar' : 'barista-topbar'}">
     <div class="container-fluid px-4 px-lg-5">
         <!-- Brand Logo -->
         <c:set var="auraBrandMarkup">
@@ -119,6 +154,13 @@
             </c:otherwise>
         </c:choose>
 
+        <c:if test="${param.navbarMode != 'barista'}">
+            <form class="aura-home-search" action="${pageContext.request.contextPath}/menu" method="get" role="search">
+                <input type="search" name="keyword" placeholder="Xin chào, bạn cần tìm gì?" aria-label="Tìm món trong thực đơn" />
+                <button type="submit" aria-label="Tìm kiếm"><span class="material-symbols-outlined">search</span></button>
+            </form>
+        </c:if>
+
         <!-- Mobile Toggler -->
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
                 aria-controls="mainNavbar" aria-expanded="false" aria-label="Mở điều hướng">
@@ -127,29 +169,35 @@
 
         <div class="collapse navbar-collapse" id="mainNavbar">
             <!-- Navigation Links -->
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1 gap-lg-2" style="font-size: 0.95rem;">
+            <c:if test="${param.navbarMode == 'barista'}">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1 gap-lg-2 barista-tabs" style="font-size: 0.95rem;">
                 <c:choose>
                     <c:when test="${param.navbarMode == 'barista'}">
-                        <li class="nav-item">
+
+                <li class="nav-item">
                             <a id="orders-link"
                                class="nav-link aura-nav-link ${param.activePage == 'barista-orders' ? 'active-nav' : ''}"
                                href="${pageContext.request.contextPath}/barista">
-                                Đơn pha chế <span class="d-none d-sm-inline">(F1)</span>
+                                Đơn pha chế
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a id="recipes-link"
-                               class="nav-link aura-nav-link ${param.activePage == 'barista-recipes' ? 'active-nav' : ''}"
-                               href="${pageContext.request.contextPath}/barista?action=recipes">
-                                Công thức &amp; Định lượng <span class="d-none d-sm-inline">(F2)</span>
+                            <a id="completed-link"
+                               class="nav-link aura-nav-link ${param.activePage == 'barista-completed' ? 'active-nav' : ''}"
+                               href="${pageContext.request.contextPath}/barista?action=completed">
+                                Đơn đã pha
                             </a>
                         </li>
+                        <li class="nav-item"><a class="nav-link aura-nav-link ${param.activePage == 'inventory' ? 'active-nav' : ''}" href="${pageContext.request.contextPath}/barista/restock-requests">Đề xuất &amp; nhận hàng</a></li>
                     </c:when>
                     <c:otherwise>
+
+
                 <li class="nav-item">
                     <a class="nav-link aura-nav-link ${param.activePage == 'home' ? 'active-nav' : ''}" 
                        href="${pageContext.request.contextPath}/">Trang chủ</a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link aura-nav-link ${param.activePage == 'menu' ? 'active-nav' : ''}" 
                        href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
@@ -158,12 +206,14 @@
                     <a class="nav-link aura-nav-link ${param.activePage == 'feedback' ? 'active-nav' : ''}" 
                        href="${pageContext.request.contextPath}/feedback">Phản ánh & Khiếu nại</a>
                 </li>
+
                     </c:otherwise>
                 </c:choose>
             </ul>
+        </c:if>
 
             <!-- Right Actions: Cart & Profile -->
-            <div class="d-flex align-items-center gap-3 ms-lg-auto">
+            <div class="d-flex align-items-center gap-3 ms-lg-auto header-actions">
                 <!-- Cart Button -->
                 <c:if test="${param.showCart != 'false' && param.navbarMode != 'barista'}">
                 <a href="${pageContext.request.contextPath}/cart" 
@@ -178,8 +228,20 @@
                 <!-- Profile / Auth Button -->
                 <c:choose>
                     <c:when test="${not empty sessionScope.user}">
+                        <c:choose>
+                        <c:when test="${param.navbarMode == 'barista'}">
+                            <div class="d-flex align-items-center gap-2 text-dark header-user">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
+                                    <span class="material-symbols-outlined text-danger">account_circle</span>
+                                </div>
+                                <div class="d-none d-xl-flex flex-column text-start">
+                                    <span class="fw-semibold text-truncate" style="font-size: 0.85rem; max-width: 130px;"><c:out value="${sessionScope.user.fullName}" /></span>
+                                </div>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
                         <div class="dropdown">
-                            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark" data-bs-toggle="dropdown">
+                            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark header-user" data-bs-toggle="dropdown">
                                 <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
                                     <span class="material-symbols-outlined text-danger">account_circle</span>
                                 </div>
@@ -255,6 +317,8 @@
                                 </li>
                             </ul>
                         </div>
+                        </c:otherwise>
+                        </c:choose>
                     </c:when>
                     <c:otherwise>
                         <button type="button" class="btn btn-outline-danger rounded-circle p-2 d-flex align-items-center justify-content-center" 
@@ -263,7 +327,42 @@
                         </button>
                     </c:otherwise>
                 </c:choose>
+                <c:if test="${param.navbarMode == 'barista' && not empty sessionScope.user}">
+                    <a href="${pageContext.request.contextPath}/login?action=logout" class="barista-logout" title="Đăng xuất khỏi hệ thống">
+                        <span class="material-symbols-outlined">logout</span><span>Đăng xuất</span>
+                    </a>
+                </c:if>
             </div>
         </div>
     </div>
 </nav>
+<c:if test="${param.navbarMode != 'barista'}">
+    <nav class="aura-home-secondary" aria-label="Điều hướng cửa hàng">
+        <div class="container">
+                        <c:choose>
+                <c:when test="${param.activePage == 'home'}"><a class="home-category-static" href="#homeCategoryList"><span class="material-symbols-outlined">grid_view</span> Danh mục sản phẩm</a></c:when>
+                <c:when test="${param.activePage == 'menu'}"><a class="menu-category-toggle" href="#menuCategoryDropdown" aria-controls="menuCategoryDropdown"><span class="material-symbols-outlined">menu</span> Danh mục sản phẩm</a></c:when>
+                <c:otherwise><a href="${pageContext.request.contextPath}/menu#menuCategoryDropdown"><span class="material-symbols-outlined">menu</span> Danh mục sản phẩm</a></c:otherwise>
+            </c:choose>
+            <a class="${param.activePage == 'menu' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/menu">Menu &amp; Đồ uống</a>
+            <a class="${param.activePage == 'feedback' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/feedback">Liên hệ &amp; Góp ý</a>
+            <a href="${pageContext.request.contextPath}/profile"><span class="material-symbols-outlined">stars</span> Thành viên Aura</a>
+            <c:if test="${param.activePage == 'menu'}">
+                <div class="menu-category-dropdown" id="menuCategoryDropdown">
+                    <c:forEach var="cat" items="${categories}">
+                        <c:url var="menuCategoryUrl" value="/menu">
+                            <c:param name="category" value="${cat.id}" />
+                            <c:if test="${not empty currentKeyword}"><c:param name="keyword" value="${currentKeyword}" /></c:if>
+                        </c:url>
+                        <a class="menu-category-option ${currentCategory == cat.id ? 'active' : ''}" href="${menuCategoryUrl}">
+                            <c:url var="storedCategoryImage" value="/category-image"><c:param name="id" value="${cat.id}" /></c:url>
+                            <img src="${cat.storedImage ? storedCategoryImage : (not empty cat.imageUrl ? cat.imageUrl : 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=80&amp;h=80&amp;fit=crop')}" alt="${cat.name}" loading="lazy" />
+                            <span>${cat.name}</span>
+                            <span class="menu-category-count">${cat.productCount}</span>
+                        </a>
+                    </c:forEach>
+                </div>
+            </c:if>
+        </div>
+    </nav>
+</c:if>

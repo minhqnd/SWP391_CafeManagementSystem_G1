@@ -16,12 +16,16 @@ He thong Quan ly Quan Ca phe Aura Cafe duoc xay dung tren nen tang Java Web Serv
 
 ## 2. Huong dan thiet lap Co so du lieu (Database Setup)
 
-Toan bo cau truc co so du lieu gom 16 bang nghiep vu, rang buoc khoa ngoai, chi muc va toan bo du lieu mau (12 san pham dac san, 6 danh muc, cau hinh sizes & toppings JSON, voucher giam gia, kho qua doi diem thuong, tai khoan nhan su va khach hang) da duoc hop nhat vao **duy nhat mot file script**:
+Toàn bộ schema và dữ liệu MySQL của ứng dụng Aura Café được gom trong một file duy nhất: `database/aura_cafe.sql` (25 bảng). File này là ảnh chụp hợp nhất gồm tài khoản, lịch/ca làm việc, bàn giao ca, sản phẩm, đơn hàng, thanh toán, giao hàng, khách hàng thân thiết, phản ánh, kho và cấu hình cửa hàng. Đánh giá và phản ánh dùng chung bảng `customer_reviews`; điểm thành viên dùng `users.total_points` và `loyalty_transactions`.
+
+Payment Gateway là microservice Cloudflare Workers riêng và dùng Cloudflare D1/SQLite, vì vậy schema tương thích của nó vẫn nằm tại `payment-gateway/schema.sql` và không được trộn vào schema MySQL.
 
 - File khoi tao: `database/aura_cafe.sql`
 - Ten database mac dinh: `aura_cafe_erp`
 
-Thanh vien moi hoac khi muon dat lai toan bo du lieu chi can thuc hien theo mot trong hai cach sau:
+Khi lấy code mới về hoặc muốn cài lại database, mở và chạy lại file `database/aura_cafe.sql` trong MySQL. Script này xóa database `aura_cafe_erp` hiện có rồi tạo lại toàn bộ schema và dữ liệu đã hợp nhất; hãy sao lưu database trước nếu cần giữ dữ liệu phát sinh sau thời điểm tạo file.
+
+Thành viên mới có thể chạy file theo một trong hai cách:
 
 ### Cach 1: Chay truc tiep qua Terminal / Command Prompt (Nhanh nhat)
 
@@ -37,9 +41,9 @@ mysql -u root -p1234 < database/aura_cafe.sql
 
 ### Cach 2: Chay qua MySQL Workbench / DBeaver / Navicat
 
-1. Mo ung dung quan tri co so du lieu (MySQL Workbench, DBeaver, hoac DataGrip).
-2. Mo tep `database/aura_cafe.sql` (`File` -> `Open SQL Script...`).
-3. Bam **Execute** (hoac to hop phim `Ctrl + Shift + Enter` / `Cmd + Shift + Enter`) de thuc thi toan bo script. Script da tu dong chua cac lenh `CREATE DATABASE IF NOT EXISTS aura_cafe_erp;` va `USE aura_cafe_erp;`.
+1. Mở MySQL Workbench và chọn `File` -> `Open SQL Script...`.
+2. Chọn `database/aura_cafe.sql` trong thư mục dự án.
+3. Bấm **Execute** (tia sét) để chạy toàn bộ script. Script tự tạo và chọn database `aura_cafe_erp`.
 
 ### Luu y cau hinh ket noi Database trong du an
 
@@ -63,10 +67,10 @@ He thong ho tro dang nhap linh hoat bang **Email**, **So dien thoai**, hoac **Te
 | Vai tro (Role) | Vi tri (Position) | Ho va ten | Email dang nhap | So dien thoai | Muc dich su dung |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **ADMIN** | Quan ly (Manager) | Aura Admin | `admin@auracafe.vn` | `0900000001` | Bao cao doanh thu, quan ly thuc don, nhan su, kho |
-| **STAFF** | Thu ngan (Cashier) | Tran Thi Binh | `binh@auracafe.vn` | `0900000003` | POS ban hang tai quay, tao don, ap dung voucher, thu tien |
+| **STAFF** | Thu ngan (Cashier) | Tran Thi Binh | `binh@auracafe.vn` | `0900000003` | POS bán hàng, tra cứu khách bằng số điện thoại, đổi điểm và thu tiền |
 | **STAFF** | Pha che (Barista) | Nguyen Van An | `an@auracafe.vn` | `0900000002` | Man hinh KDS pha che, tiep nhan mon, cap nhat trang thai READY |
 | **STAFF** | Giao hang (Shipper) | Hoang Van Nam | `nam@auracafe.vn` | `0900000006` | Man hinh giao hang, nhan don van chuyen, hoan tat giao hang |
-| **CUSTOMER** | Hoi vien Bac (Silver) | Le Minh Anh | `anh@gmail.com` | `0900000004` | Dat mon truc tuyen, tich diem (120 diem), doi qua tang voucher |
+| **CUSTOMER** | Hội viên Bạc (Silver) | Le Minh Anh | `anh@gmail.com` | `0900000004` | Đặt món trực tuyến, tích điểm và dùng điểm tại quầy bằng số điện thoại |
 | **CUSTOMER** | Hoi vien Dong (Bronze) | Pham Quang Huy | `huy@gmail.com` | `0900000005` | Dat mon truc tuyen, tich diem (50 diem) |
 
 ---
@@ -79,9 +83,8 @@ Sau khi chay ung dung tai `http://localhost:8080/SWP391_CafeManagementSystem/`:
   - Trang chu & San pham ban chay: `/`
   - Thuc don & Loc theo danh muc: `/menu`
   - Gio hang & Chon topping/size: `/cart`
-  - Dat hang & Ap dung Voucher / Diem: `/checkout`
+  - Đặt hàng trực tuyến: `/checkout` (tự tích điểm sau thanh toán)
   - Theo doi don hang: `/orders` (hoac `/orders?orderId={id}`)
-  - Cua hang doi thuong: `/rewards`
   - Thong tin ca nhan & Doi mat khau: `/profile`
 
 - **Nhan vien & Quan ly (Internal Staff)**:
@@ -116,15 +119,15 @@ SWP391_CafeManagementSystem_G1/
 ├── pom.xml                                   # Quan ly thu vien Maven (Jakarta EE 10, MySQL Connector, Gson, JSTL)
 ├── run.sh                                    # Script khoi chay tu dong (clean compile, package va deploy)
 ├── database/
-│   ├── aura_cafe.sql                         # File SQL duy nhat: Khoi tao Schema & Data toan dien
-│   ├── update_menu_data.sql                  # Script mau cap nhat thuc don
-│   └── update_rewards.sql                    # Script mau cap nhat he thong diem thuong
+│   └── aura_cafe.sql                         # File MySQL duy nhất: schema và dữ liệu hợp nhất
+├── payment-gateway/
+│   └── schema.sql                            # Schema D1/SQLite riêng của Payment Gateway
 └── src/
     └── main/
         ├── java/
         │   ├── context/                      # Quan ly ket noi JDBC (DBContext.java)
         │   ├── dao/                          # Data Access Objects (UserDAO, ProductDAO, OrderDAO, RewardDAO, v.v.)
-        │   ├── model/                        # Entity POJO (User, Product, Order, OrderDetail, Voucher, v.v.)
+        │   ├── model/                        # Entity POJO (User, Product, Order, OrderDetail, v.v.)
         │   ├── service/                      # Logic nghiep vu & tich hop thanh toan
         │   └── controller/                   # Servlet Controllers (Home, Menu, Cart, Cashier, Barista, v.v.)
         └── webapp/

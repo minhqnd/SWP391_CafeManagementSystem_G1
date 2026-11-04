@@ -8,19 +8,14 @@
         onclick="window.location.href='${pageContext.request.contextPath}/product-detail?id=${p.id}'">
         <!-- Image Box -->
         <div class="product-img-box">
-            <c:if test="${not empty p.badge}">
-                <span class="pill-badge ${p.badge == 'BÁN CHẠY' ? 'pill-badge-hot' : 'pill-badge-new'}">
-                    ${p.badge}
-                </span>
-            </c:if>
-            <img src="${p.imageUrl}" alt="${p.name}" loading="lazy"
+            <img src="${p.displayImageUrl}" alt="${p.name}" loading="lazy"
                 onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'">
         </div>
 
         <!-- Body -->
         <div class="product-card-body">
-            <div class="product-meta-subtitle">
-                ${not empty p.subtitle ? p.subtitle : p.categoryName}
+            <div class="product-meta-category">
+                ${p.categoryName}
             </div>
             <h2 class="product-name" title="${p.name}">
                 <a href="${pageContext.request.contextPath}/product-detail?id=${p.id}"

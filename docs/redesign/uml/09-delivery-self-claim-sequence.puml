@@ -1,0 +1,68 @@
+@startuml 09-delivery-self-claim-sequence
+title Sequence - Shipper Self-Claim and Delivery (UC26-UC30)
+autonumber
+actor Shipper
+boundary "delivery-dashboard.jsp" as UI
+control "DeliveryController\n/delivery" as Ctl
+entity "DeliveryDAO" as DAO
+entity "OrderDAO" as ODAO
+database "MySQL" as DB
+
+== Step 1 - View waiting orders (UC26) ==
+Shipper -> UI : Open Delivery screen
+UI -> Ctl : GET /delivery[?tab=available]
+Ctl -> Ctl : check STAFF + position SHIPPER + ACTIVE
+Ctl -> DAO : getActiveDeliveries(shipperId), getAvailableOrders()
+DAO -> DB : SELECT orders WHERE order_type = 'ONLINE' AND delivery_address IS NOT NULL\nAND status = 'READY' (Barista finished)\nAND NOT EXISTS (deliveries of this order)\n-- cod_amount = 0 if a SUCCESS payment exists
+Ctl -> ODAO : getOrderDetails(orderId) for each order
+Ctl --> UI : waiting orders (oldest first, auto-refresh 30 s)\n(no active delivery -> open step 1, else step 2)
+
+== Step 1 - Claim & deliver (UC27) ==
+Shipper -> UI : Click "Claim & deliver" + confirm
+UI -> Ctl : POST action=claim (orderId, csrfToken)
+Ctl -> Ctl : check CSRF token
+Ctl -> DAO : claim(orderId, shipperId)
+DAO -> DB : [transaction] SELECT final_amount, paid FROM orders\nWHERE id = ? AND status = 'READY' AND unclaimed FOR UPDATE
+alt no row (claimed by another shipper / cancelled)
+  DAO -> DB : ROLLBACK
+  Ctl --> UI : redirect ?tab=available\n"Order already claimed or no longer waiting"
+else order locked
+  DAO -> DB : INSERT deliveries (order_id, shipper_id, 'DELIVERING', cod_amount,\nassigned_at = accepted_at = picked_up_at = NOW())
+  note right of DB
+    UNIQUE (order_id) is a second guard:
+    duplicate key -> ROLLBACK, claim returns 0
+  end note
+  DAO -> DB : UPDATE orders SET shipper_id = ?, status = 'DELIVERING'\nCOMMIT
+  DAO --> Ctl : new delivery id
+  Ctl --> UI : redirect ?tab=delivering "Claimed order #..."
+end
+
+== Step 2 - Report issue (UC29) ==
+Shipper -> UI : Open "Problem?", choose type + description
+UI -> Ctl : POST action=report (id, issueType, description)
+Ctl -> DAO : reportIssue(id, shipperId, type, description)
+DAO -> DB : INSERT delivery_issues ... WHERE delivery not DELIVERED
+
+== Step 2 - Delivered + collect COD (UC27, UC30) ==
+Shipper -> UI : (COD) tick "I collected the full amount", click "Delivered"
+UI -> Ctl : POST action=deliver (id, codConfirmed)
+alt COD order and box not ticked
+  Ctl --> UI : "Tick the box first, or report an issue"
+else
+  Ctl -> DAO : completeDelivery(id, shipperId, collected = cod_amount)
+  DAO -> DB : [transaction] SELECT ... FROM deliveries JOIN orders\nWHERE d.id = ? AND d.shipper_id = ? FOR UPDATE (must be DELIVERING)
+  opt COD order
+    DAO -> DB : UPDATE payments SET status = 'SUCCESS', paid_at = NOW()\nWHERE transaction_code LIKE 'COD-%'
+    DAO -> DB : earn Aura points once (loyalty_transactions)
+  end
+  DAO -> DB : UPDATE deliveries SET status = 'DELIVERED', delivered_at, cod_collected\nUPDATE orders SET status = 'COMPLETED'\nCOMMIT
+  Ctl --> UI : "Delivered order #..., remember step 3"
+end
+
+== Step 3 - Hand over COD cash (UC30) ==
+Shipper -> UI : Step 3, choose Cashier, click "Handed over"
+UI -> Ctl : POST action=handover (cashierId)
+Ctl -> DAO : handOverCod(shipperId, cashierId)
+DAO -> DB : [transaction] SUM(cod_collected) of unsettled COD deliveries FOR UPDATE\nUPDATE deliveries SET cod_handed_over_at = NOW(), cod_receiver_id = ?
+Ctl --> UI : "Handed over <total> COD cash to Cashier ..."
+@enduml

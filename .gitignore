@@ -34,3 +34,18 @@ Thumbs.db
 *.log
 /cafe_system-main
 nb-configuration.xml
+
+### Node / Cloudflare Workers ###
+node_modules/
+.wrangler/
+.dev.vars
+dist/
+
+### Local HTTP test artifacts ###
+/cookie.txt
+/output.json
+
+### Local project reports ###
+/G1/
+
+G1-20261104T062705Z-1-001.zip

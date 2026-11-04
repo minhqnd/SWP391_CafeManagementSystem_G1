@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
+// BF10 - ĐẶT LẠI MẬT KHẨU: chỉ nhận sau khi VerifyOtpController đã đánh dấu canResetPassword.
 @WebServlet(name = "ResetPasswordController", urlPatterns = {"/reset-password"})
 public class ResetPasswordController extends HttpServlet {
 
@@ -38,6 +39,8 @@ public class ResetPasswordController extends HttpServlet {
             return;
         }
 
+        // Email đích lấy từ phiên khôi phục, không nhận tùy ý từ form reset.
+        // Hàm hiện kiểm tra xác nhận khớp; không tự giả định đã có kiểm tra độ dài ở server tại đây.
         boolean isUpdated = userDAO.updatePassword(forgotEmail, newPassword);
         
         if (isUpdated) {

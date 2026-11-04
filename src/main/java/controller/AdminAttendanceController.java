@@ -1,6 +1,5 @@
 package controller;
 
-import dao.ShopSettingDAO;
 import dao.WorkScheduleDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -8,7 +7,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import model.ShopSettings;
 import model.User;
 import model.WorkSchedule;
 
@@ -40,7 +38,6 @@ public class AdminAttendanceController extends HttpServlet {
     private static final int MAX_NOTE_LENGTH = 500;
 
     private final WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
-    private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -51,7 +48,7 @@ public class AdminAttendanceController extends HttpServlet {
 
         LocalDate selectedDate = parseDateOrDefault(request.getParameter("date"), LocalDate.now());
         Date sqlDate = Date.valueOf(selectedDate);
-        ShopSettings settings = shopSettingDAO.getSettings();
+        // Mỗi lịch đã mang sẵn giờ ca của đúng tuần đó (work_shifts) - tính đi muộn theo giờ bắt đầu ca
         List<WorkSchedule> attendanceList =
                 workScheduleDAO.getSchedules(sqlDate, sqlDate, null, null, null, null);
 
@@ -60,9 +57,7 @@ public class AdminAttendanceController extends HttpServlet {
         int absentCount = 0;
 
         for (WorkSchedule schedule : attendanceList) {
-            String shiftTime = resolveShiftTime(schedule.getShiftName(), settings);
-            schedule.setShiftTime(shiftTime);
-            applyLateInformation(schedule, shiftTime);
+            applyLateInformation(schedule);
 
             if ("PRESENT".equalsIgnoreCase(schedule.getStatus())
                     || "COMPLETED".equalsIgnoreCase(schedule.getStatus())) {
@@ -116,11 +111,13 @@ public class AdminAttendanceController extends HttpServlet {
             String note = normalizeNote(request.getParameter("note"));
             LocalTime checkIn = parseOptionalTime(request.getParameter("checkInTime"), "Giờ vào");
             LocalTime checkOut = parseOptionalTime(request.getParameter("checkOutTime"), "Giờ ra");
-            validateAttendance(status, checkIn, checkOut);
+            // Ca qua đêm (VD 23:00 - 02:00): giờ ra 01:50 được hiểu là sáng hôm sau
+            LocalDateTime checkInAt = checkIn == null ? null : schedule.atShiftTime(checkIn);
+            LocalDateTime checkOutAt = checkOut == null ? null : schedule.atShiftTime(checkOut);
+            validateAttendance(status, checkInAt, checkOutAt);
 
-            LocalDate workDate = schedule.getWorkDate().toLocalDate();
-            Timestamp checkInTimestamp = toTimestamp(workDate, checkIn);
-            Timestamp checkOutTimestamp = toTimestamp(workDate, checkOut);
+            Timestamp checkInTimestamp = checkInAt == null ? null : Timestamp.valueOf(checkInAt);
+            Timestamp checkOutTimestamp = checkOutAt == null ? null : Timestamp.valueOf(checkOutAt);
 
             boolean updated = workScheduleDAO.updateAttendance(
                     scheduleId, checkInTimestamp, checkOutTimestamp, status, note);
@@ -141,41 +138,25 @@ public class AdminAttendanceController extends HttpServlet {
                 + redirectDate.format(DATE_FORMATTER));
     }
 
-    private void applyLateInformation(WorkSchedule schedule, String shiftTime) {
+    /** Đi muộn = giờ check-in sau giờ bắt đầu ca (giờ ca của đúng tuần chứa ngày làm việc) */
+    private void applyLateInformation(WorkSchedule schedule) {
         schedule.setLate(false);
         schedule.setLateMinutes(0);
-        if (schedule.getCheckInTime() == null || shiftTime == null) {
+        LocalTime shiftStart = schedule.getShiftStart();
+        if (schedule.getCheckInTime() == null || shiftStart == null) {
             return;
         }
 
-        try {
-            String startText = shiftTime.split("-", 2)[0].trim();
-            LocalTime shiftStart = LocalTime.parse(startText, TIME_FORMATTER);
-            LocalTime checkIn = schedule.getCheckInTime().toLocalDateTime().toLocalTime();
-            long lateMinutes = Duration.between(shiftStart, checkIn).toMinutes();
-            if (lateMinutes > 0) {
-                schedule.setLate(true);
-                schedule.setLateMinutes((int) Math.min(lateMinutes, Integer.MAX_VALUE));
-            }
-        } catch (RuntimeException ignored) {
-            // Cấu hình ca sai định dạng không được làm hỏng toàn bộ màn hình.
+        // So theo ngày + giờ để ca qua đêm cũng đúng (VD ca 23:00, vào 00:10 hôm sau = muộn 70 phút)
+        LocalDateTime shiftStartAt = LocalDateTime.of(schedule.getWorkDate().toLocalDate(), shiftStart);
+        long lateMinutes = Duration.between(shiftStartAt, schedule.getCheckInTime().toLocalDateTime()).toMinutes();
+        if (lateMinutes > 0) {
+            schedule.setLate(true);
+            schedule.setLateMinutes((int) Math.min(lateMinutes, Integer.MAX_VALUE));
         }
     }
 
-    private String resolveShiftTime(String shiftName, ShopSettings settings) {
-        if ("MORNING".equalsIgnoreCase(shiftName)) {
-            return settings.getShiftMorning();
-        }
-        if ("AFTERNOON".equalsIgnoreCase(shiftName)) {
-            return settings.getShiftAfternoon();
-        }
-        if ("EVENING".equalsIgnoreCase(shiftName)) {
-            return settings.getShiftEvening();
-        }
-        return "";
-    }
-
-    private void validateAttendance(String status, LocalTime checkIn, LocalTime checkOut) {
+    private void validateAttendance(String status, LocalDateTime checkIn, LocalDateTime checkOut) {
         if ("SCHEDULED".equals(status) || "ABSENT".equals(status)) {
             if (checkIn != null || checkOut != null) {
                 throw new IllegalArgumentException(
@@ -230,9 +211,6 @@ public class AdminAttendanceController extends HttpServlet {
         }
     }
 
-    private Timestamp toTimestamp(LocalDate date, LocalTime time) {
-        return time == null ? null : Timestamp.valueOf(LocalDateTime.of(date, time));
-    }
 
     private int parsePositiveId(String rawId) {
         try {

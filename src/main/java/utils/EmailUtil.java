@@ -56,6 +56,7 @@ public class EmailUtil {
     }
 
     public static boolean sendOTP(String recipientEmail, String otp) {
+        // BF10: helper gửi email qua SMTP, trả true/false cho ForgotPassword/ResendOtp; không xác minh OTP.
         System.out.println("\n=========================================");
         System.out.println("YÊU CẦU GỬI OTP KHÔI PHỤC MẬT KHẨU");
         System.out.println("Gửi đến Email: " + recipientEmail);

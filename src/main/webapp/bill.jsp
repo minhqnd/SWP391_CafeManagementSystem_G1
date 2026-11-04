@@ -117,10 +117,19 @@
                 </div>
                 <div class="flex flex-col">
                     <h2 class="font-headline-md font-bold text-emerald-950">
-                        Thanh toán thành công!
+                        <c:choose>
+                            <c:when test="${billStatus eq 'PAID'}">Thanh toán thành công!</c:when>
+                            <c:when test="${billStatus eq 'COD'}">Đặt hàng thành công!</c:when>
+                            <c:when test="${billStatus eq 'CANCELLED'}">Đơn hàng đã bị huỷ</c:when>
+                            <c:otherwise>Đơn hàng chưa thanh toán</c:otherwise>
+                        </c:choose>
                     </h2>
                     <span class="font-body-md text-emerald-800">
-                        Đơn hàng #${order.orderCode} đã được ghi nhận vào hệ thống và chuyển ngay tới quầy Barista.
+                        <c:choose>
+                            <c:when test="${billStatus eq 'PAID' or billStatus eq 'COD'}">Đơn hàng #${order.orderCode} đã được ghi nhận vào hệ thống và chuyển ngay tới quầy Barista.</c:when>
+                            <c:when test="${billStatus eq 'CANCELLED'}">Đơn hàng #${order.orderCode} đã bị huỷ.</c:when>
+                            <c:otherwise>Vào "Đơn hàng của tôi" để thanh toán đơn #${order.orderCode}.</c:otherwise>
+                        </c:choose>
                     </span>
                 </div>
             </div>
@@ -151,10 +160,24 @@
 
                 <div class="flex flex-col items-end">
                     <div class="flex items-center gap-2">
-                        <span class="px-space-sm py-0.5 rounded bg-emerald-100 text-emerald-800 font-label-sm text-label-sm font-semibold flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                            ĐÃ THANH TOÁN
-                        </span>
+                        <c:choose>
+                            <c:when test="${billStatus eq 'PAID'}">
+                                <span class="px-space-sm py-0.5 rounded bg-emerald-100 text-emerald-800 font-label-sm text-label-sm font-semibold flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>ĐÃ THANH TOÁN</span>
+                            </c:when>
+                            <c:when test="${billStatus eq 'COD'}">
+                                <span class="px-space-sm py-0.5 rounded bg-amber-100 text-amber-800 font-label-sm text-label-sm font-semibold flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>THANH TOÁN KHI NHẬN HÀNG</span>
+                            </c:when>
+                            <c:when test="${billStatus eq 'CANCELLED'}">
+                                <span class="px-space-sm py-0.5 rounded bg-red-100 text-red-800 font-label-sm text-label-sm font-semibold flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>ĐÃ HUỶ</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="px-space-sm py-0.5 rounded bg-slate-100 text-slate-700 font-label-sm text-label-sm font-semibold flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>CHỜ THANH TOÁN</span>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                     <span class="font-tabular-data text-headline-sm text-primary font-bold mt-1">
                         #${order.orderCode}
@@ -274,10 +297,6 @@
                     </div>
                 </c:if>
 
-                <div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant pt-space-xs border-t border-surface-container">
-                    <span class="text-xs">VAT đã tính (8%):</span>
-                    <span class="font-tabular-data text-xs text-secondary">${order.formattedVatAmount}</span>
-                </div>
             </div>
 
             <!-- Total Final Amount -->
@@ -287,7 +306,12 @@
                         Tổng cộng thanh toán
                     </span>
                     <span class="font-label-sm text-label-sm text-secondary">
-                        Đã thanh toán đủ (Đã bao gồm VAT)
+                        <c:choose>
+                            <c:when test="${billStatus eq 'PAID'}">Đã thanh toán đủ</c:when>
+                            <c:when test="${billStatus eq 'COD'}">Thanh toán tiền mặt cho shipper khi nhận hàng</c:when>
+                            <c:when test="${billStatus eq 'CANCELLED'}">Đơn đã huỷ</c:when>
+                            <c:otherwise>Chưa thanh toán</c:otherwise>
+                        </c:choose>
                     </span>
                 </div>
                 <div class="font-display-lg text-display-lg text-primary font-bold font-tabular-data tracking-tight">

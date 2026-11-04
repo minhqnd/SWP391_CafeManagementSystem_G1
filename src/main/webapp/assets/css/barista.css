@@ -1,0 +1,537 @@
+/* NEW: Shared responsive Barista queue and read-only completed cards. */
+:root {
+    --aura-primary: #900b1a;
+}
+body {
+    margin: 0;
+    background: #f5f5f4;
+    color: #292524;
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+}
+/* Cashier header layout, scoped to Barista; brand markup and dimensions stay intact. */
+.aura-navbar.barista-topbar {
+    min-height: 56px;
+    padding: 0 !important;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: none;
+    z-index: 1000;
+    color: #0f172a;
+}
+.barista-topbar > .container-fluid {
+    min-height: 55px;
+    padding: 0 16px !important;
+    gap: 12px;
+}
+.barista-topbar #mainNavbar { gap: 12px; justify-content: space-between; }
+.barista-topbar .barista-tabs {
+    gap: 4px !important;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin: 0 auto !important;
+}
+.barista-topbar .barista-tabs .aura-nav-link {
+    padding: 6px 14px !important;
+    border-radius: 6px;
+    font: 600 13px 'Inter', sans-serif;
+    color: #475569;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+.barista-topbar .barista-tabs .aura-nav-link:hover { color: #0f172a; }
+.barista-topbar .barista-tabs .active-nav {
+    background: #fff;
+    color: #900b1a !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.barista-topbar .barista-tabs .active-nav::after { display: none; }
+.barista-topbar .header-actions { gap: 16px !important; flex-shrink: 0; }
+.barista-topbar .header-user {
+    gap: 6px !important;
+    background: #f8fafc;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.barista-topbar .header-user > .rounded-circle {
+    width: 20px !important;
+    height: 20px !important;
+    border: 0 !important;
+    background: transparent !important;
+}
+.barista-topbar .header-user .material-symbols-outlined { font-size: 20px; color: #0f172a !important; }
+.barista-topbar .header-user > .flex-column { display: flex !important; }
+.barista-topbar .header-user > .flex-column > .text-danger { display: none; }
+.barista-topbar .barista-logout {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #475569;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+.barista-topbar .barista-logout .material-symbols-outlined { font-size: 20px; }
+.barista-topbar .barista-logout:hover { background: #f1f5f9; color: #900b1a; }
+@media (max-width: 991.98px) {
+    .barista-topbar #mainNavbar { padding-bottom: 12px; }
+    .barista-topbar .barista-tabs { flex-direction: row; flex-wrap: wrap; }
+    .barista-topbar .header-actions { margin-top: 12px; justify-content: space-between; }
+}
+.barista-main {
+    max-width: 1800px;
+    margin: auto;
+    padding: 28px 24px 40px;
+}
+.barista-main h1 {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0 0 24px;
+}
+.barista-main h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 18px;
+}
+.kds-layout {
+    display: grid;
+    grid-template-columns: 330px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+.group-panel {
+    position: sticky;
+    top: 96px;
+    background: #fff;
+    border: 1px solid #e7e5e4;
+    border-radius: 16px;
+    padding: 18px;
+}
+.group-list {
+    max-height: calc(100dvh - 210px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+.group-card {
+    padding: 16px 4px;
+    border-top: 1px solid #eee;
+}
+.group-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 15px;
+}
+.group-quantity {
+    color: #900b1a;
+    font-size: 21px;
+    flex-shrink: 0;
+}
+.group-orders {
+    color: #78716c;
+    font-size: 12px;
+    margin: 8px 0;
+    overflow-wrap: anywhere;
+}
+.order-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: 18px;
+    align-items: start;
+}
+.order-card {
+    min-width: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e7e5e4;
+    border-radius: 16px;
+}
+.order-heading {
+    padding: 18px;
+    border-bottom: 1px solid #eee;
+}
+.order-code {
+    font-size: 19px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    overflow-wrap: anywhere;
+}
+.order-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: #57534e;
+    font-size: 12px;
+}
+.order-type,
+.ready-badge {
+    border-radius: 6px;
+    background: #f5f5f4;
+    padding: 4px 8px;
+}
+.ready-badge {
+    color: #176344;
+    background: #eaf6ee;
+}
+.order-person {
+    margin: 10px 0 0;
+    color: #57534e;
+    overflow-wrap: anywhere;
+}
+.item-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.order-item {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1efed;
+    transition: background 0.15s;
+}
+.item-top {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-weight: 600;
+}
+.item-quantity {
+    color: #900b1a;
+    flex-shrink: 0;
+}
+.item-name {
+    overflow-wrap: anywhere;
+}
+.option-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+}
+.option-tag {
+    font-size: 11px;
+    border: 1px solid #e7e5e4;
+    background: #fafaf9;
+    border-radius: 5px;
+    padding: 3px 7px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+}
+.prepared-toggle {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+    min-height: 30px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.prepared-toggle input {
+    width: 18px;
+    height: 18px;
+    accent-color: #900b1a;
+    cursor: pointer;
+}
+.order-item.is-prepared {
+    background: #eaf6ee;
+    border-color: #b8d8c2;
+    color: #236342;
+}
+.order-item.is-prepared .item-quantity {
+    color: #236342;
+}
+.cup-toggles .prepared-toggle.is-prepared {
+    background: #eaf6ee;
+    border: 1px solid #b8d8c2;
+    border-radius: 6px;
+    color: #236342;
+    padding: 3px 8px;
+}
+.prepared-toggle input:checked {
+    accent-color: #38845b;
+}
+.order-note {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin: 14px 18px;
+    padding: 10px;
+    background: #fff8eb;
+    border-radius: 8px;
+}
+.order-actions {
+    padding: 16px 18px;
+}
+.order-progress {
+    font-size: 12px;
+    color: #57534e;
+    margin: 0 0 10px;
+}
+.complete-button {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #d7b16c;
+    border-radius: 9px;
+    color: #83510a;
+    background: #fff8eb;
+    font-weight: 700;
+}
+.complete-button.all-prepared {
+    color: white;
+    background: #900b1a;
+    border-color: #900b1a;
+}
+.complete-button:hover {
+    filter: brightness(0.95);
+}
+.complete-button:disabled,
+.prepared-toggle input:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+.barista-main :focus-visible {
+    outline: 3px solid #bc6170;
+    outline-offset: 3px;
+}
+.empty-state {
+    color: #78716c;
+    padding: 30px 16px;
+    background: #fff;
+    border: 1px dashed #d6d3d1;
+    border-radius: 12px;
+    text-align: center;
+    grid-column: 1 / -1;
+}
+/* NEW: Keep grouping above cards on narrow screens, without a fixed footer. */
+@media (max-width: 991px) {
+    .barista-main {
+        padding: 20px 16px 32px;
+    }
+    .kds-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .group-panel {
+        position: static;
+    }
+    .group-list {
+        max-height: 40dvh;
+    }
+}
+
+/* Gom món: chi tiết từng cốc trong nhóm, đơn đặt sớm trước (tránh pha nhầm đường / đá / size) */
+.group-lines {
+    list-style: none;
+    margin: 10px 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+.group-line {
+    padding: 8px 10px;
+    background: #fafaf9;
+    border: 1px solid #eee;
+    border-radius: 10px;
+}
+.group-line-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-weight: 700;
+}
+.group-line-order {
+    color: #78716c;
+    font-size: 12px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/* Compact product groups and per-cup detail dialog, scoped to Barista. */
+.group-panel .group-card {
+    padding: 10px 0;
+    border-top: 1px solid #e5e7eb;
+}
+.group-panel .group-open {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    border: 0;
+    box-shadow: none;
+    border-radius: 8px;
+    padding: 10px 8px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    font:
+        600 16px/1.5 Inter,
+        sans-serif;
+    justify-content: space-between;
+    cursor: pointer;
+}
+.group-panel .group-open:hover {
+    background: #faf0f2;
+}
+.group-panel .group-open .item-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.group-panel .group-quantity {
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--aura-primary);
+    background: #f9e9ec;
+    white-space: nowrap;
+}
+.group-panel .prepared-toggle {
+    margin: 2px 8px 0;
+    min-height: 36px;
+    font-size: 13px;
+}
+.cup-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+}
+.cup-dialog {
+    width: min(640px, calc(100vw - 32px));
+    max-height: 85dvh;
+    padding: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    color: #292524;
+    background: #fff;
+    box-shadow: 0 16px 48px #29252426;
+    overflow: hidden;
+}
+.cup-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+.cup-dialog::backdrop {
+    background: #29252480;
+}
+.cup-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    flex-shrink: 0;
+    gap: 16px;
+    padding: 24px 24px 16px;
+}
+.cup-dialog-header h2 {
+    min-width: 0;
+    margin: 0;
+    font-size: 23px;
+    line-height: 1.4;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+.cup-dialog .cup-close {
+    appearance: none;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 8px;
+    padding: 0;
+    background: transparent;
+    color: #57534e;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+}
+.cup-dialog .cup-close:hover {
+    background: #f5f5f4;
+    color: var(--aura-primary);
+}
+.cup-dialog-progress {
+    flex-shrink: 0;
+    padding: 0 24px 18px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.cup-dialog-progress .order-progress {
+    color: #57534e;
+    font-size: 14px;
+    margin: 0;
+}
+.cup-dialog-body {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 24px;
+    overscroll-behavior: contain;
+}
+.cup-dialog-body .group-line {
+    margin-bottom: 12px;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+}
+.cup-dialog-body .group-line:last-child {
+    margin-bottom: 0;
+}
+.cup-dialog-body .is-prepared {
+    background: #eaf6ee;
+    border-color: #b8d8c2;
+}
+.cup-card-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.cup-card-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: 15px;
+    font-weight: 600;
+}
+.cup-dialog .option-tags {
+    gap: 6px;
+    margin-top: 12px;
+}
+.cup-dialog .option-tag {
+    font-size: 13px;
+    border-color: #e5e7eb;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+.cup-special-note {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fff8eb;
+    font-size: 13px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.cup-dialog .prepared-toggle {
+    min-height: 36px;
+    font-size: 14px;
+}
+.cup-dialog :focus-visible,
+.group-open:focus-visible {
+    outline: 3px solid #bc6170;
+    outline-offset: 3px;
+}
+.complete-button:disabled {
+    cursor: not-allowed;
+}

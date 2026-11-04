@@ -1,20 +1,81 @@
 package dao;
 
 import model.ShopSettings;
+import model.ShopSettingEntry;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ShopSettingDAO - Đọc / lưu cấu hình bán hàng online (bảng shop_settings, dạng khoá - giá trị)
  */
 public class ShopSettingDAO extends BaseDAO {
 
+    /** Lấy toàn bộ khóa để hiển thị trên màn hình quản trị. */
+    public List<ShopSettingEntry> findAll() {
+        List<ShopSettingEntry> entries = new ArrayList<>();
+        String sql = "SELECT setting_key, setting_value, updated_at FROM shop_settings ORDER BY setting_key";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                entries.add(new ShopSettingEntry(rs.getString("setting_key"), rs.getString("setting_value"),
+                        rs.getTimestamp("updated_at").toLocalDateTime()));
+            }
+        } catch (Exception e) {
+            System.err.println("[ShopSettingDAO] Không tải được danh sách cài đặt: " + e.getMessage());
+        }
+        return entries;
+    }
+
+    /** Cập nhật nhiều khóa hiện có trong cùng một transaction. */
+    public boolean updateAll(Map<String, String> values) {
+        if (values == null || values.isEmpty()) return true;
+        String sql = "UPDATE shop_settings SET setting_value = ? WHERE setting_key = ?";
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                for (Map.Entry<String, String> entry : values.entrySet()) {
+                    ps.setString(1, entry.getValue());
+                    ps.setString(2, entry.getKey());
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            if (conn != null) try { conn.rollback(); } catch (SQLException ignored) { }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (conn != null) try { conn.close(); } catch (SQLException ignored) { }
+        }
+    }
+
+    /** Thêm khóa mới; trả về false nếu khóa đã tồn tại hoặc database báo lỗi. */
+    public boolean insert(String key, String value) {
+        String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?)";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, key);
+            ps.setString(2, value);
+            return ps.executeUpdate() == 1;
+        } catch (Exception e) {
+            System.err.println("[ShopSettingDAO] Không thêm được khóa " + key + ": " + e.getMessage());
+            return false;
+        }
+    }
+
     /**
-     * Cấu hình hiện tại. Khoá nào chưa có trong Database (hoặc chưa chạy update_shop_settings.sql)
-     * thì dùng giá trị mặc định của ShopSettings.
+     * Cấu hình hiện tại. Khoá nào chưa có trong Database thì dùng giá trị mặc định của ShopSettings.
+     * (Khung giờ ca theo tuần nằm ở bảng work_shifts - xem WorkShiftDAO.)
      */
     public ShopSettings getSettings() {
         ShopSettings settings = new ShopSettings();
@@ -33,6 +94,8 @@ public class ShopSettingDAO extends BaseDAO {
 
     /** Lưu toàn bộ cấu hình trong 1 transaction. Trả về false nếu lỗi (VD chưa tạo bảng shop_settings). */
     public boolean saveSettings(ShopSettings settings) {
+        // BF12: Controller đã kiểm tra quy tắc; DAO lưu các khóa cấu hình theo dạng key/value.
+        // Khóa đã có thì UPDATE, chưa có thì INSERT; các khóa được lưu cùng một transaction.
         String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) "
                 + "ON DUPLICATE KEY UPDATE setting_value = ?";
 
@@ -46,6 +109,7 @@ public class ShopSettingDAO extends BaseDAO {
                 addValue(ps, ShopSettings.KEY_DELIVERY_MINUTES, settings.getDeliveryMinutes());
                 addValue(ps, ShopSettings.KEY_POINTS_STEP, settings.getPointsStep());
                 addValue(ps, ShopSettings.KEY_POINTS_STEP_VALUE, Math.round(settings.getPointsStepValue()));
+                addValue(ps, ShopSettings.KEY_POINTS_EARN_UNIT, Math.round(settings.getPointsEarnUnit()));
                 ps.executeBatch();
             }
             conn.commit();
@@ -95,39 +159,35 @@ public class ShopSettingDAO extends BaseDAO {
                 case ShopSettings.KEY_POINTS_STEP_VALUE:
                     settings.setPointsStepValue(Double.parseDouble(value.trim()));
                     break;
-                case ShopSettings.KEY_SHIFT_MORNING:
-                    settings.setShiftMorning(value.trim());
+                case ShopSettings.KEY_POINTS_EARN_UNIT:
+                    settings.setPointsEarnUnit(Double.parseDouble(value.trim()));
                     break;
-                case ShopSettings.KEY_SHIFT_AFTERNOON:
-                    settings.setShiftAfternoon(value.trim());
+                case ShopSettings.KEY_PAYMENT_TEST_MODE:
+                    settings.setPaymentTestMode(Boolean.parseBoolean(value.trim()));
                     break;
-                case ShopSettings.KEY_SHIFT_EVENING:
-                    settings.setShiftEvening(value.trim());
+                case ShopSettings.KEY_PAYMENT_GATEWAY_URL:
+                    settings.setPaymentGatewayUrl(value.trim());
+                    break;
+                case ShopSettings.KEY_PAYMENT_CALLBACK_SECRET:
+                    settings.setPaymentCallbackSecret(value.trim());
+                    break;
+                case ShopSettings.KEY_PAYMENT_BANK_ID:
+                    settings.setPaymentBankId(value.trim());
+                    break;
+                case ShopSettings.KEY_PAYMENT_BANK_NAME:
+                    settings.setPaymentBankName(value.trim());
+                    break;
+                case ShopSettings.KEY_PAYMENT_ACCOUNT_NO:
+                    settings.setPaymentAccountNo(value.trim());
+                    break;
+                case ShopSettings.KEY_PAYMENT_ACCOUNT_NAME:
+                    settings.setPaymentAccountName(value.trim());
                     break;
                 default:
                     break;
             }
         } catch (Exception e) {
             System.err.println("[ShopSettingDAO] Giá trị cấu hình không hợp lệ " + key + " = " + value);
-        }
-    }
-
-    /** Cập nhật khung giờ ca làm việc theo key (shift_morning, shift_afternoon, shift_evening) */
-    public boolean updateShiftHours(String shiftKey, String timeRange) {
-        if (shiftKey == null || timeRange == null || timeRange.trim().isEmpty()) {
-            return false;
-        }
-        String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) "
-                + "ON DUPLICATE KEY UPDATE setting_value = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, shiftKey.trim());
-            ps.setString(2, timeRange.trim());
-            ps.setString(3, timeRange.trim());
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
         }
     }
 }

@@ -132,10 +132,11 @@ public class CartTest {
     @DisplayName("Phí giao hàng & mức Freeship theo cấu hình Admin")
     void testDeliveryFee() {
         cart.addItem(item(1, "M", 50000, 2));
-        assertEquals(18000, cart.getDeliveryFee());
+        // Phí giao cố định 1 mức cho mọi địa chỉ
+        assertEquals(25000, cart.getDeliveryFee());
         assertEquals(50000, cart.getFreeshipRemaining());
         assertEquals(66, cart.getFreeshipPercent());
-        assertEquals(118000, cart.getGrandTotal());
+        assertEquals(125000, cart.getGrandTotal());
 
         cart.addItem(item(2, "M", 50000, 1));
         assertTrue(cart.isFreeshipReached());
@@ -168,5 +169,28 @@ public class CartTest {
         assertEquals(130000, cart.getTotal());
         assertTrue(cart.isFreeshipReached());
         assertEquals(130000, cart.getGrandTotal());
+    }
+
+    @Test
+    @DisplayName("Phí giao chỉ tính khi Giao tận nơi; Tự đến lấy / Dùng tại quán miễn phí (SRS 2.3.2)")
+    void testDeliveryFeeOnlyForDelivery() {
+        cart.addItem(item(1, "M", 45000, 1)); // dưới mức freeship 150.000đ
+
+        assertEquals(Cart.FULFILLMENT_DELIVERY, cart.getFulfillment());
+        assertEquals("ONLINE", cart.getOrderType());
+        assertEquals(25000, cart.getDeliveryFee());
+        assertEquals(70000, cart.getGrandTotal());
+
+        cart.setFulfillment(Cart.FULFILLMENT_PICKUP);
+        assertEquals("TAKEAWAY", cart.getOrderType());
+        assertEquals(0, cart.getDeliveryFee());
+        assertEquals(45000, cart.getGrandTotal());
+
+        cart.setFulfillment(Cart.FULFILLMENT_DINE_IN);
+        assertEquals("DINE_IN", cart.getOrderType());
+        assertEquals(0, cart.getDeliveryFee());
+
+        cart.setFulfillment("ABC"); // giá trị lạ -> mặc định Giao tận nơi
+        assertEquals(Cart.FULFILLMENT_DELIVERY, cart.getFulfillment());
     }
 }

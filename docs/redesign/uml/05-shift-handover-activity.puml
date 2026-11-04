@@ -1,0 +1,54 @@
+@startuml 05-shift-handover-activity
+' SRS 2.5 Shift Handover - UC60 Handover Shift
+title Shift Handover (Cashier closes shift - Admin reviews)
+
+|Admin|
+start
+:Assign Cashier to a shift (Work Schedules) + enter opening cash;
+:Check in -> schedule becomes PRESENT;
+|Cashier|
+:Sell during the shift (counter orders);
+:End of shift: open "Close shift";
+|System|
+:Summarize SUCCESS payments handled by the Cashier\nfrom check-in time to now:\n- cash (CASH)\n- bank transfer / VNPAY / MoMo (reference only);
+:Expected cash = opening cash + cash sales;
+|Cashier|
+:Count the drawer, enter actual cash (multiple of 1,000) + note;
+|System|
+:Difference = actual - expected (Balanced / Surplus / Shortage);
+if (Difference is not 0 and no note?) then (yes)
+  :Show "please enter an explanation note";
+  stop
+endif
+if (Shift still PRESENT and belongs to this Cashier?) then (no)
+  :Show "Shift already closed", nothing saved;
+  stop
+endif
+:In 1 transaction:\n- work_schedules -> COMPLETED, check-out time, ending cash\n- INSERT shift_handovers (SUBMITTED);
+:Show handover record "Waiting for Admin review";
+
+repeat
+  |Admin|
+  :Open "Shift Handovers", filter "Pending";
+  :Review opening cash, cash sales, expected, actual,\ndifference, Cashier's note;
+  if (Figures acceptable?) then (yes)
+    :Confirm (comment optional);
+    |System|
+    :shift_handovers -> CONFIRMED,\nsave reviewer + time;
+    break
+  else (no)
+    |Admin|
+    :Reject + enter reason (required);
+    |System|
+    :shift_handovers -> REJECTED,\nsave reviewer + reason;
+    |Cashier|
+    :View rejection reason, enter explanation;
+    :Resubmit handover record;
+    |System|
+    :shift_handovers -> SUBMITTED (note = new explanation);
+  endif
+repeat while (Record pending review?) is (yes)
+|Cashier|
+:Sees record "Confirmed";
+stop
+@enduml

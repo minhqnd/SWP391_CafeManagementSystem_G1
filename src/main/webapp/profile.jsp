@@ -6,10 +6,6 @@
             <c:if test="${empty sessionScope.user}">
                 <c:redirect url="/?login=true" />
             </c:if>
-            <c:if test="${empty currentDisplayTier}">
-                <c:redirect url="/profile" />
-            </c:if>
-
             <!DOCTYPE html>
             <html lang="vi">
 
@@ -358,6 +354,7 @@
                                                 </button>
                                             </div>
 
+                                            <%-- BF10 - HỒ SƠ: POST action=update -> ProfileController -> updateUserProfile() -> cập nhật session khi lưu được. --%>
                                             <form id="profileForm"
                                                 action="${pageContext.request.contextPath}/profile?action=update"
                                                 method="POST">
@@ -441,6 +438,7 @@
                                             </div>
 
                                             <div class="collapse mt-4" id="passwordCollapse">
+                                                <%-- BF10 - ĐỔI MẬT KHẨU: POST action=changePassword; server kiểm tra mật khẩu cũ, mới và xác nhận. --%>
                                                 <form id="passwordForm"
                                                     action="${pageContext.request.contextPath}/profile?action=changePassword"
                                                     method="POST">
@@ -535,6 +533,7 @@
                                                 </div>
                                             </c:when>
                                             <c:otherwise>
+                                                <%-- BF10/BF12: lịch sử riêng do ProfileController nạp theo ID người đăng nhập; JSP chỉ hiển thị. --%>
                                                 <c:forEach var="txn" items="${loyaltyHistory}" varStatus="loop">
                                                     <div
                                                         class="d-flex justify-content-between align-items-center py-3 ${not loop.last ? 'border-bottom' : ''}">

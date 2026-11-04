@@ -15,7 +15,6 @@ public class Order implements Serializable {
     private String orderCode;
     private Integer customerId;
     private Integer cashierId;
-    private Integer voucherId;
     private String orderType;
     private String status;
     private double totalAmount;
@@ -29,6 +28,12 @@ public class Order implements Serializable {
     private String tableNumber;
     private String orderNote;
     private LocalDateTime createdAt;
+    // Transient Barista UI state; not a database column.
+    private LocalDateTime readyAt;
+
+    public LocalDateTime getReadyAt() { return readyAt; }
+
+    public void setReadyAt(LocalDateTime readyAt) { this.readyAt = readyAt; }
 
     private List<OrderDetail> items = new ArrayList<>();
 
@@ -39,7 +44,6 @@ public class Order implements Serializable {
             String orderCode,
             Integer customerId,
             Integer cashierId,
-            Integer voucherId,
             String orderType,
             String status,
             double totalAmount,
@@ -57,7 +61,6 @@ public class Order implements Serializable {
         this.orderCode = orderCode;
         this.customerId = customerId;
         this.cashierId = cashierId;
-        this.voucherId = voucherId;
         this.orderType = orderType;
         this.status = status;
         this.totalAmount = totalAmount;
@@ -103,14 +106,6 @@ public class Order implements Serializable {
 
     public void setCashierId(Integer cashierId) {
         this.cashierId = cashierId;
-    }
-
-    public Integer getVoucherId() {
-        return voucherId;
-    }
-
-    public void setVoucherId(Integer voucherId) {
-        this.voucherId = voucherId;
     }
 
     public String getOrderType() {
@@ -268,8 +263,25 @@ public class Order implements Serializable {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private int pointsUsed;         // điểm Aura khách đã dùng để giảm giá đơn này
+    private int rewardPoints;       // điểm EARN thực tế đã ghi cho đơn
     private String paymentMethod;   // phương thức của lần thanh toán thành công
     private LocalDateTime paidAt;   // null = chưa thanh toán
+    private LocalDateTime scheduledAt; // giờ khách hẹn nhận; null = càng sớm càng tốt
+
+    public LocalDateTime getScheduledAt() { return scheduledAt; }
+    public void setScheduledAt(LocalDateTime scheduledAt) { this.scheduledAt = scheduledAt; }
+
+    public String getScheduledAtDisplay() {
+        return scheduledAt == null ? "Càng sớm càng tốt" : scheduledAt.format(TIME_FORMAT) + " " + scheduledAt.format(DATE_FORMAT);
+    }
+
+    /** Hình thức nhận hàng: ONLINE = giao tận nơi, TAKEAWAY = tự đến lấy / mang đi, DINE_IN = dùng tại quán */
+    public String getFulfillmentLabel() {
+        if ("ONLINE".equals(orderType)) return "Giao tận nơi";
+        if ("TAKEAWAY".equals(orderType)) return customerId != null && cashierId == null ? "Tự đến lấy" : "Mang đi";
+        if ("DINE_IN".equals(orderType)) return "Dùng tại quán";
+        return orderType != null ? orderType : "";
+    }
 
     public int getPointsUsed() { return pointsUsed; }
     public void setPointsUsed(int pointsUsed) { this.pointsUsed = pointsUsed; }
@@ -281,6 +293,9 @@ public class Order implements Serializable {
     public void setPaidAt(LocalDateTime paidAt) { this.paidAt = paidAt; }
 
     public boolean isDelivery() { return "ONLINE".equals(orderType); }
+
+    /** Đơn giao tận nơi chọn COD, shipper chưa thu tiền (payment CASH chưa có paid_at) */
+    public boolean isCodUnpaid() { return isDelivery() && "CASH".equals(paymentMethod) && paidAt == null; }
     public boolean isPending() { return "PENDING".equals(status); }
     public boolean isCompleted() { return "COMPLETED".equals(status); }
     public boolean isCancelled() { return "CANCELLED".equals(status); }
@@ -301,10 +316,6 @@ public class Order implements Serializable {
         return new DecimalFormat("###,###,###").format(discountAmount).replace(",", ".") + " đ";
     }
 
-    public String getFormattedVatAmount() {
-        double vat = (totalAmount - discountAmount) * 0.08;
-        return new DecimalFormat("###,###,###").format(vat).replace(",", ".") + " đ";
-    }
 
     public String getFormattedFinalAmount() {
         return new DecimalFormat("###,###,###").format(finalAmount).replace(",", ".") + " đ";
@@ -336,7 +347,7 @@ public class Order implements Serializable {
         }
         switch (status) {
             case "PENDING": return "Chờ thanh toán";
-            case "CONFIRMED": return "Đã thanh toán";
+            case "CONFIRMED": return isCodUnpaid() ? "Đã đặt - trả tiền khi nhận" : "Đã thanh toán";
             case "PREPARING": return "Đang chuẩn bị món";
             case "READY": return isDelivery() ? "Chờ giao hàng" : "Sẵn sàng tại quầy";
             case "DELIVERING": return "Đang giao hàng";
@@ -367,10 +378,11 @@ public class Order implements Serializable {
         }
     }
 
-    /** Điểm Aura khách nhận khi thanh toán: mỗi 10.000đ tiền hàng sau giảm giá = 1 điểm (không tính phí ship) */
     public int getRewardPoints() {
-        return (int) Math.floor((totalAmount - discountAmount) / Cart.MONEY_PER_POINT);
+        return rewardPoints > 0 ? rewardPoints
+                : new ShopSettings().calculateEarnedPoints(totalAmount - discountAmount);
     }
+    public void setRewardPoints(int rewardPoints) { this.rewardPoints = rewardPoints; }
 
     /**
      * Giờ nhận dự kiến (HH:mm) = lúc thanh toán (chưa thanh toán thì lúc đặt) + thời gian giao Admin cài đặt.

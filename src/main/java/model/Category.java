@@ -8,20 +8,17 @@ public class Category implements Serializable {
     private int id;
     private String name;
     private String status;
-    private String icon;
-    private String description;
     private String imageUrl;
+    private boolean storedImage;
     private int productCount;
 
     public Category() {
     }
 
-    public Category(int id, String name, String status, String icon, String description, String imageUrl, int productCount) {
+    public Category(int id, String name, String status, String imageUrl, int productCount) {
         this.id = id;
         this.name = name;
         this.status = status;
-        this.icon = icon;
-        this.description = description;
         this.imageUrl = imageUrl;
         this.productCount = productCount;
     }
@@ -50,28 +47,20 @@ public class Category implements Serializable {
         this.status = status;
     }
 
-    public String getIcon() {
-        return icon;
-    }
-
-    public void setIcon(String icon) {
-        this.icon = icon;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public String getImageUrl() {
         return imageUrl;
     }
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public boolean isStoredImage() {
+        return storedImage;
+    }
+
+    public void setStoredImage(boolean storedImage) {
+        this.storedImage = storedImage;
     }
 
     public int getProductCount() {

@@ -336,18 +336,6 @@
             object-fit: cover;
         }
 
-        .product-tag {
-            position: absolute;
-            top: 6px;
-            left: 6px;
-            background: rgba(15, 23, 42, 0.75);
-            color: #ffffff;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            backdrop-filter: blur(4px);
-        }
 
         .product-name {
             font-size: 13.5px;
@@ -1884,54 +1872,12 @@
 </head>
 <body>
 
-    <!-- Top Header -->
-    <header class="pos-header">
-        <div class="brand-area">
-            <a href="${pageContext.request.contextPath}/cashier" class="brand-title">
-                <span class="material-symbols-outlined">coffee</span>
-                <span>AURA CAFÉ</span>
-            </a>
-            <span class="pos-badge">POS THU NGÂN</span>
-        </div>
-
-        <!-- Center Tabs Switcher -->
-        <div class="nav-tabs-pos">
-            <button class="nav-tab-btn active" id="tabBtnPos" onclick="switchMainTab('pos')">
-                <span class="material-symbols-outlined">point_of_sale</span>
-                <span>Tạo đơn tại quầy</span>
-            </button>
-            <button class="nav-tab-btn" id="tabBtnOrders" onclick="switchMainTab('orders')">
-                <span class="material-symbols-outlined">receipt_long</span>
-                <span>Đơn hôm nay (<span id="todayOrderCount">${counterOrders.size()}</span>)</span>
-            </button>
-            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover?mode=close">
-                <span class="material-symbols-outlined">calculate</span>
-                <span>Chốt ca</span>
-            </a>
-            <a class="nav-tab-btn" href="${pageContext.request.contextPath}/cashier/handover">
-                <span class="material-symbols-outlined">assignment_turned_in</span>
-                <span>Bàn giao ca</span>
-            </a>
-        </div>
-
-        <!-- Right User Actions -->
-        <div class="header-meta">
-            <div class="shift-info">
-                <span class="material-symbols-outlined text-muted">schedule</span>
-                <span class="live-clock" id="clockDisplay">${currentTime}</span>
-                <span class="text-muted">|</span>
-                <span>${currentDate}</span>
-            </div>
-            <div class="user-pill">
-                <span class="material-symbols-outlined text-muted">account_circle</span>
-                <span>${sessionScope.user.fullName}</span>
-            </div>
-            <a href="${pageContext.request.contextPath}/login?action=logout" class="btn-link-action" title="Đăng xuất khỏi hệ thống">
-                <span class="material-symbols-outlined">logout</span>
-                <span>Đăng xuất</span>
-            </a>
-        </div>
-    </header>
+    <!-- Top Header: dùng chung cho các màn Thu ngân -->
+    <jsp:include page="/components/cashier-header.jsp">
+        <jsp:param name="onPos" value="true" />
+        <jsp:param name="active" value="pos" />
+        <jsp:param name="orderCount" value="${counterOrders.size()}" />
+    </jsp:include>
 
     <!-- Main Workspace -->
     <div class="pos-workspace">
@@ -1967,13 +1913,10 @@
                          data-name="<c:out value="${p.name}"/>" 
                          data-price="${p.basePrice}" 
                          data-cat-id="${p.categoryId}"
-                         data-image="${p.imageUrl}"
-                         onclick="openProductCustomization(${p.id}, '<c:out value="${p.name}"/>', ${p.basePrice}, '${p.imageUrl}')">
+                         data-image="${p.displayImageUrl}"
+                         onclick="openProductCustomization(${p.id}, '<c:out value="${p.name}"/>', ${p.basePrice}, '${p.displayImageUrl}')">
                         <div class="product-img-box">
-                            <img src="${p.imageUrl}" alt="${p.name}" class="product-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';">
-                            <c:if test="${not empty p.badge}">
-                                <span class="product-tag">${p.badge}</span>
-                            </c:if>
+                            <img src="${p.displayImageUrl}" alt="${p.name}" class="product-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';">
                         </div>
                         <div class="product-name" title="${p.name}">${p.name}</div>
                         <div class="product-category-sub">${p.categoryName}</div>
@@ -2052,10 +1995,7 @@
                     <span>Giảm giá hội viên</span>
                     <span class="text-danger" id="lblDiscount">-0đ</span>
                 </div>
-                <div class="summary-row">
-                    <span>Thuế VAT (8%)</span>
-                    <span id="lblVat">0đ</span>
-                </div>
+                <div class="summary-row" style="display:none"><span>Phụ phí</span><span id="lblVat">0đ</span></div>
                 <div class="summary-row total-row">
                     <span>Tổng thanh toán</span>
                     <span class="summary-total-price" id="lblFinalTotal">0đ</span>
@@ -2313,13 +2253,7 @@
                                                     <span class="material-symbols-outlined" style="font-size: 15px;">receipt_long</span>
                                                     <span>Hóa đơn</span>
                                                 </a>
-                                                <c:if test="${o.orderType eq 'ONLINE' && o.status eq 'READY'}">
-                                                    <button type="button" class="btn-action-deliver-order" onclick="deliverOrder(${o.id})" title="Chuyển sang Đang giao hàng">
-                                                        <span class="material-symbols-outlined" style="font-size: 15px;">delivery_dining</span>
-                                                        <span>Giao</span>
-                                                    </button>
-                                                </c:if>
-                                                <c:if test="${o.status eq 'READY' || o.status eq 'DELIVERING'}">
+                                                <c:if test="${(o.orderType eq 'DINE_IN' || o.orderType eq 'TAKEAWAY') && o.status eq 'READY'}">
                                                     <button type="button" class="btn-action-complete-order" onclick="completeOrder(${o.id})" title="Đánh dấu hoàn tất">
                                                         <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
                                                         <span>Hoàn tất</span>
@@ -2379,16 +2313,7 @@
                 <div class="modal-body">
                     <!-- Size -->
                     <div class="opt-group-title">Chọn Size</div>
-                    <div class="opt-chips-grid">
-                        <label>
-                            <input type="radio" name="optSize" value="M" checked class="d-none">
-                            <span class="opt-radio-label">Size M (Tiêu chuẩn)</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="optSize" value="L" class="d-none">
-                            <span class="opt-radio-label">Size L (+8.000đ)</span>
-                        </label>
-                    </div>
+                    <div class="opt-chips-grid" id="cashierSizeOptions"></div>
 
                     <!-- Sugar & Ice -->
                     <div class="row">
@@ -2416,25 +2341,8 @@
                     </div>
 
                     <!-- Toppings -->
-                    <div class="opt-group-title mt-3">Topping thêm (+10.000đ)</div>
-                    <div class="opt-chips-grid">
-                        <label>
-                            <input type="checkbox" name="optTopping" value="Trân châu đen" class="d-none">
-                            <span class="opt-radio-label">Trân châu đen</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="optTopping" value="Trân châu trắng" class="d-none">
-                            <span class="opt-radio-label">Trân châu trắng</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="optTopping" value="Kem cheese" class="d-none">
-                            <span class="opt-radio-label">Kem Cheese Macchiato</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="optTopping" value="Thạch sương sáo" class="d-none">
-                            <span class="opt-radio-label">Thạch sương sáo</span>
-                        </label>
-                    </div>
+                    <div class="opt-group-title mt-3" id="cashierToppingTitle">Topping thêm</div>
+                    <div class="opt-chips-grid" id="cashierToppingOptions"></div>
 
                     <!-- Custom Note -->
                     <div class="opt-group-title mt-2">Ghi chú riêng cho món này</div>
@@ -2535,7 +2443,8 @@
 
                         <div class="qr-card-wrapper">
                             <div class="qr-frame">
-                                <img id="vietQrImg" src="" alt="VietQR" class="qr-image">
+                                <img id="vietQrImg" src="" alt="VietQR" class="qr-image"
+                                     data-bank-id="<c:out value="${shopSettings.paymentBankId}"/>">
                             </div>
                             <div class="qr-scan-guide">
                                 <span class="material-symbols-outlined" style="font-size: 15px;">qr_code_scanner</span>
@@ -2546,12 +2455,12 @@
                         <div class="bank-details-card">
                             <div class="bank-row">
                                 <span class="bank-label">Ngân hàng thụ hưởng:</span>
-                                <span class="bank-val">MBBank (Quân Đội)</span>
+                                <span class="bank-val"><c:out value="${shopSettings.paymentBankName}"/></span>
                             </div>
                             <div class="bank-row">
                                 <span class="bank-label">Số tài khoản:</span>
                                 <div class="d-flex align-items-center gap-1">
-                                    <span class="bank-val font-monospace fw-bold" id="bankStk">0987654321</span>
+                                    <span class="bank-val font-monospace fw-bold" id="bankStk"><c:out value="${shopSettings.paymentAccountNo}"/></span>
                                     <button type="button" class="btn-copy-stk" onclick="copyBankSTK()" title="Sao chép số tài khoản">
                                         <span class="material-symbols-outlined" style="font-size: 15px;">content_copy</span>
                                     </button>
@@ -2559,7 +2468,7 @@
                             </div>
                             <div class="bank-row">
                                 <span class="bank-label">Chủ tài khoản:</span>
-                                <span class="bank-val fw-bold" style="color: var(--aura-primary);">AURA CAFE SYSTEM</span>
+                                <span class="bank-val fw-bold" id="bankAccountName" style="color: var(--aura-primary);"><c:out value="${shopSettings.paymentAccountName}"/></span>
                             </div>
                         </div>
                     </div>
@@ -2584,6 +2493,8 @@
     <!-- POS Logic Script -->
     <script>
         const CONTEXT_PATH = '${pageContext.request.contextPath}';
+        const LOYALTY_STEP = Number('${shopSettings.pointsStep}') || 10;
+        const LOYALTY_STEP_VALUE = Number('${shopSettings.pointsStepValue}') || 2000;
 
         // Cart State
         let cartItems = [];
@@ -2597,7 +2508,9 @@
             id: null,
             name: '',
             basePrice: 0,
-            imageUrl: ''
+            imageUrl: '',
+            sizes: {},
+            toppings: []
         };
 
         // Bootstrap Modals
@@ -2617,11 +2530,6 @@
                 const el = document.getElementById('clockDisplay');
                 if (el) el.textContent = hours + ':' + mins + ':' + secs;
             }, 1000);
-
-            // Listeners for Customizer live price
-            document.querySelectorAll('input[name="optSize"], input[name="optTopping"]').forEach(el => {
-                el.addEventListener('change', updateCustomizerPrice);
-            });
 
             // Cho phép các màn Cashier khác quay lại đúng tab danh sách đơn.
             const requestedTab = new URLSearchParams(window.location.search).get('tab');
@@ -2695,15 +2603,28 @@
         }
 
         // 4. Customization Modal
-        function openProductCustomization(id, name, basePrice, imageUrl) {
-            tempItem = { id, name, basePrice, imageUrl };
+        async function openProductCustomization(id, name, basePrice, imageUrl) {
+            let config = {};
+            try {
+                const response = await fetch(CONTEXT_PATH + '/menu?action=detail&id=' + encodeURIComponent(id));
+                if (response.ok) {
+                    const product = await response.json();
+                    config = product.variantsConfig || {};
+                    if (typeof config === 'string') config = JSON.parse(config);
+                }
+            } catch (error) {
+                console.error('Không thể tải tùy chọn món:', error);
+            }
+
+            const sizes = config.sizes && typeof config.sizes === 'object' && Object.keys(config.sizes).length
+                ? config.sizes : { 'Tiêu chuẩn': 0 };
+            const toppings = Array.isArray(config.toppings) ? config.toppings : [];
+            tempItem = { id, name, basePrice, imageUrl, sizes, toppings };
             document.getElementById('custModalItemName').textContent = name;
             document.getElementById('custModalBasePrice').textContent = formatCurrency(basePrice);
             document.getElementById('custModalNote').value = '';
 
-            // Reset options
-            document.querySelector('input[name="optSize"][value="M"]').checked = true;
-            document.querySelectorAll('input[name="optTopping"]').forEach(cb => cb.checked = false);
+            renderCustomizerOptions(sizes, toppings);
             document.getElementById('optSugar').value = '100% đường';
             document.getElementById('optIce').value = '100% đá';
 
@@ -2711,13 +2632,59 @@
             customModalInstance.show();
         }
 
+        function renderCustomizerOptions(sizes, toppings) {
+            const sizeContainer = document.getElementById('cashierSizeOptions');
+            sizeContainer.innerHTML = '';
+            const entries = Object.entries(sizes);
+            const defaultEntry = entries.find(([, delta]) => Number(delta) === 0)
+                || entries.reduce((cheapest, entry) => Number(entry[1]) < Number(cheapest[1]) ? entry : cheapest);
+            entries.forEach(([name, delta]) => {
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'optSize';
+                input.value = name;
+                input.dataset.price = String(Number(delta) || 0);
+                input.className = 'd-none';
+                input.checked = name === defaultEntry[0];
+                input.addEventListener('change', updateCustomizerPrice);
+                const text = document.createElement('span');
+                text.className = 'opt-radio-label';
+                text.textContent = name + (Number(delta) > 0 ? ' (+' + formatCurrency(Number(delta)) + ')' : ' (Giá cơ bản)');
+                label.append(input, text);
+                sizeContainer.appendChild(label);
+            });
+
+            const toppingContainer = document.getElementById('cashierToppingOptions');
+            toppingContainer.innerHTML = '';
+            document.getElementById('cashierToppingTitle').style.display = toppings.length ? '' : 'none';
+            toppings.forEach(topping => {
+                const name = typeof topping === 'string' ? topping : topping.name;
+                const price = typeof topping === 'object' ? Number(topping.price) || 0 : 8000;
+                if (!name) return;
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = 'optTopping';
+                input.value = name;
+                input.dataset.price = String(price);
+                input.className = 'd-none';
+                input.addEventListener('change', updateCustomizerPrice);
+                const text = document.createElement('span');
+                text.className = 'opt-radio-label';
+                text.textContent = name + (price > 0 ? ' (+' + formatCurrency(price) + ')' : '');
+                label.append(input, text);
+                toppingContainer.appendChild(label);
+            });
+        }
+
         function calculateCustomItemPrice() {
             let price = tempItem.basePrice;
-            const size = document.querySelector('input[name="optSize"]:checked')?.value || 'M';
-            if (size === 'L') price += 8000;
+            const size = document.querySelector('input[name="optSize"]:checked');
+            price += Number(size?.dataset.price) || 0;
 
             const toppings = document.querySelectorAll('input[name="optTopping"]:checked');
-            price += (toppings.length * 10000);
+            toppings.forEach(topping => price += Number(topping.dataset.price) || 0);
             return price;
         }
 
@@ -2727,7 +2694,7 @@
         }
 
         function confirmAddToCart() {
-            const size = document.querySelector('input[name="optSize"]:checked')?.value || 'M';
+            const size = document.querySelector('input[name="optSize"]:checked')?.value || 'Tiêu chuẩn';
             const sugar = document.getElementById('optSugar').value;
             const ice = document.getElementById('optIce').value;
             const note = document.getElementById('custModalNote').value.trim();
@@ -2740,8 +2707,9 @@
             // Build customization description string
             const parts = [];
             parts.push('Size ' + size);
-            if (sugar !== '100% đường') parts.push(sugar);
-            if (ice !== '100% đá') parts.push(ice);
+            // Luôn ghi rõ mức đường / đá (kể cả mức chuẩn) để Barista thấy chi tiết từng cốc, tránh pha nhầm
+            parts.push(sugar);
+            parts.push(ice);
             if (toppingsArr.length > 0) parts.push('+ ' + toppingsArr.join(', '));
             if (note) parts.push('Lưu ý: ' + note);
 
@@ -2858,13 +2826,13 @@
         function updateSummary(subtotal) {
             let discount = 0;
             if (usePoints && currentCustomer && currentCustomer.totalPoints > 0) {
-                // 1 point = 1.000đ discount, capped at subtotal
-                discount = Math.min(currentCustomer.totalPoints * 1000, subtotal);
+                const usablePoints = Math.floor(currentCustomer.totalPoints / LOYALTY_STEP) * LOYALTY_STEP;
+                discount = Math.min((usablePoints / LOYALTY_STEP) * LOYALTY_STEP_VALUE, subtotal);
             }
 
             const afterDiscount = Math.max(0, subtotal - discount);
-            const vat = Math.round(afterDiscount * 0.08);
-            const finalTotal = afterDiscount + vat;
+            const vat = 0;
+            const finalTotal = afterDiscount;
 
             document.getElementById('lblSubtotal').textContent = formatCurrency(subtotal);
             document.getElementById('lblVat').textContent = formatCurrency(vat);
@@ -2905,7 +2873,8 @@
                     document.getElementById('custInfoBox').style.display = 'block';
                     document.getElementById('custNameDisplay').textContent = currentCustomer.fullName;
                     document.getElementById('custPointsDisplay').textContent = currentCustomer.totalPoints;
-                    document.getElementById('custDiscountDisplay').textContent = formatCurrency(currentCustomer.totalPoints * 1000);
+                    const usable = Math.floor(currentCustomer.totalPoints / LOYALTY_STEP) * LOYALTY_STEP;
+                    document.getElementById('custDiscountDisplay').textContent = formatCurrency((usable / LOYALTY_STEP) * LOYALTY_STEP_VALUE);
                     showToast('Đã nhận diện hội viên: ' + currentCustomer.fullName);
                     renderCart();
                 } else {
@@ -2951,10 +2920,11 @@
         }
 
         function copyBankSTK() {
-            navigator.clipboard.writeText('0987654321').then(() => {
-                showToast('Đã sao chép STK: 0987654321');
+            const accountNo = document.getElementById('bankStk').textContent.trim();
+            navigator.clipboard.writeText(accountNo).then(() => {
+                showToast('Đã sao chép STK: ' + accountNo);
             }).catch(() => {
-                showToast('STK: 0987654321');
+                showToast('STK: ' + accountNo);
             });
         }
 
@@ -2980,8 +2950,11 @@
                 const sub = cartItems.reduce((acc, it) => acc + it.subtotal, 0);
                 const { finalTotal } = updateSummary(sub);
                 const desc = 'AURAPOS ' + Date.now().toString().slice(-6);
-                const qrUrl = `https://img.vietqr.io/image/MB-0987654321-compact2.png?amount=\${finalTotal}&addInfo=\${encodeURIComponent(desc)}&accountName=AURA%20CAFE`;
-                document.getElementById('vietQrImg').src = qrUrl;
+                const qrImg = document.getElementById('vietQrImg');
+                const bankId = qrImg.dataset.bankId;
+                const accountNo = document.getElementById('bankStk').textContent.trim();
+                const qrUrl = `https://vietqr.app/img?bank=\${encodeURIComponent(bankId)}&acc=\${encodeURIComponent(accountNo)}&template=compact&amount=\${finalTotal}&des=\${encodeURIComponent(desc)}&showinfo=true&fullacc=true&holder=\${encodeURIComponent(accountName)}&store=\${encodeURIComponent('AURA Cafe')}`;
+                qrImg.src = qrUrl;
             }
         }
 
@@ -3061,7 +3034,7 @@
                 recipientPhone: currentCustomer ? currentCustomer.phone : '',
                 orderNote: orderNote,
                 paymentMethod: selectedPaymentMethod,
-                pointsUsed: (usePoints && currentCustomer) ? Math.min(currentCustomer.totalPoints, Math.floor(discount / 1000)) : 0,
+                pointsUsed: (usePoints && currentCustomer) ? Math.floor(discount / LOYALTY_STEP_VALUE) * LOYALTY_STEP : 0,
                 discountAmount: discount,
                 totalAmount: sub,
                 finalAmount: finalTotal,
@@ -3125,33 +3098,6 @@
         }
 
         // 10. Order Actions & Realtime Sync
-        async function deliverOrder(orderId) {
-            if (!confirm(`Xác nhận bắt đầu giao đơn hàng #\${orderId}?`)) {
-                return;
-            }
-
-            try {
-                const resp = await fetch(`\${CONTEXT_PATH}/cashier?action=deliver-order&orderId=\${orderId}`, {
-                    method: 'POST',
-                    headers: { 'Accept': 'application/json' }
-                });
-                if (resp.status === 401) {
-                    alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
-                    window.location.href = `\${CONTEXT_PATH}/login`;
-                    return;
-                }
-                const res = await resp.json();
-                if (res.success) {
-                    showToast(res.message || 'Đã chuyển đơn sang trạng thái Đang giao hàng.');
-                    refreshOrdersList();
-                } else {
-                    alert(res.error || 'Không thể chuyển trạng thái giao hàng.');
-                }
-            } catch (e) {
-                console.error(e);
-                alert('Lỗi kết nối máy chủ.');
-            }
-        }
 
         async function completeOrder(orderId) {
             if (!confirm(`Xác nhận hoàn tất đơn hàng #\${orderId}?`)) {
@@ -3341,15 +3287,7 @@
                     <span>Hóa đơn</span>
                 </a>`;
 
-            if (o.orderType === 'ONLINE' && o.status === 'READY') {
-                actionBtnsHtml += `
-                    <button type="button" class="btn-action-deliver-order" onclick="deliverOrder(\${o.id})" title="Chuyển sang Đang giao hàng">
-                        <span class="material-symbols-outlined" style="font-size: 15px;">delivery_dining</span>
-                        <span>Giao</span>
-                    </button>`;
-            }
-
-            if (o.status === 'READY' || o.status === 'DELIVERING') {
+            if ((o.orderType === 'DINE_IN' || o.orderType === 'TAKEAWAY') && o.status === 'READY') {
                 actionBtnsHtml += `
                     <button type="button" class="btn-action-complete-order" onclick="completeOrder(\${o.id})" title="Đánh dấu hoàn tất">
                         <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
@@ -3490,3 +3428,4 @@
     </script>
 </body>
 </html>
+

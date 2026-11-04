@@ -14,13 +14,13 @@ public class User implements Serializable {
     private String status;
     private String birthday; // Stored as YYYY-MM-DD or standard Date string
     private String address;
-    private String tierName;
     private int totalPoints;
+    private String hireDate;       // Ngày vào làm dạng YYYY-MM-DD
 
     public User() {
     }
 
-    public User(int id, String fullName, String phone, String email, String role, String position, String status, String birthday, String address, String tierName, int totalPoints) {
+    public User(int id, String fullName, String phone, String email, String role, String position, String status, String birthday, String address, int totalPoints) {
         this.id = id;
         this.fullName = fullName;
         this.phone = phone;
@@ -30,7 +30,6 @@ public class User implements Serializable {
         this.status = status;
         this.birthday = birthday;
         this.address = address;
-        this.tierName = tierName;
         this.totalPoints = totalPoints;
     }
 
@@ -128,19 +127,47 @@ public class User implements Serializable {
         this.address = address;
     }
 
-    public String getTierName() {
-        return tierName;
-    }
-
-    public void setTierName(String tierName) {
-        this.tierName = tierName;
-    }
-
     public int getTotalPoints() {
         return totalPoints;
     }
 
     public void setTotalPoints(int totalPoints) {
         this.totalPoints = totalPoints;
+    }
+
+    public String getHireDate() {
+        return hireDate;
+    }
+
+    public void setHireDate(String hireDate) {
+        this.hireDate = hireDate;
+    }
+
+    // Helper methods hiển thị cho màn Quản lý nhân viên
+    public String getHireDateDisplay() {
+        if (hireDate == null || hireDate.length() < 10) return "";
+        return hireDate.substring(8, 10) + "/" + hireDate.substring(5, 7) + "/" + hireDate.substring(0, 4);
+    }
+
+    public String getRoleDisplayName() {
+        if ("ADMIN".equalsIgnoreCase(role)) return "Quản trị";
+        if ("STAFF".equalsIgnoreCase(role)) return "Nhân viên";
+        if ("CUSTOMER".equalsIgnoreCase(role)) return "Khách hàng";
+        return role != null ? role : "";
+    }
+
+    public String getPositionDisplayName() {
+        if ("MANAGER".equalsIgnoreCase(position)) return "Quản lý nhân viên";
+        if ("BARISTA".equalsIgnoreCase(position)) return "Pha chế";
+        if ("CASHIER".equalsIgnoreCase(position)) return "Thu ngân";
+        if ("SHIPPER".equalsIgnoreCase(position)) return "Giao hàng";
+        return position != null ? position : "";
+    }
+
+    public String getStatusDisplayName() {
+        if ("ACTIVE".equalsIgnoreCase(status)) return "Hoạt động";
+        if ("INACTIVE".equalsIgnoreCase(status)) return "Ngừng hoạt động";
+        if ("LOCKED".equalsIgnoreCase(status)) return "Đã khóa";
+        return status != null ? status : "";
     }
 }

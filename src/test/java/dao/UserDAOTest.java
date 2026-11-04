@@ -31,12 +31,12 @@ public class UserDAOTest {
     }
 
     @Test
-    @DisplayName("TC-USER-01: Đăng nhập thành công với SĐT và demo password")
+    @DisplayName("TC-USER-01: Đăng nhập thành công bằng số điện thoại")
     void testLoginWithPhone() {
         User user = userDAO.login("0900000002", "123456");
-        assertNotNull(user, "User Barista phải đăng nhập thành công với SĐT");
+        assertNotNull(user, "Số điện thoại đã đăng ký phải đăng nhập được");
+        assertEquals("0900000002", user.getPhone());
         assertEquals("BARISTA", user.getPosition());
-        assertEquals("STAFF", user.getRole());
     }
 
     @Test
@@ -48,11 +48,10 @@ public class UserDAOTest {
     }
 
     @Test
-    @DisplayName("TC-USER-03: Đăng nhập thành công với username prefix (an)")
+    @DisplayName("TC-USER-03: Không cho đăng nhập bằng email prefix")
     void testLoginWithUsernamePrefix() {
         User user = userDAO.login("an", "123456");
-        assertNotNull(user, "User Barista phải đăng nhập được khi gõ 'an'");
-        assertEquals("Nguyen Van An", user.getFullName());
+        assertNull(user, "Email prefix không phải thông tin đăng nhập hợp lệ");
     }
 
     @Test

@@ -12,6 +12,7 @@ public class Cart implements Serializable {
     private static final long serialVersionUID = 2L;
 
     public static final String SESSION_KEY = "cart";
+    /** Legacy default only; runtime earning uses ShopSettings.pointsEarnUnit. */
     public static final double MONEY_PER_POINT = 10000;
     public static final int MAX_QUANTITY = 99;
 
@@ -187,7 +188,7 @@ public class Cart implements Serializable {
 
     /** Mỗi 10.000đ chi tiêu tương đương 1 điểm Aura */
     public int getRewardPoints() {
-        return (int) Math.floor(getTotal() / MONEY_PER_POINT);
+        return settings.calculateEarnedPoints(getTotal());
     }
 
     /** Freeship tính trên tiền các món đã chọn (trước khi trừ điểm) */
@@ -206,9 +207,49 @@ public class Cart implements Serializable {
         return (int) Math.min(100, Math.floor(getSelectedSubtotal() * 100 / settings.getFreeshipThreshold()));
     }
 
-    /** Phí giao hàng: miễn phí khi tiền hàng đạt mức freeship Admin cài đặt */
+    // ===== Hình thức nhận hàng (SRS 2.3.2): DELIVERY = giao tận nơi, PICKUP = tự đến lấy, DINE_IN = dùng tại quán =====
+    public static final String FULFILLMENT_DELIVERY = "DELIVERY";
+    public static final String FULFILLMENT_PICKUP = "PICKUP";
+    public static final String FULFILLMENT_DINE_IN = "DINE_IN";
+
+    private String fulfillment = FULFILLMENT_DELIVERY;
+
+    public String getFulfillment() {
+        return fulfillment == null ? FULFILLMENT_DELIVERY : fulfillment;
+    }
+
+    /** Giá trị lạ thì giữ mặc định Giao tận nơi */
+    public void setFulfillment(String fulfillment) {
+        if (FULFILLMENT_PICKUP.equals(fulfillment) || FULFILLMENT_DINE_IN.equals(fulfillment)) {
+            this.fulfillment = fulfillment;
+        } else {
+            this.fulfillment = FULFILLMENT_DELIVERY;
+        }
+    }
+
+    public boolean isDelivery() {
+        return FULFILLMENT_DELIVERY.equals(getFulfillment());
+    }
+
+    /** orders.order_type tương ứng: ONLINE (giao tận nơi), TAKEAWAY (tự đến lấy), DINE_IN (tại quán) */
+    public String getOrderType() {
+        if (FULFILLMENT_PICKUP.equals(getFulfillment())) return "TAKEAWAY";
+        if (FULFILLMENT_DINE_IN.equals(getFulfillment())) return "DINE_IN";
+        return "ONLINE";
+    }
+
+    /**
+     * Phí giao hàng: chỉ tính khi giao tận nơi, miễn phí khi tiền hàng đạt mức freeship Admin cài đặt;
+     * còn lại = 1 mức phí cố định cho mọi địa chỉ (delivery_fee, Admin chỉnh ở Cài đặt).
+     */
     public double getDeliveryFee() {
-        return isFreeshipReached() ? 0 : settings.getDeliveryFee();
+        if (!isDelivery()) {
+            return 0;
+        }
+        if (isFreeshipReached()) {
+            return 0;
+        }
+        return settings.getDeliveryFee();
     }
 
     /** Khách cần trả = tiền hàng - điểm + phí giao hàng */

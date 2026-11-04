@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
+// BF11 - XEM CÔNG KHAI: GET /menu xem/lọc; GET ?action=detail&id=... trả JSON cho popup.
 @WebServlet(name = "MenuController", urlPatterns = {"/menu"})
 public class MenuController extends HttpServlet {
 
@@ -68,6 +69,7 @@ public class MenuController extends HttpServlet {
 
     private void handleProductDetailApi(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
+        // JSON API chỉ cung cấp dữ liệu món cho giao diện; không thêm món vào giỏ ở hàm này.
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
@@ -96,9 +98,7 @@ public class MenuController extends HttpServlet {
             json.append("\"basePrice\":").append(product.getBasePrice()).append(",");
             json.append("\"formattedPrice\":").append(escapeJson(product.getFormattedPrice())).append(",");
             json.append("\"description\":").append(escapeJson(product.getDescription() != null ? product.getDescription() : "")).append(",");
-            json.append("\"badge\":").append(escapeJson(product.getBadge() != null ? product.getBadge() : "")).append(",");
-            json.append("\"subtitle\":").append(escapeJson(product.getSubtitle() != null ? product.getSubtitle() : "")).append(",");
-            json.append("\"imageUrl\":").append(escapeJson(product.getImageUrl() != null ? product.getImageUrl() : "")).append(",");
+            json.append("\"imageUrl\":").append(escapeJson(product.getDisplayImageUrl() != null ? product.getDisplayImageUrl() : "")).append(",");
             json.append("\"isAvailable\":").append(product.isAvailable()).append(",");
             json.append("\"variantsConfig\":").append(product.getVariantsConfig() != null && !product.getVariantsConfig().isEmpty() ? product.getVariantsConfig() : "{}");
             json.append("}");

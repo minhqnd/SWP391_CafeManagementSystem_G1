@@ -643,12 +643,6 @@
                             <span class="pulse-dot"></span>
                             <span>${o.statusLabel}</span>
                         </div>
-                        <c:if test="${not empty o.estimateReceiveTime(deliveryMinutes)}">
-                            <div class="text-end d-none d-sm-block">
-                                <div class="text-muted" style="font-size: 0.68rem; text-transform: uppercase; font-weight: 600;">Dự kiến xong</div>
-                                <div class="fw-bold" style="font-size: 0.95rem; color: #1e293b;">${o.estimateReceiveTime(deliveryMinutes)}</div>
-                            </div>
-                        </c:if>
                     </div>
                 </div>
 
@@ -660,13 +654,13 @@
                             <!-- Stepper -->
                             <div class="stepper-container">
                                 <div class="stepper-grid">
-                                    <!-- Bước 1: Đã thanh toán -->
+                                    <!-- Bước 1: Đã thanh toán (COD: đã đặt, trả tiền khi nhận hàng) -->
                                     <div class="stepper-item done">
                                         <div class="stepper-node">
                                             <span class="material-symbols-outlined" style="font-size: 18px;">receipt_long</span>
                                         </div>
-                                        <div class="stepper-title">Đã thanh toán</div>
-                                        <div class="stepper-sub">${not empty o.paidTimeText ? o.paidTimeText : o.createdTimeText}</div>
+                                        <div class="stepper-title">${o.codUnpaid ? 'Đã đặt (COD)' : 'Đã thanh toán'}</div>
+                                        <div class="stepper-sub">${o.codUnpaid ? 'Trả tiền khi nhận' : (not empty o.paidTimeText ? o.paidTimeText : o.createdTimeText)}</div>
                                     </div>
                                     <!-- Bước 2: Pha chế -->
                                     <div class="stepper-item ${o.progressStep > 2 ? 'done' : (o.progressStep == 2 ? 'current' : '')}">
@@ -928,7 +922,6 @@
                                 <c:if test="${o.pointsUsed > 0}">Nếu hủy đơn, bạn được hoàn lại ${o.pointsUsed} điểm Aura đã dùng.</c:if>
                             </c:if>
                             <c:if test="${o.cancelled}">
-                                <span class="text-muted">Đơn hàng đã được hủy an toàn.</span>
                                 <c:if test="${empty o.paidAt && o.discountAmount > 0}">Điểm Aura đã dùng cho đơn đã được hoàn lại.</c:if>
                             </c:if>
                             <c:if test="${o.completed}">
