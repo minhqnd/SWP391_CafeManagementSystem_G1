@@ -214,7 +214,7 @@
                                             <c:when test="${cart.freeshipReached}">Bạn đã đạt mốc <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b> để nhận miễn phí giao hàng.</c:when>
                                             <c:otherwise>
                                                 Miễn phí giao hàng cho đơn từ <b><fmt:formatNumber value="${shop.freeshipThreshold}" pattern="#,##0" />đ</b>
-                                                (tính trên các món đã chọn). Phí giao tuỳ theo quận, chọn ở bước nhập địa chỉ.
+                                                (tính trên các món đã chọn). Chưa đạt mốc thì phí giao <b><fmt:formatNumber value="${shop.deliveryFee}" pattern="#,##0" />đ</b>.
                                             </c:otherwise>
                                         </c:choose>
                                     </div>
