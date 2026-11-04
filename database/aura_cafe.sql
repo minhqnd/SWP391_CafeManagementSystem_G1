@@ -855,7 +855,7 @@ CREATE TABLE `work_shifts` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_shift_week_name` (`week_start`,`shift_name`),
   KEY `idx_shift_week` (`week_start`),
-  CONSTRAINT `chk_shift_time` CHECK ((`end_time` > `start_time`))
+  CONSTRAINT `chk_shift_time` CHECK ((`end_time` <> `start_time`))
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

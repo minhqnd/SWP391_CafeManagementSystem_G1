@@ -66,20 +66,19 @@ public class WorkShiftDAO extends BaseDAO {
         }
     }
 
-    /** Ca khác trong cùng tuần bị chồng giờ (start < end khác và end > start khác); null nếu không có */
+    /**
+     * Ca khác trong cùng tuần bị chồng giờ với ca start - end; null nếu không có.
+     * So trong Java (WorkShift.overlaps) để tính đúng cả ca qua đêm (VD 23:00 - 02:00).
+     */
     public WorkShift findOverlap(LocalDate weekStart, LocalTime start, LocalTime end, int excludeId)
             throws SQLException, ClassNotFoundException {
-        String sql = SELECT_SHIFT + "WHERE s.week_start = ? AND s.id <> ? AND s.start_time < ? AND s.end_time > ? LIMIT 1";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setDate(1, Date.valueOf(weekStart));
-            ps.setInt(2, excludeId);
-            ps.setTime(3, Time.valueOf(end));
-            ps.setTime(4, Time.valueOf(start));
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? map(rs) : null;
+        WorkShift candidate = new WorkShift(excludeId, weekStart, "", start, end);
+        for (WorkShift other : getShiftsByWeek(weekStart)) {
+            if (other.getId() != excludeId && candidate.overlaps(other)) {
+                return other;
             }
         }
+        return null;
     }
 
     public int insert(WorkShift shift) throws SQLException, ClassNotFoundException {

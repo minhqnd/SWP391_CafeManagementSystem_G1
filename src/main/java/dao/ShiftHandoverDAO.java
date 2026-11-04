@@ -105,8 +105,11 @@ public class ShiftHandoverDAO extends BaseDAO {
                 + "WHERE current_ws.id = ? AND ("
                 + "previous_ws.work_date < current_ws.work_date OR ("
                 + "previous_ws.work_date = current_ws.work_date "
+                // ca qua đêm (end < start) kết thúc sáng hôm sau nên không đứng trước ca nào cùng ngày
+                + "AND previous_shift.end_time > previous_shift.start_time "
                 + "AND previous_shift.end_time <= current_shift.start_time)) "
-                + "ORDER BY previous_ws.work_date DESC, previous_shift.end_time DESC, "
+                + "ORDER BY previous_ws.work_date DESC, (previous_shift.end_time < previous_shift.start_time) DESC, "
+                + "previous_shift.end_time DESC, "
                 + "h.created_at DESC, h.id DESC LIMIT 1";
         return findOne(sql, scheduleId);
     }

@@ -280,10 +280,11 @@ public class WorkScheduleDAO extends BaseDAO {
                 ? schedule.getCheckOutTime()
                 : fallbackEndTime;
         if (endTime == null && schedule.getWorkDate() != null) {
-            endTime = Timestamp.valueOf(schedule.getWorkDate().toLocalDate().atTime(23, 59, 59));
+            endTime = Timestamp.valueOf(lastDayOfShift(schedule).atTime(23, 59, 59));
         }
         if (schedule.getCheckOutTime() == null && schedule.getWorkDate() != null) {
-            java.time.LocalDate wDate = schedule.getWorkDate().toLocalDate();
+            // Ca qua đêm (VD 23:00 - 02:00) kéo sang ngày hôm sau nên tính doanh thu tới hết ngày đó
+            java.time.LocalDate wDate = lastDayOfShift(schedule);
             if (wDate.isBefore(java.time.LocalDate.now())) {
                 endTime = Timestamp.valueOf(wDate.atTime(23, 59, 59));
             }
@@ -376,6 +377,12 @@ public class WorkScheduleDAO extends BaseDAO {
         }
     }
 
+    /** Ngày ca kết thúc: ca thường là ngày làm việc, ca qua đêm là ngày hôm sau */
+    private static java.time.LocalDate lastDayOfShift(WorkSchedule schedule) {
+        java.time.LocalDate workDate = schedule.getWorkDate().toLocalDate();
+        return schedule.isOvernightShift() ? workDate.plusDays(1) : workDate;
+    }
+
     private WorkSchedule mapResultSet(ResultSet rs) throws SQLException {
         WorkSchedule ws = new WorkSchedule();
         ws.setId(rs.getInt("id"));
@@ -390,7 +397,9 @@ public class WorkScheduleDAO extends BaseDAO {
         Time shiftEnd = rs.getTime("shift_end");
         if (shiftStart != null && shiftEnd != null) {
             ws.setShiftStart(shiftStart.toLocalTime());
-            ws.setShiftTime(shiftStart.toString().substring(0, 5) + "-" + shiftEnd.toString().substring(0, 5));
+            ws.setShiftEnd(shiftEnd.toLocalTime());
+            ws.setShiftTime(shiftStart.toString().substring(0, 5) + "-" + shiftEnd.toString().substring(0, 5)
+                    + (ws.isOvernightShift() ? " hôm sau" : ""));
         }
         ws.setCheckInTime(rs.getTimestamp("check_in_time"));
         ws.setCheckOutTime(rs.getTimestamp("check_out_time"));
