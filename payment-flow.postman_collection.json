@@ -1,0 +1,105 @@
+{
+  "info": {
+    "_postman_id": "aura-cafe-payment-collection",
+    "name": "Aura Cafe - Payment Flow & Gateway API",
+    "description": "Bộ Collection kiểm thử luồng thanh toán chuyển khoản VietQR, SePay Webhook và Polling trạng thái.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Gateway - Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://payment-gateway.zemorts.workers.dev/api/health",
+          "protocol": "https",
+          "host": ["payment-gateway", "zemorts", "workers", "dev"],
+          "path": ["api", "health"]
+        }
+      }
+    },
+    {
+      "name": "2. Gateway - Đăng ký đơn hàng (Register Order)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"appId\": \"aura_cafe\",\n  \"orderCode\": \"AURA261109114947194\",\n  \"amount\": 64000,\n  \"transactionCode\": \"QR-AURA261109114947194\"\n}"
+        },
+        "url": {
+          "raw": "https://payment-gateway.zemorts.workers.dev/api/orders/register",
+          "protocol": "https",
+          "host": ["payment-gateway", "zemorts", "workers", "dev"],
+          "path": ["api", "orders", "register"]
+        }
+      }
+    },
+    {
+      "name": "3. Gateway - Kiểm tra trạng thái đơn (Polling Status)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://payment-gateway.zemorts.workers.dev/api/orders/AURA261109114947194/status",
+          "protocol": "https",
+          "host": ["payment-gateway", "zemorts", "workers", "dev"],
+          "path": ["api", "orders", "AURA261109114947194", "status"]
+        }
+      }
+    },
+    {
+      "name": "4. Gateway - Giả lập Webhook SePay chuyển tiền thành công",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": 93338888,\n  \"gateway\": \"MBBank\",\n  \"accountNumber\": \"234556688\",\n  \"transferType\": \"in\",\n  \"transferAmount\": 64000,\n  \"content\": \"AURA261109114947194 chuyen tien\",\n  \"referenceCode\": \"FT26313600240030\",\n  \"transactionDate\": \"2026-11-09 11:50:00\"\n}"
+        },
+        "url": {
+          "raw": "https://payment-gateway.zemorts.workers.dev/api/webhooks/sepay",
+          "protocol": "https",
+          "host": ["payment-gateway", "zemorts", "workers", "dev"],
+          "path": ["api", "webhooks", "sepay"]
+        }
+      }
+    },
+    {
+      "name": "5. Gateway - Lấy danh sách giao dịch & đơn hàng để đối soát (Admin)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://payment-gateway.zemorts.workers.dev/api/transactions",
+          "protocol": "https",
+          "host": ["payment-gateway", "zemorts", "workers", "dev"],
+          "path": ["api", "transactions"]
+        }
+      }
+    },
+    {
+      "name": "6. Web App Java - Polling trạng thái đơn từ client JSP",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/SWP391_CafeManagementSystem/payment?action=status&orderId=1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["SWP391_CafeManagementSystem", "payment"],
+          "query": [
+            { "key": "action", "value": "status" },
+            { "key": "orderId", "value": "1" }
+          ]
+        }
+      }
+    }
+  ]
+}
