@@ -39,22 +39,20 @@ public class IngredientDAO extends BaseDAO {
         return list;
     }
 
-    /** Latest received purchase unit price per ingredient. Draft and ordered POs are not inventory costs. */
+    /** Latest purchase unit price per ingredient (prioritizing received POs, with fallback to latest PO). */
     public Map<Integer, BigDecimal> getLatestPurchasePrices() {
-        // BF11 - NGUỒN GIÁ VỐN: chỉ phiếu RECEIVED; ROW_NUMBER chọn lần nhập mới nhất từng nguyên liệu.
-        // Map trả ingredientId -> unit_price; thiếu giá thì Controller/JSP đánh dấu chưa đủ giá vốn.
         Map<Integer, BigDecimal> prices = new HashMap<>();
         String sql = "SELECT ingredient_id, unit_price FROM (" +
                      "  SELECT poi.ingredient_id, poi.unit_price, " +
                      "         ROW_NUMBER() OVER (PARTITION BY poi.ingredient_id " +
-                     "             ORDER BY COALESCE(tx.created_at, po.created_at) DESC, " +
+                     "             ORDER BY CASE WHEN po.status IN ('RECEIVED','PARTIALLY_RECEIVED','CLOSED') THEN 0 ELSE 1 END ASC, " +
+                     "                      COALESCE(tx.created_at, po.created_at) DESC, " +
                      "                      COALESCE(tx.id, 0) DESC, poi.id DESC) AS row_num " +
                      "  FROM purchase_order_items poi " +
-                     "  JOIN purchase_orders po ON po.id = poi.po_id AND po.status IN ('PARTIALLY_RECEIVED','RECEIVED','CLOSED') " +
+                     "  JOIN purchase_orders po ON po.id = poi.po_id AND po.status <> 'CANCELLED' " +
                      "  LEFT JOIN inventory_transactions tx " +
                      "    ON tx.reference_type = 'PURCHASE_ORDER' AND tx.reference_id = po.id " +
                      "   AND tx.ingredient_id = poi.ingredient_id AND tx.transaction_type = 'IN_PURCHASE'" +
-                     "  WHERE tx.id IS NOT NULL OR po.status = 'RECEIVED'" +
                      ") ranked WHERE row_num = 1";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
