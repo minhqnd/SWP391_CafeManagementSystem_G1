@@ -168,22 +168,26 @@
 <body class="admin-body">
 <jsp:include page="/components/admin-sidebar.jsp"><jsp:param name="activeMenu" value="bank-transactions" /></jsp:include>
 <main class="admin-main-wrapper orders-page">
-    <header class="orders-overview">
+    <header class="orders-overview d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
             <span class="table-ref">Tích hợp: SePay Bank Hub · Cloudflare Worker Webhooks</span>
             <h1>Giao dịch ngân hàng (SePay)</h1>
             <p>Nhật ký biến động số dư thực tế từ tài khoản ngân hàng quán cà phê và đối soát đơn hàng.</p>
         </div>
-        <div>
-            <button type="button" class="btn btn-outline-dark d-flex align-items-center gap-1 py-2 px-3 fw-semibold" style="border-radius: 10px;" onclick="location.reload()">
-                <span class="material-symbols-outlined fs-5">refresh</span>
-                <span>Làm mới dữ liệu</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-white text-secondary border px-3 py-2 d-flex align-items-center gap-2 shadow-sm" id="pollingBadge" style="font-size: 0.78rem; border-radius: 10px;">
+                <span class="spinner-grow text-success" role="status" style="width: 8px; height: 8px;"></span>
+                <span id="pollingStatusText">Tự động làm mới: <strong>5s</strong></span>
+            </span>
+            <button type="button" class="btn btn-outline-dark d-flex align-items-center gap-1 py-2 px-3 fw-semibold shadow-sm" style="border-radius: 10px;" id="btnRefresh" onclick="manualRefresh()">
+                <span class="material-symbols-outlined fs-5" id="refreshIcon">refresh</span>
+                <span>Làm mới ngay</span>
             </button>
         </div>
     </header>
 
     <!-- Thống kê biến động số dư -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4" id="statsContainer">
         <div class="col-md-4">
             <div class="bank-stat-card">
                 <div>
@@ -200,11 +204,13 @@
         <div class="col-md-4">
             <div class="bank-stat-card">
                 <div>
-                    <div class="bank-stat-title">Tiền ra</div>
-                    <div class="bank-stat-val text-secondary">-0 đ</div>
+                    <div class="bank-stat-title">Số giao dịch ghi nhận</div>
+                    <div class="bank-stat-val text-dark">
+                        ${totalCount} <span style="font-size: 0.9rem; font-weight: 600; color: #64748b;">giao dịch</span>
+                    </div>
                 </div>
-                <div class="bank-icon-circle bg-danger bg-opacity-10 text-danger">
-                    <span class="material-symbols-outlined">arrow_upward</span>
+                <div class="bank-icon-circle bg-secondary bg-opacity-10 text-secondary">
+                    <span class="material-symbols-outlined">receipt_long</span>
                 </div>
             </div>
         </div>
@@ -225,7 +231,7 @@
     </div>
 
     <!-- Bảng danh sách sao kê ngân hàng SePay -->
-    <section class="order-table-card">
+    <section class="order-table-card" id="tableCardContainer">
         <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
             <div class="fw-bold fs-6">Danh sách biến động số dư ngân hàng (${totalCount} giao dịch)</div>
             <div class="text-muted small">Cổng kết nối: <code style="color: #0284c7;">${fn:escapeXml(gatewayUrl)}</code></div>
@@ -357,5 +363,72 @@
     </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let isFetching = false;
+
+    async function fetchBankData(isManual = false) {
+        if (isFetching) return;
+        isFetching = true;
+
+        const refreshIcon = document.getElementById('refreshIcon');
+        const statusText = document.getElementById('pollingStatusText');
+        if (refreshIcon) refreshIcon.style.animation = 'spin 0.8s linear infinite';
+        if (statusText && isManual) statusText.innerHTML = 'Đang đồng bộ...';
+
+        try {
+            const resp = await fetch(window.location.href, {
+                headers: { 'Cache-Control': 'no-cache' }
+            });
+            if (resp.ok) {
+                const text = await resp.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+
+                const newStats = doc.getElementById('statsContainer');
+                const newTableCard = doc.getElementById('tableCardContainer');
+
+                const currentStats = document.getElementById('statsContainer');
+                const currentTableCard = document.getElementById('tableCardContainer');
+
+                if (newStats && currentStats) {
+                    currentStats.innerHTML = newStats.innerHTML;
+                }
+                if (newTableCard && currentTableCard) {
+                    currentTableCard.innerHTML = newTableCard.innerHTML;
+                }
+            }
+        } catch (e) {
+            console.error('Lỗi tự động cập nhật giao dịch:', e);
+        } finally {
+            isFetching = false;
+            if (refreshIcon) refreshIcon.style.animation = '';
+            if (statusText) statusText.innerHTML = 'Tự động làm mới: <strong>5s</strong>';
+        }
+    }
+
+    function manualRefresh() {
+        fetchBankData(true);
+    }
+
+    // Polling tự động mỗi 5 giây khi người dùng đang mở tab
+    setInterval(() => {
+        if (!document.hidden) {
+            fetchBankData(false);
+        }
+    }, 5000);
+
+    // Khi người dùng chuyển tab và quay lại, tự động đồng bộ ngay
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            fetchBankData(false);
+        }
+    });
+</script>
+<style>
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
 </body>
 </html>
