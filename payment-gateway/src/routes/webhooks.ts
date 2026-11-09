@@ -68,16 +68,30 @@ app.post('/api/webhooks/sepay', async (c) => {
             }
         }
 
-        // 3. Nếu tìm thấy đơn khớp mã và số tiền chuyển >= số tiền đơn hàng -> Cập nhật SUCCESS
-        if (matchedOrder && transferAmount >= Number(matchedOrder.amount)) {
-            await c.env.DB.prepare(
-                `UPDATE orders
-                 SET status = 'SUCCESS',
-                     gateway_reference = ?,
-                     raw_webhook = ?,
-                     paid_at = CURRENT_TIMESTAMP
-                 WHERE id = ? AND status = 'PENDING'`
-            ).bind(referenceCode, JSON.stringify(payload), matchedOrder.id).run();
+        // 3. Nếu tìm thấy đơn, tính tổng tiền khách đã chuyển cho mã đơn này (hỗ trợ chuyển nhiều lần cộng dồn)
+        if (matchedOrder) {
+            const matchedCode = String(matchedOrder.order_code || '').replace(/^#/, '').toUpperCase();
+            const matchedCompact = matchedCode.replace(/[-_\s]/g, '');
+
+            const sumRow = await c.env.DB.prepare(
+                `SELECT SUM(transfer_amount) as total_paid
+                 FROM webhook_logs
+                 WHERE transfer_type = 'in' AND (UPPER(content) LIKE ? OR UPPER(content) LIKE ?)`
+            ).bind(`%${matchedCode}%`, `%${matchedCompact}%`).first<any>();
+
+            const totalPaid = Number(sumRow?.total_paid || 0);
+
+            // Khi tổng các lần chuyển đã đủ tiền đơn hàng -> Cập nhật SUCCESS
+            if (totalPaid >= Number(matchedOrder.amount)) {
+                await c.env.DB.prepare(
+                    `UPDATE orders
+                     SET status = 'SUCCESS',
+                         gateway_reference = ?,
+                         raw_webhook = ?,
+                         paid_at = CURRENT_TIMESTAMP
+                     WHERE id = ? AND status = 'PENDING'`
+                ).bind(referenceCode, JSON.stringify(payload), matchedOrder.id).run();
+            }
         }
 
         return c.json({ success: true });

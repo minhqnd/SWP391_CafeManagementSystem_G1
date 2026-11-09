@@ -52,3 +52,15 @@ test('underpayment keeps order PENDING', async () => {
     await f.sendWebhook(2, 50000, 'Chuyen khoan ORD-261109-1002');
     assert.equal((await f.getStatus('ORD-261109-1002')).status, 'PENDING');
 });
+
+test('multiple partial payments accumulate to SUCCESS', async () => {
+    const f = fixture();
+    await f.register('ORD-261109-1003', 100000);
+    // Lan 1: Chuyen thieu 40k -> van PENDING
+    await f.sendWebhook(3, 40000, 'Chuyen khoan ORD-261109-1003');
+    assert.equal((await f.getStatus('ORD-261109-1003')).status, 'PENDING');
+
+    // Lan 2: Chuyen tiep 60k -> Tong = 100k -> Chuyen thanh SUCCESS
+    await f.sendWebhook(4, 60000, 'Chuyen tiep tien ORD-261109-1003');
+    assert.equal((await f.getStatus('ORD-261109-1003')).status, 'SUCCESS');
+});
