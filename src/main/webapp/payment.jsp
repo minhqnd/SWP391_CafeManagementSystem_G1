@@ -294,7 +294,7 @@
 
         // ========================================================
         // Tự động kiểm tra trạng thái thanh toán qua Server Java
-        // (Server Java tự đối soát HMAC với Payment Gateway & chốt đơn trong DB)
+        // (Server Java tự đối soát với Payment Gateway & chốt đơn trong DB)
         // ========================================================
         (function() {
             var orderId = '${order.id}';

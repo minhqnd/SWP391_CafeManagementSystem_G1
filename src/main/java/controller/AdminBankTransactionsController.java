@@ -53,7 +53,7 @@ public class AdminBankTransactionsController extends HttpServlet {
         ShopSettings settings = shopSettingDAO.getSettings();
         String gatewayUrl = settings.getPaymentGatewayUrl();
 
-        List<BankTransaction> transactions = fetchBankTransactions(gatewayUrl);
+        List<BankTransaction> transactions = fetchBankTransactions(gatewayUrl, settings);
 
         // Đối soát chi tiết từng giao dịch với hệ thống đơn hàng
         reconcileTransactions(transactions);
@@ -195,42 +195,207 @@ public class AdminBankTransactionsController extends HttpServlet {
         return map;
     }
 
-    private List<BankTransaction> fetchBankTransactions(String gatewayUrl) {
+    private List<BankTransaction> fetchBankTransactions(String gatewayUrl, ShopSettings settings) {
         List<BankTransaction> list = new ArrayList<>();
-        if (gatewayUrl == null || gatewayUrl.trim().isEmpty()) {
-            return list;
-        }
+        Set<String> seenRefs = new HashSet<>();
+        Set<String> seenOrders = new HashSet<>();
 
-        try {
-            String baseUrl = gatewayUrl.trim().replaceAll("/+$", "");
-            URL url = new URL(baseUrl + "/api/transactions");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(4000);
-            conn.setReadTimeout(4000);
+        if (gatewayUrl != null && !gatewayUrl.trim().isEmpty()) {
+            try {
+                String baseUrl = gatewayUrl.trim().replaceAll("/+$", "");
+                URL url = new URL(baseUrl + "/api/transactions");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Java-AuraCafe/1.0");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setConnectTimeout(4000);
+                conn.setReadTimeout(4000);
 
-            if (conn.getResponseCode() != 200) {
-                conn.disconnect();
-                return list;
-            }
+                if (conn.getResponseCode() == 200) {
+                    StringBuilder sb = new StringBuilder();
+                    try (BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            sb.append(line);
+                        }
+                    }
 
-            StringBuilder sb = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
+                    String json = sb.toString();
+                    List<BankTransaction> ordersFromGateway = parseOrdersFromJson(json, settings);
+                    List<BankTransaction> webhooksFromGateway = parseWebhooksFromJson(json);
+
+                    for (BankTransaction tx : ordersFromGateway) {
+                        String ref = tx.getReferenceCode() != null ? tx.getReferenceCode().trim().toUpperCase() : "";
+                        if (!ref.isEmpty()) seenRefs.add(ref);
+                        String code = extractOrderCode(tx.getContent());
+                        if (code != null) seenOrders.add(code.trim().toUpperCase());
+                        list.add(tx);
+                    }
+
+                    for (BankTransaction tx : webhooksFromGateway) {
+                        String ref = tx.getReferenceCode() != null ? tx.getReferenceCode().trim().toUpperCase() : "";
+                        if (!ref.isEmpty() && seenRefs.contains(ref)) {
+                            continue;
+                        }
+                        list.add(tx);
+                    }
                 }
+                conn.disconnect();
+            } catch (Exception e) {
+                System.err.println("[AdminBankTransactionsController] Lỗi tải giao dịch ngân hàng từ gateway: " + e.getMessage());
             }
-            conn.disconnect();
-
-            String json = sb.toString();
-            list = parseWebhooksFromJson(json);
-        } catch (Exception e) {
-            System.err.println("[AdminBankTransactionsController] Lỗi tải giao dịch ngân hàng: " + e.getMessage());
         }
+
+        // Bổ sung các đơn đã thanh toán BANK_TRANSFER từ local MySQL nếu chưa có trong danh sách
+        List<BankTransaction> localPayments = fetchLocalBankPayments(settings);
+        for (BankTransaction tx : localPayments) {
+            String ref = tx.getReferenceCode() != null ? tx.getReferenceCode().trim().toUpperCase() : "";
+            String code = extractOrderCode(tx.getContent());
+            code = code != null ? code.trim().toUpperCase() : "";
+
+            if (!ref.isEmpty() && seenRefs.contains(ref)) {
+                continue;
+            }
+            if (!code.isEmpty() && seenOrders.contains(code)) {
+                continue;
+            }
+            list.add(tx);
+        }
+
+        // Sắp xếp giảm dần theo thời gian (giao dịch mới nhất lên đầu bảng)
+        list.sort((a, b) -> {
+            String da = a.getTransactionDate() != null ? a.getTransactionDate() : "";
+            String db = b.getTransactionDate() != null ? b.getTransactionDate() : "";
+            return db.compareTo(da);
+        });
 
         return list;
+    }
+
+    private List<BankTransaction> parseOrdersFromJson(String json, ShopSettings settings) {
+        List<BankTransaction> list = new ArrayList<>();
+        int ordersIndex = json.indexOf("\"orders\":");
+        if (ordersIndex == -1) return list;
+
+        int startBracket = json.indexOf("[", ordersIndex);
+        if (startBracket == -1) return list;
+
+        int webhooksIndex = json.indexOf("\"webhooks\":", ordersIndex);
+        int endBracket;
+        if (webhooksIndex != -1) {
+            endBracket = json.lastIndexOf("]", webhooksIndex);
+        } else {
+            endBracket = json.indexOf("]", startBracket);
+        }
+        if (endBracket == -1 || startBracket >= endBracket) return list;
+
+        String arrayContent = json.substring(startBracket + 1, endBracket);
+        Pattern objPattern = Pattern.compile("\\{([^}]+)\\}");
+        Matcher objMatcher = objPattern.matcher(arrayContent);
+
+        String bankName = (settings != null && settings.getPaymentBankName() != null && !settings.getPaymentBankName().isEmpty())
+                ? settings.getPaymentBankName() : "MBBank";
+        String bankAcc = (settings != null && settings.getPaymentAccountNo() != null && !settings.getPaymentAccountNo().isEmpty())
+                ? settings.getPaymentAccountNo() : "234556688";
+
+        while (objMatcher.find()) {
+            String objStr = objMatcher.group(1);
+            String status = extractString(objStr, "status", "");
+            String gatewayRef = extractString(objStr, "gateway_reference", "");
+
+            // Chỉ lấy các đơn đã thanh toán thành công (có status SUCCESS hoặc có mã tham chiếu)
+            if (!"SUCCESS".equalsIgnoreCase(status) && (gatewayRef == null || gatewayRef.isEmpty() || "null".equals(gatewayRef))) {
+                continue;
+            }
+
+            long id = extractLong(objStr, "id", 0);
+            String orderCode = extractString(objStr, "order_code", "");
+            if (orderCode == null || orderCode.isEmpty() || "null".equals(orderCode)) {
+                continue;
+            }
+            double amount = extractDouble(objStr, "amount", 0.0);
+            String paidAt = extractString(objStr, "paid_at", "");
+            if (paidAt == null || paidAt.isEmpty() || "null".equals(paidAt)) {
+                paidAt = extractString(objStr, "created_at", "");
+            }
+
+            BankTransaction tx = new BankTransaction();
+            tx.setSepayId(id > 0 ? (98000000L + id) : 0);
+            tx.setGateway(bankName);
+            tx.setAccountNumber(bankAcc);
+            tx.setTransferType("in");
+            tx.setTransferAmount(amount);
+            tx.setContent(orderCode + " CHUYEN TIEN THANH TOAN DON HANG");
+            tx.setReferenceCode(gatewayRef != null && !gatewayRef.isEmpty() && !"null".equals(gatewayRef)
+                    ? gatewayRef
+                    : ("FT" + (id > 0 ? id : orderCode)));
+            tx.setTransactionDate(adjustUtcToVietnamTime(paidAt));
+
+            list.add(tx);
+        }
+        return list;
+    }
+
+    private List<BankTransaction> fetchLocalBankPayments(ShopSettings settings) {
+        List<BankTransaction> list = new ArrayList<>();
+        String sql = "SELECT p.id, p.order_id, p.amount, p.status, p.paid_at, p.gateway_reference, " +
+                     "o.order_code " +
+                     "FROM payments p " +
+                     "JOIN orders o ON p.order_id = o.id " +
+                     "WHERE p.payment_method = 'BANK_TRANSFER' AND p.status = 'SUCCESS' " +
+                     "ORDER BY p.id DESC LIMIT 50";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            String bankName = (settings != null && settings.getPaymentBankName() != null && !settings.getPaymentBankName().isEmpty())
+                    ? settings.getPaymentBankName() : "MBBank";
+            String bankAcc = (settings != null && settings.getPaymentAccountNo() != null && !settings.getPaymentAccountNo().isEmpty())
+                    ? settings.getPaymentAccountNo() : "234556688";
+
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            while (rs.next()) {
+                long pId = rs.getLong("id");
+                String orderCode = rs.getString("order_code");
+                double amount = rs.getDouble("amount");
+                java.sql.Timestamp paidAt = rs.getTimestamp("paid_at");
+                String ref = rs.getString("gateway_reference");
+
+                BankTransaction tx = new BankTransaction();
+                tx.setSepayId(99000000L + pId);
+                tx.setGateway(bankName);
+                tx.setAccountNumber(bankAcc);
+                tx.setTransferType("in");
+                tx.setTransferAmount(amount);
+                tx.setContent(orderCode + " CHUYEN TIEN THANH TOAN DON HANG");
+                tx.setReferenceCode(ref != null && !ref.isEmpty() ? ref : ("FT" + pId));
+                tx.setTransactionDate(paidAt != null ? sdf.format(paidAt) : "");
+
+                list.add(tx);
+            }
+        } catch (Exception ignored) {
+        }
+        return list;
+    }
+
+    private String adjustUtcToVietnamTime(String utcStr) {
+        if (utcStr == null || utcStr.trim().isEmpty() || "null".equals(utcStr)) {
+            return "";
+        }
+        try {
+            String clean = utcStr.trim().replace("T", " ");
+            int dotIdx = clean.indexOf('.');
+            if (dotIdx != -1) {
+                clean = clean.substring(0, dotIdx);
+            }
+            java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(clean, dtf);
+            java.time.LocalDateTime vnTime = ldt.plusHours(7);
+            return vnTime.format(dtf);
+        } catch (Exception e) {
+            return utcStr;
+        }
     }
 
     private List<BankTransaction> parseWebhooksFromJson(String json) {
