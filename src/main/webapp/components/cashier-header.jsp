@@ -67,6 +67,9 @@
                 </a>
             </c:otherwise>
         </c:choose>
+        <a class="nav-tab-btn ${param.active eq 'counter' ? 'active' : ''}" href="${ctx}/counter-orders">
+            <span class="material-symbols-outlined">search</span><span>Tra cứu đơn tại quầy</span>
+        </a>
         <a class="nav-tab-btn ${param.active eq 'close' ? 'active' : ''}" href="${ctx}/cashier/handover?mode=close">
             <span class="material-symbols-outlined">calculate</span><span>Chốt ca</span>
         </a>
