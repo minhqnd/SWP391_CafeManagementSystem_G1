@@ -36,13 +36,22 @@ import java.util.regex.Pattern;
 public class AdminBankTransactionsController extends HttpServlet {
     private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
 
-    private static class OrderSummary {
+    static class OrderSummary {
         int id;
         String orderCode;
         double finalAmount;
         String status;
         String paymentStatus;
         String recipientName;
+
+        OrderSummary() {}
+
+        OrderSummary(int id, String orderCode, double finalAmount, String status) {
+            this.id = id;
+            this.orderCode = orderCode;
+            this.finalAmount = finalAmount;
+            this.status = status;
+        }
     }
 
     @Override
@@ -87,6 +96,11 @@ public class AdminBankTransactionsController extends HttpServlet {
         }
 
         Map<String, OrderSummary> orders = fetchOrderSummaries(orderCodes);
+        reconcileTransactionsWithOrders(transactions, orders);
+    }
+
+    void reconcileTransactionsWithOrders(List<BankTransaction> transactions, Map<String, OrderSummary> orders) {
+        if (transactions == null || transactions.isEmpty()) return;
         DecimalFormat df = new DecimalFormat("###,###,###");
 
         // Duyệt theo thứ tự thời gian từ cũ nhất đến mới nhất để tính luỹ kế chính xác
@@ -98,12 +112,16 @@ public class AdminBankTransactionsController extends HttpServlet {
         for (BankTransaction tx : chronologicalList) {
             String code = tx.getMatchedOrderCode();
             if (code == null || code.isEmpty()) {
+                code = extractOrderCode(tx.getContent());
+                tx.setMatchedOrderCode(code);
+            }
+            if (code == null || code.isEmpty()) {
                 tx.setReconcileStatus("NO_CODE");
                 tx.setReconcileNote("Sai nội dung: Không chứa mã đơn hàng");
                 continue;
             }
 
-            OrderSummary order = orders.get(code);
+            OrderSummary order = orders != null ? orders.get(code) : null;
             if (order == null) {
                 tx.setReconcileStatus("ORDER_NOT_FOUND");
                 tx.setReconcileNote("Mã #" + code + " không có trên hệ thống");
