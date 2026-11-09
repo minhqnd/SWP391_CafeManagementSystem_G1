@@ -293,7 +293,7 @@
         }
 
         // ========================================================
-        // Tự động kiểm tra trạng thái thanh toán qua Server Java
+        // Tự động kiểm tra trạng thái thanh toán qua Server Java Polling
         // (Server Java tự đối soát với Payment Gateway & chốt đơn trong DB)
         // ========================================================
         (function() {
