@@ -176,8 +176,8 @@
         </div>
         <div class="d-flex align-items-center gap-2">
             <span class="badge bg-white text-secondary border px-3 py-2 d-flex align-items-center gap-2 shadow-sm" id="pollingBadge" style="font-size: 0.78rem; border-radius: 10px;">
-                <span class="spinner-grow text-success" role="status" style="width: 8px; height: 8px;"></span>
-                <span id="pollingStatusText">Tự động làm mới: <strong>5s</strong></span>
+                <span class="material-symbols-outlined text-muted" style="font-size: 16px;">timer</span>
+                <span id="pollingStatusText">Tự làm mới sau: <strong id="countdownText" class="text-primary font-monospace">5s</strong></span>
             </span>
             <button type="button" class="btn btn-outline-dark d-flex align-items-center gap-1 py-2 px-3 fw-semibold shadow-sm" style="border-radius: 10px;" id="btnRefresh" onclick="manualRefresh()">
                 <span class="material-symbols-outlined fs-5" id="refreshIcon">refresh</span>
@@ -365,15 +365,23 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     let isFetching = false;
+    let countdown = 5;
+    const COUNTDOWN_DEFAULT = 5;
+
+    function updateCountdownDisplay() {
+        const cdElem = document.getElementById('countdownText');
+        if (cdElem) cdElem.innerText = countdown + 's';
+    }
 
     async function fetchBankData(isManual = false) {
         if (isFetching) return;
         isFetching = true;
+        countdown = COUNTDOWN_DEFAULT;
 
         const refreshIcon = document.getElementById('refreshIcon');
         const statusText = document.getElementById('pollingStatusText');
         if (refreshIcon) refreshIcon.style.animation = 'spin 0.8s linear infinite';
-        if (statusText && isManual) statusText.innerHTML = 'Đang đồng bộ...';
+        if (statusText) statusText.innerHTML = 'Đang đồng bộ...';
 
         try {
             const resp = await fetch(window.location.href, {
@@ -402,7 +410,10 @@
         } finally {
             isFetching = false;
             if (refreshIcon) refreshIcon.style.animation = '';
-            if (statusText) statusText.innerHTML = 'Tự động làm mới: <strong>5s</strong>';
+            countdown = COUNTDOWN_DEFAULT;
+            if (statusText) {
+                statusText.innerHTML = 'Tự làm mới sau: <strong id="countdownText" class="text-primary font-monospace">' + countdown + 's</strong>';
+            }
         }
     }
 
@@ -410,12 +421,16 @@
         fetchBankData(true);
     }
 
-    // Polling tự động mỗi 5 giây khi người dùng đang mở tab
+    // Bộ đếm ngược chạy mỗi giây
     setInterval(() => {
-        if (!document.hidden) {
+        if (document.hidden || isFetching) return;
+        countdown--;
+        if (countdown <= 0) {
             fetchBankData(false);
+        } else {
+            updateCountdownDisplay();
         }
-    }, 5000);
+    }, 1000);
 
     // Khi người dùng chuyển tab và quay lại, tự động đồng bộ ngay
     document.addEventListener('visibilitychange', () => {
