@@ -45,6 +45,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="${ctx}/admin/payments" class="nav-link ${param.activeMenu == 'payments' ? 'active' : ''}">
+                    <span class="material-symbols-outlined">payments</span>
+                    <span>Giao dịch thanh toán</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="${ctx}/admin/categories" class="nav-link ${param.activeMenu == 'categories' ? 'active' : ''}">
                     <span class="material-symbols-outlined">category</span>
                     <span>Danh mục</span>
