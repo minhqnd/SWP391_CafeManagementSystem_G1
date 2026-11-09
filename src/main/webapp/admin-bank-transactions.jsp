@@ -94,43 +94,65 @@
             color: #475569;
             white-space: nowrap;
         }
+        .badge-reconcile {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.76rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
         .badge-matched {
             background-color: #ecfdf5;
             color: #059669;
             border: 1px solid #a7f3d0;
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.78rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            white-space: nowrap;
+        }
+        .badge-overpaid {
+            background-color: #f5f3ff;
+            color: #7c3aed;
+            border: 1px solid #ddd6fe;
+        }
+        .badge-underpaid {
+            background-color: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #fed7aa;
         }
         .badge-duplicate {
-            background-color: #fffbeb;
-            color: #d97706;
-            border: 1px solid #fde68a;
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.78rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            white-space: nowrap;
+            background-color: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
         }
-        .badge-unmatched {
+        .badge-notfound {
+            background-color: #fdf2f8;
+            color: #db2777;
+            border: 1px solid #fbcfe8;
+        }
+        .badge-cancelled {
             background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+        .badge-nocode {
+            background-color: #f8fafc;
             color: #64748b;
             border: 1px solid #e2e8f0;
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.78rem;
-            display: inline-flex;
-            align-items: center;
-            white-space: nowrap;
+        }
+        .reconcile-subtext {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 4px;
+            line-height: 1.35;
+            white-space: normal;
+            max-width: 240px;
+        }
+        .order-code-link {
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-weight: 700;
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 2px;
         }
         .sepay-tag {
             color: #dc2626;
@@ -218,7 +240,7 @@
                         <th class="text-end" style="width: 125px;">Số tiền</th>
                         <th style="min-width: 260px;">Nội dung chuyển khoản</th>
                         <th style="width: 155px;">Mã tham chiếu (FT)</th>
-                        <th style="width: 180px;">Đối soát hệ thống</th>
+                        <th style="min-width: 220px;">Đối soát hệ thống</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -258,24 +280,70 @@
                                     <td class="text-nowrap">
                                         <span class="tx-ref-code"><c:out value="${tx.referenceCode}" /></span>
                                     </td>
-                                    <td class="text-nowrap">
+                                    <td>
                                         <c:choose>
                                             <c:when test="${tx.reconcileStatus eq 'MATCHED'}">
-                                                <span class="badge-matched" title="Đã khớp và thanh toán đơn hàng">
-                                                    <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
-                                                    Khớp đơn #${tx.matchedOrderCode}
+                                                <span class="badge-reconcile badge-matched" title="Đã khớp chuẩn và thanh toán đủ số tiền đơn hàng">
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">verified</span>
+                                                    Khớp chuẩn: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
                                                 </span>
+                                                <div class="reconcile-subtext text-success">
+                                                    <c:out value="${tx.reconcileNote}" />
+                                                </div>
+                                            </c:when>
+                                            <c:when test="${tx.reconcileStatus eq 'OVERPAID'}">
+                                                <span class="badge-reconcile badge-overpaid" title="Khách chuyển thừa tiền so với giá trị đơn hàng">
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">add_circle</span>
+                                                    Thừa tiền: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
+                                                </span>
+                                                <div class="reconcile-subtext" style="color: #6d28d9; font-weight: 500;">
+                                                    <c:out value="${tx.reconcileNote}" /> · <span class="fw-bold">Cần hoàn tiền thừa</span>
+                                                </div>
+                                            </c:when>
+                                            <c:when test="${tx.reconcileStatus eq 'UNDERPAID'}">
+                                                <span class="badge-reconcile badge-underpaid" title="Khách chuyển thiếu tiền">
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">warning</span>
+                                                    Thiếu tiền: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
+                                                </span>
+                                                <div class="reconcile-subtext" style="color: #c2410c; font-weight: 500;">
+                                                    <c:out value="${tx.reconcileNote}" /> · <span class="fw-bold">Chưa đủ đơn</span>
+                                                </div>
                                             </c:when>
                                             <c:when test="${tx.reconcileStatus eq 'DUPLICATE'}">
-                                                <span class="badge-duplicate" title="Khách chuyển thừa hoặc chuyển trùng lần 2 cho cùng 1 đơn">
-                                                    <span class="material-symbols-outlined" style="font-size: 15px;">warning</span>
-                                                    Chuyển thừa #${tx.matchedOrderCode}
+                                                <span class="badge-reconcile badge-duplicate" title="Đơn đã được thanh toán đủ ở giao dịch trước, khách chuyển thêm hoặc chuyển trùng lần 2">
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">content_copy</span>
+                                                    Trùng đơn: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
                                                 </span>
+                                                <div class="reconcile-subtext text-danger" style="font-weight: 500;">
+                                                    <c:out value="${tx.reconcileNote}" /> · <span class="fw-bold">Cần hoàn lại</span>
+                                                </div>
+                                            </c:when>
+                                            <c:when test="${tx.reconcileStatus eq 'ORDER_CANCELLED'}">
+                                                <span class="badge-reconcile badge-cancelled" title="Đơn hàng đã bị hủy">
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">cancel</span>
+                                                    Đã hủy: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
+                                                </span>
+                                                <div class="reconcile-subtext text-secondary">
+                                                    <c:out value="${tx.reconcileNote}" />
+                                                </div>
+                                            </c:when>
+                                            <c:when test="${tx.reconcileStatus eq 'ORDER_NOT_FOUND'}">
+                                                <span class="badge-reconcile badge-notfound" title="Mã đơn trong nội dung chuyển khoản không tồn tại trên hệ thống">
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">search_off</span>
+                                                    Không có đơn #${tx.matchedOrderCode}
+                                                </span>
+                                                <div class="reconcile-subtext text-danger">
+                                                    <c:out value="${tx.reconcileNote}" />
+                                                </div>
                                             </c:when>
                                             <c:otherwise>
-                                                <span class="badge-unmatched">
-                                                    Chưa gắn đơn
+                                                <span class="badge-reconcile badge-nocode" title="Nội dung chuyển khoản không tìm thấy cú pháp mã đơn hàng">
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">help_outline</span>
+                                                    Sai nội dung
                                                 </span>
+                                                <div class="reconcile-subtext text-muted">
+                                                    Không tìm thấy mã đơn hàng
+                                                </div>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
