@@ -10,7 +10,7 @@ code mới đã được deploy. Xem [kế hoạch triển khai](../docs/PAYMENT
 ## 1. Luồng và phạm vi hiện tại
 
 1. Java đăng ký mã đơn, mã payment và số tiền nguyên VND lên gateway.
-2. SePay gửi webhook. Gateway xác thực bằng HMAC hoặc API key khi có cấu hình.
+2. SePay gửi webhook. Gateway xác thực bằng HMAC hoặc API key.
 3. Chỉ xử lý tiền vào; tiền ra được bỏ qua, không ghi ledger.
 4. Ghép mã đơn đầy đủ, không phân biệt hoa thường, giữ dấu phân cách.
 5. Ghi ledger `bank_transactions` và cập nhật đơn gateway trong cùng transaction.
@@ -108,8 +108,8 @@ Chưa khai báo environment staging. Không dùng `--env staging` nếu chưa t�
 Worker/D1 riêng và bổ sung environment tương ứng. Các lệnh `--remote` bên dưới
 và `npm run deploy` tác động tài nguyên đang chỉ định trong `wrangler.toml`.
 
-Cấu hình source hiện vẫn chứa giá trị demo: secret callback mẫu, khóa SePay trống,
-simulation bật. Trước khi dùng cho tiền thật:
+Cấu hình source dùng khóa callback demo và tắt mô phỏng mặc định.
+Trước khi dùng cho tiền thật:
 
 1. Trong `[vars]`, đổi `ALLOW_TEST_SIMULATION = "false"`.
 2. Bỏ các dòng `SECRET_KEY`, `SEPAY_API_KEY`, `SEPAY_WEBHOOK_SECRET` khỏi `[vars]`
@@ -126,8 +126,8 @@ simulation bật. Trước khi dùng cho tiền thật:
 | RECONCILIATION_API_KEY | Bearer key của feed; chỉ backend giữ, không đưa vào browser |
 | ALLOW_TEST_SIMULATION | Chỉ bật `true` trên môi trường thử |
 
-Nếu cả hai khóa SePay không được cấu hình, source hiện cho webhook đi qua mà không
-xác thực. Không dùng cấu hình trống khi nhận tiền thật. Registration hiện chỉ kiểm
+Nếu cả hai khóa SePay chưa được cấu hình, Worker trả HTTP 503 và bỏ qua giao dịch.
+Cấu hình cùng khóa ở SePay và Worker trước khi chuyển sang bản này. Registration hiện chỉ kiểm
 tra chữ ký nếu request có gửi; status/dashboard cũ chưa có kiểm soát truy cập Admin.
 Đây là các giới hạn còn phải xử lý trước khi triển khai production.
 

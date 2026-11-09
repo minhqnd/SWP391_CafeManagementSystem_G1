@@ -1,14 +1,108 @@
 package service;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-/** Shared contract for the local gateway simulator and a future real QR callback. */
+/**
+ * Lớp hỗ trợ kết nối sang Cloudflare Worker Payment Gateway để đăng ký đơn và kiểm tra thanh toán QR.
+ */
 public final class PaymentService {
-    private PaymentService() {}
 
+    private PaymentService() {
+    }
+
+    /**
+     * 1. Gửi thông tin đơn hàng mới lên Cloudflare Worker để chờ nhận chuyển khoản SePay.
+     */
+    public static void registerOrderToGateway(String gatewayUrl, String appId, String orderCode,
+                                              double amount, String transactionCode) {
+        if (gatewayUrl == null || gatewayUrl.trim().isEmpty()) {
+            return;
+        }
+        try {
+            String baseUrl = gatewayUrl.trim();
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+            }
+
+            long roundedAmount = Math.round(amount);
+            String jsonBody = "{"
+                    + "\"appId\":\"" + clean(appId) + "\","
+                    + "\"orderCode\":\"" + clean(orderCode) + "\","
+                    + "\"amount\":" + roundedAmount + ","
+                    + "\"transactionCode\":\"" + clean(transactionCode) + "\""
+                    + "}";
+
+            URL url = new URL(baseUrl + "/api/orders/register");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+            conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            conn.setDoOutput(true);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
+            }
+            conn.getResponseCode();
+            conn.disconnect();
+        } catch (Exception e) {
+            System.err.println("[PaymentService] Không thể đăng ký đơn lên Gateway: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 2. Hỏi Cloudflare Worker xem đơn hàng đã được chuyển khoản thành công (status = SUCCESS) chưa.
+     */
+    public static boolean isOrderPaidOnGateway(String gatewayUrl, String orderCode) {
+        if (gatewayUrl == null || gatewayUrl.trim().isEmpty() || orderCode == null || orderCode.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            String baseUrl = gatewayUrl.trim();
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+            }
+
+            String encodedCode = URLEncoder.encode(clean(orderCode), StandardCharsets.UTF_8);
+            URL url = new URL(baseUrl + "/api/orders/" + encodedCode + "/status");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+
+            if (conn.getResponseCode() != 200) {
+                conn.disconnect();
+                return false;
+            }
+
+            StringBuilder responseText = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    responseText.append(line);
+                }
+            }
+            conn.disconnect();
+
+            String json = responseText.toString();
+            // Kiểm tra xem JSON trả về có chứa "status":"SUCCESS" hay không
+            return json.contains("\"status\":\"SUCCESS\"") || json.contains("\"status\": \"SUCCESS\"");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // Các hàm dưới đây giữ lại để tương thích với endpoint /payment/callback
     public static String canonical(String orderCode, String transactionCode, String amount, String status) {
         return clean(orderCode) + "|" + clean(transactionCode) + "|" + clean(amount) + "|" + clean(status).toUpperCase();
     }
@@ -32,53 +126,7 @@ public final class PaymentService {
                 suppliedSignature.trim().toLowerCase().getBytes(StandardCharsets.UTF_8));
     }
 
-    /** Registers a pending order to the external Payment Gateway (Cloudflare Worker). */
-    public static void registerOrderToGateway(String gatewayUrl, String appId, String orderCode,
-                                              double amount, String transactionCode, String secret) {
-        if (gatewayUrl == null || gatewayUrl.isBlank()) return;
-        try {
-            String baseUrl = gatewayUrl.trim().replaceAll("/+$", "");
-            String url = baseUrl + "/api/orders/register";
-            String safeAppId = (appId != null && !appId.isBlank()) ? appId : "default";
-            String safeOrderCode = clean(orderCode);
-            String safeTx = clean(transactionCode);
-            String formattedAmount = (amount == Math.floor(amount))
-                    ? String.valueOf((long) amount)
-                    : String.format(java.util.Locale.US, "%.2f", amount);
-            String signature = sign(secret, safeAppId + "|" + safeOrderCode + "|" + formattedAmount);
-
-            String jsonBody = String.format(java.util.Locale.US,
-                    "{\"appId\":\"%s\",\"orderCode\":\"%s\",\"amount\":%s,\"transactionCode\":\"%s\",\"signature\":\"%s\"}",
-                    safeAppId, safeOrderCode, formattedAmount, safeTx, signature
-            );
-
-            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                    .connectTimeout(java.time.Duration.ofSeconds(3))
-                    .build();
-
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create(url))
-                    .timeout(java.time.Duration.ofSeconds(4))
-                    .header("Content-Type", "application/json")
-                    .header("X-Signature", signature)
-                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
-                    .build();
-
-            // Run in background thread so it never blocks page load
-            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
-                    .thenAccept(res -> {
-                        if (res.statusCode() >= 400) {
-                            System.err.println("[PaymentService] Gateway registration returned " + res.statusCode() + ": " + res.body());
-                        }
-                    })
-                    .exceptionally(ex -> {
-                        System.err.println("[PaymentService] Failed to notify gateway: " + ex.getMessage());
-                        return null;
-                    });
-        } catch (Exception e) {
-            System.err.println("[PaymentService] Error initiating gateway registration: " + e.getMessage());
-        }
+    private static String clean(String value) {
+        return value == null ? "" : value.trim();
     }
-
-    private static String clean(String value) { return value == null ? "" : value.trim(); }
 }

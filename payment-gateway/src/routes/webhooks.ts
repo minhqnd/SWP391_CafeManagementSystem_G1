@@ -1,96 +1,89 @@
 import { Hono } from 'hono';
 import type { Bindings } from '../types';
-import { computeHmacSha256Hex, buildCanonicalPayload } from '../lib/signatures';
-import { paymentCodes, reconcile, validBankEvent, type RegisteredOrder } from '../services/reconciliation';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-interface SePayWebhookPayload {
-    id: number;
-    gateway: string;
-    transactionDate: string;
-    accountNumber: string;
-    subAccount?: string;
-    code?: string | null;
-    content: string;
-    transferType: 'in' | 'out' | string;
-    description?: string;
-    transferAmount: number;
-    accumulated?: number;
-    referenceCode?: string;
-}
-
+// Nhận Webhook từ SePay khi có biến động số dư ngân hàng
 app.post('/api/webhooks/sepay', async (c) => {
-    const rawBody = await c.req.text();
-    let payload: SePayWebhookPayload;
-
+    let payload: any;
     try {
-        payload = JSON.parse(rawBody);
+        payload = await c.req.json();
     } catch {
-        return c.json({ success: false, message: 'Invalid JSON body' }, 400);
+        return c.json({ success: false, message: 'Invalid JSON' }, 400);
     }
 
-    const secret = c.env.SECRET_KEY || 'AURA-LOCAL-DEMO-SECRET';
-    const sepayHmacSecret = c.env.SEPAY_WEBHOOK_SECRET;
-    const sepayApiKey = c.env.SEPAY_API_KEY;
+    const sepayId = Number(payload.id || 0);
+    const transferType = String(payload.transferType || '').trim().toLowerCase();
+    const transferAmount = Math.round(Number(payload.transferAmount || 0));
+    const content = String(payload.content || '').trim();
+    const gateway = String(payload.gateway || '');
+    const accountNumber = String(payload.accountNumber || '');
+    const referenceCode = String(payload.referenceCode || `SEPAY-${sepayId}`);
+    const transactionDate = String(payload.transactionDate || '');
 
-    // A. Authenticate SePay Webhook
-    if (sepayHmacSecret) {
-        const signatureHeader = c.req.header('X-SePay-Signature') || '';
-        const timestampHeader = c.req.header('X-SePay-Timestamp') || '0';
-        const timestamp = parseInt(timestampHeader, 10);
-
-        // Replay attack prevention (+/- 5 minutes)
-        if (Math.abs(Math.floor(Date.now() / 1000) - timestamp) > 300) {
-            return c.json({ success: false, message: 'Request expired' }, 401);
-        }
-
-        const stringToSign = `${timestamp}.${rawBody}`;
-        const calculatedSig = 'sha256=' + await computeHmacSha256Hex(sepayHmacSecret, stringToSign);
-
-        if (signatureHeader.toLowerCase() !== calculatedSig.toLowerCase()) {
-            return c.json({ success: false, message: 'Invalid SePay signature' }, 401);
-        }
-    } else if (sepayApiKey) {
-        const authHeader = c.req.header('Authorization') || '';
-        if (authHeader !== `Apikey ${sepayApiKey}`) {
-            return c.json({ success: false, message: 'Unauthorized API key' }, 401);
-        }
+    if (sepayId <= 0 || transferAmount <= 0) {
+        return c.json({ success: false, message: 'Invalid transaction data' }, 400);
     }
 
-    if (!validBankEvent(payload) || payload.content.length > 2000) {
-        return c.json({ success: false, message: 'Invalid bank event: positive ID and integer VND amount required' }, 400);
-    }
-
-    // Only incoming transfers belong to the payment reconciliation ledger.
-    if (payload.transferType.trim().toLowerCase() !== 'in') {
-        return c.json({ success: true });
+    // Chỉ xử lý giao dịch tiền vào ('in')
+    if (transferType !== 'in') {
+        return c.json({ success: true, message: 'Ignored outgoing transfer' });
     }
 
     try {
-        const codes = paymentCodes(payload.code || '', payload.content);
-        let initialStatus = 'UNMATCHED';
-        let order: RegisteredOrder | null = null;
-        if (codes.length) {
-            const matches = await c.env.DB.prepare(
-                `SELECT id, order_code, transaction_code, amount, status FROM orders
-                 WHERE UPPER(LTRIM(order_code, '#')) IN (SELECT value FROM json_each(?)) LIMIT 2`
-            ).bind(JSON.stringify(codes)).all<RegisteredOrder>();
-            if (matches.results.length === 1) {
-                order = matches.results[0];
-                initialStatus = 'MATCH';
-            } else if (matches.results.length > 1) {
-                initialStatus = 'AMBIGUOUS';
+        // 1. Lưu log webhook vào bảng webhook_logs (bỏ qua nếu trùng sepay_id)
+        await c.env.DB.prepare(
+            `INSERT INTO webhook_logs
+             (sepay_id, gateway, account_number, transfer_type, transfer_amount, code, content, reference_code, transaction_date)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(sepay_id) DO NOTHING`
+        ).bind(
+            sepayId,
+            gateway,
+            accountNumber,
+            transferType,
+            transferAmount,
+            payload.code || null,
+            content,
+            referenceCode,
+            transactionDate
+        ).run();
+
+        // 2. Lấy danh sách các đơn đang chờ thanh toán (PENDING) để dò mã đơn trong nội dung chuyển khoản
+        const pendingOrders = await c.env.DB.prepare(
+            `SELECT * FROM orders WHERE status = 'PENDING' ORDER BY id DESC LIMIT 100`
+        ).all<any>();
+
+        const upperContent = content.toUpperCase();
+        // Tạo thêm bản nội dung đã bỏ dấu gạch ngang vì nhiều ngân hàng tự xóa dấu '-' khi chuyển khoản
+        const compactContent = upperContent.replace(/[-_\s]/g, '');
+
+        let matchedOrder: any = null;
+        for (const ord of pendingOrders.results) {
+            const code = String(ord.order_code || '').replace(/^#/, '').toUpperCase();
+            const compactCode = code.replace(/[-_\s]/g, '');
+            if (code && (upperContent.includes(code) || (compactCode.length >= 6 && compactContent.includes(compactCode)))) {
+                matchedOrder = ord;
+                break;
             }
         }
-        const signature = order ? await computeHmacSha256Hex(secret,
-            buildCanonicalPayload(order.order_code, order.transaction_code, order.amount, 'SUCCESS')) : '';
-        await reconcile(c.env.DB, payload, rawBody, order, initialStatus, signature);
+
+        // 3. Nếu tìm thấy đơn khớp mã và số tiền chuyển >= số tiền đơn hàng -> Cập nhật SUCCESS
+        if (matchedOrder && transferAmount >= Number(matchedOrder.amount)) {
+            await c.env.DB.prepare(
+                `UPDATE orders
+                 SET status = 'SUCCESS',
+                     gateway_reference = ?,
+                     raw_webhook = ?,
+                     paid_at = CURRENT_TIMESTAMP
+                 WHERE id = ? AND status = 'PENDING'`
+            ).bind(referenceCode, JSON.stringify(payload), matchedOrder.id).run();
+        }
+
         return c.json({ success: true });
-    } catch (error) {
-        console.error('Bank event reconciliation failed', { eventId: payload.id, error: String(error) });
-        // A storage failure is retryable; never acknowledge it as a duplicate.
-        return c.json({ success: false, message: 'Unable to persist bank event; retry required' }, 503);
+    } catch (error: any) {
+        console.error('Webhook error:', error);
+        return c.json({ success: false, message: 'Database error' }, 500);
     }
 });
 

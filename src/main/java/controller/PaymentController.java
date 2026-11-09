@@ -37,6 +37,10 @@ public class PaymentController extends HttpServlet {
         User user=(User)session.getAttribute("user");
         if(!CartController.isCustomer(user)){response.sendRedirect(request.getContextPath()+"/?login=true");return;}
         int orderId=parseInt(request.getParameter("orderId"));
+        if("status".equals(trim(request.getParameter("action")))){
+            handleStatusCheck(orderId,user.getId(),session,response);
+            return;
+        }
         Order order=orderDAO.getCustomerOrder(orderId,user.getId());
         if(order==null){session.setAttribute("ordersError","Không tìm thấy đơn hàng cần thanh toán.");response.sendRedirect(request.getContextPath()+"/orders");return;}
         if(!order.isPending()){response.sendRedirect(request.getContextPath()+"/bill?orderId="+orderId);return;}
@@ -49,8 +53,7 @@ public class PaymentController extends HttpServlet {
                 "aura_cafe",
                 order.getOrderCode(),
                 order.getFinalAmount(),
-                payment.getTransactionCode(),
-                settings.getPaymentCallbackSecret()
+                payment.getTransactionCode()
         );
         CartController.moveFlashMessage(session,request,"paymentError");
         request.setAttribute("order",order);
@@ -61,7 +64,6 @@ public class PaymentController extends HttpServlet {
         request.setAttribute("qrUrl",buildQrUrl(order,settings));
         request.setAttribute("storeAddress",CheckoutController.STORE_ADDRESS);
         request.setAttribute("deliveryMinutes",settings.getDeliveryMinutes());
-        request.setAttribute("paymentGatewayUrl",settings.getPaymentGatewayUrl());
         request.setAttribute("expectedRewardPoints",settings.calculateEarnedPoints(order.getTotalAmount()-order.getDiscountAmount()));
         request.getRequestDispatcher("/payment.jsp").forward(request,response);
     }
@@ -74,6 +76,10 @@ public class PaymentController extends HttpServlet {
         User user=(User)session.getAttribute("user");
         if(!CartController.isCustomer(user)){response.sendRedirect(request.getContextPath()+"/?login=true");return;}
         int orderId=parseInt(request.getParameter("orderId"));
+        if("status".equals(trim(request.getParameter("action")))){
+            handleStatusCheck(orderId,user.getId(),session,response);
+            return;
+        }
         Order order=orderDAO.getCustomerOrder(orderId,user.getId());
         if(order==null){session.setAttribute("ordersError","Không tìm thấy đơn hàng cần thanh toán.");response.sendRedirect(request.getContextPath()+"/orders");return;}
         String action=trim(request.getParameter("action"));
@@ -93,6 +99,39 @@ public class PaymentController extends HttpServlet {
         // Không còn mô phỏng thanh toán: chuyển khoản QR chỉ được xác nhận qua callback của cổng thanh toán
         session.setAttribute("paymentError","Giao dịch đang chờ cổng thanh toán xác nhận tự động.");
         response.sendRedirect(request.getContextPath()+"/payment?orderId="+orderId);
+    }
+
+    private void handleStatusCheck(int orderId,int customerId,HttpSession session,HttpServletResponse response)throws IOException{
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        Order order=orderDAO.getCustomerOrder(orderId,customerId);
+        if(order==null){
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.getWriter().write("{\"paid\":false,\"status\":\"NOT_FOUND\"}");
+            return;
+        }
+        if(!order.isPending()){
+            CheckoutController.removePaidItems(session,orderId);
+            response.getWriter().write("{\"paid\":true,\"status\":\""+escapeJson(order.getStatus())+"\"}");
+            return;
+        }
+        ShopSettings settings=shopSettingDAO.getSettings();
+        boolean isPaid=PaymentService.isOrderPaidOnGateway(settings.getPaymentGatewayUrl(),order.getOrderCode());
+        if(isPaid){
+            Payment payment=paymentDAO.ensurePendingBankTransfer(orderId,customerId);
+            String txCode=payment!=null?payment.getTransactionCode():"";
+            BigDecimal amount=BigDecimal.valueOf(Math.round(order.getFinalAmount()));
+            String payload="{\"orderCode\":\""+escapeJson(order.getOrderCode())+"\",\"status\":\"SUCCESS\"}";
+            PaymentDAO.CallbackResult res=paymentDAO.applyGatewayCallback(
+                    order.getOrderCode(),txCode,amount,"SUCCESS",
+                    "SEPAY-QR",payload,settings.getPointsEarnUnit());
+            if(res.successful()){
+                CheckoutController.removePaidItems(session,orderId);
+                response.getWriter().write("{\"paid\":true,\"status\":\"CONFIRMED\"}");
+                return;
+            }
+        }
+        response.getWriter().write("{\"paid\":false,\"status\":\"PENDING\"}");
     }
 
     private void handleCallback(HttpServletRequest request,HttpServletResponse response)throws IOException{

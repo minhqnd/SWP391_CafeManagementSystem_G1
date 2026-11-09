@@ -293,66 +293,39 @@
         }
 
         // ========================================================
-        // Tự động Polling trạng thái thanh toán từ Payment Gateway Hub
+        // Tự động kiểm tra trạng thái thanh toán qua Server Java
+        // (Server Java tự đối soát HMAC với Payment Gateway & chốt đơn trong DB)
         // ========================================================
         (function() {
-            var gatewayUrl = '${fn:escapeXml(paymentGatewayUrl)}';
-            var orderCode = '${fn:escapeXml(order.orderCode)}';
             var orderId = '${order.id}';
             var ctx = '${ctx}';
+            if (!orderId) return;
 
-            if (!gatewayUrl || !orderCode) return;
-
-            var cleanGateway = gatewayUrl.replace(/\/+$/, '');
             var isFinished = false;
 
             function checkPaymentStatus() {
                 if (isFinished) return;
 
-                fetch(cleanGateway + '/api/orders/' + encodeURIComponent(orderCode) + '/status')
+                fetch(ctx + '/payment?action=status&orderId=' + encodeURIComponent(orderId))
                     .then(function(res) { return res.json(); })
                     .then(function(data) {
-                        if (data && data.status === 'SUCCESS' && data.signature) {
+                        if (data && data.paid) {
                             isFinished = true;
-
-                            // Hiển thị thông báo thành công
                             var statusBadges = document.querySelectorAll('.status-badge');
                             statusBadges.forEach(function(b) {
                                 b.className = 'status-badge status-confirmed bg-success text-white';
                                 b.innerText = 'Đã thanh toán thành công!';
                             });
-
-                            // Báo về server Java localhost để chốt đơn & cộng điểm
-                            var params = new URLSearchParams();
-                            params.append('orderCode', data.orderCode);
-                            params.append('transactionCode', data.transactionCode || '');
-                            params.append('amount', String(data.amount));
-                            params.append('status', 'SUCCESS');
-                            params.append('gatewayReference', data.gatewayReference || '');
-                            params.append('signature', data.signature);
-
-                            fetch(ctx + '/payment/callback', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                body: params.toString()
-                            })
-                            .then(function() {
-                                setTimeout(function() {
-                                    window.location.href = ctx + '/bill?orderId=' + orderId;
-                                }, 1000);
-                            })
-                            .catch(function(err) {
-                                console.error('Lỗi khi chốt đơn về server:', err);
+                            setTimeout(function() {
                                 window.location.href = ctx + '/bill?orderId=' + orderId;
-                            });
+                            }, 800);
                         }
                     })
                     .catch(function() {
-                        // Gateway chưa bật hoặc mạng lag -> tiếp tục polling lần sau
+                        // Mạng chậm -> tiếp tục kiểm tra ở chu kỳ tiếp theo
                     });
             }
 
-            // Polling mỗi 2.5 giây
             var pollInterval = setInterval(function() {
                 if (isFinished) {
                     clearInterval(pollInterval);
@@ -361,7 +334,6 @@
                 checkPaymentStatus();
             }, 2500);
 
-            // Kiểm tra ngay khi vừa vào trang
             setTimeout(checkPaymentStatus, 1000);
         })();
     </script>
