@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@WebServlet(name = "AdminBankTransactionsController", urlPatterns = {"/admin/bank-transactions", "/admin/payments"})
+@WebServlet(name = "AdminBankTransactionsController", urlPatterns = {"/admin/bank-transactions"})
 public class AdminBankTransactionsController extends HttpServlet {
     private final ShopSettingDAO shopSettingDAO = new ShopSettingDAO();
 

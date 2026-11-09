@@ -46,8 +46,8 @@ if [ -n "$OLD_PID" ]; then
     sleep 1
 fi
 
-# Clean previous Cargo configuration directory to prevent ContainerException on restart
-rm -rf target/cargo/configurations
+# Clean previous Cargo configuration and build classes/WAR to prevent stale deleted servlets
+rm -rf target/cargo/configurations target/classes target/SWP391_CafeManagementSystem target/SWP391_CafeManagementSystem.war
 
 MVN_OPTS=""
 if [ "$SKIP_TESTS" = true ]; then

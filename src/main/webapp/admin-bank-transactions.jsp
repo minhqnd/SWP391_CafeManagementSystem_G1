@@ -47,55 +47,90 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* Tùy chỉnh bảng giao dịch ngân hàng */
+        .bank-tx-table {
+            width: 100%;
+            table-layout: auto;
+            border-collapse: collapse;
+        }
+        .bank-tx-table > :not(caption) > * > * {
+            padding: 0.85rem 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .bank-tx-table thead th {
+            background: #fafaf9;
+            color: #64748b;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .bank-tx-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
         .tx-content-box {
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: #334155;
-            max-width: 320px;
-            word-break: break-all;
             background: #f8fafc;
-            padding: 4px 8px;
+            padding: 6px 10px;
             border-radius: 6px;
-            border: 1px solid #f1f5f9;
+            border: 1px solid #e2e8f0;
+            white-space: normal;
+            word-break: break-all;
+            line-height: 1.45;
+            max-width: 320px;
+            min-width: 220px;
+            display: block;
         }
         .tx-ref-code {
-            font-family: monospace;
+            font-family: 'SFMono-Regular', Consolas, monospace;
             font-size: 0.8rem;
             font-weight: 600;
             color: #475569;
+            white-space: nowrap;
         }
         .badge-matched {
             background-color: #ecfdf5;
             color: #059669;
             border: 1px solid #a7f3d0;
-            padding: 4px 10px;
+            padding: 5px 10px;
             border-radius: 6px;
             font-weight: 700;
             font-size: 0.78rem;
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            white-space: nowrap;
         }
         .badge-duplicate {
             background-color: #fffbeb;
             color: #d97706;
             border: 1px solid #fde68a;
-            padding: 4px 10px;
+            padding: 5px 10px;
             border-radius: 6px;
             font-weight: 700;
             font-size: 0.78rem;
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            white-space: nowrap;
         }
         .badge-unmatched {
             background-color: #f1f5f9;
             color: #64748b;
             border: 1px solid #e2e8f0;
-            padding: 4px 10px;
+            padding: 5px 10px;
             border-radius: 6px;
             font-weight: 600;
             font-size: 0.78rem;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
         }
         .sepay-tag {
             color: #dc2626;
@@ -104,6 +139,7 @@
             display: inline-flex;
             align-items: center;
             gap: 2px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -173,16 +209,16 @@
             <div class="text-muted small">Cổng kết nối: <code style="color: #0284c7;">${fn:escapeXml(gatewayUrl)}</code></div>
         </div>
         <div class="table-responsive">
-            <table class="table order-table mb-0 align-middle">
+            <table class="table bank-tx-table mb-0 align-middle">
                 <thead>
                     <tr>
-                        <th>ID SePay</th>
-                        <th>Thời gian</th>
-                        <th>Tài khoản</th>
-                        <th class="text-end">Số tiền</th>
-                        <th>Nội dung chuyển khoản</th>
-                        <th>Mã tham chiếu (FT)</th>
-                        <th>Đối soát hệ thống</th>
+                        <th style="width: 95px;">ID SePay</th>
+                        <th style="width: 145px;">Thời gian</th>
+                        <th style="width: 135px;">Tài khoản</th>
+                        <th class="text-end" style="width: 125px;">Số tiền</th>
+                        <th style="min-width: 260px;">Nội dung chuyển khoản</th>
+                        <th style="width: 155px;">Mã tham chiếu (FT)</th>
+                        <th style="width: 180px;">Đối soát hệ thống</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -197,11 +233,11 @@
                         </c:when>
                         <c:otherwise>
                             <c:forEach var="tx" items="${transactions}">
-                                <tr class="order-row">
+                                <tr>
                                     <td>
-                                        <span class="fw-bold font-monospace text-secondary">${tx.sepayId}</span>
+                                        <span class="fw-bold font-monospace text-secondary" style="font-size: 0.82rem;">${tx.sepayId}</span>
                                     </td>
-                                    <td class="text-muted text-nowrap" style="font-size: 0.85rem;">
+                                    <td class="text-muted text-nowrap font-monospace" style="font-size: 0.82rem;">
                                         <c:out value="${tx.transactionDate}" />
                                     </td>
                                     <td>
@@ -212,27 +248,27 @@
                                         <div style="font-size: 0.72rem; color: #94a3b8;"><c:out value="${tx.gateway}" /></div>
                                     </td>
                                     <td class="text-end text-nowrap">
-                                        <strong class="text-success fs-6">${tx.formattedAmount}</strong>
+                                        <span class="text-success fw-bold font-monospace fs-6">${tx.formattedAmount}</span>
                                     </td>
                                     <td>
                                         <div class="tx-content-box" title="${fn:escapeXml(tx.content)}">
                                             <c:out value="${tx.content}" />
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="text-nowrap">
                                         <span class="tx-ref-code"><c:out value="${tx.referenceCode}" /></span>
                                     </td>
-                                    <td>
+                                    <td class="text-nowrap">
                                         <c:choose>
                                             <c:when test="${tx.reconcileStatus eq 'MATCHED'}">
                                                 <span class="badge-matched" title="Đã khớp và thanh toán đơn hàng">
-                                                    <span class="material-symbols-outlined" style="font-size: 14px;">check_circle</span>
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">check_circle</span>
                                                     Khớp đơn #${tx.matchedOrderCode}
                                                 </span>
                                             </c:when>
                                             <c:when test="${tx.reconcileStatus eq 'DUPLICATE'}">
                                                 <span class="badge-duplicate" title="Khách chuyển thừa hoặc chuyển trùng lần 2 cho cùng 1 đơn">
-                                                    <span class="material-symbols-outlined" style="font-size: 14px;">warning</span>
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">warning</span>
                                                     Chuyển thừa #${tx.matchedOrderCode}
                                                 </span>
                                             </c:when>
