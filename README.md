@@ -16,14 +16,18 @@ He thong Quan ly Quan Ca phe Aura Cafe duoc xay dung tren nen tang Java Web Serv
 
 ## 2. Huong dan thiet lap Co so du lieu (Database Setup)
 
-Toàn bộ schema và dữ liệu MySQL của ứng dụng Aura Café được gom trong một file duy nhất: `database/aura_cafe.sql` (25 bảng). File này là ảnh chụp hợp nhất gồm tài khoản, lịch/ca làm việc, bàn giao ca, sản phẩm, đơn hàng, thanh toán, giao hàng, khách hàng thân thiết, phản ánh, kho và cấu hình cửa hàng. Đánh giá và phản ánh dùng chung bảng `customer_reviews`; điểm thành viên dùng `users.total_points` và `loyalty_transactions`.
+Toàn bộ schema, dữ liệu mẫu và phần nâng cấp MySQL của ứng dụng Aura Café nằm trong `database/aura_cafe.sql` (28 bảng). File này gồm tài khoản, lịch/ca làm việc, bàn giao ca, sản phẩm, đơn hàng, thanh toán, giao hàng, khách hàng thân thiết, phản ánh, kho, kiểm nhận và cấu hình cửa hàng. Đánh giá và phản ánh dùng chung bảng `customer_reviews`; điểm thành viên dùng `users.total_points` và `loyalty_transactions`.
 
 Payment Gateway là microservice Cloudflare Workers riêng và dùng Cloudflare D1/SQLite, vì vậy schema tương thích của nó vẫn nằm tại `payment-gateway/schema.sql` và không được trộn vào schema MySQL.
 
 - File khoi tao: `database/aura_cafe.sql`
 - Ten database mac dinh: `aura_cafe_erp`
 
-Khi lấy code mới về hoặc muốn cài lại database, mở và chạy lại file `database/aura_cafe.sql` trong MySQL. Script này xóa database `aura_cafe_erp` hiện có rồi tạo lại toàn bộ schema và dữ liệu đã hợp nhất; hãy sao lưu database trước nếu cần giữ dữ liệu phát sinh sau thời điểm tạo file.
+Database đang có dữ liệu cần giữ: sao lưu trước, chỉ chọn nội dung khối `BEGIN EXISTING DATABASE UPGRADE` / `END EXISTING DATABASE UPGRADE` ở đầu `database/aura_cafe.sql`, bỏ dấu `/*` và `*/` rồi chạy riêng khối đó. DDL MySQL tự commit. Không chạy toàn bộ file để nâng cấp.
+
+Chỉ khi cài mới hoặc chủ động reset môi trường thử nghiệm mới chạy toàn bộ file theo hướng dẫn bên dưới: phần reset xóa database `aura_cafe_erp` rồi nạp schema và dữ liệu mẫu. Hai file SQL cũ đã được giữ nguyên dưới dạng `.bak` tại `outputs/sql-consolidation-backup-20261111/` để có thể khôi phục; không cần chạy chúng. Schema `payment-gateway/schema.sql` thuộc SQLite/D1 riêng như giải thích ở trên.
+
+Đọc các luồng BF10/BF11/BF12 theo mã comment: [LUONG_NGUYEN.md](docs/LUONG_NGUYEN.md).
 
 Thành viên mới có thể chạy file theo một trong hai cách:
 
