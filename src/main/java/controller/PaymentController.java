@@ -96,6 +96,9 @@ public class PaymentController extends HttpServlet {
     }
 
     private void handleCallback(HttpServletRequest request,HttpServletResponse response)throws IOException{
+        // EA01: . Ở đây em nhận thông báo kết quả thanh toán từ cổng thanh toán.
+        // .. Em kiểm tra chữ ký trước khi cho phép ghi nhận giao dịch.
+        // ... handleCallback() gọi processCallback() [EA04] → PaymentDAO.applyGatewayCallback() [EA02].
         ShopSettings settings=shopSettingDAO.getSettings();
         PaymentDAO.CallbackResult result=processCallback(trim(request.getParameter("orderCode")),
                 trim(request.getParameter("transactionCode")),trim(request.getParameter("amount")),
@@ -120,6 +123,9 @@ public class PaymentController extends HttpServlet {
             String payload="{\"orderCode\":\""+escapeJson(orderCode)+"\",\"transactionCode\":\""
                     +escapeJson(transactionCode)+"\",\"amount\":\""+escapeJson(amountText)
                     +"\",\"status\":\""+escapeJson(status)+"\"}";
+            // EA04: . Ở đây em chỉ chuyển kết quả thanh toán xuống phần lưu sau khi chữ ký và số tiền đọc được hợp lệ.
+            // .. Phần lưu trả kết quả có chấp nhận thông báo và thanh toán có thành công không.
+            // ... applyGatewayCallback(thông tin giao dịch, quy tắc tích điểm) [EA02] → kết quả về handleCallback() [EA01].
             return paymentDAO.applyGatewayCallback(orderCode,transactionCode,amount,status,gatewayReference,payload,settings.getPointsEarnUnit());
         }catch(Exception e){return new PaymentDAO.CallbackResult(false,false,0,0,orderCode,"Invalid callback amount");}
     }

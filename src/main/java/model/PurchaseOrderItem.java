@@ -8,5 +8,5 @@ public class PurchaseOrderItem{
  private BigDecimal receivedQuantity=BigDecimal.ZERO;
  public BigDecimal getReceivedQuantity(){return receivedQuantity;}public void setReceivedQuantity(BigDecimal v){receivedQuantity=v;}
  public BigDecimal getRemainingQuantity(){return quantity.subtract(receivedQuantity).max(BigDecimal.ZERO);}
- public BigDecimal getSubtotal(){return quantity.multiply(unitPrice);}
+ public BigDecimal getSubtotal(){return quantity.multiply(unitPrice).setScale(2,java.math.RoundingMode.HALF_UP);}
 }

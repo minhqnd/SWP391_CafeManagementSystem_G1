@@ -21,12 +21,17 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public List<LoyaltyTransaction> findRecent(int limit) throws SQLException {
-        // BF12: nhật ký chung trên trang Admin, không lọc riêng theo khách đang tra cứu.
+        // HI07: . Ở đây em nhận yêu cầu lấy 50 giao dịch gần nhất.
+        // .. Em chọn lịch sử toàn hệ thống, không lọc theo khách đang tra.
+        // ... findDetailed("", null, limit) [HI02] trả list về Controller [HI08].
         return findDetailed("", null, limit);
     }
 
     private List<LoyaltyTransaction> findDetailed(String whereClause, Integer customerId, int limit)
             throws SQLException {
+        // HI02: . Ở đây em lấy giao dịch cùng thông tin khách và đơn liên quan.
+        // .. Em giữ cả giao dịch không gắn đơn và xếp mới nhất trước.
+        // ... List về Controller → các dòng nhật ký [HI03]; tính số dư tại [HI06].
         String sql = "SELECT lt.id, lt.customer_id, lt.order_id, lt.points_change, "
                 + "lt.transaction_type, lt.created_at, u.full_name, u.phone, u.total_points, o.order_code "
                 + "FROM loyalty_transactions lt JOIN users u ON u.id = lt.customer_id "
@@ -51,7 +56,9 @@ public class LoyaltyTransactionDAO extends BaseDAO {
                     row.setCustomerName(rs.getString("full_name"));
                     row.setCustomerPhone(rs.getString("phone"));
                     row.setOrderCode(rs.getString("order_code"));
-                    // Tính ngược số dư theo lịch sử mới nhất trước; balanceAfter không phải cột lưu trong DB.
+                    // HI06: . Ở đây em bắt đầu từ số dư hiện tại rồi lần ngược lịch sử từng khách.
+                    // .. Mỗi giao dịch có số dư sau; số dư trước được suy ngược bằng số dư sau trừ điểm biến động.
+                    // ... LoyaltyTransaction.balanceAfter → cột số dư sau [HI05].
                     row.setBalanceAfter(balanceAfter);
                     runningBalance.put(ownerId, balanceAfter - row.getPointsChange());
                     rows.add(row);
@@ -72,14 +79,23 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public long countCustomersWithPoints() throws SQLException {
+        // ST11: . Ở đây em đếm số khách có điểm lớn hơn không.
+        // .. Kết quả là số khách có điểm, không phải số điểm.
+        // ... Trả số đếm về Controller → ô thống kê [ST01].
         return queryLong("SELECT COUNT(*) FROM users WHERE role='CUSTOMER' AND total_points > 0");
     }
 
     public long getTotalPoints() throws SQLException {
+        // ST12: . Ở đây em cộng số dư điểm của tất cả khách.
+        // .. Chưa có dữ liệu thì kết quả bằng không.
+        // ... Trả tổng về Controller → ô thống kê [ST02].
         return queryLong("SELECT COALESCE(SUM(total_points),0) FROM users WHERE role='CUSTOMER'");
     }
 
     public long countTransactions() throws SQLException {
+        // ST14: . Ở đây em đếm các dòng lịch sử điểm.
+        // .. Bao gồm tích, đổi, hoàn và điều chỉnh.
+        // ... Trả số đếm về Controller → ô thống kê [ST04].
         return queryLong("SELECT COUNT(*) FROM loyalty_transactions");
     }
 
@@ -94,8 +110,9 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public User findCustomerByPhone(String phone) throws SQLException {
-        // BF12 - TRA CỨU: chỉ tìm CUSTOMER; PreparedStatement gắn phone vào dấu ? như dữ liệu.
-        // Trả User nếu tìm thấy, null nếu không; Controller quyết định hiển thị gì trên JSP.
+        // CU03: . Ở đây em tìm khách bằng số điện thoại sau khi bỏ dấu cách, chấm và gạch ngang.
+        // .. Tìm thấy thì trả thông tin khách; không có thì trả kết quả rỗng.
+        // ... User về Controller [CU02] → thẻ khách [CU04]; không tìm thấy đi vào [CU08].
         String sql = "SELECT id, full_name, phone, email, role, position, status, total_points "
                 + "FROM users WHERE role='CUSTOMER' AND phone=? LIMIT 1";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -109,6 +126,9 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public User findDefaultCustomer() throws SQLException {
+        // CU06: . Ở đây em chọn sẵn khách khi Admin chưa nhập số điện thoại.
+        // .. Em lấy khách nhiều điểm nhất; bằng điểm thì lấy mã nhỏ hơn.
+        // ... User về doGet() [CU02] → giao diện [CU04].
         String sql = "SELECT id, full_name, phone, email, role, position, status, total_points "
                 + "FROM users WHERE role='CUSTOMER' ORDER BY total_points DESC, id LIMIT 1";
         try (Connection conn = getConnection();
@@ -127,6 +147,9 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public CustomerActivity getCustomerActivity(int customerId) throws SQLException {
+        // CU15: . Ở đây em tính chi tiêu từ các đơn đã hoàn thành của khách.
+        // .. Tổng tiền gồm phí giao; ngày gần nhất lấy ngày tạo đơn mới nhất ở mọi trạng thái.
+        // ... CustomerActivity về doGet() → giao diện [CU05].
         String sql = "SELECT COALESCE(SUM(CASE WHEN status='COMPLETED' THEN final_amount ELSE 0 END),0) total_spent, "
                 + "MAX(created_at) last_order_at FROM orders WHERE customer_id=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -143,8 +166,9 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public boolean adjustPoints(int customerId, int pointsChange) throws SQLException {
-        // BF12 - LƯU ĐIỀU CHỈNH: số dư ở users, lịch sử ở loyalty_transactions.
-        // Điều chỉnh thủ công dùng ADJUST và không gắn đơn hàng (order_id = NULL).
+        // LP04: . Ở đây em khóa số dư khách để tránh hai yêu cầu cùng sửa trên điểm cũ.
+        // .. Em lưu điểm và lịch sử cùng nhau; lỗi thì hoàn tác cả hai, không để số dư âm.
+        // ... Kết quả về Controller để báo thành công hoặc lỗi [LP05].
         if (pointsChange == 0) throw new IllegalArgumentException("Số điểm điều chỉnh phải khác 0.");
         String lockSql = "SELECT total_points FROM users WHERE id=? AND role='CUSTOMER' FOR UPDATE";
         String updateSql = "UPDATE users SET total_points=? WHERE id=?";
@@ -152,11 +176,9 @@ public class LoyaltyTransactionDAO extends BaseDAO {
                 + "VALUES (?,NULL,?,'ADJUST')";
         try (Connection conn = getConnection()) {
             boolean oldAutoCommit = conn.getAutoCommit();
-            // Bắt đầu transaction: cập nhật số dư và thêm lịch sử phải cùng thành công.
             conn.setAutoCommit(false);
             try {
                 int current;
-                // FOR UPDATE khóa dòng khách đến cuối transaction, tránh sửa trên số dư cũ khi đồng thời.
                 try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
                     ps.setInt(1, customerId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -164,27 +186,22 @@ public class LoyaltyTransactionDAO extends BaseDAO {
                         current = rs.getInt(1);
                     }
                 }
-                // Nhánh "balance not negative?": lấy số dư DB + biến động, không tin số dư từ trình duyệt.
                 long next = (long) current + pointsChange;
                 if (next < 0) throw new IllegalArgumentException("Không thể trừ nhiều hơn số điểm hiện có.");
                 if (next > Integer.MAX_VALUE) throw new IllegalArgumentException("Số điểm vượt giới hạn cho phép.");
-                // Bước 1: cập nhật số dư mới theo ID khách hàng.
                 try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                     ps.setInt(1, (int) next);
                     ps.setInt(2, customerId);
                     ps.executeUpdate();
                 }
-                // Bước 2: ghi biến động có dấu (+/-) để truy vết lý do thay đổi số dư.
                 try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
                     ps.setInt(1, customerId);
                     ps.setInt(2, pointsChange);
                     ps.executeUpdate();
                 }
-                // Chỉ chốt khi cả hai bước thành công; trả kết quả về Controller.
                 conn.commit();
                 return true;
             } catch (Exception e) {
-                // Có lỗi thì hoàn tác transaction và ném lỗi lên Controller để báo trên JSP.
                 conn.rollback();
                 if (e instanceof SQLException) throw (SQLException) e;
                 if (e instanceof RuntimeException) throw (RuntimeException) e;
@@ -198,6 +215,9 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public boolean earnForCompletedOrder(int customerId, int orderId, int points) throws SQLException {
+        // EA00: . Ở đây em giữ một hàm cộng điểm riêng nhưng hiện chưa có chỗ gọi hàm này trong luồng đang chạy.
+        // .. Khi trình bày, em lần theo lời gọi thật của thao tác đang demo.
+        // Tham khảo: QR hoặc COD gọi PaymentDAO.earnPointsOnce() [EA03]; tiền mặt tại quầy xử lý trong [CT02].
         if (points <= 0) return false;
         String existsSql = "SELECT 1 FROM loyalty_transactions WHERE order_id=? AND transaction_type='EARN'";
         String updateSql = "UPDATE users SET total_points=total_points+? WHERE id=? AND role='CUSTOMER'";

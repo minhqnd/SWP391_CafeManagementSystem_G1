@@ -355,6 +355,9 @@
                                             </div>
 
                                             <%-- BF10 - HỒ SƠ: POST action=update -> ProfileController -> updateUserProfile() -> cập nhật session khi lưu được. --%>
+                                            <%-- PF01: . Ở đây em hiển thị thông tin hồ sơ để người dùng chỉnh sửa.
+                                                 .. Bấm Lưu thì em gửi các thông tin vừa sửa lên máy chủ.
+                                                 ... POST /profile?action=update → ProfileController.doPost() [PF03]. --%>
                                             <form id="profileForm"
                                                 action="${pageContext.request.contextPath}/profile?action=update"
                                                 method="POST">
@@ -439,6 +442,9 @@
 
                                             <div class="collapse mt-4" id="passwordCollapse">
                                                 <%-- BF10 - ĐỔI MẬT KHẨU: POST action=changePassword; server kiểm tra mật khẩu cũ, mới và xác nhận. --%>
+                                                <%-- PW01: . Ở đây em nhận mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu.
+                                                     .. Người dùng phải biết mật khẩu hiện tại mới đổi tại hồ sơ.
+                                                     ... POST /profile?action=changePassword → ProfileController [PW02]. --%>
                                                 <form id="passwordForm"
                                                     action="${pageContext.request.contextPath}/profile?action=changePassword"
                                                     method="POST">
@@ -534,6 +540,9 @@
                                             </c:when>
                                             <c:otherwise>
                                                 <%-- BF10/BF12: lịch sử riêng do ProfileController nạp theo ID người đăng nhập; JSP chỉ hiển thị. --%>
+                                                <%-- PH03: . Ở đây em hiển thị từng giao dịch điểm của người đang đăng nhập.
+                                                     .. Người dùng xem được điểm đã tích, đã đổi và đã hoàn.
+                                                     Nguồn/ghi chú: Danh sách lấy từ UserDAO [PH02] qua ProfileController [PF02]. --%>
                                                 <c:forEach var="txn" items="${loyaltyHistory}" varStatus="loop">
                                                     <div
                                                         class="d-flex justify-content-between align-items-center py-3 ${not loop.last ? 'border-bottom' : ''}">

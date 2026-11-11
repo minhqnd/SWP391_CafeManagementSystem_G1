@@ -24,6 +24,9 @@ public class RegisterController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         
         String fullName = request.getParameter("fullname");
+        // RG02: . Ở đây em kiểm tra thông tin đăng ký có đầy đủ và đúng định dạng không.
+        // .. Hợp lệ thì em kiểm tra trùng rồi tạo tài khoản khách hàng.
+        // ... checkPhoneExists()/checkEmailExists() [RG03] → register() [RG04].
         String email = request.getParameter("email");
         if (email == null || email.trim().isEmpty()) {
             email = request.getParameter("username");
@@ -104,6 +107,9 @@ public class RegisterController extends HttpServlet {
 
         // Đầu vào hợp lệ -> DAO thêm users với vai trò CUSTOMER; không lấy role từ form.
         boolean isSuccess = userDAO.register(newUser, password);
+        // RG05: . Ở đây em nhận kết quả tạo tài khoản và chuẩn bị thông báo.
+        // .. Thành công thì mở đăng nhập; lỗi thì mở lại đăng ký.
+        // ... sendRedirect() về trang chứa auth_modal.jsp [RG01].
 
         // KẾT QUẢ: redirect về trang gốc kèm tab=login/register để popup hiển thị đúng bước.
         if (isSuccess) {

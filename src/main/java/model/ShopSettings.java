@@ -80,13 +80,17 @@ public class ShopSettings implements Serializable {
     public String getPaymentAccountName(){return paymentAccountName;} public void setPaymentAccountName(String v){if(v!=null&&!v.isBlank())paymentAccountName=v;}
 
     public int calculateEarnedPoints(double goodsAmountAfterDiscount) {
-        // BF12 - TÍCH ĐIỂM: lấy tiền hàng sau giảm / mức tiền cho 1 điểm, làm tròn xuống.
+        // CF01: . Ở đây em tính điểm thưởng từ tiền hàng sau giảm.
+        // .. Kết quả là số điểm nguyên làm tròn xuống từ tiền hàng sau giảm, không tính phí giao.
+        // ... calculateEarnedPoints() trả số điểm về nơi gọi; tại quầy dùng ở [CT02].
         if (goodsAmountAfterDiscount <= 0 || pointsEarnUnit <= 0) return 0;
         return (int) Math.floor(goodsAmountAfterDiscount / pointsEarnUnit);
     }
     /** Số tiền giảm khi dùng số điểm này - chỉ tính các mốc trọn vẹn (VD mốc 50: 120 điểm = 2 mốc) */
     public double getPointsDiscount(int points) {
-        // BF12 - ĐỔI ĐIỂM: chỉ tính mốc trọn vẹn, VD mốc 10 thì 25 điểm tính 2 mốc.
+        // CF02: . Ở đây em tính tiền giảm từ số điểm khách đổi.
+        // .. Kết quả là tiền giảm theo số mốc trọn vẹn; mốc 10 thì 25 điểm chỉ tính 2 mốc.
+        // ... getPointsDiscount() trả tiền giảm cho giỏ hoặc nơi tính đơn.
         if (points <= 0 || pointsStep <= 0) {
             return 0;
         }
@@ -98,7 +102,9 @@ public class ShopSettings implements Serializable {
      * không vượt quá số điểm khách đang có và số tiền giảm không vượt quá tiền hàng.
      */
     public int getMaxRedeemablePoints(int availablePoints, double subtotal) {
-        // BF12: lấy giới hạn nhỏ hơn giữa số mốc khách đủ điểm và số mốc tiền hàng đủ để giảm.
+        // CF03: . Ở đây em giới hạn điểm dùng theo số dư và tiền hàng.
+        // .. Điểm dùng không quá số dư, tiền giảm không quá tiền hàng và phải đúng mốc.
+        // ... getMaxRedeemablePoints() trả giới hạn cho giỏ [RD06] hoặc POS [CT01].
         if (pointsStep <= 0 || pointsStepValue <= 0 || availablePoints <= 0 || subtotal <= 0) {
             return 0;
         }

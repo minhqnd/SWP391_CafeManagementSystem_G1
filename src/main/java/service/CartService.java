@@ -57,6 +57,9 @@ public class CartService {
      * Trả về false nếu số điểm đang dùng không còn hợp lệ và đã bị giảm về mốc hợp lệ gần nhất.
      */
     public boolean refreshCart(Cart cart, Integer customerId) {
+        // RD03: . Ở đây em đọc lại giá món, quy tắc cửa hàng và số điểm hiện có của khách.
+        // .. Giỏ đã được làm mới để tính lại điểm được dùng và tiền phải trả.
+        // ... ShopSettingDAO [RU05], UserDAO.getTotalPoints() [PH04] → Cart.normalizePointsUsed() [RD06].
         for (CartItem item : cart.getItems()) {
             Product product = productDAO.getProductById(item.getProductId());
             if (product == null || !product.isAvailable()) {

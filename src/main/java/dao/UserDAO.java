@@ -27,6 +27,9 @@ public class UserDAO extends BaseDAO {
     }
 
     public User login(String identifier, String password) {
+        // LG03: . Ở đây em tìm tài khoản bằng email hoặc số điện thoại, kiểm tra trạng thái và mật khẩu.
+        // .. Đúng thông tin và tài khoản hoạt động thì em trả về người dùng.
+        // ... Trả User về LoginController [LG04]; hồ sơ cũng gọi để kiểm tra mật khẩu cũ [PW02].
         // BF10: xác thực và dựng User trả về LoginController để tạo session.
         // Lưu ý code hiện tìm theo email HOẶC phone; không mô tả backend này là email-only.
         if (identifier == null || password == null) {
@@ -106,6 +109,9 @@ public class UserDAO extends BaseDAO {
     }
 
     public boolean register(User user, String password) {
+        // RG04: . Ở đây em thêm tài khoản khách vào cơ sở dữ liệu.
+        // .. Em trả kết quả lưu được hay không để chọn thông báo.
+        // ... register(User, mật khẩu) trả boolean về RegisterController [RG05].
         // BF10: INSERT tài khoản ACTIVE; Controller đã đặt role CUSTOMER cho đăng ký từ web.
         // Kết quả true/false được Controller chuyển thành thông báo; mật khẩu hiện chưa hash.
         String sql = "INSERT INTO users (full_name, phone, email, role, position, status, password_hash) " +
@@ -130,6 +136,9 @@ public class UserDAO extends BaseDAO {
         return false;
     }
     public boolean checkEmailExists(String email) {
+        // RG03: . Ở đây em kiểm tra email hoặc số điện thoại đã có tài khoản chưa.
+        // .. Kết quả giúp máy chủ báo trùng trước khi thêm tài khoản.
+        // ... Trả boolean về RegisterController [RG02]; kiểm tra email cũng dùng khi quên mật khẩu [OT02].
         // BF10: kiểm tra email có bản ghi users để chống trùng hoặc xác định luồng quên mật khẩu.
         String sql = "SELECT id FROM users WHERE email = ?";
         try (Connection conn = DBContext.getConnection();
@@ -163,6 +172,9 @@ public class UserDAO extends BaseDAO {
     }
 
     public boolean updatePassword(String email, String newPassword) {
+        // PW03: . Ở đây em cập nhật mật khẩu cho tài khoản có email được truyền vào.
+        // .. Em trả kết quả có cập nhật được tài khoản không.
+        // ... Trả boolean về đúng nơi gọi: đặt lại mật khẩu [OT07] hoặc đổi tại hồ sơ [PW02].
         // BF10: dùng chung cho reset sau OTP và đổi mật khẩu trong hồ sơ; UPDATE theo email.
         String sql = "UPDATE users SET password_hash = ? WHERE email = ?";
         try (Connection conn = DBContext.getConnection();
@@ -176,6 +188,9 @@ public class UserDAO extends BaseDAO {
         return false;
     }
     public String updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
+        // PF04: . Ở đây em lưu thông tin hồ sơ theo đúng mã người dùng.
+        // .. Em trả thông báo thành công hoặc nguyên nhân không lưu được.
+        // ... Kết quả về ProfileController [PF05].
         // BF10: UPDATE đúng ID của phiên đăng nhập; lỗi khóa duy nhất được đổi thành thông báo trùng.
         String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ? WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
@@ -205,6 +220,9 @@ public class UserDAO extends BaseDAO {
 
     /** Điểm Aura hiện tại (đọc lại sau khi thanh toán / đổi điểm để cập nhật user trong session) */
     public int getTotalPoints(int userId) {
+        // PH04: . Ở đây em đọc số điểm hiện có của khách từ cơ sở dữ liệu.
+        // .. Hàm chỉ trả số dư để nơi gọi sử dụng, không thưởng thêm điểm.
+        // ... UserDAO.getTotalPoints(mã khách) trả số dư; giỏ nhận tại [RD03].
         String sql = "SELECT total_points FROM users WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -221,6 +239,9 @@ public class UserDAO extends BaseDAO {
     }
 
     public java.util.List<model.LoyaltyTransaction> getLoyaltyHistoryByUserId(int userId) {
+        // PH02: . Ở đây em đọc lịch sử điểm của đúng người đang đăng nhập.
+        // .. Em tạo danh sách giao dịch, sắp giao dịch mới trước.
+        // ... List về ProfileController [PF02] → vòng lặp lịch sử [PH03].
         // BF10/BF12: đọc lịch sử riêng theo customer_id; ProfileController đặt vào loyaltyHistory cho JSP.
         java.util.List<model.LoyaltyTransaction> list = new java.util.ArrayList<>();
         String sql = "SELECT id, customer_id, order_id, points_change, transaction_type, created_at " +

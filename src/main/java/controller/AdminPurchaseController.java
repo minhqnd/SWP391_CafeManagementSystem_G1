@@ -29,19 +29,45 @@ public class AdminPurchaseController extends HttpServlet {
         try{
             String action=r.getParameter("action");
             if("create".equals(action)||"edit".equals(action)){
-                BigDecimal qty=InventoryRules.quantity(new BigDecimal(r.getParameter("quantity")),true);
-                BigDecimal total=new BigDecimal(r.getParameter("totalPrice"));
-                if(total.signum()<0||total.scale()>2||total.compareTo(new BigDecimal("9999999999.99"))>0)throw new IllegalArgumentException("Tổng tiền không hợp lệ.");
                 int supplier=Integer.parseInt(r.getParameter("supplierId"));
-                if("edit".equals(action))dao.editDraft(Integer.parseInt(r.getParameter("id")),u.getId(),supplier,qty,total,r.getParameter("note"),r.getParameter("editReason"));
+                if("edit".equals(action)) {
+                    BigDecimal qty=InventoryRules.quantity(new BigDecimal(r.getParameter("quantity")),true);
+                    BigDecimal total=InventoryRules.money(new BigDecimal(r.getParameter("totalPrice")));
+                    dao.editDraft(Integer.parseInt(r.getParameter("id")),u.getId(),supplier,qty,total,r.getParameter("note"),r.getParameter("editReason"));
+                }
                 else {
                     PurchaseOrder po=new PurchaseOrder();po.setSupplierId(supplier);po.setCreatorId(u.getId());po.setNote(InventoryRules.text(r.getParameter("note"),false));
                     String rr=r.getParameter("restockRequestId");if(rr!=null&&!rr.isBlank())po.setRestockRequestId(Integer.parseInt(rr));
-                    dao.create(po,List.of(new PurchaseOrderItem(Integer.parseInt(r.getParameter("ingredientId")),qty,total.divide(qty,2,RoundingMode.HALF_UP))));
+                    dao.create(po,parseItems(r));
                 }
             }else dao.changeStatus(Integer.parseInt(r.getParameter("id")),u.getId(),action,r.getParameter("reason"));
             r.getSession().setAttribute("workflowMessage","Đã cập nhật đơn mua.");
         }catch(Exception e){getServletContext().log("Purchase action failed",e);r.getSession().setAttribute("workflowError",e instanceof IllegalArgumentException?e.getMessage():"Không thể lưu đơn mua. Hãy kiểm tra dữ liệu hoặc đề xuất đã được sử dụng.");}
         p.sendRedirect(r.getContextPath()+"/admin/purchases");
+    }
+    static List<PurchaseOrderItem> parseItems(HttpServletRequest request) {
+        String[] ids=request.getParameterValues("ingredientId");
+        String[] quantities=request.getParameterValues("quantity");
+        String[] totals=request.getParameterValues("totalPrice");
+        if(ids==null || quantities==null || totals==null || ids.length==0 || ids.length>100
+                || ids.length!=quantities.length || ids.length!=totals.length)
+            throw new IllegalArgumentException("Danh sách nguyên liệu, số lượng và tiền lô không khớp.");
+        List<PurchaseOrderItem> items=new ArrayList<>();
+        Set<Integer> seen=new HashSet<>();
+        BigDecimal grandTotal=BigDecimal.ZERO;
+        try {
+            for(int i=0;i<ids.length;i++) {
+                int id=Integer.parseInt(ids[i]);
+                if(id<=0 || !seen.add(id))throw new IllegalArgumentException("Nguyên liệu không hợp lệ hoặc bị trùng.");
+                BigDecimal quantity=InventoryRules.quantity(new BigDecimal(quantities[i]),true);
+                BigDecimal total=InventoryRules.money(new BigDecimal(totals[i]));
+                grandTotal=grandTotal.add(total);
+                items.add(new PurchaseOrderItem(id,quantity,InventoryRules.purchaseUnitPrice(quantity,total)));
+            }
+        } catch(NumberFormatException | NullPointerException e) {
+            throw new IllegalArgumentException("Số lượng hoặc tiền lô không hợp lệ.",e);
+        }
+        InventoryRules.money(grandTotal);
+        return items;
     }
 }
