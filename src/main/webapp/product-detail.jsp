@@ -564,6 +564,9 @@
 </head>
 
 <body>
+<%-- MN08: . Ở đây em hiển thị món và các món liên quan mà máy chủ vừa gửi sang.
+     .. Bấm một món liên quan thì mở trang chi tiết của món đó.
+     ... GET /product-detail?id=... → ProductDetailController [MN07]. --%>
 
     <!-- Shared Header -->
     <jsp:include page="/components/header.jsp">

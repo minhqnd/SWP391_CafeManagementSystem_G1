@@ -28,6 +28,9 @@ public class LoginController extends HttpServlet {
         // Xử lý Đăng xuất
         String action = request.getParameter("action");
         if ("logout".equals(action)) {
+            // LG05: . Ở đây em xử lý khi người dùng bấm Đăng xuất.
+            // .. Em hủy phiên đăng nhập rồi đưa người dùng về trang chủ.
+            // ... GET /login?action=logout chọn nhánh này; đăng nhập lại từ [LG01].
             // BF10: hủy phiên chứa user; các trang bảo vệ phải kiểm tra lại khi truy cập lần sau.
             session.invalidate(); // Xóa session
             // Redirect về trang chủ thay vì /login
@@ -68,9 +71,15 @@ public class LoginController extends HttpServlet {
 
         // Gọi DAO để xác thực
         // BF10: DAO trả User nếu đúng thông tin và ACTIVE; trả null nếu không xác thực được.
+        // LG02: . Ở đây em gọi kiểm tra tài khoản vì người dùng vừa gửi form đăng nhập.
+        // .. Hàm kiểm tra trả thông tin tài khoản hoặc báo không hợp lệ.
+        // ... userDAO.login(tên đăng nhập, mật khẩu) [LG03]; kết quả xử lý tại [LG04].
         User loginUser = userDAO.login(userIdentifier, pass);
 
         if (loginUser != null) {
+            // LG04: . Ở đây em tạo phiên đăng nhập mới sau khi tài khoản được xác thực.
+            // .. Phiên mới chứa người vừa đăng nhập và giỏ hàng; điểm của danh tính cũ đã được xóa khỏi giỏ.
+            // ... Gọi redirectByUser() [LG06], hoặc quay về đường dẫn nội bộ nếu khách đang tiếp tục mua hàng.
             // Renew the session after authentication so an older role/CSRF state cannot leak
             // into the newly authenticated account. The anonymous shopping cart is safe to keep.
             // BF10: tạo phiên mới sau đăng nhập, chỉ mang giỏ hàng sang và xóa điểm của danh tính cũ.
@@ -109,6 +118,9 @@ public class LoginController extends HttpServlet {
 
     // Hàm helper để chia luồng redirect tùy thuộc vào Role và Position
     private void redirectByUser(User user, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        // LG06: . Ở đây em chọn trang tiếp theo dựa vào vai trò và vị trí làm việc.
+        // .. Admin vào quản trị, nhân viên vào màn hình nghiệp vụ, khách về trang chủ.
+        // ... sendRedirect(URL đích) yêu cầu trình duyệt mở trang mới.
         // BF10 - PHÂN LUỒNG: ADMIN -> quản trị; STAFF theo vị trí; CUSTOMER -> trang chủ.
         String role = user.getRole();
         String position = user.getPosition();

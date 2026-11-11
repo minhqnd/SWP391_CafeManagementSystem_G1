@@ -19,6 +19,9 @@ public class ProductDAO extends BaseDAO {
 
     /** All products for the admin catalog, including temporarily unavailable items. */
     public List<Product> getProductsForAdmin(Integer categoryId, String keyword) throws SQLException, ClassNotFoundException {
+        // PR03: . Ở đây em lấy danh sách món theo danh mục và từ khóa tìm kiếm.
+        // .. Em lấy cả món đang bán và ngừng bán để Admin sửa hoặc bật lại.
+        // ... List<Product> về AdminProductsController [PR02]; trang công thức cũng dùng tại [RC02].
         // BF11: quản trị cần thấy cả món đang bán/ngừng bán để sửa hoặc bật lại; không giống bộ lọc công khai.
         List<Product> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE 1 = 1");
@@ -70,6 +73,9 @@ public class ProductDAO extends BaseDAO {
     public boolean saveProduct(Product product, byte[] imageData, String contentType,
                                String fileName, boolean removeImage)
             throws SQLException, ClassNotFoundException {
+        // PR07: . Ở đây em lưu món và ảnh của món cùng nhau.
+        // .. Có mã thì cập nhật, chưa có thì thêm mới; lỗi thì hoàn tác.
+        // ... Trả boolean về AdminProductsController.save() [PR05] → tải lại danh sách [PR02].
         // BF11: lưu products (gồm variants_config) và product_images cùng transaction, lỗi thì rollback.
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
@@ -160,6 +166,9 @@ public class ProductDAO extends BaseDAO {
     }
 
     public boolean updateProductAvailability(int id, boolean available) throws SQLException, ClassNotFoundException {
+        // PR09: . Ở đây em cập nhật trạng thái bán của món được chọn.
+        // .. Em trả kết quả để báo thao tác có thành công không.
+        // ... Kết quả về AdminProductsController.toggle() [PR08].
         // BF11: nút mắt chỉ đổi is_available; không xóa món hay các order_items đã tham chiếu.
         try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE products SET is_available = ? WHERE id = ?")) {
             ps.setBoolean(1, available);
@@ -199,6 +208,9 @@ public class ProductDAO extends BaseDAO {
     }
 
     public ProductImage getProductImage(int productId) {
+        // IM04: . Ở đây em đọc nội dung và loại ảnh của món trong cơ sở dữ liệu.
+        // .. Em trả ảnh nếu có, hoặc kết quả rỗng nếu chưa lưu ảnh.
+        // ... ProductImage về ProductImageController [IM03].
         String sql = "SELECT image_data, content_type FROM product_images WHERE product_id = ?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, productId);
@@ -311,6 +323,9 @@ public class ProductDAO extends BaseDAO {
     }
 
     public List<Product> filterProducts(Integer categoryId, String keyword) {
+        // MN04: . Ở đây em tìm món công khai theo danh mục và từ khóa khách gửi.
+        // .. Em trả danh sách theo các điều kiện bán trong câu truy vấn.
+        // ... List<Product> về MenuController [MN02] → menu.jsp [MN01].
         List<Product> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
                 "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
@@ -354,6 +369,9 @@ public class ProductDAO extends BaseDAO {
     }
 
     public Product getProductById(int id) {
+        // MN06: . Ở đây em lấy thông tin một món theo mã được truyền vào.
+        // .. Có món thì trả thông tin và cấu hình size, topping; không có thì trả kết quả rỗng.
+        // ... Trả Product về hộp chọn món [MN05] hoặc trang chi tiết riêng [MN07].
         // BF11: lấy thông tin/JSON cấu hình của một món; hàm này chỉ lọc ID, không tự lọc is_available.
         String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                      "FROM products p " +

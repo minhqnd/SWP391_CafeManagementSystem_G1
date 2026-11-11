@@ -27,6 +27,9 @@ public class CategoryImageController extends HttpServlet {
 
         CategoryImage image;
         try {
+            // IM01: . Ở đây em nhận yêu cầu tải ảnh danh mục và kiểm tra mã danh mục.
+            // .. Có ảnh thì trả nội dung ảnh cho trình duyệt; không có thì báo không tìm thấy.
+            // ... categoryDAO.getCategoryImage(mã danh mục) [IM02] → ghi byte ảnh vào response.
             image = categoryDAO.getCategoryImage(categoryId);
         } catch (RuntimeException e) {
             getServletContext().log("Failed to load category image " + categoryId, e);

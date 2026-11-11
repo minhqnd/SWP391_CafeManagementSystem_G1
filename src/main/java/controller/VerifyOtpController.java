@@ -20,6 +20,9 @@ public class VerifyOtpController extends HttpServlet {
         
         request.setCharacterEncoding("UTF-8");
         String inputOtp = request.getParameter("otp");
+        // OT05: . Ở đây em so sánh mã vừa nhập với mã đã giữ trong phiên.
+        // .. Khớp thì cho phép đặt lại mật khẩu; sai thì yêu cầu nhập lại.
+        // ... Đặt canResetPassword=true rồi mở form mật khẩu mới [OT06].
         
         HttpSession session = request.getSession();
         String sessionOtp = (String) session.getAttribute("forgotOtp");

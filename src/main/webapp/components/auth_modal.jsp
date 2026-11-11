@@ -194,6 +194,9 @@
                                                                 <p class="text-muted" style="font-size: 0.85rem;">Vui lòng nhập định danh tài khoản</p>
                                                             </div>
                                                             <%-- BF10 - ĐĂNG NHẬP: POST /login -> LoginController.doPost() -> UserDAO.login() -> session user. --%>
+                                                            <%-- LG01: . Ở đây em nhận tên đăng nhập và mật khẩu từ người dùng.
+                                                                 .. Bấm Đăng nhập thì form gửi thông tin lên máy chủ.
+                                                                 ... POST /login → LoginController.doPost() [LG02]. --%>
                                                             <form action="${pageContext.request.contextPath}/login" method="POST">
                                                                 <% if (authRedirect !=null) { %>
                                                                     <input type="hidden" name="redirect" value="<%= authRedirect %>">
@@ -235,6 +238,9 @@
                                                                 <p class="text-muted" style="font-size: 0.85rem;">Hệ thống sẽ cấp lại mật khẩu ngẫu nhiên qua Email của bạn</p>
                                                             </div>
                                                             <%-- BF10 - QUÊN MẬT KHẨU: POST email -> ForgotPasswordController -> gửi OTP và lưu phiên khôi phục. --%>
+                                                            <%-- OT01: . Ở đây em nhận email của người dùng đang quên mật khẩu.
+                                                                 .. Bấm gửi mã thì yêu cầu khôi phục được chuyển lên máy chủ.
+                                                                 ... POST /forgot-password → ForgotPasswordController.doPost() [OT02]. --%>
                                                             <form action="${pageContext.request.contextPath}/forgot-password" method="POST">
                                                                 <div class="mb-3">
                                                                     <label class="form-label fw-medium" style="font-size: 0.85rem;">Email đã liên kết</label>
@@ -277,6 +283,9 @@
                                                                 thành viên để nhận ưu đãi và tích điểm</p>
                                                         </div>
                                                         <%-- BF10 - ĐĂNG KÝ: POST thông tin -> RegisterController -> kiểm tra trùng -> UserDAO.register(). --%>
+                                                        <%-- RG01: . Ở đây em nhận thông tin tài khoản người dùng muốn đăng ký.
+                                                             .. Bấm Đăng ký thì form gửi thông tin lên máy chủ.
+                                                             ... POST /register → RegisterController.doPost() [RG02]. --%>
                                                         <form action="${pageContext.request.contextPath}/register"
                                                             method="POST">
                                                             <% if (authRedirect !=null) { %>
@@ -347,6 +356,9 @@
                                                             <p class="text-muted" style="font-size: 0.85rem;">Nhập mã OTP đã được gửi đến email của bạn</p>
                                                         </div>
                                                         <%-- BF10 - OTP: POST mã -> VerifyOtpController; đúng mới cho sang tab đặt mật khẩu, chưa UPDATE users. --%>
+                                                        <%-- OT04: . Ở đây em nhận mã xác nhận người dùng nhập từ email.
+                                                             .. Bấm Xác nhận thì mã được gửi lên máy chủ để đối chiếu.
+                                                             ... POST /verify-otp → VerifyOtpController.doPost() [OT05]; gửi lại mã qua GET /resend-otp [OT08]. --%>
                                                         <form action="${pageContext.request.contextPath}/verify-otp" method="POST">
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Mã xác thực (OTP)</label>
@@ -399,6 +411,9 @@
                                                             <p class="text-muted" style="font-size: 0.85rem;">Vui lòng tạo mật khẩu mới cho tài khoản của bạn</p>
                                                         </div>
                                                         <%-- BF10 - RESET: POST mật khẩu mới -> ResetPasswordController -> UserDAO.updatePassword() -> tab login. --%>
+                                                        <%-- OT06: . Ở đây em nhận mật khẩu mới và phần xác nhận lại mật khẩu.
+                                                             .. Bấm Lưu thì thông tin được gửi tới bước đặt lại mật khẩu.
+                                                             ... POST /reset-password → ResetPasswordController.doPost() [OT07]. --%>
                                                         <form action="${pageContext.request.contextPath}/reset-password" method="POST">
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Mật khẩu mới</label>

@@ -19,6 +19,9 @@ public class ResendOtpController extends HttpServlet {
         
         HttpSession session = request.getSession();
         String forgotEmail = (String) session.getAttribute("forgotEmail");
+        // OT08: . Ở đây em xử lý yêu cầu gửi lại mã khi đã chờ đủ 60 giây.
+        // .. Mã mới thay mã cũ trong phiên để dùng cho lần xác nhận tiếp theo.
+        // ... EmailUtil.sendOTP() [OT03] → form nhập mã [OT04] → kiểm tra [OT05].
         
         if (forgotEmail == null) {
             session.setAttribute("errorMsg", "Phiên làm việc đã hết hạn. Vui lòng thử lại.");

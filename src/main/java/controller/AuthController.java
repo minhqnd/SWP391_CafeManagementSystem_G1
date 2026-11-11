@@ -9,6 +9,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @WebServlet(name = "AuthController", urlPatterns = {"/auth"})
+// AU00: . Ở đây em để sẵn khung xử lý tài khoản cho đường dẫn này.
+// .. Các hàm hiện còn trống, form thật chưa dùng đường dẫn này.
+// Tham khảo: Muốn lần luồng đang chạy thì mở đăng nhập [LG01], đăng ký [RG01] hoặc quên mật khẩu [OT01].
 public class AuthController extends HttpServlet {
 
     @Override

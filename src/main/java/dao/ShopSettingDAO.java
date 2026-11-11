@@ -78,6 +78,9 @@ public class ShopSettingDAO extends BaseDAO {
      * (Khung giờ ca theo tuần nằm ở bảng work_shifts - xem WorkShiftDAO.)
      */
     public ShopSettings getSettings() {
+        // RU05: . Ở đây em đọc thiết lập cửa hàng đã lưu.
+        // .. Giá trị thiếu hoặc không đọc được thì giữ mặc định.
+        // ... Trả ShopSettings về nơi gọi; Controller gửi sang form [RU01].
         ShopSettings settings = new ShopSettings();
         String sql = "SELECT setting_key, setting_value FROM shop_settings";
         try (Connection conn = getConnection();
@@ -94,8 +97,9 @@ public class ShopSettingDAO extends BaseDAO {
 
     /** Lưu toàn bộ cấu hình trong 1 transaction. Trả về false nếu lỗi (VD chưa tạo bảng shop_settings). */
     public boolean saveSettings(ShopSettings settings) {
-        // BF12: Controller đã kiểm tra quy tắc; DAO lưu các khóa cấu hình theo dạng key/value.
-        // Khóa đã có thì UPDATE, chưa có thì INSERT; các khóa được lưu cùng một transaction.
+        // RU04: . Ở đây em lưu thiết lập cửa hàng vào cơ sở dữ liệu.
+        // .. Đã có thì cập nhật, chưa có thì thêm; sáu thiết lập được lưu cùng nhau.
+        // ... Trả true/false về updateRules() [RU03], rồi Controller báo kết quả và tải lại [LP05].
         String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) "
                 + "ON DUPLICATE KEY UPDATE setting_value = ?";
 

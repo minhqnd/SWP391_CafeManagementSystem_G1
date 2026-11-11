@@ -21,6 +21,9 @@ public class ForgotPasswordController extends HttpServlet {
             throws ServletException, IOException {
 
         String email = request.getParameter("email");
+        // OT02: . Ở đây em kiểm tra email có tài khoản rồi tạo mã xác nhận.
+        // .. Em gửi mã qua email và giữ email, mã trong phiên để kiểm tra ở bước sau.
+        // ... EmailUtil.sendOTP(email, mã) [OT03] → mở form nhập mã [OT04].
 
         if (email == null || email.trim().isEmpty()) {
             request.getSession().setAttribute("errorMsg", "Vui lòng nhập địa chỉ email.");
