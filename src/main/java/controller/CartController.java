@@ -86,7 +86,7 @@ public class CartController extends HttpServlet {
         } else if ("remove".equals(action)) {
             cart.removeItem(lineId);
         } else if ("clear".equals(action)) {
-            cart.getItems().clear();
+            cart.clear();
         } else if ("removeSelected".equals(action)) {
             cart.removeSelectedItems();
         } else if ("usePoints".equals(action)) {

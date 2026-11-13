@@ -85,6 +85,7 @@
         </c:if>
 
         <form method="post" action="${ctx}/checkout">
+            <input type="hidden" name="checkoutToken" value="${checkoutToken}">
 
             <div class="row g-4">
 

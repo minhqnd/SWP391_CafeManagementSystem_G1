@@ -36,7 +36,7 @@ public class ResetPasswordController extends HttpServlet {
             return;
         }
 
-        if (newPassword == null || !newPassword.equals(confirmPassword)) {
+        if (newPassword == null || newPassword.length() < 6 || !newPassword.equals(confirmPassword)) {
             session.setAttribute("errorMsg", "Mật khẩu xác nhận không khớp.");
             response.sendRedirect(request.getContextPath() + "/?tab=reset_password");
             return;

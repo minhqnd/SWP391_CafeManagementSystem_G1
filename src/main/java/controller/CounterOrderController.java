@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -308,8 +309,7 @@ public class CounterOrderController extends HttpServlet {
 
         // Tạo mã đơn hàng độc nhất dạng ORD-YYMMDD-XXXX
         String datePrefix = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-        String timeSuffix = String.format("%04d", (int) (System.currentTimeMillis() % 10000));
-        String orderCode = "ORD-" + datePrefix + "-" + timeSuffix;
+        String orderCode = "ORD-" + datePrefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
 
         Order order = new Order();
         order.setOrderCode(orderCode);

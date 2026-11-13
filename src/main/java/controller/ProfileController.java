@@ -18,7 +18,8 @@ public class ProfileController extends HttpServlet {
             throws ServletException, IOException {
         
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
+        if (session == null || session.getAttribute("user") == null
+                || !"ACTIVE".equalsIgnoreCase(((User) session.getAttribute("user")).getStatus())) {
             // Require login
             response.sendRedirect(request.getContextPath() + "/?login=true");
             return;
@@ -30,7 +31,10 @@ public class ProfileController extends HttpServlet {
         // PF02: . Ở đây em lấy mã người đang đăng nhập để đọc lịch sử điểm và quy tắc.
         // .. Em gửi dữ liệu này sang trang hồ sơ; số dư đang hiển thị vẫn lấy từ phiên.
         // ... UserDAO.getLoyaltyHistoryByUserId() [PH02] → forward profile.jsp [PH03].
-        java.util.List<model.LoyaltyTransaction> history = userDAO.getLoyaltyHistoryByUserId(((User)session.getAttribute("user")).getId());
+        User currentUser = (User) session.getAttribute("user");
+        currentUser.setTotalPoints(userDAO.getTotalPoints(currentUser.getId()));
+        session.setAttribute("user", currentUser);
+        java.util.List<model.LoyaltyTransaction> history = userDAO.getLoyaltyHistoryByUserId(currentUser.getId());
         request.setAttribute("loyaltyHistory", history);
 
         // Mốc điểm Admin cài đặt: điểm Aura trừ thẳng vào đơn ở Giỏ hàng
@@ -44,7 +48,8 @@ public class ProfileController extends HttpServlet {
             throws ServletException, IOException {
         
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
+        if (session == null || session.getAttribute("user") == null
+                || !"ACTIVE".equalsIgnoreCase(((User) session.getAttribute("user")).getStatus())) {
             response.sendRedirect(request.getContextPath() + "/?login=true");
             return;
         }

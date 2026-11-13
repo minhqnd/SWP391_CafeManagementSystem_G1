@@ -202,11 +202,13 @@
                                                                     <input type="hidden" name="redirect" value="<%= authRedirect %>">
                                                                 <% } %>
                                                                 <div class="mb-3">
-                                                                    <label class="form-label fw-medium" style="font-size: 0.85rem;">Email</label>
+                                                                    <label for="modal-login-username" class="form-label fw-medium" style="font-size: 0.85rem;">Email hoặc số điện thoại</label>
                                                                     <input type="text"
+                                                                        id="modal-login-username"
                                                                         class="form-control bg-light border-0 p-2"
                                                                         name="username"
-                                                                        placeholder="email@domain.com"
+                                                                        placeholder="Nhập email hoặc số điện thoại"
+                                                                        autocomplete="username"
                                                                         required>
                                                                 </div>
                                                                 <div class="mb-2">

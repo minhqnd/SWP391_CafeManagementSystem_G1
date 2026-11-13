@@ -12,10 +12,12 @@ import java.util.Properties;
 public class EmailUtil {
 
     // TODO: BẠN CẦN THAY ĐỔI EMAIL VÀ MẬT KHẨU ỨNG DỤNG CỦA BẠN VÀO ĐÂY
-    private static final String SENDER_EMAIL = "nguyen.nguyenquoc2004@gmail.com"; 
+    private static final String SENDER_EMAIL = System.getenv("AURA_SMTP_EMAIL");
+    private static final String SMTP_PASSWORD = System.getenv("AURA_SMTP_PASSWORD");
     private static final String SENDER_PASSWORD = "ozhupnrjrrlvlkii"; // Lấy mật khẩu ứng dụng gồm 16 ký tự từ tài khoản Google (đã xóa dấu cách)
 
     public static boolean sendNewPassword(String recipientEmail, String newPassword) {
+        if (SENDER_EMAIL == null || SENDER_EMAIL.isBlank() || SMTP_PASSWORD == null || SMTP_PASSWORD.isBlank()) return false;
         Properties properties = new Properties();
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.smtp.starttls.enable", "true");
@@ -25,7 +27,7 @@ public class EmailUtil {
         Session session = Session.getInstance(properties, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(SENDER_EMAIL, SENDER_PASSWORD);
+                return new PasswordAuthentication(SENDER_EMAIL, SMTP_PASSWORD);
             }
         });
 
@@ -56,6 +58,7 @@ public class EmailUtil {
     }
 
     public static boolean sendOTP(String recipientEmail, String otp) {
+        if (SENDER_EMAIL == null || SENDER_EMAIL.isBlank() || SMTP_PASSWORD == null || SMTP_PASSWORD.isBlank()) return false;
         // OT03: . Ở đây em gửi mã xác nhận đến email được cung cấp.
         // .. Hàm trả kết quả gửi thư thành công hay thất bại.
         // ... Kết quả về ForgotPasswordController [OT02] hoặc ResendOtpController [OT08].
@@ -75,7 +78,7 @@ public class EmailUtil {
         Session session = Session.getInstance(properties, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(SENDER_EMAIL, SENDER_PASSWORD);
+                return new PasswordAuthentication(SENDER_EMAIL, SMTP_PASSWORD);
             }
         });
 

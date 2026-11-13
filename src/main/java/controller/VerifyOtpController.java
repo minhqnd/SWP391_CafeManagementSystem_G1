@@ -27,8 +27,10 @@ public class VerifyOtpController extends HttpServlet {
         HttpSession session = request.getSession();
         String sessionOtp = (String) session.getAttribute("forgotOtp");
         String forgotEmail = (String) session.getAttribute("forgotEmail");
+        Long sentAt = (Long) session.getAttribute("lastOtpSentTime");
         
-        if (sessionOtp == null || forgotEmail == null) {
+        if (sessionOtp == null || forgotEmail == null || sentAt == null
+                || System.currentTimeMillis() - sentAt > 300000L) {
             session.setAttribute("errorMsg", "Phiên xác thực đã hết hạn. Vui lòng yêu cầu lại.");
             response.sendRedirect(request.getContextPath() + "/?tab=forgot");
             return;

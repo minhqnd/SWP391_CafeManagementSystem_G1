@@ -23,6 +23,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * CheckoutController - Bước 2: Xác nhận đơn & Giao nhận
@@ -48,6 +49,9 @@ public class CheckoutController extends HttpServlet {
 
     // Đơn vừa tạo nhưng chưa thanh toán: các món vẫn nằm trong giỏ cho tới khi thanh toán xong
     private static final String PENDING_ORDER_ID = "checkoutPendingOrderId";
+    private static final String CHECKOUT_TOKEN = "checkoutRequestToken";
+    private static final String LAST_CHECKOUT_TOKEN = "lastCheckoutRequestToken";
+    private static final String LAST_CHECKOUT_ORDER = "lastCheckoutOrderId";
     private static final String PENDING_ORDER_ITEMS = "checkoutPendingItems";
 
     private final CartService cartService = new CartService();
@@ -80,6 +84,8 @@ public class CheckoutController extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
+        String checkoutToken = trim(request.getParameter("checkoutToken"));
+        if (checkoutToken.isEmpty()) checkoutToken = UUID.randomUUID().toString();
         Cart cart = CartController.getCart(session);
         boolean pointsStillValid = cartService.refreshCart(cart, CartController.getCustomerId(session));
 
@@ -156,8 +162,9 @@ public class CheckoutController extends HttpServlet {
         int pointsUsed = cart.getPointsUsed();
 
         Order order = new Order();
-        order.setOrderCode(
-                "AURA" + LocalDateTime.now(SHOP_ZONE).format(DateTimeFormatter.ofPattern("yyMMddHHmmssSSS")));
+        String orderCode = "AURA" + LocalDateTime.now(SHOP_ZONE).format(DateTimeFormatter.ofPattern("yyMMddHHmm"))
+                + UUID.randomUUID().toString().replace("-", "").substring(0, 5);
+        order.setOrderCode(orderCode);
         order.setCustomerId(user.getId());
         order.setOrderType(cart.getOrderType());
         order.setStatus("PENDING");
@@ -174,16 +181,29 @@ public class CheckoutController extends HttpServlet {
 
         // Khách quay lại sửa giỏ rồi xác nhận lại: huỷ đơn chờ thanh toán trước đó (hoàn điểm nếu có)
         // để không sinh nhiều đơn "Chờ thanh toán" cho cùng một giỏ hàng
-        Object previousOrderId = session.getAttribute(PENDING_ORDER_ID);
-        if (previousOrderId instanceof Integer) {
-            orderDAO.cancelPendingOrder((Integer) previousOrderId, user.getId());
-            clearPendingOrder(session);
-        }
-
         // RD04: . Ở đây em gửi đơn, các món đã chọn và điểm dùng sang phần lưu đơn.
         // .. Lưu được thì nhận mã đơn; thiếu hàng hoặc thiếu điểm thì quay lại báo khách.
         // ... OrderDAO.placeOrder(đơn, món, điểm dùng) [RD05] → trang thanh toán; QR [EA01], COD [CD01].
-        int orderId = orderDAO.placeOrder(order, items, pointsUsed);
+        int orderId;
+        synchronized (session) {
+            Object duplicateToken = session.getAttribute(LAST_CHECKOUT_TOKEN);
+            Object duplicateOrder = session.getAttribute(LAST_CHECKOUT_ORDER);
+            if (checkoutToken.equals(duplicateToken) && duplicateOrder instanceof Integer) {
+                response.sendRedirect(request.getContextPath() + "/payment?orderId=" + duplicateOrder);
+                return;
+            }
+            Object previousOrderId = session.getAttribute(PENDING_ORDER_ID);
+            if (previousOrderId instanceof Integer) {
+                orderDAO.cancelPendingOrder((Integer) previousOrderId, user.getId());
+                clearPendingOrder(session);
+            }
+            orderId = orderDAO.placeOrder(order, items, pointsUsed);
+            if (orderId > 0) {
+                session.setAttribute(LAST_CHECKOUT_TOKEN, checkoutToken);
+                session.setAttribute(LAST_CHECKOUT_ORDER, orderId);
+                session.setAttribute(CHECKOUT_TOKEN, UUID.randomUUID().toString());
+            }
+        }
         if (orderId == OrderDAO.NOT_ENOUGH_STOCK) {
             request.setAttribute("checkoutError", "Có món đã hết hoặc không đủ số lượng. Vui lòng sửa giỏ hàng.");
             showCheckout(request, response, cart);
@@ -242,6 +262,11 @@ public class CheckoutController extends HttpServlet {
             throws ServletException, IOException {
 
         User sessionUser = (User) request.getSession().getAttribute("user");
+        HttpSession checkoutSession = request.getSession();
+        if (checkoutSession.getAttribute(CHECKOUT_TOKEN) == null) {
+            checkoutSession.setAttribute(CHECKOUT_TOKEN, UUID.randomUUID().toString());
+        }
+        request.setAttribute("checkoutToken", checkoutSession.getAttribute(CHECKOUT_TOKEN));
         User user = CartController.isCustomer(sessionUser) ? sessionUser : null;
 
         // Lần đầu mở trang: điền sẵn thông tin từ tài khoản; khi gửi lại form: giữ

@@ -115,6 +115,7 @@
         <form class="loyalty-panel content-card" method="post" action="${ctx}/admin/loyalty">
             <input type="hidden" name="action" value="updateRules">
             <input type="hidden" name="csrfToken" value="${sessionScope.loyaltyCsrfToken}">
+            <input type="hidden" name="operationToken" value="${sessionScope.loyaltyOperationToken}">
             <input type="hidden" name="phone" value="${fn:escapeXml(searchPhone)}">
             <h2 class="section-title">Quy tắc tích &amp; đổi điểm</h2>
             <div class="rules-grid">
@@ -181,6 +182,7 @@
                 <form id="adjustPointsForm" method="post" action="${ctx}/admin/loyalty">
                     <input type="hidden" name="action" value="adjust">
                     <input type="hidden" name="csrfToken" value="${sessionScope.loyaltyCsrfToken}">
+                    <input type="hidden" name="operationToken" value="${sessionScope.loyaltyOperationToken}">
                     <input type="hidden" name="customerId" value="${activeCustomer.id}">
                     <input type="hidden" name="phone" value="${fn:escapeXml(activeCustomer.phone)}">
                     <input type="hidden" id="adjustType" name="adjustType">

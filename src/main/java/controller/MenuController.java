@@ -110,9 +110,13 @@ public class MenuController extends HttpServlet {
             json.append("}");
 
             out.print(json.toString());
+        } catch (NumberFormatException e) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.print("{\"error\": \"Invalid product ID\"}");
         } catch (Exception e) {
+            getServletContext().log("Failed to load product detail", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print("{\"error\": \"" + e.getMessage() + "\"}");
+            out.print("{\"error\": \"Unable to load product detail\"}");
         }
     }
 

@@ -31,6 +31,9 @@ public class AdminLoyaltyController extends HttpServlet {
         if (session.getAttribute("loyaltyCsrfToken") == null) {
             session.setAttribute("loyaltyCsrfToken", UUID.randomUUID().toString());
         }
+        if (session.getAttribute("loyaltyOperationToken") == null) {
+            session.setAttribute("loyaltyOperationToken", UUID.randomUUID().toString());
+        }
         moveFlash(session, request, "loyaltyMessage");
         moveFlash(session, request, "loyaltyError");
 
@@ -98,6 +101,13 @@ public class AdminLoyaltyController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/admin/loyalty");
             return;
         }
+        String operationToken = trim(request.getParameter("operationToken"));
+        Object expectedOperation = session.getAttribute("loyaltyOperationToken");
+        if (expectedOperation == null || !expectedOperation.toString().equals(operationToken)) {
+            session.setAttribute("loyaltyError", "Yêu cầu đã được xử lý hoặc không hợp lệ.");
+            response.sendRedirect(request.getContextPath() + "/admin/loyalty");
+            return;
+        }
 
         String action = trim(request.getParameter("action"));
         // LP08: . Ở đây em đọc thao tác gửi từ form sau bước kiểm tra quyền Admin và mã bảo vệ.
@@ -120,6 +130,7 @@ public class AdminLoyaltyController extends HttpServlet {
             } else {
                 throw new IllegalArgumentException("Thao tác không hợp lệ.");
             }
+            session.setAttribute("loyaltyOperationToken", UUID.randomUUID().toString());
         } catch (IllegalArgumentException | SQLException e) {
             getServletContext().log("Admin loyalty update failed", e);
             session.setAttribute("loyaltyError", e.getMessage());
@@ -138,7 +149,7 @@ public class AdminLoyaltyController extends HttpServlet {
         // .. Hợp lệ thì em thay ba giá trị trong cấu hình rồi yêu cầu lưu.
         // ... settingDAO.saveSettings(settings) [RU04]; giới hạn ở [RU06].
         long earnUnit = parseLong(request.getParameter("pointsEarnUnit"), "Số tiền chi tiêu để nhận 1 điểm");
-        int pointsStep = (int) parseLong(request.getParameter("pointsStep"), "Số điểm cho mỗi lần đổi");
+        long pointsStep = parseLong(request.getParameter("pointsStep"), "Số điểm cho mỗi lần đổi");
         long stepValue = parseLong(request.getParameter("pointsStepValue"), "Số tiền giảm cho mỗi lần đổi");
         // RU06: . Ở đây em giới hạn mức chi tiêu, số điểm mỗi mốc và tiền giảm.
         // .. Tiền tích từ 1 đến 100 triệu; mốc đổi từ 1 đến 1 triệu điểm; tiền giảm từ 0 đến 100 triệu.
@@ -146,7 +157,7 @@ public class AdminLoyaltyController extends HttpServlet {
         if (earnUnit < 1 || earnUnit > 100_000_000L) {
             throw new IllegalArgumentException("Số tiền chi tiêu để nhận 1 điểm phải từ 1 đến 100.000.000đ.");
         }
-        if (pointsStep < 1 || pointsStep > 1_000_000) {
+        if (pointsStep < 1 || pointsStep > 1_000_000L) {
             throw new IllegalArgumentException("Số điểm cho mỗi lần đổi phải từ 1 đến 1.000.000 điểm.");
         }
         if (stepValue < 0 || stepValue > 100_000_000L) {
@@ -155,7 +166,7 @@ public class AdminLoyaltyController extends HttpServlet {
 
         ShopSettings settings = settingDAO.getSettings();
         settings.setPointsEarnUnit(earnUnit);
-        settings.setPointsStep(pointsStep);
+        settings.setPointsStep(Math.toIntExact(pointsStep));
         settings.setPointsStepValue(stepValue);
         if (!settingDAO.saveSettings(settings)) {
             throw new IllegalArgumentException("Không thể lưu quy tắc vào shop_settings.");
@@ -166,8 +177,13 @@ public class AdminLoyaltyController extends HttpServlet {
         // LP03: . Ở đây em kiểm tra khách hàng, số điểm và thao tác Admin gửi lên.
         // .. Cộng thì giữ số dương; trừ thì đổi thành số âm.
         // ... loyaltyDAO.adjustPoints(ID khách, điểm có dấu) [LP04].
-        int customerId = (int) parseLong(request.getParameter("customerId"), "Khách hàng");
-        int points = (int) parseLong(request.getParameter("points"), "Số điểm");
+        long customerIdValue = parseLong(request.getParameter("customerId"), "Khách hàng");
+        long pointsValue = parseLong(request.getParameter("points"), "Số điểm");
+        if (customerIdValue > Integer.MAX_VALUE || pointsValue > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Giá trị số vượt quá giới hạn.");
+        }
+        int customerId = (int) customerIdValue;
+        int points = (int) pointsValue;
         if (customerId <= 0) throw new IllegalArgumentException("Khách hàng không hợp lệ.");
         if (points <= 0 || points > 1_000_000) {
             throw new IllegalArgumentException("Số điểm điều chỉnh phải từ 1 đến 1.000.000.");

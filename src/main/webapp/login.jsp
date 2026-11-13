@@ -399,12 +399,12 @@
                     
                     <form action="${pageContext.request.contextPath}/login" method="POST">
                         <div class="mb-3">
-                            <label class="form-label">Email đăng nhập</label>
+                            <label for="login-username" class="form-label">Email hoặc số điện thoại</label>
                             <div class="input-group">
                                 <span class="input-group-text">
                                     <span class="material-symbols-outlined fs-5">account_circle</span>
                                 </span>
-                                <input type="email" class="form-control" name="username" placeholder="Ví dụ: nguyen@example.com" required autocomplete="username">
+                                <input type="text" id="login-username" class="form-control" name="username" placeholder="Nhập email hoặc số điện thoại" required autocomplete="username">
                             </div>
                         </div>
                         
