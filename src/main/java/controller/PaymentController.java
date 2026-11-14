@@ -28,9 +28,8 @@ import java.nio.charset.StandardCharsets;
  * 1. GET  /payment               : Hiển thị giao diện thanh toán chuyển khoản VietQR hoặc chọn COD.
  * 2. GET  /payment?action=status : API để trang JSP gọi định kỳ (polling) kiểm tra đơn đã thanh toán xong chưa.
  * 3. POST /payment?action=cod    : Khách hàng chọn hình thức thanh toán khi nhận hàng (COD).
- * 4. POST /payment/callback      : Nhận webhook từ cổng thanh toán tự động khi tiền về tài khoản.
  */
-@WebServlet(name = "PaymentController", urlPatterns = {"/payment", "/payment/callback"})
+@WebServlet(name = "PaymentController", urlPatterns = {"/payment"})
 public class PaymentController extends HttpServlet {
 
     // Khởi tạo các DAO để thao tác với cơ sở dữ liệu
@@ -44,12 +43,6 @@ public class PaymentController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // Endpoint callback chỉ chấp nhận phương thức POST, nếu gọi bằng GET thì báo lỗi 405
-        if ("/payment/callback".equals(request.getServletPath())) {
-            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Callback chỉ hỗ trợ POST");
-            return;
-        }
 
         // Bước 1: Kiểm tra xem người dùng đã đăng nhập tài khoản khách hàng chưa
         HttpSession session = request.getSession();
@@ -127,7 +120,7 @@ public class PaymentController extends HttpServlet {
     }
 
     /**
-     * Xử lý request POST: Chọn thanh toán COD hoặc nhận Webhook callback từ cổng thanh toán.
+     * Xử lý request POST: Chọn thanh toán COD hoặc kiểm tra trạng thái thanh toán.
      */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -135,13 +128,7 @@ public class PaymentController extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
 
-        // Nhánh 1: Cổng thanh toán gọi Webhook callback báo kết quả
-        if ("/payment/callback".equals(request.getServletPath())) {
-            handleCallback(request, response);
-            return;
-        }
-
-        // Nhánh 2: Thao tác của khách hàng tại giao diện thanh toán
+        // Thao tác của khách hàng tại giao diện thanh toán
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
         if (!CartController.isCustomer(user)) {
@@ -247,64 +234,6 @@ public class PaymentController extends HttpServlet {
 
         // Vẫn chưa nhận được tiền: trả về paid = false để frontend tiếp tục chờ
         response.getWriter().write("{\"paid\":false,\"status\":\"PENDING\"}");
-    }
-
-    /**
-     * Xử lý Webhook do Payment Gateway gửi sang (POST /payment/callback).
-     */
-    private void handleCallback(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-
-        ShopSettings settings = shopSettingDAO.getSettings();
-
-        // Đọc các tham số gửi từ Gateway
-        String orderCode = trim(request.getParameter("orderCode"));
-        String transactionCode = trim(request.getParameter("transactionCode"));
-        String amountText = trim(request.getParameter("amount"));
-        String status = trim(request.getParameter("status"));
-        String gatewayReference = trim(request.getParameter("gatewayReference"));
-        String signature = trim(request.getParameter("signature"));
-
-        // Xác thực chữ ký bí mật HMAC để chống làm giả dữ liệu
-        String canonical = PaymentService.canonical(orderCode, transactionCode, amountText, status);
-        boolean isValidSignature = PaymentService.verify(settings.getPaymentCallbackSecret(), canonical, signature);
-
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-
-        if (!isValidSignature) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("{\"accepted\":false,\"successful\":false,\"message\":\"Sai chữ ký xác thực\"}");
-            return;
-        }
-
-        try {
-            BigDecimal amount = new BigDecimal(amountText);
-            String payload = "{\"orderCode\":\"" + escapeJson(orderCode)
-                    + "\",\"transactionCode\":\"" + escapeJson(transactionCode)
-                    + "\",\"amount\":\"" + escapeJson(amountText)
-                    + "\",\"status\":\"" + escapeJson(status) + "\"}";
-
-            // Cập nhật trạng thái thanh toán vào DB
-            PaymentDAO.CallbackResult result = paymentDAO.applyGatewayCallback(
-                    orderCode,
-                    transactionCode,
-                    amount,
-                    status,
-                    gatewayReference,
-                    payload,
-                    settings.getPointsEarnUnit()
-            );
-
-            response.setStatus(result.accepted() ? HttpServletResponse.SC_OK : HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("{\"accepted\":" + result.accepted()
-                    + ",\"successful\":" + result.successful()
-                    + ",\"message\":\"" + escapeJson(result.message()) + "\"}");
-
-        } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("{\"accepted\":false,\"successful\":false,\"message\":\"Số tiền không hợp lệ\"}");
-        }
     }
 
     /**

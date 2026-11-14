@@ -134,7 +134,7 @@
                     <ol class="pay-guide mb-0">
                         <li>Mở ứng dụng ngân hàng, chọn <b>Quét mã QR</b> và quét mã bên trên.</li>
                         <li>Kiểm tra đúng <b>số tiền</b> và <b>nội dung chuyển khoản</b> là mã đơn <b><c:out value="${order.orderCode}" /></b>.</li>
-                        <li>Hệ thống chỉ xác nhận khi nhận callback hợp lệ từ cổng thanh toán.</li>
+                        <li>Hệ thống sẽ tự động xác nhận sau khi nhận được chuyển khoản (vui lòng giữ nguyên trang này).</li>
                     </ol>
                 </div>
             </div>
