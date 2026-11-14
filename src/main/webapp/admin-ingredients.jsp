@@ -141,14 +141,14 @@
                         <th class="text-end">Giá nhập gần nhất</th>
                         <th class="text-center">Dùng trong</th>
                         <th class="text-center">Trạng thái</th>
-                        <th class="text-end" style="width: 100px;">Thao tác</th>
+                        <th class="text-end" style="width: 175px;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     <c:forEach var="item" items="${ingredients}">
                         <tr>
                             <td class="text-danger fw-bold">#<c:out value="${item.id}" /></td>
-                            <td><strong class="text-dark"><c:out value="${item.name}" /></strong><c:if test="${not item.active}"><span class="badge bg-secondary d-block mt-1">Ngừng sử dụng</span></c:if></td>
+                            <td><strong class="text-dark"><c:out value="${item.name}" /></strong><c:if test="${not item.active}"><span class="badge bg-secondary d-block mt-1" style="width:fit-content;">Ngừng sử dụng</span></c:if></td>
                             <td class="text-muted"><c:out value="${item.unit}" /></td>
                             <td><c:out value="${item.supplierName}" default="—" /></td>
                             <td class="text-end fw-bold">
@@ -166,7 +166,7 @@
                                 </c:choose>
                             </td>
                             <td class="text-center">
-                                <span class="badge bg-light text-dark border px-2 py-1"><c:out value="${item.usedInRecipesCount}" /> món</span>
+                                <a href="${ctx}/admin/recipes" class="badge bg-light text-dark border px-2 py-1 text-decoration-none" title="Xem công thức BOM"><c:out value="${item.usedInRecipesCount}" /> món</a>
                             </td>
                             <td class="text-center">
                                 <c:choose>
@@ -182,10 +182,17 @@
                                 </c:choose>
                             </td>
                             <td class="text-end">
-                                <button type="button" class="btn btn-sm btn-light border me-1" title="Chỉnh sửa"
-                                        onclick="prepareEditIngredient(${item.id}, '<c:out value="${item.name}" />', '<c:out value="${item.unit}" />', ${item.supplierId != null ? item.supplierId : 0}, ${item.minStockLevel})">
-                                    <span class="material-symbols-outlined fs-6 align-middle text-secondary">edit</span>
-                                </button>
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <c:if test="${item.active}">
+                                        <a href="${ctx}/admin/purchases?ingredientId=${item.id}" class="btn btn-sm btn-light border text-success" title="Lập phiếu nhập cho nguyên liệu này">
+                                            <span class="material-symbols-outlined fs-6 align-middle">add_shopping_cart</span>
+                                        </a>
+                                    </c:if>
+                                    <button type="button" class="btn btn-sm btn-light border" title="Chỉnh sửa"
+                                            onclick="prepareEditIngredient(${item.id}, '<c:out value="${item.name}" />', '<c:out value="${item.unit}" />', ${item.supplierId != null ? item.supplierId : 0}, ${item.minStockLevel})">
+                                        <span class="material-symbols-outlined fs-6 align-middle text-secondary">edit</span>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </c:forEach>

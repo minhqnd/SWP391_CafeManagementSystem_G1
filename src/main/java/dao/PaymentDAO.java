@@ -277,6 +277,57 @@ public class PaymentDAO extends BaseDAO {
         try(Connection conn=getConnection()){return findLatestPayment(conn,orderId);}catch(Exception e){return null;}
     }
 
+    public java.util.List<Payment> getAllPayments(String search, String status, String method) {
+        java.util.List<Payment> list = new java.util.ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT p.*, o.order_code, o.recipient_name, o.recipient_phone, o.order_type " +
+                "FROM payments p " +
+                "JOIN orders o ON p.order_id = o.id " +
+                "WHERE 1=1 "
+        );
+        java.util.List<Object> params = new java.util.ArrayList<>();
+
+        if (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status)) {
+            sql.append("AND p.status = ? ");
+            params.add(status.trim().toUpperCase());
+        }
+        if (method != null && !method.trim().isEmpty() && !"ALL".equalsIgnoreCase(method)) {
+            sql.append("AND p.payment_method = ? ");
+            params.add(method.trim().toUpperCase());
+        }
+        if (search != null && !search.trim().isEmpty()) {
+            String kw = "%" + search.trim() + "%";
+            sql.append("AND (o.order_code LIKE ? OR p.transaction_code LIKE ? OR p.gateway_reference LIKE ? OR o.recipient_name LIKE ? OR o.recipient_phone LIKE ?) ");
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+        }
+        sql.append("ORDER BY p.id DESC");
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Payment p = map(rs);
+                    p.setGatewayReference(rs.getString("gateway_reference"));
+                    p.setOrderCode(rs.getString("order_code"));
+                    p.setCustomerName(rs.getString("recipient_name"));
+                    p.setCustomerPhone(rs.getString("recipient_phone"));
+                    p.setOrderType(rs.getString("order_type"));
+                    list.add(p);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     private Payment findLatestPayment(Connection conn,int orderId)throws java.sql.SQLException{
         try(PreparedStatement ps=conn.prepareStatement("SELECT * FROM payments WHERE order_id=? ORDER BY id DESC LIMIT 1")){
             ps.setInt(1,orderId);try(ResultSet rs=ps.executeQuery()){return rs.next()?map(rs):null;}
