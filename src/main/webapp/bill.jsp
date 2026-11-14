@@ -215,6 +215,9 @@
                         </span>
                         <span class="font-body-md text-body-md font-semibold text-on-surface">
                             <c:choose>
+                                <c:when test="${payment.paymentMethod eq 'CASH' and not order.delivery}">
+                                    Tiền mặt tại quầy
+                                </c:when>
                                 <c:when test="${not empty payment}">
                                     ${payment.paymentMethodDisplay}
                                 </c:when>
