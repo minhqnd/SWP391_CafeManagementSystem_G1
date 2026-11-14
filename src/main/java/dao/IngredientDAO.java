@@ -39,20 +39,25 @@ public class IngredientDAO extends BaseDAO {
         return list;
     }
 
-    /** Latest purchase unit price per ingredient (prioritizing received POs, with fallback to latest PO). */
+    /** Latest received purchase unit price per ingredient. Draft and ordered POs are not inventory costs. */
     public Map<Integer, BigDecimal> getLatestPurchasePrices() {
+        // RC08: . Ở đây em lấy giá nhập gần nhất của từng nguyên liệu theo điều kiện trong câu truy vấn.
+        // .. Kết quả là bảng tra đơn giá theo mã nguyên liệu; Controller xử lý trường hợp thiếu giá.
+        // ... Map giá nhập về AdminRecipeController [RC02] để tính định lượng nhân đơn giá.
+        // BF11 - NGUỒN GIÁ VỐN: phiếu PARTIALLY_RECEIVED/RECEIVED/CLOSED; cần giao dịch nhập, riêng RECEIVED giữ tương thích dữ liệu cũ.
+        // Map trả ingredientId -> unit_price; thiếu giá thì Controller/JSP đánh dấu chưa đủ giá vốn.
         Map<Integer, BigDecimal> prices = new HashMap<>();
         String sql = "SELECT ingredient_id, unit_price FROM (" +
                      "  SELECT poi.ingredient_id, poi.unit_price, " +
                      "         ROW_NUMBER() OVER (PARTITION BY poi.ingredient_id " +
-                     "             ORDER BY CASE WHEN po.status IN ('RECEIVED','PARTIALLY_RECEIVED','CLOSED') THEN 0 ELSE 1 END ASC, " +
-                     "                      COALESCE(tx.created_at, po.created_at) DESC, " +
+                     "             ORDER BY COALESCE(tx.created_at, po.created_at) DESC, " +
                      "                      COALESCE(tx.id, 0) DESC, poi.id DESC) AS row_num " +
                      "  FROM purchase_order_items poi " +
-                     "  JOIN purchase_orders po ON po.id = poi.po_id AND po.status <> 'CANCELLED' " +
+                     "  JOIN purchase_orders po ON po.id = poi.po_id AND po.status IN ('PARTIALLY_RECEIVED','RECEIVED','CLOSED') " +
                      "  LEFT JOIN inventory_transactions tx " +
                      "    ON tx.reference_type = 'PURCHASE_ORDER' AND tx.reference_id = po.id " +
                      "   AND tx.ingredient_id = poi.ingredient_id AND tx.transaction_type = 'IN_PURCHASE'" +
+                     "  WHERE tx.id IS NOT NULL OR po.status = 'RECEIVED'" +
                      ") ranked WHERE row_num = 1";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);

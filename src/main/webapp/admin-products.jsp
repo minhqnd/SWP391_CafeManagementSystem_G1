@@ -151,6 +151,9 @@
             <c:if test="${not empty selectedProduct}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedProduct.id}" /></span></c:if>
         </div>
         <%-- BF11 - LƯU MÓN: POST tên/danh mục/giá/ảnh và các mảng size/topping; Controller dựng variants_config. --%>
+        <%-- PR01: . Ở đây em hiển thị danh sách món; nếu Admin chọn sửa thì điền sẵn thông tin món đó vào form.
+             .. Bấm Lưu gửi thông tin món, size, topping và ảnh; nút mắt dùng để bật hoặc tắt bán.
+             ... POST /admin/products → doPost() [PR04]; dữ liệu hiển thị lấy từ doGet() [PR02]. --%>
         <form id="productForm" method="post" action="${ctx}/admin/products" enctype="multipart/form-data">
             <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="${empty selectedProduct ? 0 : selectedProduct.id}">
             <input type="hidden" id="variantsConfig" value="${fn:escapeXml(selectedProduct.variantsConfig)}">

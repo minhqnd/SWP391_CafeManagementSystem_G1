@@ -38,6 +38,9 @@ public class AdminCategoriesController extends HttpServlet {
         moveFlash(session, request, "categoryError");
         try {
             // BF11 - MỞ TRANG: lấy danh sách và thống kê, gán request để JSP hiển thị.
+            // CA02: . Ở đây em nạp danh sách danh mục khi Admin mở trang hoặc bấm sửa.
+            // .. Danh sách và danh mục đang chọn đã sẵn sàng để hiển thị.
+            // ... CategoryDAO.getAllCategoriesWithCount() [CA03] → request → admin-categories.jsp [CA01].
             List<Category> categories = categoryDAO.getAllCategoriesWithCount();
             request.setAttribute("categories", categories);
             request.setAttribute("categoryTotal", categories.size());
@@ -79,6 +82,9 @@ public class AdminCategoriesController extends HttpServlet {
 
         // BF11 - NHẬN FORM: save thêm/sửa, toggle ẩn/hiện; nhánh delete cũ còn ở backend nhưng UI không có nút.
         String action = request.getParameter("action");
+        // CA04: . Ở đây em xem Admin vừa bấm Lưu hay nút ẩn, hiện sau khi kiểm tra quyền và mã bảo vệ.
+        // .. Mỗi thao tác được chuyển sang đúng hàm xử lý.
+        // ... action=save → save() [CA05]; action=toggle → toggle() [CA07]; delete là nhánh backend cũ.
         try {
             if ("save".equals(action)) {
                 save(request, session);
@@ -112,6 +118,9 @@ public class AdminCategoriesController extends HttpServlet {
             throws SQLException, ClassNotFoundException, ServletException, IOException {
         // BF11 - LƯU: id=0 tạo mới, id>0 cập nhật; form multipart gửi kèm ảnh dưới dạng Part.
         int id = parseId(request.getParameter("id"), true);
+        // CA05: . Ở đây em kiểm tra tên, trạng thái, ảnh và tên danh mục có bị trùng không.
+        // .. Mã bằng không thì thêm mới; có mã thì sửa danh mục đó.
+        // ... CategoryDAO.saveCategory(danh mục, ảnh và thông tin tệp) [CA06] → tải lại [CA02].
         String name = trimToNull(request.getParameter("name"));
         String status = request.getParameter("status");
         boolean removeImage = "true".equals(request.getParameter("removeImage"));
@@ -149,6 +158,9 @@ public class AdminCategoriesController extends HttpServlet {
     }
 
     private void toggle(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
+        // CA07: . Ở đây em nhận danh mục và trạng thái Admin muốn chuyển sang.
+        // .. Em chỉ đổi hiện hoặc ẩn, không xóa danh mục.
+        // ... CategoryDAO.updateCategoryStatus(mã danh mục, trạng thái) [CA08] → tải lại [CA02].
         // BF11 - NÚT MẮT: đổi ACTIVE/INACTIVE, không xóa dòng danh mục hay lịch sử liên quan.
         int id = parseId(request.getParameter("id"), false);
         String status = request.getParameter("status");

@@ -26,6 +26,9 @@ public class ProductDetailController extends HttpServlet {
             throws ServletException, IOException {
 
         String idParam = request.getParameter("id");
+        // MN07: . Ở đây em nhận mã món khách muốn xem ở trang chi tiết riêng.
+        // .. Em đọc món đó và các món liên quan rồi gửi sang trang hiển thị.
+        // ... ProductDAO.getProductById() [MN06] → request → product-detail.jsp [MN08].
 
         // Validate tham số id
         if (idParam == null || idParam.trim().isEmpty()) {

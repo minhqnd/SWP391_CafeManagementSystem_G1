@@ -8,6 +8,9 @@ import model.ProductIngredient;
 public class ProductIngredientDAO extends BaseDAO {
 
     public void saveRecipe(int productId, List<ProductIngredient> ingredients) throws Exception {
+        // RC06: . Ở đây em thay công thức cũ bằng các dòng nguyên liệu vừa kiểm tra.
+        // .. Em lưu cả lần thay đổi cùng nhau; lỗi thì khôi phục công thức cũ, chưa trừ tồn kho ở bước này.
+        // ... Trở về AdminRecipeController.doPost() để chuẩn bị chuyển trang [RC07].
         // BF11 - BOM: thay toàn bộ dòng product_ingredients của một món trong cùng transaction.
         // Đây là lưu định mức; KHÔNG trừ tồn kho khi Admin bấm Lưu công thức.
         String deleteOldBomSql = "DELETE FROM product_ingredients WHERE product_id = ?";
@@ -89,6 +92,9 @@ public class ProductIngredientDAO extends BaseDAO {
     }
 
     public java.util.Map<Integer, List<ProductIngredient>> getAllProductIngredientsMap() {
+        // RC03: . Ở đây em đọc công thức của các món kèm tên và đơn vị nguyên liệu.
+        // .. Em gom các dòng nguyên liệu theo từng mã món để tra nhanh.
+        // ... Map công thức về AdminRecipeController.doGet() [RC02].
         // BF11: đọc BOM toàn bộ món một lần, gom theo productId để dựng các thẻ trên trang công thức.
         java.util.Map<Integer, List<ProductIngredient>> map = new java.util.LinkedHashMap<>();
         String sql = "SELECT pi.product_id, pi.ingredient_id, pi.quantity_required, i.name AS ingredient_name, i.unit "

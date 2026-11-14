@@ -43,6 +43,9 @@ public class AdminProductsController extends HttpServlet {
             // BF11: lọc theo categoryId và q; editId chọn món để nạp selectedProduct vào form sửa.
             Integer categoryId = parseOptionalId(request.getParameter("categoryId"));
             String keyword = request.getParameter("q");
+            // PR02: . Ở đây em đọc điều kiện tìm món và kiểm tra Admin có chọn món để sửa không.
+            // .. Danh sách, thống kê và thông tin món đang chọn đã sẵn sàng để hiển thị.
+            // ... ProductDAO.getProductsForAdmin() [PR03] → request → admin-products.jsp [PR01].
             List<Product> products = productDAO.getProductsForAdmin(categoryId, keyword);
             int[] stats = productDAO.getProductAdminStats();
             request.setAttribute("categories", categories);
@@ -90,6 +93,9 @@ public class AdminProductsController extends HttpServlet {
         try {
             // BF11: form gửi action=save để thêm/sửa, action=toggle để đổi trạng thái đang bán.
             String action = request.getParameter("action");
+            // PR04: . Ở đây em chọn xử lý lưu món hoặc bật, tắt bán theo nút Admin vừa bấm.
+            // .. Yêu cầu chỉ được xử lý sau khi kiểm tra Admin và mã bảo vệ form.
+            // ... action=save → save() [PR05]; action=toggle → toggle() [PR08].
             if ("save".equals(action)) save(request, session);
             else if ("toggle".equals(action)) toggle(request, session);
             else session.setAttribute("productError", "Thao tác không hợp lệ.");
@@ -113,6 +119,9 @@ public class AdminProductsController extends HttpServlet {
         // BF11 - KIỂM TRA: tên, danh mục tồn tại, giá không âm, ảnh hợp lệ rồi mới lưu.
         // id=0 thêm mới; id>0 sửa món và giữ trạng thái bán/hướng dẫn công thức đã có.
         int id = parseId(request.getParameter("id"), true);
+        // PR05: . Ở đây em kiểm tra tên món, danh mục, giá bán và ảnh trước khi lưu.
+        // .. Khi sửa em giữ trạng thái bán cũ, rồi ghép size và topping vào thông tin món.
+        // ... buildVariantsConfig() [PR06] → ProductDAO.saveProduct(món, ảnh và thông tin tệp) [PR07].
         int categoryId = parseId(request.getParameter("categoryId"), false);
         String name = trimToNull(request.getParameter("name"));
         String description = trimToNull(request.getParameter("description"));
@@ -173,6 +182,9 @@ public class AdminProductsController extends HttpServlet {
     }
 
     private String buildVariantsConfig(HttpServletRequest request, String recipeInstructions) {
+        // PR06: . Ở đây em kiểm tra tên và phụ thu của các size, topping vừa nhập.
+        // .. Em ghép thành cấu hình của món; phải có một size không phụ thu để khớp giá gốc.
+        // ... Chuỗi JSON trở về save() [PR05], gắn vào Product.variantsConfig rồi đưa tới DAO [PR07].
         // BF11 - SIZE/TOPPING: đọc các mảng tên/giá từ form, kiểm tra phụ thu rồi dựng JSON lưu cùng món.
         String[] names = request.getParameterValues("sizeName");
         String[] deltas = request.getParameterValues("sizeDelta");
@@ -239,6 +251,9 @@ public class AdminProductsController extends HttpServlet {
     }
 
     private void toggle(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
+        // PR08: . Ở đây em nhận mã món và trạng thái bán Admin muốn đổi.
+        // .. Em chỉ bật hoặc tắt bán để giữ nguyên lịch sử đơn hàng.
+        // ... ProductDAO.updateProductAvailability(mã món, trạng thái bán) [PR09] → tải lại [PR02].
         // BF11 - NÚT MẮT: đổi is_available, không DELETE sản phẩm; lịch sử đơn vẫn còn.
         int id = parseId(request.getParameter("id"), false);
         boolean available = "true".equals(request.getParameter("available"));

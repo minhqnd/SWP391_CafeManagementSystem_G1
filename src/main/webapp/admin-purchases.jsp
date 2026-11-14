@@ -308,41 +308,17 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-secondary">Liên kết đề xuất từ Barista (Không bắt buộc)</label>
-                            <select class="form-select" name="restockRequestId" id="restockRequestSelect" onchange="applyRestockPreset(this)">
+                            <select class="form-select" name="restockRequestId" id="purchaseRequest">
                                 <option value="">-- Lập phiếu độc lập (Không liên kết) --</option>
                                 <c:forEach var="r" items="${approvedRequests}">
-                                    <option value="${r.id}"
-                                            data-ing-id="${not empty r.items ? r.items[0].ingredientId : ''}"
-                                            data-qty="${not empty r.items ? r.items[0].quantity : ''}">
-                                        #RR-${r.id}: <c:out value="${r.itemsSummary}"/>
-                                    </option>
+                                    <option value="${r.id}">#RR-${r.id}: <c:out value="${r.itemsSummary}"/></option>
                                 </c:forEach>
                             </select>
                         </div>
                     </div>
 
-                    <div class="p-3 rounded-3 border bg-light mb-3">
-                        <div class="row g-3">
-                            <div class="col-md-5">
-                                <label class="form-label fw-bold small text-secondary">Nguyên liệu nhập <span class="text-danger">*</span></label>
-                                <select class="form-select" name="ingredientId" id="createIngSelect" required>
-                                    <c:forEach var="i" items="${allIngredients}">
-                                        <option value="${i.id}">
-                                            <c:out value="${i.name}"/> (${i.unit}) · Tồn: <fmt:formatNumber value="${i.currentStock}" pattern="#,##0.###" />
-                                        </option>
-                                    </c:forEach>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold small text-secondary">Số lượng đặt <span class="text-danger">*</span></label>
-                                <input class="form-control" name="quantity" id="createQtyInput" type="number" min="0.001" step="0.001" placeholder="VD: 10" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold small text-secondary">Tổng tiền lô hàng (đ) <span class="text-danger">*</span></label>
-                                <input class="form-control" name="totalPrice" id="createTotalInput" type="number" min="0" step="1" placeholder="VD: 500000" required>
-                            </div>
-                        </div>
-                    </div>
+<div id="purchaseLines"><jsp:include page="/components/purchase-order-line.jsp"/></div>
+    <button type="button" class="btn btn-outline-secondary mb-3" id="addPurchaseLine">Thêm nguyên liệu</button>
 
                     <div>
                         <label class="form-label fw-bold small text-secondary">Ghi chú phiếu nhập</label>
@@ -578,21 +554,6 @@
         });
     }
 
-    function applyRestockPreset(selectElem) {
-        const opt = selectElem.selectedOptions[0];
-        if (!opt || !opt.value) return;
-        const ingId = opt.dataset.ingId;
-        const qty = opt.dataset.qty;
-        if (ingId) {
-            const ingSelect = document.getElementById('createIngSelect');
-            if (ingSelect) ingSelect.value = ingId;
-        }
-        if (qty) {
-            const qtyInput = document.getElementById('createQtyInput');
-            if (qtyInput) qtyInput.value = qty;
-        }
-    }
-
     function updateReceiveDiff(inputElem) {
         const card = inputElem.closest('.receive-item-card');
         if (!card) return;
@@ -640,19 +601,63 @@
         const reqId = params.get('fromRequestId');
         if (ingId || reqId) {
             if (ingId) {
-                const ingSelect = document.getElementById('createIngSelect');
+                const ingSelect = document.querySelector('#purchaseLines select[name=ingredientId]');
                 if (ingSelect) ingSelect.value = ingId;
             }
             if (reqId) {
-                const reqSelect = document.getElementById('restockRequestSelect');
+                const reqSelect = document.getElementById('purchaseRequest');
                 if (reqSelect) {
                     reqSelect.value = reqId;
-                    applyRestockPreset(reqSelect);
+                    reqSelect.dispatchEvent(new Event('change'));
                 }
             }
             new bootstrap.Modal(document.getElementById('createPoModal')).show();
         }
     });
+</script>
+<template id="purchaseLineTemplate"><jsp:include page="/components/purchase-order-line.jsp"/></template>
+<c:forEach var="r" items="${approvedRequests}">
+    <template id="purchaseRequest-${r.id}">
+        <c:forEach var="it" items="${r.items}">
+            <fieldset class="purchase-line border rounded p-3 mb-3">
+                <legend class="float-none w-auto fs-6"><c:out value="${it.ingredientName}"/> (<c:out value="${it.unit}"/>)</legend>
+                <input type="hidden" name="ingredientId" value="${it.ingredientId}">
+                <label class="form-label d-block">Số lượng đặt
+                    <input class="form-control" name="quantity" type="number" min="0.001" max="999999999.999" step="0.001" value="${it.quantity}" required>
+                </label>
+                <label class="form-label d-block">Tổng tiền lô của nguyên liệu này (đ)
+                    <input class="form-control" name="totalPrice" type="number" min="0" max="9999999999.99" step="0.01" required>
+                </label>
+            </fieldset>
+        </c:forEach>
+    </template>
+</c:forEach>
+<script id="purchase-form-script">
+(() => {
+    const request = document.getElementById('purchaseRequest');
+    const lines = document.getElementById('purchaseLines');
+    const add = document.getElementById('addPurchaseLine');
+    const blank = document.getElementById('purchaseLineTemplate');
+    function selectRequest() {
+        const template = request.value
+            ? document.getElementById('purchaseRequest-' + request.value) : blank;
+        if (!template) return;
+        lines.replaceChildren(template.content.cloneNode(true));
+        add.disabled = Boolean(request.value);
+    }
+    request.addEventListener('change', selectRequest);
+    add.addEventListener('click', () => {
+        if (!request.value && lines.querySelectorAll('.purchase-line').length < 100)
+            lines.appendChild(blank.content.cloneNode(true));
+    });
+    lines.addEventListener('click', event => {
+        const button = event.target.closest('[data-remove-line]');
+        if (button && !request.value && lines.querySelectorAll('.purchase-line').length > 1)
+            button.closest('.purchase-line').remove();
+    });
+    // Reconcile a request selection restored by the browser after a refresh/back navigation.
+    if (request.value) selectRequest();
+})();
 </script>
 </body>
 </html>

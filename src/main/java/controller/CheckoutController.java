@@ -180,6 +180,9 @@ public class CheckoutController extends HttpServlet {
             clearPendingOrder(session);
         }
 
+        // RD04: . Ở đây em gửi đơn, các món đã chọn và điểm dùng sang phần lưu đơn.
+        // .. Lưu được thì nhận mã đơn; thiếu hàng hoặc thiếu điểm thì quay lại báo khách.
+        // ... OrderDAO.placeOrder(đơn, món, điểm dùng) [RD05] → trang thanh toán; QR [EA01], COD [CD01].
         int orderId = orderDAO.placeOrder(order, items, pointsUsed);
         if (orderId == OrderDAO.NOT_ENOUGH_STOCK) {
             request.setAttribute("checkoutError", "Có món đã hết hoặc không đủ số lượng. Vui lòng sửa giỏ hàng.");

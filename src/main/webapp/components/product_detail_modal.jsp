@@ -339,6 +339,9 @@
     }
 
     function openProductDetailModal(productId) {
+        // MN09: . Ở đây em gửi mã món lên máy chủ khi khách mở hộp chọn món.
+        // .. Thông tin trả về được dùng để hiện tên món, size và topping.
+        // ... GET /menu?action=detail&id=... → handleProductDetailApi() [MN05] → DAO [MN06].
         fetch('${pageContext.request.contextPath}/menu?action=detail&id=' + productId)
             .then(function (res) {
                 if (!res.ok) {

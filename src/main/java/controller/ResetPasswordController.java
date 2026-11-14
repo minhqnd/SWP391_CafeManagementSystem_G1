@@ -21,6 +21,9 @@ public class ResetPasswordController extends HttpServlet {
         
         request.setCharacterEncoding("UTF-8");
         String newPassword = request.getParameter("password");
+        // OT07: . Ở đây em kiểm tra phiên đã xác minh mã và hai mật khẩu có khớp nhau không.
+        // .. Lưu thành công thì em xóa quyền khôi phục và yêu cầu đăng nhập lại.
+        // ... UserDAO.updatePassword(email trong phiên, mật khẩu mới) [PW03].
         String confirmPassword = request.getParameter("confirm_password");
         
         HttpSession session = request.getSession();

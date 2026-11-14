@@ -125,6 +125,9 @@
                     <c:if test="${not empty selectedCategory}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedCategory.id}" /></span></c:if>
                 </div>
                 <%-- BF11 - THÊM/SỬA: POST action=save và ID; multipart gửi ảnh -> Controller kiểm tra -> CategoryDAO lưu. --%>
+                <%-- CA01: . Ở đây em hiển thị danh mục và điền sẵn thông tin nếu Admin chọn sửa.
+                     .. Bấm Lưu thì gửi tên, trạng thái và ảnh; bấm nút mắt thì gửi yêu cầu ẩn hoặc hiện.
+                     ... POST /admin/categories → doPost() [CA04]; danh sách lấy từ doGet() [CA02]. --%>
                 <form method="post" action="${ctx}/admin/categories" enctype="multipart/form-data">
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="save">
                     <input type="hidden" name="id" value="${empty selectedCategory ? 0 : selectedCategory.id}">

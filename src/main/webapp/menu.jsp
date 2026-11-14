@@ -399,6 +399,9 @@
 
                         <!-- Menu Search Box -->
                         <div class="menu-search-container flex-grow-1 flex-md-grow-0">
+                            <%-- MN01: . Ở đây em hiển thị menu và cho khách tìm món theo danh mục hoặc từ khóa.
+                                 .. Bấm tìm thì gửi điều kiện lọc; chọn đồ uống thì có thể mở hộp chọn size và topping.
+                                 ... GET /menu → MenuController.doGet() [MN02]; hộp chọn món bắt đầu tại [MN09]. --%>
                             <form action="${pageContext.request.contextPath}/menu" method="GET"
                                 class="position-relative w-100">
                                 <c:if test="${not empty currentCategory}">

@@ -78,6 +78,9 @@
 </jsp:include>
 
 <main class="admin-main-wrapper loyalty-page">
+    <%-- MS01: . Ở đây em hiển thị thông báo của thao tác vừa làm.
+         .. Thông báo cho biết thao tác thành công hay bị lỗi.
+         Nguồn/ghi chú: Controller lấy thông báo từ phiên tại moveFlash() [MS02]. --%>
     <c:if test="${not empty loyaltyMessage}"><div class="alert alert-success py-2 small"><c:out value="${loyaltyMessage}" /></div></c:if>
     <c:if test="${not empty loyaltyError}"><div class="alert alert-danger py-2 small"><c:out value="${loyaltyError}" /></div></c:if>
     <section class="loyalty-panel loyalty-header">
@@ -86,15 +89,29 @@
         <p>Khách hàng được nhận diện bằng số điện thoại; điểm tích khi đơn hoàn thành và đổi điểm để giảm giá.</p>
 
         <div class="stats-grid">
+            <%-- ST01: . Ở đây em hiển thị số khách đang có điểm.
+                 .. Chỉ khách có số dư lớn hơn không được tính.
+                 Nguồn/ghi chú: Nguồn số đếm: countCustomersWithPoints() [ST11]. --%>
             <div class="stat-card"><span>Khách hàng có điểm</span><strong><fmt:formatNumber value="${customerCountWithPoints}" pattern="#,##0" /></strong></div>
+            <%-- ST02: . Ở đây em hiển thị tổng số điểm các khách đang giữ.
+                 .. Đây là cộng số dư để thống kê, không thưởng thêm điểm.
+                 Nguồn/ghi chú: Nguồn tổng điểm: LoyaltyTransactionDAO.getTotalPoints() [ST12]. --%>
             <div class="stat-card primary"><span>Tổng điểm lưu hành</span><strong><fmt:formatNumber value="${totalPoints}" pattern="#,##0" /></strong></div>
+            <%-- ST03: . Ở đây em hiển thị tiền giảm ước tính của tổng điểm lưu hành.
+                 .. Giá trị này phụ thuộc quy tắc đổi điểm hiện tại.
+                 Nguồn/ghi chú: Controller tính tại [ST13] → totalPointValue. --%>
             <div class="stat-card"><span>Giá trị quy đổi</span><strong><fmt:formatNumber value="${totalPointValue}" pattern="#,##0" />đ</strong></div>
+            <%-- ST04: . Ở đây em hiển thị số giao dịch điểm đã ghi nhận.
+                 .. Mỗi dòng lịch sử được tính là một giao dịch.
+                 Nguồn/ghi chú: Nguồn số đếm: countTransactions() [ST14]. --%>
             <div class="stat-card"><span>Giao dịch điểm</span><strong><fmt:formatNumber value="${transactionCount}" pattern="#,##0" /></strong></div>
         </div>
     </section>
 
     <div class="content-grid">
-        <%-- BF12 - LƯU QUY TẮC: POST /admin/loyalty -> doPost() -> updateRules() -> ShopSettingDAO. --%>
+        <%-- RU01: . Ở đây em cho Admin xem và sửa ba quy tắc tích, đổi điểm.
+             .. Bấm Lưu thì ba giá trị được gửi lên máy chủ.
+             ... POST action=updateRules → [RU02]; cấu hình cũ lấy từ [RU05]. --%>
         <form class="loyalty-panel content-card" method="post" action="${ctx}/admin/loyalty">
             <input type="hidden" name="action" value="updateRules">
             <input type="hidden" name="csrfToken" value="${sessionScope.loyaltyCsrfToken}">
@@ -102,12 +119,21 @@
             <h2 class="section-title">Quy tắc tích &amp; đổi điểm</h2>
             <div class="rules-grid">
                 <label class="field-label">Số tiền chi tiêu để nhận 1 điểm (VNĐ)<span class="field-column">points_earn_unit</span>
+                    <%-- RU11: . Ở đây em nhận mức chi tiêu để khách được một điểm thưởng.
+                         .. Chỉ tính tiền hàng sau giảm, không gồm phí giao.
+                         ... pointsEarnUnit → updateRules() [RU03]; công thức [CF01]. --%>
                     <input class="loyalty-input" name="pointsEarnUnit" type="number" min="1" value="${pointsEarnUnitValue}" required>
                 </label>
                 <label class="field-label">Số điểm cho mỗi lần đổi<span class="field-column">points_step</span>
+                    <%-- RU12: . Ở đây em nhận số điểm cần cho mỗi lần đổi.
+                         .. Khách đổi theo mốc trọn vẹn Admin đặt.
+                         ... pointsStep → updateRules() [RU03]; tính tiền giảm ở [CF02]. --%>
                     <input class="loyalty-input" name="pointsStep" type="number" min="1" value="${settings.pointsStep}" required>
                 </label>
                 <label class="field-label">Số tiền giảm cho mỗi lần đổi (VNĐ)<span class="field-column">points_step_value</span>
+                    <%-- RU13: . Ở đây em nhận số tiền giảm cho mỗi mốc đổi.
+                         .. Em dùng giá trị này để tính tiền giảm khi khách dùng điểm.
+                         ... pointsStepValue → updateRules() [RU03]. --%>
                     <input class="loyalty-input" name="pointsStepValue" type="number" min="0" value="${pointsStepValue}" required>
                 </label>
             </div>
@@ -123,7 +149,9 @@
 
         <section class="loyalty-panel content-card">
             <h2 class="section-title">Tra cứu &amp; điều chỉnh điểm</h2>
-            <%-- BF12 - TRA CỨU: GET gửi phone -> doGet() -> findCustomerByPhone() -> activeCustomer. --%>
+            <%-- CU01: . Ở đây em nhận số điện thoại Admin muốn tra cứu.
+                 .. Bấm Tra cứu thì số điện thoại được gửi lên máy chủ.
+                 ... GET /admin/loyalty?phone=... → doGet() [CU02]. --%>
             <form class="search-form" method="get" action="${ctx}/admin/loyalty">
                 <input class="loyalty-input" name="phone" value="${fn:escapeXml(searchPhone)}" aria-label="Số điện thoại" placeholder="Nhập số điện thoại..." required>
                 <button class="search-btn" type="submit">Tra cứu</button>
@@ -131,18 +159,25 @@
             <c:if test="${not empty lookupError}"><div class="alert alert-warning py-2 px-3 mt-2 mb-0 small"><c:out value="${lookupError}" /></div></c:if>
             <c:if test="${not empty activeCustomer}">
               <div class="customer-box">
+                <%-- CU04: . Ở đây em hiển thị tên, số điện thoại, email và điểm của khách vừa tìm.
+                     .. Số điện thoại để tra cứu; mã khách để gửi yêu cầu điều chỉnh.
+                     Nguồn/ghi chú: Dữ liệu từ findCustomerByPhone() [CU03] hoặc khách mặc định [CU06]. --%>
                 <h3><c:out value="${activeCustomer.fullName}" /></h3>
                 <p class="customer-contact"><c:out value="${activeCustomer.phone}" /> • <c:out value="${activeCustomer.email}" /></p>
-                <%-- Hiển thị User do Controller gán vào request; JSP không trực tiếp truy vấn DB. --%>
+                <%-- LP07: . Ở đây em hiển thị số điểm mới của khách sau khi tải lại trang.
+                     .. Admin đối chiếu số dư với 50 giao dịch gần nhất của toàn hệ thống bên dưới.
+                     Nguồn/ghi chú: Dữ liệu được Controller gửi sang tại [LP06]; đây là bước hiển thị kết quả. --%>
                 <div class="customer-metrics">
                     <div class="customer-metric"><span>Điểm hiện có</span><strong style="color:#a51225"><fmt:formatNumber value="${activeCustomer.totalPoints}" pattern="#,##0" /></strong><small>= <fmt:formatNumber value="${customerPointValue}" pattern="#,##0" />đ</small></div>
+                    <%-- CU05: . Ở đây em hiển thị tổng chi tiêu và ngày đặt đơn gần nhất.
+                         .. Các thông tin này thuộc đúng khách đang xem.
+                         Nguồn/ghi chú: Controller nhận dữ liệu từ getCustomerActivity() [CU15] rồi đưa lên thẻ khách. --%>
                     <div class="customer-metric"><span>Tổng chi tiêu</span><strong><fmt:formatNumber value="${customerActivity.totalSpent}" pattern="#,##0" />đ</strong><small><c:choose><c:when test="${not empty customerActivity.lastOrderAt}">Đơn gần nhất <fmt:formatDate value="${customerActivity.lastOrderAt}" pattern="dd/MM/yyyy HH:mm" /></c:when><c:otherwise>Chưa có đơn</c:otherwise></c:choose></small></div>
                 </div>
                 <div class="adjust-row">
                     <button class="adjust-btn adjust-add" type="button" onclick="submitAdjustment('add')">Cộng điểm</button>
                     <button class="adjust-btn adjust-subtract" type="button" onclick="submitAdjustment('subtract')">Trừ điểm</button>
                 </div>
-                <%-- BF12 - CỘNG/TRỪ: JavaScript điền form -> doPost() action=adjust -> adjustPoints(). --%>
                 <form id="adjustPointsForm" method="post" action="${ctx}/admin/loyalty">
                     <input type="hidden" name="action" value="adjust">
                     <input type="hidden" name="csrfToken" value="${sessionScope.loyaltyCsrfToken}">
@@ -162,14 +197,25 @@
             <table class="log-table">
                 <thead><tr><th>ID</th><th>Thời gian</th><th>Khách hàng</th><th>Loại</th><th class="text-end">Điểm biến động</th><th class="text-end">Số dư sau</th><th>Đơn hàng</th></tr></thead>
                 <tbody>
-                <%-- Nhật ký chung từ loyaltyDAO.findRecent(50), gồm cả giao dịch của khách khác. --%>
+                <%-- HI01: . Ở đây em hiển thị 50 giao dịch điểm gần nhất toàn hệ thống.
+                     .. Giao dịch mới đứng trước để Admin dễ đối chiếu.
+                     Nguồn/ghi chú: Controller [HI08] → findRecent() [HI07] → findDetailed() [HI02] cấp dữ liệu. --%>
                 <c:forEach var="tx" items="${transactions}">
                     <tr>
+                        <%-- HI03: . Ở đây em hiển thị một giao dịch trong nhật ký.
+                             .. Thông tin khách, điểm và đơn được ghép trên cùng một dòng.
+                             Nguồn/ghi chú: Dữ liệu từng dòng do findDetailed() [HI02] trả về. --%>
                         <td class="mono text-muted">#${tx.id}</td>
                         <td class="mono text-muted"><fmt:formatDate value="${tx.createdAt}" pattern="dd/MM/yyyy HH:mm" /></td>
                         <td><span class="customer-name"><c:out value="${tx.customerName}" /></span><span class="customer-phone mono"><c:out value="${tx.customerPhone}" /></span></td>
+                        <%-- HI04: . Ở đây em phân biệt tích, đổi, hoàn và điều chỉnh điểm.
+                             .. Số dương hiện dấu cộng; số âm hiện dấu trừ.
+                             Nguồn/ghi chú: EARN: tích; REDEEM: đổi; REFUND: hoàn điểm đã dùng; ADJUST: điều chỉnh. --%>
                         <td><span class="type-badge ${tx.pointsChange gt 0 ? 'type-earn' : 'type-redeem'}"><c:choose><c:when test="${tx.transactionType eq 'EARN'}">EARN - Tích điểm</c:when><c:when test="${tx.transactionType eq 'REDEEM'}">REDEEM - Đổi điểm</c:when><c:when test="${tx.transactionType eq 'REFUND'}">REFUND - Hoàn điểm</c:when><c:otherwise>ADJUST - Điều chỉnh</c:otherwise></c:choose></span></td>
                         <td class="text-end mono ${tx.pointsChange gt 0 ? 'points-plus' : 'points-minus'}">${tx.pointsChange gt 0 ? '+' : ''}${tx.pointsChange}</td>
+                        <%-- HI05: . Ở đây em hiển thị số dư sau giao dịch này.
+                             .. Số dư được tính từ điểm hiện tại và các giao dịch mới hơn.
+                             Nguồn/ghi chú: Phần tính nằm ở findDetailed() [HI06]. --%>
                         <td class="text-end mono fw-bold"><fmt:formatNumber value="${tx.balanceAfter}" pattern="#,##0" /></td>
                         <td class="text-muted"><c:choose><c:when test="${not empty tx.orderCode}"><c:out value="${tx.orderCode}" /></c:when><c:otherwise>Điều chỉnh thủ công</c:otherwise></c:choose></td>
                     </tr>
@@ -182,7 +228,9 @@
 </main>
 <script>
     function submitAdjustment(type) {
-        // Chỉ nhận số và gửi form; kiểm tra số dư và lưu DB nằm ở Controller/DAO, không ở JavaScript.
+        // LP01: . Ở đây em hỏi Admin muốn cộng hay trừ bao nhiêu điểm.
+        // .. Hợp lệ thì em đưa số điểm và thông tin khách vào form.
+        // ... POST /admin/loyalty, action=adjust → doPost() [LP08] → [LP02].
         const label = type === 'add' ? 'cộng' : 'trừ';
         const raw = window.prompt('Nhập số điểm muốn ' + label + ':', '10');
         if (raw === null) return;

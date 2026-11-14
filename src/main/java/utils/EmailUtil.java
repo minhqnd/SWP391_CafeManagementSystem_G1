@@ -56,6 +56,9 @@ public class EmailUtil {
     }
 
     public static boolean sendOTP(String recipientEmail, String otp) {
+        // OT03: . Ở đây em gửi mã xác nhận đến email được cung cấp.
+        // .. Hàm trả kết quả gửi thư thành công hay thất bại.
+        // ... Kết quả về ForgotPasswordController [OT02] hoặc ResendOtpController [OT08].
         // BF10: helper gửi email qua SMTP, trả true/false cho ForgotPassword/ResendOtp; không xác minh OTP.
         System.out.println("\n=========================================");
         System.out.println("YÊU CẦU GỬI OTP KHÔI PHỤC MẬT KHẨU");

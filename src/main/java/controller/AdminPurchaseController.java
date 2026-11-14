@@ -71,24 +71,7 @@ public class AdminPurchaseController extends HttpServlet {
         try {
             String action = r.getParameter("action");
             if ("create".equals(action) || "createAndReceive".equals(action)) {
-                String[] ingIds = r.getParameterValues("ingredientId");
-                String[] qtys = r.getParameterValues("quantity");
-                String[] totals = r.getParameterValues("totalPrice");
-                if (ingIds == null || qtys == null || totals == null || ingIds.length == 0) {
-                    throw new IllegalArgumentException("Vui lòng chọn ít nhất một nguyên liệu.");
-                }
-
-                List<PurchaseOrderItem> items = new ArrayList<>();
-                for (int i = 0; i < ingIds.length; i++) {
-                    if (ingIds[i] == null || ingIds[i].isBlank()) continue;
-                    BigDecimal qty = InventoryRules.quantity(new BigDecimal(qtys[i].trim()), true);
-                    BigDecimal total = new BigDecimal(totals[i].trim());
-                    if (total.signum() < 0 || total.scale() > 2 || total.compareTo(new BigDecimal("9999999999.99")) > 0) {
-                        throw new IllegalArgumentException("Tổng tiền không hợp lệ.");
-                    }
-                    BigDecimal unitPrice = total.divide(qty, 2, RoundingMode.HALF_UP);
-                    items.add(new PurchaseOrderItem(Integer.parseInt(ingIds[i].trim()), qty, unitPrice));
-                }
+                List<PurchaseOrderItem> items = parseItems(r);
 
                 int supplier = Integer.parseInt(r.getParameter("supplierId"));
                 PurchaseOrder po = new PurchaseOrder();
@@ -124,7 +107,7 @@ public class AdminPurchaseController extends HttpServlet {
             } else if ("edit".equals(action)) {
                 int poId = Integer.parseInt(r.getParameter("id"));
                 BigDecimal qty = InventoryRules.quantity(new BigDecimal(r.getParameter("quantity").trim()), true);
-                BigDecimal total = new BigDecimal(r.getParameter("totalPrice").trim());
+                BigDecimal total = InventoryRules.money(new BigDecimal(r.getParameter("totalPrice").trim()));
                 int supplier = Integer.parseInt(r.getParameter("supplierId"));
                 String note = r.getParameter("note");
                 String editReason = r.getParameter("editReason");
@@ -224,5 +207,31 @@ public class AdminPurchaseController extends HttpServlet {
                     e.getMessage() != null ? e.getMessage() : "Không thể xử lý thao tác. Vui lòng kiểm tra lại dữ liệu.");
         }
         p.sendRedirect(r.getContextPath() + "/admin/purchases");
+    }
+
+    static List<PurchaseOrderItem> parseItems(HttpServletRequest request) {
+        String[] ids=request.getParameterValues("ingredientId");
+        String[] quantities=request.getParameterValues("quantity");
+        String[] totals=request.getParameterValues("totalPrice");
+        if(ids==null || quantities==null || totals==null || ids.length==0 || ids.length>100
+                || ids.length!=quantities.length || ids.length!=totals.length)
+            throw new IllegalArgumentException("Danh sách nguyên liệu, số lượng và tiền lô không khớp.");
+        List<PurchaseOrderItem> items=new ArrayList<>();
+        Set<Integer> seen=new HashSet<>();
+        BigDecimal grandTotal=BigDecimal.ZERO;
+        try {
+            for(int i=0;i<ids.length;i++) {
+                int id=Integer.parseInt(ids[i]);
+                if(id<=0 || !seen.add(id))throw new IllegalArgumentException("Nguyên liệu không hợp lệ hoặc bị trùng.");
+                BigDecimal quantity=InventoryRules.quantity(new BigDecimal(quantities[i]),true);
+                BigDecimal total=InventoryRules.money(new BigDecimal(totals[i]));
+                grandTotal=grandTotal.add(total);
+                items.add(new PurchaseOrderItem(id,quantity,InventoryRules.purchaseUnitPrice(quantity,total)));
+            }
+        } catch(NumberFormatException | NullPointerException e) {
+            throw new IllegalArgumentException("Số lượng hoặc tiền lô không hợp lệ.",e);
+        }
+        InventoryRules.money(grandTotal);
+        return items;
     }
 }
