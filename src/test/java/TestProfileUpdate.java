@@ -1,6 +1,5 @@
 import context.DBContext;
 import dao.UserDAO;
-import model.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

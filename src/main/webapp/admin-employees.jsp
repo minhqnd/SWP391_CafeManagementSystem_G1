@@ -177,9 +177,9 @@
                         <div class="col-md-6">
                             <label class="form-label" for="employeePhone">Số điện thoại (đăng nhập) <span>*</span></label>
                             <input class="form-control font-monospace" id="employeePhone" name="phone" required
-                                   inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" autocomplete="off"
+                                   inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="off"
                                    value="${fn:escapeXml(form.phone)}">
-                            <div class="invalid-feedback">Số điện thoại gồm 9-11 chữ số.</div>
+                            <div class="invalid-feedback">Số điện thoại phải có đúng 10 chữ số.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="employeeEmail">Email</label>
@@ -190,8 +190,8 @@
                         <div class="col-md-6">
                             <label class="form-label" for="employeePassword" id="employeePasswordLabel">Mật khẩu <span>*</span></label>
                             <input class="form-control" type="password" id="employeePassword" name="password"
-                                   minlength="6" maxlength="255" autocomplete="new-password">
-                            <div class="invalid-feedback">Mật khẩu phải từ 6 ký tự trở lên.</div>
+                                   minlength="8" maxlength="255" pattern="(?=.*[A-Za-z])(?=.*[0-9]).{8,255}" autocomplete="new-password">
+                            <div class="invalid-feedback">Mật khẩu phải có ít nhất 8 ký tự, gồm chữ và số.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="employeeRole">Vai trò</label>

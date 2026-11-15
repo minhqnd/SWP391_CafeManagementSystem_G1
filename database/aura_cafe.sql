@@ -849,6 +849,7 @@ CREATE TABLE `users` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `phone` (`phone`),
+  UNIQUE KEY `uq_users_email` (`email`),
   CONSTRAINT `chk_user_points` CHECK ((`total_points` >= 0)),
   CONSTRAINT `chk_user_salary` CHECK ((`base_salary` >= 0))
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -860,7 +861,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Aura Admin','0900000001','admin@auracafe.vn','demo_hash',NULL,NULL,'ADMIN','ACTIVE','MANAGER',15000000.00,'2025-01-01',0,'2026-10-28 14:26:58'),(2,'Nguyen Van An','0900000002','an@auracafe.vn','demo_hash',NULL,NULL,'STAFF','ACTIVE','BARISTA',8000000.00,'2025-02-01',0,'2026-10-28 14:26:58'),(3,'Tran Thi Binh','0900000003','binh@auracafe.vn','demo_hash',NULL,NULL,'STAFF','ACTIVE','CASHIER',8500000.00,'2025-02-01',0,'2026-10-28 14:26:58'),(4,'Le Minh Anh','0900000004','anh@gmail.com','demo_hash',NULL,NULL,'CUSTOMER','ACTIVE',NULL,0.00,NULL,120,'2026-10-28 14:26:58'),(5,'Pham Quang Huy','0900000005','huy@gmail.com','demo_hash',NULL,NULL,'CUSTOMER','ACTIVE',NULL,0.00,NULL,50,'2026-10-28 14:26:58'),(6,'Hoang Van Nam','0900000006','nam@auracafe.vn','demo_hash',NULL,NULL,'STAFF','ACTIVE','SHIPPER',7500000.00,'2025-03-01',0,'2026-10-28 14:26:58');
+INSERT INTO `users` VALUES (1,'Aura Admin','0900000001','admin@auracafe.vn','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'ADMIN','ACTIVE','MANAGER',15000000.00,'2025-01-01',0,'2026-10-28 14:26:58'),(2,'Nguyen Van An','0900000002','an@auracafe.vn','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'STAFF','ACTIVE','BARISTA',8000000.00,'2025-02-01',0,'2026-10-28 14:26:58'),(3,'Tran Thi Binh','0900000003','binh@auracafe.vn','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'STAFF','ACTIVE','CASHIER',8500000.00,'2025-02-01',0,'2026-10-28 14:26:58'),(4,'Le Minh Anh','0900000004','anh@gmail.com','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'CUSTOMER','ACTIVE',NULL,0.00,NULL,120,'2026-10-28 14:26:58'),(5,'Pham Quang Huy','0900000005','huy@gmail.com','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'CUSTOMER','ACTIVE',NULL,0.00,NULL,50,'2026-10-28 14:26:58'),(6,'Hoang Van Nam','0900000006','nam@auracafe.vn','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'STAFF','ACTIVE','SHIPPER',7500000.00,'2025-03-01',0,'2026-10-28 14:26:58');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 

@@ -33,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -318,8 +319,7 @@ public class CounterOrderController extends HttpServlet {
 
         // Tạo mã đơn hàng độc nhất dạng ORD-YYMMDD-XXXX
         String datePrefix = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-        String timeSuffix = String.format("%04d", (int) (System.currentTimeMillis() % 10000));
-        String orderCode = "ORD-" + datePrefix + "-" + timeSuffix;
+        String orderCode = "ORD-" + datePrefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
 
         Order order = new Order();
         order.setOrderCode(orderCode);
@@ -493,21 +493,6 @@ public class CounterOrderController extends HttpServlet {
             sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã hủy đơn hàng thành công.\"}");
         } else {
             sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"" + escapeJson(errorMsg) + "\"}");
-        }
-    }
-
-    private void handleDeliverOrder(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        int orderId = parseInt(request.getParameter("orderId"), -1);
-        if (orderId <= 0) {
-            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Mã đơn không hợp lệ.\"}");
-            return;
-        }
-
-        boolean success = orderDAO.deliverCounterOrder(orderId);
-        if (success) {
-            sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã chuyển đơn sang trạng thái Đang giao hàng.\"}");
-        } else {
-            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Không thể chuyển trạng thái giao hàng (chỉ áp dụng cho đơn Online đã pha chế xong).\"}");
         }
     }
 

@@ -51,18 +51,27 @@
                 </a>
             </li>
             <li class="nav-item">
+                <%-- CA01: [SLBF11] Open Category Management
+                     . Mở trang quản lý bằng GET /admin/categories.
+                     ... AdminCategoriesController.doGet() [CA02]. --%>
                 <a href="${ctx}/admin/categories" class="nav-link ${param.activeMenu == 'categories' ? 'active' : ''}">
                     <span class="material-symbols-outlined">category</span>
                     <span>Danh mục</span>
                 </a>
             </li>
             <li class="nav-item">
+                <%-- PR01: [SLBF11] Open Product Management
+                     . Mở trang quản lý bằng GET /admin/products.
+                     ... AdminProductsController.doGet() [PR02]. --%>
                 <a href="${ctx}/admin/products" class="nav-link ${param.activeMenu == 'products' ? 'active' : ''}">
                     <span class="material-symbols-outlined">coffee</span>
                     <span>Sản phẩm</span>
                 </a>
             </li>
             <li class="nav-item">
+                <%-- RC01: [SLBF11] Open Recipe Management
+                     . Mở trang quản lý bằng GET /admin/recipes.
+                     ... AdminRecipeController.doGet() [RC02]. --%>
                 <a href="${ctx}/admin/recipes" class="nav-link ${param.activeMenu == 'recipes' ? 'active' : ''}">
                     <span class="material-symbols-outlined">menu_book</span>
                     <span>Công thức (BOM)</span>
@@ -150,6 +159,9 @@
                 </a>
             </li>
             <li class="nav-item">
+                <%-- RU01: [SLBF12] Open Phone Loyalty Management
+                     . Mở trang quản lý tích điểm theo SĐT bằng GET /admin/loyalty.
+                     ... AdminLoyaltyController.doGet() [RU02]. --%>
                 <a href="${ctx}/admin/loyalty" class="nav-link ${param.activeMenu == 'loyalty' ? 'active' : ''}">
                     <span class="material-symbols-outlined">loyalty</span>
                     <span>Tích điểm</span>

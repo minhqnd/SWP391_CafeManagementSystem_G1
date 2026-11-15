@@ -24,6 +24,7 @@ public class RestockRequestDAOTest {
 
     @Test
     @DisplayName("Test get low stock ingredients")
+    @org.junit.jupiter.api.Tag("database")
     void testGetLowStockIngredients() {
         try {
             assertNotNull(restockRequestDAO.getLowStockIngredients());
@@ -34,6 +35,7 @@ public class RestockRequestDAOTest {
 
     @Test
     @DisplayName("Test get restock requests")
+    @org.junit.jupiter.api.Tag("database")
     void testGetRestockRequests() {
         try {
             List<RestockRequest> list = restockRequestDAO.getRestockRequests("ALL");

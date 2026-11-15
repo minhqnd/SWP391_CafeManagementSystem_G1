@@ -23,6 +23,7 @@ public class IngredientDAOTest {
 
     @Test
     @DisplayName("Test get all ingredients returns non-null list")
+    @org.junit.jupiter.api.Tag("database")
     void testGetAllIngredients() {
         try {
             List<Ingredient> list = ingredientDAO.getAllIngredients();
@@ -39,6 +40,7 @@ public class IngredientDAOTest {
 
     @Test
     @DisplayName("Test get all ingredients with details and stats")
+    @org.junit.jupiter.api.Tag("database")
     void testGetAllIngredientsWithDetails() {
         try {
             List<Ingredient> list = ingredientDAO.getAllIngredientsWithDetails(null, null);

@@ -85,6 +85,7 @@
         </c:if>
 
         <form method="post" action="${ctx}/checkout">
+            <input type="hidden" name="checkoutToken" value="${checkoutToken}">
 
             <div class="row g-4">
 
@@ -115,7 +116,7 @@
                                     <div class="col-md-6">
                                         <label for="recipientPhone" class="form-label small fw-semibold mb-1">Số điện thoại *</label>
                                         <input type="tel" id="recipientPhone" name="recipientPhone" class="form-control aura-input bg-white"
-                                               maxlength="15" required placeholder="0908 123 456"
+                                               maxlength="10" pattern="0[0-9]{9}" inputmode="numeric" title="Nhập đúng 10 chữ số, bắt đầu bằng số 0" required placeholder="0908123456"
                                                value="${fn:escapeXml(recipientPhone)}">
                                     </div>
 

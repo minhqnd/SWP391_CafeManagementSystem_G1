@@ -246,7 +246,7 @@
                                     <span class="material-symbols-outlined text-danger">account_circle</span>
                                 </div>
                                 <div class="d-none d-xl-flex flex-column text-start">
-                                    <span class="fw-semibold text-truncate" style="font-size: 0.85rem; max-width: 130px;">${sessionScope.user.fullName}</span>
+                                    <span class="fw-semibold text-truncate" style="font-size: 0.85rem; max-width: 130px;"><c:out value="${sessionScope.user.fullName}" /></span>
                                     <span class="text-danger fw-bold" style="font-size: 0.7rem;">${sessionScope.user.role}</span>
                                 </div>
                             </a>
@@ -254,13 +254,13 @@
                                 <!-- Header Info -->
                                 <li class="user-dropdown-header">
                                     <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span class="fw-bold text-dark text-truncate" style="max-width: 150px; font-size: 0.92rem;">${sessionScope.user.fullName}</span>
+                                        <span class="fw-bold text-dark text-truncate" style="max-width: 150px; font-size: 0.92rem;"><c:out value="${sessionScope.user.fullName}" /></span>
                                         <c:if test="${sessionScope.user.role != 'CUSTOMER'}">
                                             <span class="badge bg-danger-subtle text-danger" style="font-size: 0.68rem; font-weight: 700;">${sessionScope.user.role}</span>
                                         </c:if>
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between text-muted" style="font-size: 0.78rem;">
-                                        <span>${not empty sessionScope.user.phone ? sessionScope.user.phone : sessionScope.user.email}</span>
+                                        <span><c:out value="${not empty sessionScope.user.phone ? sessionScope.user.phone : sessionScope.user.email}" /></span>
                                         <c:if test="${sessionScope.user.totalPoints > 0}">
                                             <span class="text-warning-emphasis fw-bold">• ${sessionScope.user.totalPoints} điểm</span>
                                         </c:if>
@@ -278,6 +278,10 @@
 
                                 <!-- Hồ sơ & Điểm tích luỹ -->
                                 <li>
+                                    
+                                    <%-- PF01: [SLBF10] Select "Personal Profile"
+                                         . Chọn Hồ sơ & Điểm tích luỹ trong menu tài khoản đã đăng nhập.
+                                         ... GET /profile → ProfileController.doGet() [PF02] → profile.jsp [PF06]. --%>
                                     <a class="user-item-btn" href="${pageContext.request.contextPath}/profile">
                                         <span class="material-symbols-outlined item-icon">account_circle</span>
                                         <span class="flex-grow-1">Hồ sơ & Điểm tích luỹ</span>
@@ -310,6 +314,10 @@
 
                                 <!-- Đăng xuất -->
                                 <li>
+                                    
+                                    <%-- LG09: [SLBF10] Click "Logout"
+                                         . Bấm Đăng xuất trong menu tài khoản để kết thúc phiên.
+                                         ... GET /login?action=logout → LoginController.doGet() [LG10] → Homepage. --%>
                                     <a class="user-item-btn logout-btn" href="${pageContext.request.contextPath}/login?action=logout">
                                         <span class="material-symbols-outlined item-icon" style="color: #dc2626;">logout</span>
                                         <span class="text-danger fw-semibold">Đăng xuất</span>
@@ -321,6 +329,9 @@
                         </c:choose>
                     </c:when>
                     <c:otherwise>
+                        <%-- . Bấm biểu tượng tài khoản ở header khi chưa đăng nhập để mở authModal.
+                             .. Bootstrap chỉ mở hộp thoại; chưa gửi dữ liệu tài khoản.
+                             ... auth_modal.jsp: chọn Đăng ký [RG01] hoặc Đăng nhập [LG01]. --%>
                         <button type="button" class="btn btn-outline-danger rounded-circle p-2 d-flex align-items-center justify-content-center" 
                                 style="width: 42px; height: 42px;" data-bs-toggle="modal" data-bs-target="#authModal" title="Đăng nhập / Đăng ký">
                             <span class="material-symbols-outlined fs-5">person</span>
@@ -344,6 +355,9 @@
                 <c:when test="${param.activePage == 'menu'}"><a class="menu-category-toggle" href="#menuCategoryDropdown" aria-controls="menuCategoryDropdown"><span class="material-symbols-outlined">menu</span> Danh mục sản phẩm</a></c:when>
                 <c:otherwise><a href="${pageContext.request.contextPath}/menu#menuCategoryDropdown"><span class="material-symbols-outlined">menu</span> Danh mục sản phẩm</a></c:otherwise>
             </c:choose>
+            <%-- MN01: [SLBF11] Open Menu
+                 . Bấm Menu & Đồ uống gửi GET /menu; không yêu cầu đăng nhập.
+                 ... MenuController.doGet() [MN02] tải danh mục và sản phẩm. --%>
             <a class="${param.activePage == 'menu' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/menu">Menu &amp; Đồ uống</a>
             <a class="${param.activePage == 'feedback' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/feedback">Liên hệ &amp; Góp ý</a>
             <a href="${pageContext.request.contextPath}/profile"><span class="material-symbols-outlined">stars</span> Thành viên Aura</a>

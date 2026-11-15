@@ -227,7 +227,7 @@ public class PaymentDAO extends BaseDAO {
     public static void reversePointsOnCancel(Connection conn,int customerId,int orderId)throws java.sql.SQLException{
         // RV02: . Ở đây em hoàn điểm khách đã dùng và thu hồi điểm đã thưởng khi nhánh hủy yêu cầu.
         // .. Em tránh xử lý lặp và chỉ thu hồi tối đa số điểm khách còn giữ.
-        // ... Trở về DeliveryDAO.reportIssue() để chốt giao thất bại và hủy đơn; lịch sử đọc tại [HI02] hoặc [PH02].
+        // ... Trở về DeliveryDAO.reportIssue() để chốt giao thất bại và hủy đơn; lịch sử đọc tại [HI03] hoặc [PH02].
         int used=sumPoints(conn,orderId,"REDEEM");          // số âm
         int refunded=sumPoints(conn,orderId,"REFUND");
         if(used<0 && refunded==0){

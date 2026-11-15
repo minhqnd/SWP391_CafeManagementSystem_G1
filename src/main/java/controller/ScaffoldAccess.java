@@ -10,7 +10,7 @@ final class ScaffoldAccess {
     static boolean requireAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
         // BF12: chỉ cho role ADMIN đi tiếp; không phải kiểm tra token hay kiểm tra số điểm.
         User user = (User) request.getSession().getAttribute("user");
-        if (user == null || !"ADMIN".equals(user.getRole())) {
+        if (user == null || !"ACTIVE".equalsIgnoreCase(user.getStatus()) || !"ADMIN".equals(user.getRole())) {
             response.sendRedirect(request.getContextPath() + "/?tab=login");
             return false;
         }
@@ -18,7 +18,8 @@ final class ScaffoldAccess {
     }
     static boolean requireStaff(HttpServletRequest request, HttpServletResponse response) throws IOException {
         User user = (User) request.getSession().getAttribute("user");
-        if (user == null || (!"STAFF".equals(user.getRole()) && !"ADMIN".equals(user.getRole()))) {
+        if (user == null || !"ACTIVE".equalsIgnoreCase(user.getStatus())
+                || (!"STAFF".equals(user.getRole()) && !"ADMIN".equals(user.getRole()))) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }

@@ -12,6 +12,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UserLoginIdentifierTest {
+    private static final String HASH = utils.PasswordHasher.hash("test-secret");
     private int connections;
     private String sql;
     private final Map<Integer,String> bindings = new java.util.HashMap<>();
@@ -33,7 +34,7 @@ class UserLoginIdentifierTest {
                             return mock(ResultSet.class, (rp,rm,ra) -> switch (rm.getName()) {
                                 case "next" -> found && ("test@example.com".equals(bindings.get(1)) || "0909000101".equals(bindings.get(2)));
                                 case "getInt" -> 7;
-                                case "getString" -> Map.of("status", status, "password_hash", "test-secret",
+                                case "getString" -> Map.of("status", status, "password_hash", HASH,
                                         "full_name", "Test Customer", "phone", "0909000101",
                                         "email", "test@example.com", "role", "CUSTOMER", "position", "").get(ra[0]);
                                 case "getMetaData" -> mock(ResultSetMetaData.class,
