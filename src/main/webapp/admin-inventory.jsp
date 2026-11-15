@@ -154,6 +154,7 @@
                                 <th class="text-end">Tối thiểu</th>
                                 <th class="text-end">Giá trị</th>
                                 <th class="text-center">Trạng thái</th>
+                                <th class="text-end">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,10 +191,23 @@
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-1">
+                                            <c:if test="${item.stockStatus ne 'Đủ hàng'}">
+                                                <a href="${ctx}/admin/purchases?ingredientId=${item.id}" class="btn btn-sm btn-light border text-success" title="Nhập thêm nguyên liệu này">
+                                                    <span class="material-symbols-outlined" style="font-size: 16px;">add_shopping_cart</span>
+                                                </a>
+                                            </c:if>
+                                            <button type="button" class="btn btn-sm btn-light border text-secondary" title="Cân kho / Ghi hao hụt"
+                                                    onclick="openAdjustForIngredient(${item.id})">
+                                                <span class="material-symbols-outlined" style="font-size: 16px;">tune</span>
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             </c:forEach>
                             <c:if test="${empty stockList}">
-                                <tr><td colspan="5" class="text-center py-4 text-muted">Không có dữ liệu tồn kho.</td></tr>
+                                <tr><td colspan="6" class="text-center py-4 text-muted">Không có dữ liệu tồn kho.</td></tr>
                             </c:if>
                         </tbody>
                     </table>
@@ -240,6 +254,9 @@
                                 <div class="tx-meta">
                                     <fmt:formatDate value="${tx.createdAt}" pattern="dd/MM/yyyy HH:mm" />
                                     · <c:out value="${tx.referenceType}" /> ${tx.referenceId != null ? tx.referenceId : ''}
+                                    <c:if test="${not empty tx.reason}">
+                                        <div class="text-secondary mt-1"><c:out value="${tx.reason}" /></div>
+                                    </c:if>
                                 </div>
                             </div>
                             <div>
@@ -277,7 +294,7 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Nguyên liệu cần chỉnh <span class="text-danger">*</span></label>
-                        <select name="ingredientId" class="form-select" required>
+                        <select name="ingredientId" id="adjustIngredientSelect" class="form-select" required>
                             <option value="">-- Chọn nguyên liệu --</option>
                             <c:forEach var="ing" items="${allIngredients}">
                                 <option value="${ing.id}">
@@ -334,6 +351,12 @@
         } else {
             dirGroup.style.display = 'block';
         }
+    }
+
+    function openAdjustForIngredient(ingredientId) {
+        const sel = document.getElementById('adjustIngredientSelect');
+        if (sel) sel.value = String(ingredientId);
+        new bootstrap.Modal(document.getElementById('adjustmentModal')).show();
     }
 </script>
 </body>

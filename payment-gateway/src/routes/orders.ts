@@ -1,145 +1,117 @@
 import { Hono } from 'hono';
 import type { Bindings } from '../types';
-import { clean, computeHmacSha256Hex, buildCanonicalPayload } from '../lib/signatures';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+/**
+ * API 1: Đăng ký đơn hàng mới cần thanh toán qua mã VietQR
+ * Đường dẫn: POST /api/orders/register
+ * Được gọi bởi: Backend Java khi khách hàng bấm Đặt hàng và chọn chuyển khoản
+ */
 app.post('/api/orders/register', async (c) => {
     try {
-        const body = await c.req.json<{
-            appId?: string;
-            orderCode: string;
-            amount: number | string;
-            transactionCode?: string;
-            signature?: string;
-        }>();
+        // Lấy dữ liệu gửi lên từ body JSON
+        const body = await c.req.json();
+        const appId = String(body.appId || 'default').trim();
+        const orderCode = String(body.orderCode || '').trim();
+        const transactionCode = String(body.transactionCode || `TX-${orderCode}`).trim();
+        const amount = Math.round(Number(body.amount || 0));
 
-        const appId = clean(body.appId) || 'default';
-        const orderCode = clean(body.orderCode);
-        const transactionCode = clean(body.transactionCode) || `TX-${orderCode}-${Date.now()}`;
-        const amount = Number(body.amount);
-
-        if (!orderCode || !Number.isSafeInteger(amount) || amount <= 0) {
-            return c.json({ success: false, message: 'Invalid orderCode or amount' }, 400);
+        // Kiểm tra dữ liệu hợp lệ: bắt buộc phải có mã đơn và số tiền lớn hơn 0
+        if (!orderCode || amount <= 0) {
+            return c.json({ success: false, message: 'Mã đơn hàng hoặc số tiền không hợp lệ' }, 400);
         }
 
-        const secret = c.env.SECRET_KEY || 'AURA-LOCAL-DEMO-SECRET';
-
-        // Optional server-to-server signature verification (resilient against numeric formatting)
-        const clientSig = c.req.header('X-Signature') || body.signature;
-        if (clientSig) {
-            const rawAmountStr = String(body.amount);
-            const numAmount = typeof body.amount === 'string' ? parseFloat(body.amount) : body.amount;
-            const candidates = [
-                `${appId}|${orderCode}|${rawAmountStr}`,
-                `${appId}|${orderCode}|${numAmount}`,
-                `${appId}|${orderCode}|${Math.round(numAmount)}`,
-                `${appId}|${orderCode}|${Number(numAmount).toFixed(1)}`,
-                `${appId}|${orderCode}|${Number(numAmount).toFixed(2)}`
-            ];
-            let matched = false;
-            for (const cand of candidates) {
-                const candSig = await computeHmacSha256Hex(secret, cand);
-                if (candSig.toLowerCase() === clientSig.toLowerCase()) {
-                    matched = true;
-                    break;
-                }
-            }
-            if (!matched) {
-                return c.json({ success: false, message: 'Invalid registration signature' }, 401);
-            }
-        }
-
-        // Upsert order into D1
+        // Lưu đơn hàng vào bảng orders với trạng thái ban đầu là PENDING (chờ thanh toán)
+        // Nếu đơn hàng này đã được đăng ký trước đó rồi thì bỏ qua không tạo trùng (ON CONFLICT DO NOTHING)
         await c.env.DB.prepare(
             `INSERT INTO orders (app_id, order_code, transaction_code, amount, status)
              VALUES (?, ?, ?, ?, 'PENDING')
              ON CONFLICT(app_id, order_code) DO NOTHING`
         ).bind(appId, orderCode, transactionCode, amount).run();
 
-        const registered = await c.env.DB.prepare(
-            'SELECT amount, transaction_code FROM orders WHERE app_id = ? AND order_code = ?'
-        ).bind(appId, orderCode).first<{ amount: number; transaction_code: string }>();
-        if (!registered || registered.amount !== amount || registered.transaction_code !== transactionCode) {
-            return c.json({ success: false, message: 'Order already registered with different payment details' }, 409);
-        }
-
+        // Trả kết quả đăng ký thành công về cho Server Java
         return c.json({
             success: true,
-            message: 'Order registered successfully',
-            orderCode,
-            transactionCode,
-            amount
+            orderCode: orderCode,
+            transactionCode: transactionCode,
+            amount: amount
         });
-    } catch (e: any) {
-        return c.json({ success: false, message: e.message || 'Internal error' }, 500);
+    } catch (error: any) {
+        return c.json({ success: false, message: error.message || 'Lỗi hệ thống khi đăng ký đơn' }, 500);
     }
 });
 
+/**
+ * API 2: Kiểm tra trạng thái thanh toán của một đơn hàng
+ * Đường dẫn: GET /api/orders/:orderCode/status
+ * Được gọi bởi: Backend Java (hoặc trang thanh toán) để biết khách đã chuyển khoản hay chưa
+ */
 app.get('/api/orders/:orderCode/status', async (c) => {
-    const orderCode = c.req.param('orderCode');
-    const appId = c.req.query('appId') || 'default';
+    const rawCode = c.req.param('orderCode').trim();
+    // Loại bỏ dấu # ở đầu mã đơn nếu có (ví dụ #AUR-101 -> AUR-101)
+    const cleanCode = rawCode.replace(/^#/, '');
 
+    // Tìm đơn hàng trong cơ sở dữ liệu
     const order: any = await c.env.DB.prepare(
-        `SELECT * FROM orders WHERE (order_code = ? OR order_code = ?) LIMIT 1`
-    ).bind(orderCode, `#${orderCode.replace(/^#/, '')}`).first();
+        `SELECT * FROM orders WHERE order_code = ? OR order_code = ? LIMIT 1`
+    ).bind(cleanCode, `#${cleanCode}`).first();
 
+    // Nếu chưa tìm thấy đơn trong CSDL thì mặc định coi như đang chờ thanh toán
     if (!order) {
         return c.json({
             success: true,
-            orderCode,
-            status: 'PENDING',
-            message: 'Waiting for payment confirmation'
-        }, 200);
+            orderCode: rawCode,
+            status: 'PENDING'
+        });
     }
 
+    // Trả về thông tin trạng thái đơn hàng (PENDING hoặc SUCCESS)
     return c.json({
         success: true,
         orderCode: order.order_code,
         transactionCode: order.transaction_code,
         amount: order.amount,
         status: order.status,
-        signature: order.signature,
         gatewayReference: order.gateway_reference,
         paidAt: order.paid_at
     });
 });
 
+/**
+ * API 3: Giả lập thanh toán thành công (chỉ dùng cho môi trường kiểm thử / chạy thử local)
+ * Đường dẫn: POST /api/orders/:orderCode/simulate-pay
+ */
 app.post('/api/orders/:orderCode/simulate-pay', async (c) => {
+    // Chỉ cho phép chạy khi cấu hình bật giả lập
     if (c.env.ALLOW_TEST_SIMULATION !== 'true') {
-        return c.json({ success: false, message: 'Simulation is disabled in production' }, 403);
+        return c.json({ success: false, message: 'Tính năng giả lập đang bị tắt' }, 403);
     }
 
-    const orderCode = c.req.param('orderCode');
+    const rawCode = c.req.param('orderCode').trim();
+    const cleanCode = rawCode.replace(/^#/, '');
+
     const order: any = await c.env.DB.prepare(
-        `SELECT * FROM orders WHERE (order_code = ? OR order_code = ?) LIMIT 1`
-    ).bind(orderCode, `#${orderCode.replace(/^#/, '')}`).first();
+        `SELECT * FROM orders WHERE order_code = ? OR order_code = ? LIMIT 1`
+    ).bind(cleanCode, `#${cleanCode}`).first();
 
     if (!order) {
-        return c.json({ success: false, message: 'Order not found' }, 404);
+        return c.json({ success: false, message: 'Không tìm thấy đơn hàng để giả lập' }, 404);
     }
 
-    const secret = c.env.SECRET_KEY || 'AURA-LOCAL-DEMO-SECRET';
-    const canonical = buildCanonicalPayload(order.order_code, order.transaction_code, order.amount, 'SUCCESS');
-    const signature = await computeHmacSha256Hex(secret, canonical);
-
+    // Cập nhật ngay đơn hàng sang trạng thái SUCCESS
     await c.env.DB.prepare(
-        `UPDATE orders SET
-            status = 'SUCCESS',
-            gateway_reference = ?,
-            signature = ?,
-            paid_at = CURRENT_TIMESTAMP
+        `UPDATE orders
+         SET status = 'SUCCESS',
+             gateway_reference = ?,
+             paid_at = CURRENT_TIMESTAMP
          WHERE id = ?`
-    ).bind(`LOCAL-SIM-${Date.now()}`, signature, order.id).run();
+    ).bind(`LOCAL-SIM-${Date.now()}`, order.id).run();
 
     return c.json({
         success: true,
-        message: 'Order simulated as SUCCESS',
         orderCode: order.order_code,
-        transactionCode: order.transaction_code,
-        amount: order.amount,
-        status: 'SUCCESS',
-        signature
+        status: 'SUCCESS'
     });
 });
 
