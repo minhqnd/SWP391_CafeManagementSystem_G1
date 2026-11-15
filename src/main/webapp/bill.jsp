@@ -197,11 +197,11 @@
                 </div>
                 <div class="flex flex-col">
                     <span class="text-on-surface-variant text-xs">Khách hàng:</span>
-                    <span class="font-semibold text-on-surface">${order.recipientName}</span>
+                    <span class="font-semibold text-on-surface"><c:out value="${order.recipientName}" /></span>
                 </div>
                 <div class="flex flex-col">
                     <span class="text-on-surface-variant text-xs">Số điện thoại:</span>
-                    <span class="font-tabular-data font-medium text-on-surface">${order.recipientPhone}</span>
+                    <span class="font-tabular-data font-medium text-on-surface"><c:out value="${order.recipientPhone}" /></span>
                 </div>
             </div>
 
@@ -229,7 +229,7 @@
                     <span class="font-tabular-data font-mono font-bold text-primary text-sm">
                         <c:choose>
                             <c:when test="${not empty payment and not empty payment.transactionCode}">
-                                ${payment.transactionCode}
+                                <c:out value="${payment.transactionCode}" />
                             </c:when>
                             <c:otherwise>PAY-${order.orderCode}-CONFIRMED</c:otherwise>
                         </c:choose>
@@ -255,12 +255,12 @@
                                     ${item.formattedQuantity}
                                 </span>
                                 <span class="font-label-lg text-label-lg text-on-surface font-bold">
-                                    ${item.productName}
+                                    <c:out value="${item.productName}" />
                                 </span>
                             </div>
                             <c:if test="${not empty item.optionsText}">
                                 <span class="font-body-sm text-body-sm text-on-surface-variant ml-8 mt-0.5">
-                                    ${item.optionsText}
+                                    <c:out value="${item.optionsText}" />
                                 </span>
                             </c:if>
                         </div>
