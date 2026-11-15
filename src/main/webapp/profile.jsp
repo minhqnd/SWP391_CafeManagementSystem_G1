@@ -1,3 +1,11 @@
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%
+    if (request.getDispatcherType() != jakarta.servlet.DispatcherType.FORWARD) {
+        response.sendRedirect(request.getContextPath() + "/profile");
+        if (true) return;
+    }
+%>
+<% utils.AccountCsrf.token(session); %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ taglib prefix="c" uri="jakarta.tags.core" %>
         <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
@@ -268,7 +276,7 @@
                                     </div>
                                     <div class="text-end border-start ps-4">
                                         <div class="text-muted mb-2" style="font-size: 0.9rem; font-weight: 500;">
-                                            Chủ tài khoản: <span class="text-dark fw-bold">${sessionScope.user.fullName}</span>
+                                            Chủ tài khoản: <span class="text-dark fw-bold">${fn:escapeXml(sessionScope.user.fullName)}</span>
                                         </div>
                                         <div class="d-flex align-items-center justify-content-end gap-2 text-muted">
                                             <span id="memberIdBadge" style="font-family: monospace; font-size: 1rem; background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 0.5rem; border: 1px dashed #ced4da; font-weight: 600; color: var(--primary);">#AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}</span>
@@ -329,7 +337,7 @@
                                                 </div>
                                             </div>
 
-                                            <h2 class="fs-4 fw-bold mb-1">${sessionScope.user.fullName}</h2>
+                                            <h2 class="fs-4 fw-bold mb-1">${fn:escapeXml(sessionScope.user.fullName)}</h2>
                                             <p class="text-muted mb-3"
                                                 style="font-size: 0.85rem; font-family: monospace;">
                                                 #AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}</p>
@@ -354,61 +362,92 @@
                                                 </button>
                                             </div>
 
-                                            <%-- BF10 - HỒ SƠ: POST action=update -> ProfileController -> updateUserProfile() -> cập nhật session khi lưu được. --%>
-                                            <%-- PF01: . Ở đây em hiển thị thông tin hồ sơ để người dùng chỉnh sửa.
-                                                 .. Bấm Lưu thì em gửi các thông tin vừa sửa lên máy chủ.
-                                                 ... POST /profile?action=update → ProfileController.doPost() [PF03]. --%>
+                                            
+                                            
+                                            <%-- PF01: . Hiển thị form Hồ sơ gồm họ tên, SĐT, email, ngày sinh và địa chỉ.
+.. Dữ liệu chỉ được lưu sau khi bấm Lưu thay đổi; mật khẩu chỉ cần khi đổi email.
+... Bấm Lưu thay đổi -> account-validation.js -> POST /profile?action=update [PF03]. --%>
                                             <form id="profileForm"
                                                 action="${pageContext.request.contextPath}/profile?action=update"
                                                 method="POST">
+                                                    <input type="hidden" name="csrfToken" value="${sessionScope.accountCsrfToken}">
                                                 <div class="row g-4">
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Họ và tên</label>
+                                                        
+                                                        <%-- PF01: . Nhận họ tên hiển thị trong hồ sơ.
+.. Bắt buộc, sau chuẩn hóa còn từ 1 đến 120 ký tự.
+... Tham số fullName chuyển đến ProfileController.update() [PF08]. --%>
                                                         <input type="text" name="fullName"
                                                             class="form-control-custom w-100 profile-input"
-                                                            value="${sessionScope.user.fullName}" minlength="2" readonly
+                                                            value="${fn:escapeXml(sessionScope.user.fullName)}" minlength="1" readonly
                                                             required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Số điện thoại</label>
+                                                        
+                                                        <%-- PF01: . Nhận số điện thoại trong hồ sơ.
+.. Phải có 10 chữ số, bắt đầu bằng 0 và không trùng tài khoản khác.
+... Tham số phone chuyển đến ProfileController.update() [PF08]. --%>
                                                         <input type="tel" name="phone"
                                                             class="form-control-custom w-100 profile-input"
-                                                            value="${sessionScope.user.phone}"
-                                                            pattern="^(84|0)[3|5|7|8|9][0-9]{8}$"
-                                                            title="Vui lòng nhập số điện thoại Việt Nam hợp lệ (VD: 0912345678)"
-                                                            readonly>
+                                                            value="${fn:escapeXml(sessionScope.user.phone)}"
+                                                            pattern="0[0-9]{9}" inputmode="numeric"
+                                                            title="Nhập 10 chữ số và bắt đầu bằng số 0"
+                                                            readonly required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Địa chỉ Email</label>
-                                                        <input type="email" name="email"
+                                                        
+                                                        <%-- PF01: . Nhận email dùng cho tài khoản.
+.. Phải đúng định dạng; đổi email thì cần mật khẩu hiện tại.
+... Tham số email và profilePassword chuyển đến ProfileController.update() [PF08]. --%>
+                                                        <input type="email" name="email" maxlength="150"
                                                             class="form-control-custom w-100 profile-input"
-                                                            value="${sessionScope.user.email}" readonly required>
+                                                            value="${fn:escapeXml(sessionScope.user.email)}" readonly required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Ngày sinh nhật</label>
                                                         <div class="d-flex gap-2">
-                                                            <select id="birthDay"
+                                                            
+                                                            <%-- PF01: . Nhận ngày, tháng và năm sinh.
+.. Chọn đủ ba phần hoặc để trống cả ba.
+... Các tham số birthDay, birthMonth, birthYear chuyển đến ProfileController.update() [PF08]. --%>
+                                                            <select id="birthDay" name="birthDay"
                                                                 class="form-select form-control-custom w-100 profile-input"
                                                                 disabled></select>
-                                                            <select id="birthMonth"
+                                                            <select id="birthMonth" name="birthMonth"
                                                                 class="form-select form-control-custom w-100 profile-input"
                                                                 disabled></select>
-                                                            <select id="birthYear"
+                                                            <select id="birthYear" name="birthYear"
                                                                 class="form-select form-control-custom w-100 profile-input"
                                                                 disabled></select>
                                                         </div>
+                                                        
                                                         <input type="hidden" name="birthday" id="birthdayHidden"
-                                                            value="${sessionScope.user.birthday}">
+                                                            value="${fn:escapeXml(sessionScope.user.birthday)}">
                                                     </div>
                                                     <div class="col-12">
                                                         <label class="form-label-custom">Địa chỉ nhận hàng mặc
                                                             định</label>
-                                                        <input type="text" name="address"
+                                                        
+                                                        <%-- PF01: . Nhận địa chỉ nhận hàng mặc định.
+.. Không bắt buộc, tối đa 500 ký tự.
+... Tham số address chuyển đến ProfileController.update() [PF08]. --%>
+                                                        <input type="text" name="address" maxlength="500"
                                                             class="form-control-custom w-100 profile-input"
-                                                            value="${sessionScope.user.address}" readonly>
+                                                            value="${fn:escapeXml(sessionScope.user.address)}" readonly>
                                                     </div>
                                                 </div>
 
+                                                <div class="mt-3">
+                                                    <label class="form-label-custom" for="profilePassword">Mật khẩu hiện tại (chỉ cần khi đổi email)</label>
+                                                    
+                                                    <%-- PF01: . Nhận mật khẩu hiện tại khi người dùng đổi email.
+.. Chỉ dùng để xác nhận quyền sửa email, không thay đổi mật khẩu.
+... Tham số profilePassword chuyển đến UserDAO.verifyPasswordById() [PF09]. --%>
+                                                    <input id="profilePassword" name="profilePassword" type="password" maxlength="255" autocomplete="current-password" class="form-control-custom w-100">
+                                                </div>
                                                 <div id="editActions"
                                                     class="mt-4 pt-3 border-top d-none justify-content-end gap-2">
                                                     <button type="button" id="btnCancelEdit"
@@ -441,18 +480,24 @@
                                             </div>
 
                                             <div class="collapse mt-4" id="passwordCollapse">
-                                                <%-- BF10 - ĐỔI MẬT KHẨU: POST action=changePassword; server kiểm tra mật khẩu cũ, mới và xác nhận. --%>
-                                                <%-- PW01: . Ở đây em nhận mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu.
-                                                     .. Người dùng phải biết mật khẩu hiện tại mới đổi tại hồ sơ.
-                                                     ... POST /profile?action=changePassword → ProfileController [PW02]. --%>
+                                                
+                                                
+                                                <%-- PW01: . Hiển thị form Đổi mật khẩu gồm mật khẩu hiện tại, mật khẩu mới và xác nhận.
+.. Chưa cập nhật mật khẩu khi người dùng mới nhập dữ liệu.
+... Bấm Cập nhật mật khẩu -> account-validation.js -> POST /profile?action=changePassword [PW02]. --%>
                                                 <form id="passwordForm"
                                                     action="${pageContext.request.contextPath}/profile?action=changePassword"
                                                     method="POST">
+                                                    <input type="hidden" name="csrfToken" value="${sessionScope.accountCsrfToken}">
                                                     <div class="row g-4">
                                                         <div class="col-12">
                                                             <label class="form-label-custom">Mật khẩu hiện tại</label>
                                                             <div class="input-group">
-                                                                <input type="password" name="oldPassword"
+                                                                
+                                                                <%-- PW01: . Nhận mật khẩu hiện tại trong form đổi mật khẩu.
+.. Bắt buộc nhập và phải khớp mật khẩu đang lưu.
+... Tham số oldPassword chuyển đến ProfileController.doPost() [PW02]. --%>
+                                                                <input type="password" name="oldPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
                                                                     placeholder="Nhập mật khẩu hiện tại" required>
                                                                 <span
@@ -467,10 +512,14 @@
                                                         <div class="col-md-6">
                                                             <label class="form-label-custom">Mật khẩu mới</label>
                                                             <div class="input-group">
+                                                                
+                                                                <%-- PW01: . Nhận mật khẩu mới.
+.. Dài 8–255 ký tự và có cả chữ và số.
+... Tham số newPassword chuyển đến ProfileController.doPost() [PW02]. --%>
                                                                 <input type="password" id="newPassword"
-                                                                    name="newPassword"
+                                                                    name="newPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
-                                                                    placeholder="Nhập mật khẩu mới" minlength="6"
+                                                                    placeholder="Nhập mật khẩu mới" minlength="8"
                                                                     required>
                                                                 <span
                                                                     class="input-group-text bg-white border-start-0 cursor-pointer"
@@ -481,14 +530,18 @@
                                                                 </span>
                                                             </div>
                                                             <div class="invalid-feedback" id="newPasswordFeedback">Mật
-                                                                khẩu phải từ 6 ký tự trở lên.</div>
+                                                                khẩu phải có ít nhất 8 ký tự, gồm chữ và số.</div>
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label class="form-label-custom">Xác nhận mật khẩu
                                                                 mới</label>
                                                             <div class="input-group">
+                                                                
+                                                                <%-- PW01: . Nhận xác nhận mật khẩu mới.
+.. Bắt buộc nhập và phải giống newPassword trong cùng form.
+... Tham số confirmPassword chuyển đến ProfileController.doPost() [PW02]. --%>
                                                                 <input type="password" id="confirmPassword"
-                                                                    name="confirmPassword"
+                                                                    name="confirmPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
                                                                     placeholder="Nhập lại mật khẩu mới" required>
                                                                 <span
@@ -539,8 +592,8 @@
                                                 </div>
                                             </c:when>
                                             <c:otherwise>
-                                                <%-- BF10/BF12: lịch sử riêng do ProfileController nạp theo ID người đăng nhập; JSP chỉ hiển thị. --%>
-                                                <%-- PH03: . Ở đây em hiển thị từng giao dịch điểm của người đang đăng nhập.
+                                                
+                                                <%-- PH03: . Hiển thị từng giao dịch điểm của người đang đăng nhập.
                                                      .. Người dùng xem được điểm đã tích, đã đổi và đã hoàn.
                                                      Nguồn/ghi chú: Danh sách lấy từ UserDAO [PH02] qua ProfileController [PF02]. --%>
                                                 <c:forEach var="txn" items="${loyaltyHistory}" varStatus="loop">
@@ -608,11 +661,12 @@
                         // Store original values
                         const originalValues = {};
 
-                        // Check if form changed
+
+                        // . Chỉ bật nút Lưu thay đổi khi thông tin hồ sơ khác dữ liệu ban đầu.
                         function checkFormChanged() {
                             let isChanged = false;
                             profileInputs.forEach(input => {
-                                if (input.value !== originalValues[input.name]) {
+                                if (input.value !== originalValues[input.name || input.id]) {
                                     isChanged = true;
                                 }
                             });
@@ -639,10 +693,10 @@
                         const birthYear = document.getElementById('birthYear');
                         const birthdayHidden = document.getElementById('birthdayHidden');
 
-                        // Populate Year (Current year - 80 to Current year)
+                        // Match the server's supported birth years.
                         const curYear = new Date().getFullYear();
                         birthYear.innerHTML = '<option value="">Năm</option>';
-                        for (let i = curYear; i >= curYear - 80; i--) {
+                        for (let i = curYear; i >= 1900; i--) {
                             birthYear.innerHTML += '<option value="' + i + '">' + i + '</option>';
                         }
 
@@ -653,6 +707,8 @@
                         }
 
                         // Populate Day dynamically based on Month and Year
+                        // . Tạo danh sách ngày theo tháng/năm, xét cả năm nhuận; giữ ngày cũ nếu còn hợp lệ.
+                        // . Tạo số ngày theo tháng/năm đang chọn; giữ ngày cũ nếu còn hợp lệ.
                         function updateDays() {
                             const d = birthDay.value;
                             const m = parseInt(birthMonth.value) || 1;
@@ -673,8 +729,11 @@
                         birthMonth.addEventListener('change', updateDays);
                         birthYear.addEventListener('change', updateDays);
 
-                        // Sync with Hidden Input
+
+                        // . Ghép ngày sinh đủ ba phần thành yyyy-MM-dd trong birthdayHidden; server kiểm tra lại các phần được gửi.
                         function syncBirthday() {
+                            const selected = [birthYear.value, birthMonth.value, birthDay.value].filter(Boolean).length;
+                            birthDay.setCustomValidity(selected === 0 || selected === 3 ? '' : 'Vui lòng chọn đủ ngày, tháng và năm sinh.');
                             if (birthYear.value && birthMonth.value && birthDay.value) {
                                 const y = birthYear.value;
                                 const m = birthMonth.value.padStart(2, '0');
@@ -706,9 +765,12 @@
                         originalValues['birthDay'] = birthDay.value;
                         originalValues['birthMonth'] = birthMonth.value;
                         originalValues['birthYear'] = birthYear.value;
+                        profileInputs.forEach(input => { originalValues[input.name || input.id] = input.value; });
                         // ---------------------------------------------------------
 
 
+                        // . Bấm Chỉnh sửa thì bỏ readonly/disabled trên trường hồ sơ, lưu giá trị ban đầu và hiện nút Lưu/Hủy.
+                        // . Nút Chỉnh sửa mở khóa các trường hồ sơ và hiện nút Lưu/Hủy.
                         btnEdit.addEventListener('click', function () {
                             // Enable inputs
                             profileInputs.forEach(input => {
@@ -736,6 +798,8 @@
                             checkFormChanged(); // Reset button state
                         });
 
+                        // .. Bấm Hủy thì phục hồi giá trị ban đầu và khóa trường; không gửi cập nhật database.
+                        // .. Nút Hủy phục hồi dữ liệu ban đầu và khóa các trường; không gửi dữ liệu lên server.
                         btnCancel.addEventListener('click', function () {
                             // Restore inputs
                             profileInputs.forEach(input => {
@@ -756,6 +820,7 @@
                             });
 
                             birthdayHidden.value = originalValues['birthdayHidden'];
+                            birthDay.setCustomValidity('');
 
                             // Hide actions, show edit button
                             editActions.classList.remove('d-flex');
@@ -821,31 +886,6 @@
                             icon.classList.remove('text-primary-custom');
                         }
                     }
-
-                    // Validate password form before submission
-                    document.getElementById('passwordForm').addEventListener('submit', function (event) {
-                        const newPassword = document.getElementById('newPassword');
-                        const confirmPassword = document.getElementById('confirmPassword');
-                        let isValid = true;
-
-                        if (newPassword.value.length < 6) {
-                            newPassword.classList.add('is-invalid');
-                            isValid = false;
-                        } else {
-                            newPassword.classList.remove('is-invalid');
-                        }
-
-                        if (newPassword.value !== confirmPassword.value) {
-                            confirmPassword.classList.add('is-invalid');
-                            isValid = false;
-                        } else {
-                            confirmPassword.classList.remove('is-invalid');
-                        }
-
-                        if (!isValid) {
-                            event.preventDefault(); // Stop form submission
-                        }
-                    });
 
                     // Handle direct navigation to tabs via URL hash
                     window.addEventListener('DOMContentLoaded', (event) => {

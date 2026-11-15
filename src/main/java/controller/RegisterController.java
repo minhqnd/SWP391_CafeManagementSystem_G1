@@ -3,6 +3,8 @@ package controller;
 import dao.UserDAO;
 import model.User;
 import utils.RedirectUtil;
+import utils.AccountValidation;
+import utils.AccountCsrf;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -11,93 +13,69 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-// BF10 - ĐĂNG KÝ: popup auth_modal.jsp gửi POST /register; đây không phải trang GET riêng.
 @WebServlet(name = "RegisterController", urlPatterns = {"/register"})
 public class RegisterController extends HttpServlet {
 
-    private final UserDAO userDAO = new UserDAO();
+    private final UserDAO userDAO;
+    public RegisterController() { this(new UserDAO()); }
+    RegisterController(UserDAO userDAO) { this.userDAO = userDAO; }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
+        // RG02: . Nhận POST /register từ form RG01 và kiểm tra csrfToken trước khi xử lý.
+        // .. Token đúng thì tiếp tục đọc dữ liệu; token sai thì dừng request.
+        // ... AccountCsrf.require() đối chiếu token trong form với session.
         request.setCharacterEncoding("UTF-8");
+        if (!AccountCsrf.require(request, response)) return;
         
-        String fullName = request.getParameter("fullname");
-        // RG02: . Ở đây em kiểm tra thông tin đăng ký có đầy đủ và đúng định dạng không.
-        // .. Hợp lệ thì em kiểm tra trùng rồi tạo tài khoản khách hàng.
-        // ... checkPhoneExists()/checkEmailExists() [RG03] → register() [RG04].
+        // . Nhận fullname, phone, email, password và confirm_password từ form RG01.
+        // .. Họ tên, email và SĐT được chuẩn hóa; mật khẩu giữ nguyên để kiểm tra chính xác.
+        // ... AccountValidation kiểm tra định dạng từng trường trước khi kiểm tra trùng.
+        String fullName = AccountValidation.text(request.getParameter("fullname"));
         String email = request.getParameter("email");
         if (email == null || email.trim().isEmpty()) {
             email = request.getParameter("username");
         }
-        String phone = request.getParameter("phone");
-        if (phone != null) {
-            phone = phone.trim().replaceAll("[\\s.]", "");
-        }
+        email = AccountValidation.email(email);
+        String phone = AccountValidation.phone(request.getParameter("phone"));
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirm_password");
         
         String redirect = request.getParameter("redirect");
         String backPath = RedirectUtil.isSafeLocalPath(redirect) ? redirect : "/";
-
-        // Kiểm tra hợp lệ dữ liệu đầu vào
-        if (fullName == null || fullName.trim().isEmpty()) {
-            request.getSession().setAttribute("errorMsg", "Họ và tên không được để trống.");
+        // . Gom lỗi của họ tên, SĐT, email, mật khẩu và xác nhận theo đúng tên trường trên form.
+        // .. Trường sai được đưa vào errors; server vẫn kiểm tra dù người dùng bỏ qua JavaScript.
+        // ... Quy tắc kiểm tra nằm trong AccountValidation.java.
+        java.util.Map<String,String> errors = new java.util.LinkedHashMap<>();
+        String nameError = AccountValidation.nameError(fullName);
+        String phoneError = AccountValidation.phoneError(phone);
+        String emailError = AccountValidation.emailError(email);
+        if (nameError != null) errors.put("fullname", nameError);
+        if (phoneError != null) errors.put("phone", phoneError);
+        if (emailError != null) errors.put("email", emailError);
+        errors.putAll(AccountValidation.passwordErrors(password, confirmPassword, "password", "confirm_password"));
+        // . Trường đúng định dạng mới được kiểm tra trùng trong database.
+        // ... Email gọi UserDAO.checkEmailExists() [RG03]; SĐT gọi UserDAO.checkPhoneExists() [RG06].
+        if (phoneError == null && userDAO.checkPhoneExists(phone)) errors.put("phone", "Số điện thoại đã tồn tại trong hệ thống.");
+        if (emailError == null && userDAO.checkEmailExists(email)) errors.put("email", "Email đã tồn tại trong hệ thống.");
+        // RG04: . Xử lý danh sách lỗi sau validation và kiểm tra trùng.
+        // .. Còn lỗi thì không tạo tài khoản; giữ họ tên/SĐT/email và mở lại form RG01.
+        // ... AccountFormFeedback.flash() giữ lỗi để auth_modal.jsp hiển thị lại đúng trường.
+        if (!errors.isEmpty()) {
+            utils.AccountFormFeedback.flash(request, "register", errors,
+                    java.util.Map.of("fullname", fullName, "phone", phone, "email", email));
+            request.getSession().setAttribute("errorMsg", "Vui lòng kiểm tra các trường được đánh dấu bên dưới.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
             return;
         }
 
-        if (phone == null || phone.isEmpty()) {
-            request.getSession().setAttribute("errorMsg", "Số điện thoại không được để trống.");
-            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
-            return;
-        }
-
-        if (!phone.matches("^(84|0)[3|5|7|8|9][0-9]{8}$") && !phone.matches("^[0-9]{9,11}$")) {
-            request.getSession().setAttribute("errorMsg", "Số điện thoại không hợp lệ (VD: 0912345678).");
-            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
-            return;
-        }
-
-        if (email == null || email.trim().isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            request.getSession().setAttribute("errorMsg", "Địa chỉ email không hợp lệ.");
-            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
-            return;
-        }
-
-        if (password == null || password.length() < 6) {
-            request.getSession().setAttribute("errorMsg", "Mật khẩu phải từ 6 ký tự trở lên.");
-            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
-            return;
-        }
-
-        if (confirmPassword != null && !confirmPassword.isEmpty() && !password.equals(confirmPassword)) {
-            request.getSession().setAttribute("errorMsg", "Mật khẩu xác nhận không khớp.");
-            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
-            return;
-        }
-
-        // Kiểm tra số điện thoại đã tồn tại chưa
-        // Kiểm tra trùng trước khi INSERT; DAO trả boolean, Controller chọn thông báo và tab mở lại.
-        if (userDAO.checkPhoneExists(phone)) {
-            request.getSession().setAttribute("errorMsg", "Số điện thoại đã tồn tại trong hệ thống.");
-            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
-            return;
-        }
-
-        // Kiểm tra email đã tồn tại chưa
-        if (userDAO.checkEmailExists(email)) {
-            request.getSession().setAttribute("errorMsg", "Email đã tồn tại trong hệ thống.");
-            response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
-            return;
-        }
-
-        // Mặc định tất cả user đăng ký mới từ web đều là Khách hàng
+        // . Gán role=CUSTOMER và position=null tại server; không nhận vai trò từ form.
+        // .. Dữ liệu hợp lệ được đóng gói thành User trước khi lưu.
         String dbRole = "CUSTOMER";
         String dbPosition = null;
 
-        // Create new User object
         User newUser = new User();
         newUser.setFullName(fullName.trim());
         newUser.setEmail(email.trim());
@@ -105,13 +83,12 @@ public class RegisterController extends HttpServlet {
         newUser.setRole(dbRole);
         newUser.setPosition(dbPosition);
 
-        // Đầu vào hợp lệ -> DAO thêm users với vai trò CUSTOMER; không lấy role từ form.
+        // ... UserDAO.register() lưu User và mật khẩu rồi trả kết quả [RG05].
         boolean isSuccess = userDAO.register(newUser, password);
-        // RG05: . Ở đây em nhận kết quả tạo tài khoản và chuẩn bị thông báo.
-        // .. Thành công thì mở đăng nhập; lỗi thì mở lại đăng ký.
-        // ... sendRedirect() về trang chứa auth_modal.jsp [RG01].
 
-        // KẾT QUẢ: redirect về trang gốc kèm tab=login/register để popup hiển thị đúng bước.
+        // RG05: . Nhận kết quả UserDAO.register() sau khi bấm Tạo tài khoản mới.
+        // .. DAO trả true thì tài khoản đã được tạo và mở tab đăng nhập [LG01].
+        // .. DAO trả false thì tài khoản chưa được tạo và mở lại form đăng ký [RG01].
         if (isSuccess) {
             request.getSession().setAttribute("successMsg", "Đăng ký thành công! Vui lòng đăng nhập.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=login");

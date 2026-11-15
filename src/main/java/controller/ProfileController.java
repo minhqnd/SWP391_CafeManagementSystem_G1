@@ -1,142 +1,131 @@
 package controller;
 
+import dao.UserDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.*;
 import java.io.IOException;
+import java.util.Objects;
 import model.User;
+import utils.AccountCsrf;
+import utils.AccountValidation;
 
-// BF10/BF12 - HỒ SƠ: GET xem thông tin/lịch sử; POST action=update hoặc changePassword.
-@WebServlet(name = "ProfileController", urlPatterns = {"/profile"})
+@WebServlet(name="ProfileController",urlPatterns={"/profile"})
 public class ProfileController extends HttpServlet {
+    private final UserDAO users;
+    public ProfileController(){this(new UserDAO());}
+    ProfileController(UserDAO users){this.users=users;}
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null
-                || !"ACTIVE".equalsIgnoreCase(((User) session.getAttribute("user")).getStatus())) {
-            // Require login
-            response.sendRedirect(request.getContextPath() + "/?login=true");
-            return;
+    // PF06: . Lấy user hiện tại từ session rồi kiểm tra lại tài khoản còn ACTIVE.
+    // .. Không hợp lệ thì hủy session và chuyển về đăng nhập; hợp lệ cập nhật user mới vào session.
+    // ... UserDAO.getActiveUserById() đọc dữ liệu tài khoản [PF07].
+    private User authorize(HttpServletRequest request,HttpServletResponse response)throws IOException {
+        HttpSession session=request.getSession(false);
+        User previous=session==null?null:(User)session.getAttribute("user");
+        User current=previous==null?null:users.getActiveUserById(previous.getId());
+        if(current==null){
+            if(session!=null)session.invalidate();
+            response.sendRedirect(request.getContextPath()+"/?tab=login");return null;
         }
-
-        // BF12 - PHÍA KHÁCH: đọc lịch sử theo ID trong session, không theo ID do người dùng gửi lên.
-        // Lưu ý: đoạn này chỉ tải lại lịch sử; số dư trong profile.jsp hiện lấy từ sessionScope.user.
-        dao.UserDAO userDAO = new dao.UserDAO();
-        // PF02: . Ở đây em lấy mã người đang đăng nhập để đọc lịch sử điểm và quy tắc.
-        // .. Em gửi dữ liệu này sang trang hồ sơ; số dư đang hiển thị vẫn lấy từ phiên.
-        // ... UserDAO.getLoyaltyHistoryByUserId() [PH02] → forward profile.jsp [PH03].
-        User currentUser = (User) session.getAttribute("user");
-        currentUser.setTotalPoints(userDAO.getTotalPoints(currentUser.getId()));
-        session.setAttribute("user", currentUser);
-        java.util.List<model.LoyaltyTransaction> history = userDAO.getLoyaltyHistoryByUserId(currentUser.getId());
-        request.setAttribute("loyaltyHistory", history);
-
-        // Mốc điểm Admin cài đặt: điểm Aura trừ thẳng vào đơn ở Giỏ hàng
-        request.setAttribute("shopSettings", new dao.ShopSettingDAO().getSettings());
-
-        request.getRequestDispatcher("/profile.jsp").forward(request, response);
+        session.setAttribute("user",current);return current;
     }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null
-                || !"ACTIVE".equalsIgnoreCase(((User) session.getAttribute("user")).getStatus())) {
-            response.sendRedirect(request.getContextPath() + "/?login=true");
-            return;
-        }
-
-        User user = (User) session.getAttribute("user");
-        
-        // BF10: chọn thao tác; ID chủ hồ sơ lấy từ user trong session, không lấy ID từ form.
-        String action = request.getParameter("action");
-        if ("update".equals(action)) {
-            // PF03: . Ở đây em chọn sửa hồ sơ vì form gửi yêu cầu cập nhật thông tin.
-            // .. Thông tin hợp lệ thì em yêu cầu lưu theo mã người đang đăng nhập.
-            // ... UserDAO.updateUserProfile(mã người dùng, thông tin hồ sơ) [PF04].
-            String fullName = request.getParameter("fullName");
-            String phone = request.getParameter("phone");
-            if (phone == null) {
-                phone = user.getPhone(); // Giữ nguyên sđt cũ do đã ẩn field này
+    // PF02: . Nhận GET /profile khi người dùng bấm Hồ sơ.
+    // .. Phiên hợp lệ thì chuẩn bị dữ liệu hồ sơ; phiên không hợp lệ thì chuyển về đăng nhập.
+    // ... authorize() kiểm tra phiên [PF06], sau đó renderProfile() trả giao diện [PF05].
+    @Override protected void doGet(HttpServletRequest request,HttpServletResponse response)throws ServletException,IOException {
+        User user=authorize(request,response);if(user==null)return;
+        AccountCsrf.token(request.getSession());renderProfile(request,response,user);
+    }
+    // PF03: . Nhận POST /profile, kiểm tra CSRF và xác thực tài khoản trước khi đọc action.
+    // .. action=update cập nhật hồ sơ; action=changePassword chuyển sang nhánh đổi mật khẩu [PW02].
+    // ... Dữ liệu của từng nhánh được xử lý trong update() hoặc UserDAO tương ứng.
+    @Override protected void doPost(HttpServletRequest request,HttpServletResponse response)throws ServletException,IOException {
+        request.setCharacterEncoding("UTF-8");
+        if(!AccountCsrf.require(request,response))return;
+        User user=authorize(request,response);if(user==null)return;
+        String action=request.getParameter("action");
+        if("update".equals(action))update(request,user);
+        // PW02: . Nhận oldPassword, newPassword và confirmPassword từ form đổi mật khẩu.
+        // .. Sai trường thì giữ form và báo lỗi; hợp lệ mới chuyển sang cập nhật database.
+        // ... UserDAO.changePasswordById() xử lý đổi mật khẩu theo ID trong session [PW03].
+        else if("changePassword".equals(action)){
+            String password=request.getParameter("newPassword");
+            java.util.Map<String,String> errors=AccountValidation.passwordErrors(password,request.getParameter("confirmPassword"),"newPassword","confirmPassword");
+            String current=request.getParameter("oldPassword");
+            if(current==null || current.isEmpty()) errors.put("oldPassword","Vui lòng nhập mật khẩu hiện tại.");
+            if(errors.isEmpty() && !users.changePasswordById(user.getId(),current,password))
+                errors.put("oldPassword","Mật khẩu hiện tại không đúng hoặc tài khoản không còn hoạt động.");
+            // PW04: . Xử lý kết quả đổi mật khẩu.
+            // .. Thành công thì đổi session ID, xoay CSRF và báo thành công; lỗi được gắn vào đúng trường.
+            // ... renderProfile() trả lại giao diện hồ sơ [PF05].
+            if(errors.isEmpty()){request.changeSessionId();AccountCsrf.rotate(request.getSession());request.setAttribute("successMsg","Đổi mật khẩu thành công!");}
+            else {
+                utils.AccountFormFeedback.show(request,"profile-password",errors,java.util.Map.of());
+                request.setAttribute("errorMsg","Vui lòng kiểm tra các trường được đánh dấu bên dưới.");
             }
-            String email = request.getParameter("email");
-            if (email == null) {
-                email = user.getEmail(); // Giữ nguyên email
-            }
-            String birthday = request.getParameter("birthday");
-            String address = request.getParameter("address");
-            
-            // Backend validation
-            if (fullName == null || fullName.trim().isEmpty()) {
-                request.setAttribute("errorMsg", "Họ và tên không được để trống!");
-            } else if (phone != null && !phone.trim().isEmpty() && !phone.matches("^[0-9]{9,15}$")) {
-                request.setAttribute("errorMsg", "Số điện thoại không hợp lệ!");
-            } else if (email != null && !email.trim().isEmpty() && !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-                request.setAttribute("errorMsg", "Địa chỉ email không hợp lệ!");
-            } else {
-                dao.UserDAO userDAO = new dao.UserDAO();
-                // Controller kiểm tra định dạng -> DAO UPDATE users WHERE id=? -> trả success hoặc lỗi.
-                String updateResult = userDAO.updateUserProfile(user.getId(), fullName, phone, email, birthday, address);
-                
-                if ("success".equals(updateResult)) {
-                    // PF05: . Ở đây em cập nhật người dùng trong phiên sau khi cơ sở dữ liệu đã lưu xong.
-                    // .. Trang hồ sơ hiển thị thông tin mới và thông báo kết quả.
-                    // ... forward profile.jsp cùng request chứa thông báo [PF01].
-                    // DB lưu thành công mới cập nhật User trong session để JSP hiển thị thông tin mới.
-                    user.setFullName(fullName);
-                    user.setPhone(phone);
-                    user.setEmail(email);
-                    user.setBirthday(birthday);
-                    user.setAddress(address);
-                    session.setAttribute("user", user);
-                    request.setAttribute("successMsg", "Cập nhật thông tin thành công!");
-                } else {
-                    request.setAttribute("errorMsg", updateResult);
-                }
-            }
-        } else if ("changePassword".equals(action)) {
-            // PW02: . Ở đây em kiểm tra mật khẩu mới và xác minh mật khẩu hiện tại.
-            // .. Mật khẩu hiện tại đúng thì em mới cho lưu mật khẩu mới.
-            // ... UserDAO.login() [LG03] → UserDAO.updatePassword() [PW03] → thông báo ở hồ sơ.
-            // BF10 - ĐỔI MẬT KHẨU: khác quên mật khẩu; phải xác minh mật khẩu hiện tại, không dùng OTP.
-            String oldPassword = request.getParameter("oldPassword");
-            String newPassword = request.getParameter("newPassword");
-            String confirmPassword = request.getParameter("confirmPassword");
-            
-            if (newPassword == null || newPassword.length() < 6) {
-                request.setAttribute("errorMsg", "Mật khẩu mới phải dài ít nhất 6 ký tự!");
-            } else if (!newPassword.equals(confirmPassword)) {
-                request.setAttribute("errorMsg", "Mật khẩu xác nhận không khớp!");
-            } else {
-                dao.UserDAO userDAO = new dao.UserDAO();
-                // Verify old password by trying to log in
-                if (userDAO.login(user.getEmail(), oldPassword) != null) {
-                    boolean success = userDAO.updatePassword(user.getEmail(), newPassword);
-                    if (success) {
-                        request.setAttribute("successMsg", "Đổi mật khẩu thành công!");
-                    } else {
-                        request.setAttribute("errorMsg", "Đổi mật khẩu thất bại. Vui lòng thử lại!");
-                    }
-                } else {
-                    request.setAttribute("errorMsg", "Mật khẩu hiện tại không đúng!");
-                }
+        }else request.setAttribute("errorMsg","Thao tác hồ sơ không hợp lệ.");
+        renderProfile(request,response,(User)request.getSession().getAttribute("user"));
+    }
+    // PF08: . Đọc họ tên, SĐT, email, ngày sinh và địa chỉ từ form cập nhật hồ sơ.
+    // .. Chuẩn hóa dữ liệu rồi kiểm tra từng trường; ngày sinh không đủ/sai và địa chỉ quá dài sẽ tạo lỗi.
+    private void update(HttpServletRequest request,User user){
+        String name=AccountValidation.text(request.getParameter("fullName"));
+        String phone=AccountValidation.phone(request.getParameter("phone")==null?user.getPhone():request.getParameter("phone"));
+        String email=AccountValidation.email(request.getParameter("email")==null?user.getEmail():request.getParameter("email"));
+        String birthday=AccountValidation.text(request.getParameter("birthday"));
+        String day=request.getParameter("birthDay");
+        String month=request.getParameter("birthMonth");
+        String year=request.getParameter("birthYear");
+        boolean hasBirthdayParts=day!=null || month!=null || year!=null;
+        int birthdayParts=(AccountValidation.text(day).isEmpty()?0:1)
+                +(AccountValidation.text(month).isEmpty()?0:1)
+                +(AccountValidation.text(year).isEmpty()?0:1);
+        if(hasBirthdayParts && birthdayParts==3){
+            try{
+                birthday=java.time.LocalDate.of(Integer.parseInt(year),Integer.parseInt(month),Integer.parseInt(day)).toString();
+            }catch(java.time.DateTimeException | NumberFormatException e){birthday="invalid";}
+        }else if(hasBirthdayParts && birthdayParts==0){birthday="";}
+        String address=AccountValidation.text(request.getParameter("address"));
+        java.util.Map<String,String> errors=new java.util.LinkedHashMap<>();
+        if(AccountValidation.nameError(name)!=null)errors.put("fullName",AccountValidation.nameError(name));
+        if(AccountValidation.phoneError(phone)!=null)errors.put("phone",AccountValidation.phoneError(phone));
+        if(AccountValidation.emailError(email)!=null)errors.put("email",AccountValidation.emailError(email));
+        if(hasBirthdayParts && birthdayParts!=0 && birthdayParts!=3)
+            errors.put("birthDay","Vui lòng chọn đủ ngày, tháng và năm sinh hoặc để trống cả ba.");
+        else if(AccountValidation.birthdayError(birthday)!=null)errors.put("birthDay",AccountValidation.birthdayError(birthday));
+        if(address.length()>500)errors.put("address","Địa chỉ tối đa 500 ký tự.");
+        // . Chỉ khi email thay đổi mới yêu cầu profilePassword; giữ email hiện tại thì không cần mật khẩu.
+        // ... UserDAO.verifyPasswordById() đối chiếu mật khẩu hiện tại [PF09].
+        boolean changingEmail=!Objects.equals(email,AccountValidation.email(user.getEmail()));
+        if(changingEmail && !errors.containsKey("email") && !users.verifyPasswordById(user.getId(),request.getParameter("profilePassword")))
+            errors.put("profilePassword","Vui lòng nhập đúng mật khẩu hiện tại để thay đổi email.");
+        if(errors.isEmpty()){
+            // ... Không còn lỗi thì gửi thông tin tới UserDAO.updateUserProfile() [PF04].
+            String result=users.updateUserProfile(user.getId(),name,phone,email,birthday,address);
+            if(!"success".equals(result)){
+                if(result.contains("Email"))errors.put("email",result);
+                if(result.contains("điện thoại"))errors.put("phone",result);
+                if(errors.isEmpty()){request.setAttribute("errorMsg",result);return;}
             }
         }
-        
-        // Sau POST: tải lại lịch sử/quy tắc và forward JSP, mang theo thông báo trong request.
-        java.util.List<model.LoyaltyTransaction> history = new dao.UserDAO().getLoyaltyHistoryByUserId(((User)session.getAttribute("user")).getId());
-        request.setAttribute("loyaltyHistory", history);
-        
-        request.setAttribute("shopSettings", new dao.ShopSettingDAO().getSettings());
-        
-        request.getRequestDispatcher("/profile.jsp").forward(request, response);
+        // .. Có lỗi thì giữ dữ liệu an toàn và không báo cập nhật thành công.
+        // ... AccountFormFeedback.show() đưa lỗi và giá trị an toàn về trang hồ sơ.
+        if(!errors.isEmpty()){
+            java.util.Map<String,String> values=new java.util.LinkedHashMap<>(java.util.Map.of("fullName",name,"phone",phone,"email",email,"address",address));
+            for(String part:new String[]{"birthDay","birthMonth","birthYear"})
+                if(request.getParameter(part)!=null)values.put(part,request.getParameter(part));
+            utils.AccountFormFeedback.show(request,"profile-update",errors,values);
+            request.setAttribute("errorMsg","Vui lòng kiểm tra các trường được đánh dấu bên dưới.");return;
+        }
+        // .. Chỉ sau khi DAO lưu thành công mới cập nhật user trong session và hiện thông báo thành công.
+        user.setFullName(name);user.setPhone(phone);user.setEmail(email);user.setBirthday(birthday);user.setAddress(address);
+        request.getSession().setAttribute("user",user);request.setAttribute("successMsg","Cập nhật thông tin thành công!");
+    }
+    // PF05: . Nạp dữ liệu hồ sơ, lịch sử điểm và cấu hình hiển thị.
+    // ... forward /profile.jsp để giao diện hiển thị dữ liệu và thông báo trong cùng request [PF01].
+    protected void renderProfile(HttpServletRequest request,HttpServletResponse response,User user)throws ServletException,IOException{
+        request.setAttribute("loyaltyHistory",users.getLoyaltyHistoryByUserId(user.getId()));
+        request.setAttribute("shopSettings",new dao.ShopSettingDAO().getSettings());
+        request.getRequestDispatcher("/profile.jsp").forward(request,response);
     }
 }

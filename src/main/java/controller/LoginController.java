@@ -4,6 +4,7 @@ import dao.UserDAO;
 import model.Cart;
 import model.User;
 import utils.RedirectUtil;
+import utils.AccountCsrf;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,7 +14,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
-// BF10 - ĐĂNG NHẬP/ĐĂNG XUẤT: POST nhận form; GET mở popup hoặc xử lý action=logout.
 @WebServlet(name = "LoginController", urlPatterns = {"/login"})
 public class LoginController extends HttpServlet {
 
@@ -25,20 +25,16 @@ public class LoginController extends HttpServlet {
         
         HttpSession session = request.getSession();
         
-        // Xử lý Đăng xuất
         String action = request.getParameter("action");
         if ("logout".equals(action)) {
-            // LG05: . Ở đây em xử lý khi người dùng bấm Đăng xuất.
-            // .. Em hủy phiên đăng nhập rồi đưa người dùng về trang chủ.
-            // ... GET /login?action=logout chọn nhánh này; đăng nhập lại từ [LG01].
-            // BF10: hủy phiên chứa user; các trang bảo vệ phải kiểm tra lại khi truy cập lần sau.
+            // LG05: . Nhận yêu cầu GET /login?action=logout từ nút Đăng xuất.
+            // .. Session đăng nhập được hủy để kết thúc phiên hiện tại.
+            // ... Chuyển trình duyệt về trang chủ.
             session.invalidate(); // Xóa session
-            // Redirect về trang chủ thay vì /login
             response.sendRedirect(request.getContextPath() + "/");
             return;
         }
 
-        // Kiểm tra nếu đã login thì redirect luôn, không cho vào trang login nữa
         User currentUser = (User) session.getAttribute("user");
         if (currentUser != null) {
             redirectByUser(currentUser, request, response);
@@ -46,7 +42,6 @@ public class LoginController extends HttpServlet {
         }
 
         String tab = request.getParameter("tab");
-        // Nếu truy cập trực tiếp /login thì điều hướng về trang chủ kèm bật popup đăng nhập
         response.sendRedirect(request.getContextPath() + "/?tab=" + (tab != null ? tab : "login"));
     }
 
@@ -55,41 +50,32 @@ public class LoginController extends HttpServlet {
             throws ServletException, IOException {
         
         request.setCharacterEncoding("UTF-8");
+        if (!AccountCsrf.require(request, response)) return;
 
-        // Nhận dữ liệu từ form (login modal / login.jsp)
+        // LG02: . Nhận username là email/SĐT và password từ form đăng nhập.
+        // .. Định danh được loại khoảng trắng ở đầu/cuối; mật khẩu giữ nguyên để đối chiếu chính xác.
+        // ... Dữ liệu được chuyển vào UserDAO.login() sau khi kiểm tra redirect nội bộ.
         String userIdentifier = request.getParameter("username");
         if (userIdentifier != null) {
             userIdentifier = userIdentifier.trim();
         }
         String pass = request.getParameter("password");
-        if (pass != null) {
-            pass = pass.trim();
-        }
-        // Trang cần quay lại sau khi đăng nhập (VD: /checkout), chỉ nhận đường dẫn nội bộ
         String redirect = request.getParameter("redirect");
         boolean hasRedirect = RedirectUtil.isSafeLocalPath(redirect);
 
-        // Gọi DAO để xác thực
-        // BF10: DAO trả User nếu đúng thông tin và ACTIVE; trả null nếu không xác thực được.
-        // LG02: . Ở đây em gọi kiểm tra tài khoản vì người dùng vừa gửi form đăng nhập.
-        // .. Hàm kiểm tra trả thông tin tài khoản hoặc báo không hợp lệ.
-        // ... userDAO.login(tên đăng nhập, mật khẩu) [LG03]; kết quả xử lý tại [LG04].
+        // ... Gửi định danh và mật khẩu tới UserDAO.login() [LG03].
         User loginUser = userDAO.login(userIdentifier, pass);
 
+        // LG04: . Xử lý kết quả UserDAO.login().
+        // .. Đúng thông tin thì tạo session mới và lưu user; sai thì giữ form và gắn lỗi vào mật khẩu.
+        // ... Thành công chuyển tới redirectByUser() [LG06]; thất bại quay lại auth_modal.jsp [LG01].
         if (loginUser != null) {
-            // LG04: . Ở đây em tạo phiên đăng nhập mới sau khi tài khoản được xác thực.
-            // .. Phiên mới chứa người vừa đăng nhập và giỏ hàng; điểm của danh tính cũ đã được xóa khỏi giỏ.
-            // ... Gọi redirectByUser() [LG06], hoặc quay về đường dẫn nội bộ nếu khách đang tiếp tục mua hàng.
-            // Renew the session after authentication so an older role/CSRF state cannot leak
-            // into the newly authenticated account. The anonymous shopping cart is safe to keep.
-            // BF10: tạo phiên mới sau đăng nhập, chỉ mang giỏ hàng sang và xóa điểm của danh tính cũ.
             HttpSession oldSession = request.getSession(false);
             Cart cart = null;
             if (oldSession != null) {
                 Object sessionCart = oldSession.getAttribute(Cart.SESSION_KEY);
                 if (sessionCart instanceof Cart) {
                     cart = (Cart) sessionCart;
-                    // Loyalty balances belong to the previous identity, not the browser cart.
                     cart.setAvailablePoints(0);
                     cart.setPointsUsed(0);
                 }
@@ -101,27 +87,25 @@ public class LoginController extends HttpServlet {
             }
             session.setAttribute("user", loginUser); // Lưu object User vào session
 
-            // Khách hàng đăng nhập từ trang Checkout -> quay lại tiếp tục đặt hàng
             if (hasRedirect && "CUSTOMER".equalsIgnoreCase(loginUser.getRole())) {
                 response.sendRedirect(request.getContextPath() + redirect);
                 return;
             }
 
-            // Dựa vào Role/Position để chuyển hướng đến trang tương ứng
             redirectByUser(loginUser, request, response);
         } else {
-            // Đăng nhập thất bại -> Lưu lỗi vào session và điều hướng về trang trước đó (mặc định trang chủ) bật popup
+            // .. Đăng nhập sai hoặc tài khoản bị khóa thì không tạo phiên đăng nhập và gắn lỗi vào ô mật khẩu.
+            // ... Quay lại auth_modal.jsp với tab=login [LG01].
+            utils.AccountFormFeedback.flash(request,"login",java.util.Map.of("password","Thông tin đăng nhập không đúng hoặc tài khoản đã bị khóa."),java.util.Map.of());
             request.getSession().setAttribute("errorMsg", "Tên đăng nhập hoặc mật khẩu không chính xác, hoặc tài khoản đã bị khóa!");
             response.sendRedirect(request.getContextPath() + (hasRedirect ? redirect : "/") + "?tab=login");
         }
     }
 
-    // Hàm helper để chia luồng redirect tùy thuộc vào Role và Position
+    // LG06: . Chọn trang theo role và position của tài khoản đã đăng nhập.
+    // .. ADMIN vào quản trị, STAFF vào màn hình vị trí, CUSTOMER về trang chủ.
+    // ... sendRedirect() đưa trình duyệt đến đường dẫn đã chọn.
     private void redirectByUser(User user, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        // LG06: . Ở đây em chọn trang tiếp theo dựa vào vai trò và vị trí làm việc.
-        // .. Admin vào quản trị, nhân viên vào màn hình nghiệp vụ, khách về trang chủ.
-        // ... sendRedirect(URL đích) yêu cầu trình duyệt mở trang mới.
-        // BF10 - PHÂN LUỒNG: ADMIN -> quản trị; STAFF theo vị trí; CUSTOMER -> trang chủ.
         String role = user.getRole();
         String position = user.getPosition();
         
@@ -138,7 +122,6 @@ public class LoginController extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/"); // Fallback for other staff
             }
         } else {
-            // CUSTOMER
             response.sendRedirect(request.getContextPath() + "/");
         }
     }
