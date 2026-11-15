@@ -45,6 +45,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="${ctx}/admin/bank-transactions" class="nav-link ${param.activeMenu == 'bank-transactions' ? 'active' : ''}">
+                    <span class="material-symbols-outlined">account_balance</span>
+                    <span>Giao dịch ngân hàng</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <%-- CA01: [SLBF11] Open Category Management
                      . Mở trang quản lý bằng GET /admin/categories.
                      ... AdminCategoriesController.doGet() [CA02]. --%>
@@ -106,7 +112,6 @@
                     <span>Phiếu nhập hàng</span>
                 </a>
             </li>
-            <li class="nav-item"><a href="${ctx}/admin/purchase-receipts" class="nav-link"><span class="material-symbols-outlined">fact_check</span><span>Kiểm nhận hàng</span></a></li>
         </ul>
 
         <!-- GROUP: NHÂN SỰ & CA LÀM -->

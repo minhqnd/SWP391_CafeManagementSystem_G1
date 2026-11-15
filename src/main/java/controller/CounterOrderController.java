@@ -27,6 +27,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -110,6 +112,12 @@ public class CounterOrderController extends HttpServlet {
             return;
         }
 
+        // API: Kiểm tra trạng thái thanh toán đơn chuyển khoản tại quầy
+        if ("check-payment".equals(action)) {
+            handleCheckPayment(request, response);
+            return;
+        }
+
         // Mặc định: Hiển thị giao diện POS
         User cashier = (User) request.getSession().getAttribute("user");
         List<Category> categories = categoryDAO.getAllActiveCategoriesWithCount();
@@ -144,6 +152,8 @@ public class CounterOrderController extends HttpServlet {
             handleCancelOrder(request, response);
         } else if ("complete-order".equals(action)) {
             handleCompleteOrder(request, response);
+        } else if ("simulate-payment".equals(action)) {
+            handleSimulatePayment(request, response);
         } else {
             sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Hành động không hợp lệ.\"}");
         }
@@ -332,25 +342,106 @@ public class CounterOrderController extends HttpServlet {
         // ... OrderDAO.createCounterOrder(đơn, món, cách trả, điểm dùng, ghi chú, quy tắc) [CT02].
         int orderId = orderDAO.createCounterOrder(order, items, paymentMethod, pointsUsed, paymentNote, settings);
 
-        if (orderId > 0 && "BANK_TRANSFER".equals(paymentMethod) && settings.isPaymentTestMode()) {
-            String amount = BigDecimal.valueOf(finalAmount).stripTrailingZeros().toPlainString();
-            String txCode = "QR-" + orderCode;
-            String status = "SUCCESS";
-            String canonical = PaymentService.canonical(orderCode, txCode, amount, status);
-            String signature = PaymentService.sign(settings.getPaymentCallbackSecret(), canonical);
-            if (PaymentService.verify(settings.getPaymentCallbackSecret(), canonical, signature)) {
-                paymentDAO.applyGatewayCallback(orderCode, txCode, new BigDecimal(amount), status,
-                        "POS-LOCAL-" + System.currentTimeMillis(), "{\"source\":\"counter-simulator\"}",
-                        settings.getPointsEarnUnit());
-            }
+        String qrUrl = "";
+        if (orderId > 0 && "BANK_TRANSFER".equals(paymentMethod)) {
+            // Đăng ký đơn hàng lên Payment Gateway để SePay webhook đối soát
+            PaymentService.registerOrderToGateway(
+                    settings.getPaymentGatewayUrl(),
+                    "aura_cafe",
+                    orderCode,
+                    finalAmount,
+                    "TX-" + orderCode
+            );
+
+            // Tạo link VietQR chuẩn
+            try {
+                qrUrl = "https://vietqr.app/img?bank=" + URLEncoder.encode(settings.getPaymentBankId(), StandardCharsets.UTF_8)
+                        + "&acc=" + URLEncoder.encode(settings.getPaymentAccountNo(), StandardCharsets.UTF_8)
+                        + "&template=compact"
+                        + "&amount=" + Math.round(finalAmount)
+                        + "&des=" + URLEncoder.encode(orderCode, StandardCharsets.UTF_8)
+                        + "&showinfo=true&fullacc=true"
+                        + "&holder=" + URLEncoder.encode(settings.getPaymentAccountName(), StandardCharsets.UTF_8)
+                        + "&store=" + URLEncoder.encode("AURA Cafe", StandardCharsets.UTF_8);
+            } catch (Exception ignored) {}
         }
 
         if (orderId > 0) {
-            String json = String.format("{\"success\":true,\"orderId\":%d,\"orderCode\":\"%s\",\"message\":\"Tạo đơn tại quầy thành công!\"}", orderId, orderCode);
+            String json = String.format(
+                    "{\"success\":true,\"orderId\":%d,\"orderCode\":\"%s\",\"qrUrl\":\"%s\",\"finalAmount\":%.0f,\"message\":\"Tạo đơn tại quầy thành công!\"}",
+                    orderId, orderCode, escapeJson(qrUrl), finalAmount
+            );
             sendJson(response, HttpServletResponse.SC_OK, json);
         } else {
             sendJson(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "{\"success\":false,\"error\":\"Không thể tạo đơn hàng. Vui lòng thử lại.\"}");
         }
+    }
+
+    private void handleCheckPayment(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int orderId = parseInt(request.getParameter("orderId"), -1);
+        if (orderId <= 0) {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"paid\":false,\"error\":\"Mã đơn không hợp lệ.\"}");
+            return;
+        }
+
+        Order order = orderDAO.getOrderById(orderId);
+        if (order == null || !isOwnedCounterOrder(request, order)) {
+            sendJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"paid\":false,\"error\":\"Không tìm thấy đơn hàng.\"}");
+            return;
+        }
+
+        // Nếu đơn hàng đã được chuyển sang trạng thái CONFIRMED / COMPLETED (đã thanh toán)
+        if (!"PENDING".equalsIgnoreCase(order.getStatus())) {
+            sendJson(response, HttpServletResponse.SC_OK,
+                    String.format("{\"paid\":true,\"status\":\"%s\",\"orderCode\":\"%s\"}",
+                            escapeJson(order.getStatus()), escapeJson(order.getOrderCode())));
+            return;
+        }
+
+        // Đơn đang PENDING: Gọi sang Payment Gateway kiểm tra xem SePay đã nhận tiền chưa
+        ShopSettings settings = shopSettingDAO.getSettings();
+        boolean isPaid = PaymentService.isOrderPaidOnGateway(settings.getPaymentGatewayUrl(), order.getOrderCode());
+
+        if (isPaid) {
+            String txCode = "QR-" + order.getOrderCode();
+            BigDecimal amount = BigDecimal.valueOf(Math.round(order.getFinalAmount()));
+            String payload = "{\"orderCode\":\"" + escapeJson(order.getOrderCode()) + "\",\"status\":\"SUCCESS\",\"source\":\"pos-polling\"}";
+            PaymentDAO.CallbackResult res = paymentDAO.applyGatewayCallback(
+                    order.getOrderCode(), txCode, amount, "SUCCESS",
+                    "SEPAY-POS-QR", payload, settings.getPointsEarnUnit()
+            );
+            if (res.successful()) {
+                sendJson(response, HttpServletResponse.SC_OK,
+                        String.format("{\"paid\":true,\"status\":\"CONFIRMED\",\"orderCode\":\"%s\"}",
+                                escapeJson(order.getOrderCode())));
+                return;
+            }
+        }
+
+        // Chưa nhận được tiền từ ngân hàng
+        sendJson(response, HttpServletResponse.SC_OK,
+                String.format("{\"paid\":false,\"status\":\"PENDING\",\"orderCode\":\"%s\"}",
+                        escapeJson(order.getOrderCode())));
+    }
+
+    private void handleSimulatePayment(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int orderId = parseInt(request.getParameter("orderId"), -1);
+        Order order = orderId > 0 ? orderDAO.getOrderById(orderId) : null;
+        if (order == null || !isOwnedCounterOrder(request, order)) {
+            sendJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"success\":false,\"error\":\"Không tìm thấy đơn hàng.\"}");
+            return;
+        }
+        ShopSettings settings = shopSettingDAO.getSettings();
+        String txCode = "QR-" + order.getOrderCode();
+        BigDecimal amount = BigDecimal.valueOf(Math.round(order.getFinalAmount()));
+        String payload = "{\"orderCode\":\"" + escapeJson(order.getOrderCode()) + "\",\"status\":\"SUCCESS\",\"source\":\"pos-simulator\"}";
+        PaymentDAO.CallbackResult res = paymentDAO.applyGatewayCallback(
+                order.getOrderCode(), txCode, amount, "SUCCESS",
+                "SIMULATE-POS", payload, settings.getPointsEarnUnit()
+        );
+        sendJson(response, HttpServletResponse.SC_OK,
+                String.format("{\"success\":%b,\"paid\":true,\"status\":\"CONFIRMED\",\"orderCode\":\"%s\"}",
+                        res.successful(), escapeJson(order.getOrderCode())));
     }
 
     private void handleGetOrders(HttpServletRequest request, HttpServletResponse response) throws IOException {

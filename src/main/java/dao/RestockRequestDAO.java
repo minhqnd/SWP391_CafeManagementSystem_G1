@@ -100,6 +100,40 @@ public class RestockRequestDAO extends BaseDAO{
         return s.toString();
     }
     private static String itemsDescription(List<RestockItem> items){return items.stream().map(i->i.getIngredientId()+": "+i.getQuantity()).toList().toString();}
+    public boolean transitionFromUi(int id,int actor,boolean admin,String action,String reviewNote)throws SQLException,ClassNotFoundException {
+        boolean review=List.of("approve","reject","requestChanges").contains(action);
+        if(reviewNote==null||reviewNote.trim().length()<3){
+            reviewNote=switch(action==null?"":action){
+                case "approve"->"Đã duyệt đề xuất nhập hàng";
+                case "reject"->"Từ chối đề xuất nhập hàng";
+                case "requestChanges"->"Yêu cầu điều chỉnh lại số lượng đề xuất";
+                default->"Cập nhật trạng thái đề xuất";
+            };
+        }
+        reviewNote=InventoryRules.text(reviewNote,false);
+        if(review&&!admin)throw new IllegalArgumentException("Chỉ quản lý được duyệt đề xuất.");
+        try(Connection c=getConnection()){c.setAutoCommit(false);try{
+            InventoryWorkflowDAO.requireActor(c,actor,admin);
+            String current;
+            try(PreparedStatement p=c.prepareStatement("SELECT requester_id,status FROM restock_requests WHERE id=? FOR UPDATE")){
+                p.setInt(1,id);try(ResultSet r=p.executeQuery()){
+                    if(!r.next())throw new IllegalArgumentException("Không tìm thấy đề xuất.");
+                    int owner=r.getInt("requester_id");current=r.getString("status");
+                    if(!admin && owner!=actor)throw new IllegalArgumentException("Bạn chỉ được thao tác trên đề xuất của mình.");
+                    if(!InventoryRules.editableRequest(current))throw new IllegalArgumentException("Đề xuất đã kết thúc, không thể thay đổi.");
+                }
+            }
+            String target;
+            if(review&&List.of("PENDING_APPROVAL","DRAFT","CHANGES_REQUESTED").contains(current))target=switch(action){case "approve"->"APPROVED";case "reject"->"REJECTED";default->"CHANGES_REQUESTED";};
+            else if("submit".equals(action)&&List.of("DRAFT","CHANGES_REQUESTED").contains(current))target="PENDING_APPROVAL";
+            else if("cancel".equals(action)&&InventoryRules.editableRequest(current))target="CANCELLED";
+            else throw new IllegalArgumentException("Trạng thái đề xuất không cho phép thao tác này.");
+            try(PreparedStatement p=c.prepareStatement("UPDATE restock_requests SET status=?,reviewer_id=?,review_note=?,reviewed_at=NOW() WHERE id=?")){
+                p.setString(1,target);if(review)p.setInt(2,actor);else p.setNull(2,Types.INTEGER);p.setString(3,reviewNote);p.setInt(4,id);p.executeUpdate();}
+            InventoryWorkflowDAO.audit(c,"RESTOCK",id,actor,action,current+" -> "+target+"; "+reviewNote);
+            c.commit();return true;
+        }catch(Exception e){c.rollback();throw e;}}
+    }
     public Map<String,Object> getRestockStats(){
         Map<String,Object> m=new HashMap<>();try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement("SELECT (SELECT COUNT(*) FROM ingredients WHERE is_active=1 AND current_stock<=min_stock_level) low_stock,(SELECT COUNT(*) FROM restock_requests WHERE status='PENDING_APPROVAL') pending_count,(SELECT COUNT(*) FROM restock_requests WHERE status='APPROVED') approved_count,(SELECT COUNT(*) FROM restock_requests WHERE status='DRAFT') draft_count");ResultSet rs=ps.executeQuery()){if(rs.next()){m.put("lowStock",rs.getInt(1));m.put("pendingCount",rs.getInt(2));m.put("approvedCount",rs.getInt(3));m.put("draftCount",rs.getInt(4));}}catch(Exception e){throw new IllegalStateException(e);}return m;
     }

@@ -20,6 +20,11 @@ public class Payment implements Serializable {
     private String status;        // PENDING, SUCCESS, FAILED
     private Timestamp paidAt;
     private String paymentNote;
+    private String gatewayReference;
+    private String orderCode;
+    private String customerName;
+    private String customerPhone;
+    private String orderType;
 
     public Payment() {
     }
@@ -99,6 +104,46 @@ public class Payment implements Serializable {
 
     public void setPaymentNote(String paymentNote) {
         this.paymentNote = paymentNote;
+    }
+
+    public String getGatewayReference() {
+        return gatewayReference;
+    }
+
+    public void setGatewayReference(String gatewayReference) {
+        this.gatewayReference = gatewayReference;
+    }
+
+    public String getOrderCode() {
+        return orderCode;
+    }
+
+    public void setOrderCode(String orderCode) {
+        this.orderCode = orderCode;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
+    }
+
+    public String getOrderType() {
+        return orderType;
+    }
+
+    public void setOrderType(String orderType) {
+        this.orderType = orderType;
     }
 
     // Helper formatters

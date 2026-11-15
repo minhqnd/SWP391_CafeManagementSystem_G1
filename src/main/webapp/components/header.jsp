@@ -188,7 +188,7 @@
                                 Đơn đã pha
                             </a>
                         </li>
-                        <li class="nav-item"><a class="nav-link aura-nav-link ${param.activePage == 'inventory' ? 'active-nav' : ''}" href="${pageContext.request.contextPath}/barista/restock-requests">Đề xuất &amp; nhận hàng</a></li>
+                        <li class="nav-item"><a class="nav-link aura-nav-link ${param.activePage == 'inventory' ? 'active-nav' : ''}" href="${pageContext.request.contextPath}/barista/restock-requests">Đề xuất nguyên liệu</a></li>
                     </c:when>
                     <c:otherwise>
 
