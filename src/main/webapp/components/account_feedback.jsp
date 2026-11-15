@@ -1,7 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%-- . Đọc lỗi từ request/session và xóa bản lưu trong session sau khi đọc; c:out bảo vệ nội dung hiển thị.
-    ... account-validation.js đọc payload để điền lại form và báo lỗi từng trường. --%>
 <style>
     .is-invalid { border: 1px solid #dc3545 !important; }
     .invalid-feedback { color: #dc3545; }
@@ -19,6 +17,9 @@
     }
     session.removeAttribute("accountFeedback");
 %>
+<%-- . Đọc accountFeedback từ request/session, xóa bản session sau khi đọc và xuất payload ẩn.
+     .. c:out bảo vệ nội dung; payload chứa form, lỗi và các giá trị an toàn.
+     ... account-validation.js phần đọc payload trong account-validation.js đọc payload → feedback() trong account-validation.js tô đỏ đúng ô. --%>
 <c:if test="${not empty accountFeedback}">
     <div hidden data-account-feedback data-form="<c:out value='${accountFeedback.form}'/>">
         <c:forEach var="entry" items="${accountFeedback.errors}">

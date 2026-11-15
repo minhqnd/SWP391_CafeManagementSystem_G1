@@ -15,6 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.Tag("database")
 public class WorkScheduleDAOTest {
 
     private WorkScheduleDAO workScheduleDAO;
@@ -73,6 +74,7 @@ public class WorkScheduleDAOTest {
     }
 
     @Test
+    @org.junit.jupiter.api.condition.EnabledIfSystemProperty(named="cafe.database.writeTests", matches="true")
     public void testScheduleCrudCycle() throws Exception {
         List<User> staff = userDAO.getStaffEmployees();
         if (staff.isEmpty()) return;

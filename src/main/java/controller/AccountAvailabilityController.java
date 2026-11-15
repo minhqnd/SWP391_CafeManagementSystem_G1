@@ -18,10 +18,10 @@ public class AccountAvailabilityController extends HttpServlet {
     public AccountAvailabilityController() { this(new UserDAO()); }
     AccountAvailabilityController(UserDAO users) { this.users = users; }
 
-    // RG07/PF10: . Nhận field, value và scope từ kiểm tra trùng email/SĐT; kiểm tra CSRF và định dạng trước.
-    // .. Khi sửa hồ sơ, ID trong session được loại trừ để không báo trùng chính tài khoản.
-    // ... UserDAO.contactExists() đọc database và trả kết quả [RG07/PF10].
-    // .. Controller trả JSON exists cho checkContact() trong account-validation.js; không lưu dữ liệu.
+    // RG04c: . Nhận kiểm tra trùng đăng ký, xác minh CSRF, field và định dạng.
+    // ... UserDAO.contactExists() [RG04d] → trả JSON exists cho checkContact().
+    // PF10c: . Với scope=profile, kiểm tra session ACTIVE và lấy ID cần loại trừ.
+    // ... UserDAO.contactExists() [PF10d] → trả JSON exists cho checkContact().
     @Override protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("application/json;charset=UTF-8");

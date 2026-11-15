@@ -8,9 +8,9 @@ import utils.AccountCsrf;
 
 @WebServlet(name="VerifyOtpController",urlPatterns={"/verify-otp"})
 public class VerifyOtpController extends HttpServlet {
-    // OT05: . Nhận OTP từ nút Xác nhận và kiểm tra token biểu mẫu.
-    // ... PasswordRecoveryService.verify() kiểm tra mã, thời hạn và số lần sai [OT12].
-    // .. Đúng thì mở tab đặt lại mật khẩu; sai thì giữ tab OTP và báo lỗi dưới ô mã.
+    // OT10: . Nhận otp từ JavaScript [OT09] và kiểm tra CSRF.
+    // .. Đúng mã thì mở tab đặt mật khẩu mới; sai thì giữ tab OTP và gắn lỗi tại ô mã.
+    // ... PasswordRecoveryService.verify() [OT11] → form mật khẩu mới [OT12].
     @Override protected void doPost(HttpServletRequest request,HttpServletResponse response)throws IOException{
         request.setCharacterEncoding("UTF-8");if(!AccountCsrf.require(request,response))return;
         try{

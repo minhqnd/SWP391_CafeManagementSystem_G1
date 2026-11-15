@@ -1,7 +1,6 @@
 package dao;
 
 import context.DBContext;
-import model.Cart;
 import model.CartItem;
 import model.Order;
 
@@ -12,17 +11,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import model.Order;
 import model.OrderDetail;
 import model.ShopSettings;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * OrderDAO - Tương tác dữ liệu đơn hàng
@@ -578,7 +574,7 @@ public class OrderDAO extends BaseDAO {
     public boolean cancelPendingOrder(int orderId, int customerId) {
         // RV01: . Ở đây em hủy đơn chưa thanh toán của đúng khách và hoàn điểm đã dùng cho đơn.
         // .. Em giữ lịch sử đổi điểm cũ, thêm giao dịch hoàn điểm để đối chiếu.
-        // ... Trả boolean về CheckoutController hoặc OrdersController; xem lịch sử tại [HI02] hoặc [PH02].
+        // ... Trả boolean về CheckoutController hoặc OrdersController; xem lịch sử tại [HI03] hoặc [PH02].
         String cancelSql = "UPDATE orders SET status = 'CANCELLED' " +
                            "WHERE id = ? AND customer_id = ? AND status = 'PENDING' " +
                            "AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.order_id = orders.id AND p.status = 'SUCCESS')";

@@ -30,6 +30,8 @@ import java.util.UUID;
 @WebServlet(name = "AdminRecipeController", urlPatterns = {"/admin/recipes", "/admin/recipe/update"})
 public class AdminRecipeController extends HttpServlet {
 
+    private static final int MAX_RECIPE_LINES = 100;
+
     private final ProductDAO productDAO;
     private final IngredientDAO ingredientDAO;
     private final ProductIngredientDAO productIngredientDAO;
@@ -58,9 +60,9 @@ public class AdminRecipeController extends HttpServlet {
                 session.setAttribute("recipeCsrfToken", UUID.randomUUID().toString());
             }
             List<Product> products = productDAO.getProductsForAdmin(null, null);
-            // RC02: . Ở đây em nạp món, nguyên liệu, công thức và giá nhập khi mở trang.
+            // RC02: . nạp món, nguyên liệu, công thức và giá nhập khi mở trang.
             // .. Có giá vốn từng món và dấu hiệu nhận biết nguyên liệu còn thiếu giá nhập.
-            // ... Lấy món [PR03], công thức [RC03], giá nhập [RC08] → admin-recipes.jsp [RC01].
+            // ... Lấy món [PR03], công thức [RC03], giá nhập [RC04] → admin-recipes.jsp [RC07].
             List<Ingredient> ingredients = ingredientDAO.getAllIngredients();
             int selectedProductId = parseOptionalProductId(request.getParameter("productId"));
             Product selectedProduct = findProduct(products, selectedProductId);
@@ -72,8 +74,11 @@ public class AdminRecipeController extends HttpServlet {
             List<ProductIngredient> recipeIngredients = selectedProduct == null
                     ? List.of()
                     : allRecipeIngredients.getOrDefault(selectedProductId, List.of());
-            // BF11 - GIÁ VỐN: lấy đơn giá nhập gần nhất theo điều kiện của IngredientDAO [RC08]; thiếu giá thì đánh dấu.
+            // BF11 - GIÁ VỐN: lấy đơn giá nhập gần nhất theo điều kiện của IngredientDAO [RC04]; thiếu giá thì đánh dấu.
             Map<Integer, BigDecimal> ingredientUnitCosts = ingredientDAO.getLatestPurchasePrices();
+            // RC05: . Tính giá vốn bằng định lượng nhân giá nhập từ IngredientDAO [RC04].
+            // .. Thiếu giá được ghi riêng, không coi tổng một phần là giá vốn đầy đủ.
+            // ... request chuyển recipeCost/productSummaries tới admin-recipes.jsp [RC14].
             BigDecimal recipeCost = BigDecimal.ZERO;
             List<String> missingCostIngredients = new ArrayList<>();
             for (ProductIngredient recipeIngredient : recipeIngredients) {
@@ -171,9 +176,10 @@ public class AdminRecipeController extends HttpServlet {
             }
 
             productId = parseRequiredProductId(request.getParameter("productId"));
-            // RC04: . Ở đây em kiểm tra quyền, mã bảo vệ và món Admin muốn lưu công thức.
-            // .. Món tồn tại thì em kiểm tra từng dòng nguyên liệu rồi mới lưu.
-            // ... parseIngredients(mã món, nguyên liệu, định lượng) [RC05] → saveRecipe() [RC06].
+            // RC16: [SLBF11] Check recipe information
+            // . kiểm tra quyền, mã bảo vệ và món Admin muốn lưu công thức.
+            // .. Món tồn tại thì kiểm tra từng dòng nguyên liệu rồi mới lưu.
+            // ... parseIngredients(mã món, nguyên liệu, định lượng) [RC17] → saveRecipe() [RC18].
             Product product = productDAO.getProductForAdmin(productId);
             if (product == null) throw new IllegalArgumentException("Không tìm thấy sản phẩm cần cập nhật công thức.");
 
@@ -199,9 +205,9 @@ public class AdminRecipeController extends HttpServlet {
                     request.getParameterValues("ingredientId"), request.getParameterValues("quantity"))));
             redirect += "?productId=" + productId;
         }
-        // RC07: . Ở đây em chuyển về danh sách sau khi xử lý lưu công thức.
+        // RC19: . chuyển về danh sách sau khi xử lý lưu công thức.
         // .. Thành công thì xem dữ liệu đã lưu; lỗi thì giữ phần đang nhập và mở lại đúng món.
-        // ... Trình duyệt gửi GET /admin/recipes → doGet() [RC02] → giao diện [RC01].
+        // ... Trình duyệt gửi GET /admin/recipes → doGet() [RC02] → giao diện [RC07].
         response.sendRedirect(redirect);
     }
 
@@ -219,15 +225,20 @@ public class AdminRecipeController extends HttpServlet {
     }
 
     private List<ProductIngredient> parseIngredients(int productId, String[] ingredientIds, String[] quantities) {
-        // RC05: . Ở đây em ghép mỗi nguyên liệu với định lượng cùng dòng và kiểm tra dữ liệu.
+        // RC17: . ghép mỗi nguyên liệu với định lượng cùng dòng và kiểm tra dữ liệu.
         // .. Lượng phải dương, tối đa ba số lẻ và không được chọn trùng nguyên liệu.
-        // ... List<ProductIngredient> về doPost() [RC04] để truyền vào saveRecipe() [RC06].
+        // ... List<ProductIngredient> về doPost() [RC16] để truyền vào saveRecipe() [RC18].
         // BF11 - "Ingredient lines valid and unique?": đủ cặp ID/định lượng, lượng dương,
         // tối đa 3 chữ số thập phân và mỗi nguyên liệu chỉ xuất hiện một lần trong công thức.
         List<ProductIngredient> result = new ArrayList<>();
-        if (ingredientIds == null && quantities == null) return result;
+        if (ingredientIds == null && quantities == null) {
+            throw new IllegalArgumentException("Công thức phải có ít nhất một nguyên liệu.");
+        }
         if (ingredientIds == null || quantities == null || ingredientIds.length != quantities.length) {
             throw new IllegalArgumentException("Kiểm tra lại danh sách nguyên liệu và định lượng.");
+        }
+        if (ingredientIds.length > MAX_RECIPE_LINES) {
+            throw new IllegalArgumentException("Không được thêm quá " + MAX_RECIPE_LINES + " dòng nguyên liệu.");
         }
 
         Set<Integer> seenIngredientIds = new HashSet<>();
@@ -243,6 +254,7 @@ public class AdminRecipeController extends HttpServlet {
             BigDecimal quantity;
             try {
                 ingredientId = Integer.parseInt(rawId);
+                if (!rawQuantity.matches("\\d+(?:\\.\\d{1,3})?")) throw new NumberFormatException();
                 quantity = new BigDecimal(rawQuantity);
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Nguyên liệu hoặc định lượng không đúng định dạng.");
@@ -258,6 +270,7 @@ public class AdminRecipeController extends HttpServlet {
             }
             result.add(new ProductIngredient(productId, ingredientId, quantity.doubleValue(), null, null));
         }
+        if (result.isEmpty()) throw new IllegalArgumentException("Công thức phải có ít nhất một nguyên liệu.");
         return result;
     }
 
@@ -298,7 +311,7 @@ public class AdminRecipeController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/?tab=login");
             return false;
         }
-        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+        if (!"ACTIVE".equalsIgnoreCase(user.getStatus()) || !"ADMIN".equalsIgnoreCase(user.getRole())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ Admin được quản lý công thức sản phẩm.");
             return false;
         }

@@ -59,7 +59,7 @@ public class CartService {
     public boolean refreshCart(Cart cart, Integer customerId) {
         // RD03: . Ở đây em đọc lại giá món, quy tắc cửa hàng và số điểm hiện có của khách.
         // .. Giỏ đã được làm mới để tính lại điểm được dùng và tiền phải trả.
-        // ... ShopSettingDAO [RU05], UserDAO.getTotalPoints() [PH04] → Cart.normalizePointsUsed() [RD06].
+        // ... ShopSettingDAO [RU03], UserDAO.getTotalPoints() [PH04] → Cart.normalizePointsUsed() [RD06].
         for (CartItem item : cart.getItems()) {
             Product product = productDAO.getProductById(item.getProductId());
             if (product == null || !product.isAvailable()) {
@@ -164,8 +164,9 @@ public class CartService {
                 Matcher name = NAME_FIELD.matcher(object.group(1));
                 if (name.find()) {
                     Matcher price = PRICE_FIELD.matcher(object.group(1));
-                    double value = price.find() ? Double.parseDouble(price.group(1)) : 0;
-                    toppings.put(name.group(1), value > 0 ? value : DEFAULT_TOPPING_PRICE);
+                    boolean hasPrice = price.find();
+                    double value = hasPrice ? Double.parseDouble(price.group(1)) : 0;
+                    toppings.put(name.group(1), hasPrice ? value : DEFAULT_TOPPING_PRICE);
                 }
             }
         } else {

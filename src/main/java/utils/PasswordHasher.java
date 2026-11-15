@@ -13,15 +13,15 @@ public final class PasswordHasher {
     private static final SecureRandom RANDOM = new SecureRandom();
     private PasswordHasher() {}
     public static boolean encoded(String stored) { return stored != null && stored.startsWith("pbkdf2_sha256$"); }
-    // . Dùng salt ngẫu nhiên và PBKDF2 để băm mật khẩu mới trước khi lưu.
-    // .. Lưu chuỗi thuật toán, số vòng, salt và hash; không lưu mật khẩu mới dạng rõ.
+    // . Băm mật khẩu bằng PBKDF2 và salt ngẫu nhiên trước khi DAO lưu.
+    // .. Trả chuỗi chứa thuật toán, số vòng, salt và hash; không trả mật khẩu rõ.
     public static String hash(String password) {
         byte[] salt = new byte[16]; RANDOM.nextBytes(salt);
         return "pbkdf2_sha256$" + ITERATIONS + "$" + Base64.getEncoder().encodeToString(salt) + "$"
                 + Base64.getEncoder().encodeToString(derive(password, salt, ITERATIONS));
     }
-    // . Đối chiếu mật khẩu nhập với bản đã lưu; hỗ trợ mật khẩu rõ cũ để đăng nhập và nâng cấp.
-    // .. Trả đúng hoặc sai cho DAO, không tự tạo phiên đăng nhập.
+    // . Đối chiếu mật khẩu nhập với dữ liệu đã lưu; hỗ trợ dữ liệu mật khẩu rõ cũ.
+    // .. Trả true/false cho DAO; không tạo session hoặc tự cho phép đăng nhập.
     public static boolean verify(String password, String stored) {
         if (password == null || password.isBlank() || password.length() > 255 || stored == null || stored.matches("[A-Za-z]+_hash")) return false;
         if (!encoded(stored)) {

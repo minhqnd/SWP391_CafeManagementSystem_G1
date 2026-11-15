@@ -81,9 +81,9 @@ public class EmailUtil {
         }
     }
 
-    // OT03: . Nhận email và mã từ service rồi gửi thư OTP qua SMTP Gmail bằng Jakarta Mail.
+    // OT06e: . Nhận email và mã từ service rồi gửi thư OTP qua SMTP Gmail bằng Jakarta Mail.
     // .. Trả true khi gửi được, false khi thiếu cấu hình hoặc gửi lỗi.
-    // ... Kết quả về PasswordRecoveryService.start() [OT10].
+    // ... Kết quả về PasswordRecoveryService.start() [OT06].
     public static boolean sendOTP(String recipientEmail, String otp) {
         if (SENDER_EMAIL == null || SENDER_EMAIL.isBlank() || SMTP_PASSWORD == null || SMTP_PASSWORD.isBlank()) return false;
         Properties properties = new Properties();

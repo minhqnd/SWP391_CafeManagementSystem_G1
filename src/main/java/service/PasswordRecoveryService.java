@@ -34,10 +34,12 @@ public final class PasswordRecoveryService {
     }
     public PasswordRecoveryService(UserDAO users,BiPredicate<String,String> sender,LongSupplier clock){this.users=users;this.sender=sender;this.clock=clock;}
     public static PasswordRecoveryService shared(){return SHARED;}
-    // OT09: . Xóa trạng thái OTP và quyền khôi phục khi bắt đầu lại, hết hạn, quá lượt hoặc reset xong.
+    // OT06f: . Xóa trạng thái OTP và quyền khôi phục trong session.
+    // .. Dùng khi bắt đầu lại, hết hạn, sai quá lượt hoặc đã gọi lưu mật khẩu mới.
     private void clear(HttpSession session){session.removeAttribute(KEY);session.removeAttribute("canResetPassword");session.removeAttribute("forgotOtp");session.removeAttribute("forgotEmail");}
-    // OT10: . Xóa phiên khôi phục cũ, chuẩn hóa email và giới hạn số lần yêu cầu.
-    // ... reserve() kiểm tra giới hạn [OT16], sau đó UserDAO.findActiveAccountByEmail() tìm tài khoản [OT11].
+    // OT06: . Xóa phiên khôi phục cũ, chuẩn hóa email, giới hạn yêu cầu rồi tìm tài khoản/gửi OTP.
+    // .. Gửi mail thành công mới lưu OTP, userId, email và thời điểm trong session.
+    // ... reserve() [OT06a] → tìm tài khoản [OT06b] → gửi mail [OT06d]; Controller mở form [OT07].
     public void start(HttpSession session,String rawEmail,String source){
         synchronized(session){
             clear(session);
@@ -45,22 +47,23 @@ public final class PasswordRecoveryService {
             String error=AccountValidation.emailError(email);
             if(error!=null)throw new utils.RecoveryFailure("email",error);
             long now=clock.getAsLong();reserve(email,source,now);session.setAttribute("lastOtpSentTime",now);
-            // OT11: . Tìm một tài khoản ACTIVE theo email đã chuẩn hóa.
-            // .. Có tài khoản thì tiếp tục tạo OTP; không có thì trả lỗi tại trường email.
+            // OT06b: . Tìm tài khoản theo email đã chuẩn hóa.
+            // .. Không tìm thấy thì báo lỗi email; trùng dữ liệu cũ/không ACTIVE thì DAO trả lỗi riêng.
+            // ... UserDAO.findActiveAccountByEmail() trong UserDAO.java [OT06c].
             User user=users.findActiveAccountByEmail(email);
             if(user==null)throw new utils.RecoveryFailure("email","Không tìm thấy tài khoản sử dụng email này. Vui lòng nhập đúng email đã liên kết với tài khoản.");
-            // . Tạo OTP ngẫu nhiên 6 chữ số cho tài khoản tìm được.
-            // ... Gửi email và mã qua EmailUtil.sendOTP() [OT03].
-            // .. Gửi thành công mới lưu mã, userId, email và thời điểm trong session; chưa đổi mật khẩu.
+            // OT06d: . Sinh OTP ngẫu nhiên 6 chữ số và gửi tới email đã tra cứu.
+            // .. Gửi lỗi thì chưa lưu State khôi phục; gửi được mới lưu mã và thời điểm.
+            // ... sender dùng EmailUtil.sendOTP() trong EmailUtil.java [OT06e].
             String code=String.format("%06d",RANDOM.nextInt(1000000));
             boolean sent;try{sent=sender.test(email,code);}catch(RuntimeException e){sent=false;}
             if(!sent)throw new utils.RecoveryFailure(null,"Không gửi được email OTP. Vui lòng kiểm tra cấu hình SMTP và thử lại sau 60 giây.");
             session.setAttribute(KEY,new State(user,code,now));
         }
     }
-    // OT15:
-    // . Đọc email từ phiên khôi phục; chưa có phiên hoặc chưa đủ 60 giây thì từ chối.
-    // ... [OT10] Đủ thời gian thì gọi start() để tạo và gửi mã mới.
+    // OT07d: . Lấy email từ phiên khôi phục và kiểm tra đã qua 60 giây chưa.
+    // .. Chưa có phiên hoặc chưa đủ thời gian thì từ chối; đủ thời gian mới tạo mã mới.
+    // ... start() [OT06] gửi lại và thay trạng thái khôi phục cũ.
     public void resend(HttpSession session,String source){
         synchronized(session){
             State previous=(State)session.getAttribute(KEY);
@@ -72,9 +75,8 @@ public final class PasswordRecoveryService {
             start(session,previous.email,source);
         }
     }
-    // OT16:
-    // . Giới hạn mỗi email 60 giây, mỗi IP tối đa 10 yêu cầu/10 phút.
-    // .. Yêu cầu được tính trước tra DB/gửi mail; tra cứu hoặc gửi thất bại vẫn tính lượt.
+    // OT06a: . Giới hạn mỗi email một yêu cầu/60 giây và mỗi IP tối đa 10 yêu cầu/10 phút.
+    // .. Tính lượt trước khi tra cứu/gửi mail; tra cứu hay gửi mail thất bại vẫn tính lượt.
     private synchronized void reserve(String email,String source,long now){
         emailSends.entrySet().removeIf(e->now-e.getValue()>=COOLDOWN);
         sourceSends.entrySet().removeIf(e->now-e.getValue().start()>=600000L);
@@ -83,9 +85,9 @@ public final class PasswordRecoveryService {
         if(window.count()>=10 || emailSends.size()>=10000 || sourceSends.size()>=10000)throw new IllegalArgumentException("Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.");
         emailSends.put(email,now);sourceSends.put(source,new Window(window.start(),window.count()+1));
     }
-    // OT12: . Kiểm tra mã của phiên chưa dùng, chưa quá 5 phút và khớp mã nhập vào.
-    // .. Sai tăng lượt, lần thứ 5 xóa phiên khôi phục; đúng xóa mã và cấp quyền đặt mật khẩu trong 5 phút.
-    // ... Trả kết quả về VerifyOtpController.doPost() [OT05].
+    // OT11: . Kiểm tra OTP chưa dùng, chưa quá 5 phút và khớp mã 6 chữ số.
+    // .. Sai tăng lượt, sai lần thứ 5 xóa phiên; đúng xóa mã và cấp quyền đặt mật khẩu trong 5 phút.
+    // ... VerifyOtpController nhận kết quả và mở form đặt mật khẩu [OT12].
     public void verify(HttpSession session,String input){
         synchronized(session){
             State state=state(session);long now=clock.getAsLong();
@@ -95,10 +97,9 @@ public final class PasswordRecoveryService {
             state.otp=null;state.verifiedAt=now;
         }
     }
-    // OT13:
-    // . Yêu cầu đã xác minh OTP còn hạn; kiểm tra mật khẩu mới và xác nhận.
-    // ... [OT14] UserDAO.resetPasswordById() lưu mật khẩu theo ID/email đã xác minh.
-    // .. Xóa trạng thái khôi phục sau lần gọi DAO; không dùng lại quyền đã cấp.
+    // OT16: . Kiểm tra quyền khôi phục đã xác minh còn hạn, kiểm tra mật khẩu mới và xác nhận.
+    // .. Mật khẩu sai thì chưa gọi DAO; gọi DAO xong sẽ xóa quyền khôi phục.
+    // ... UserDAO.resetPasswordById() [OT17] → ResetPasswordController xử lý thành công [OT18].
     public void reset(HttpSession session,String password,String confirmation){
         synchronized(session){
             State state=state(session);long now=clock.getAsLong();
@@ -108,6 +109,8 @@ public final class PasswordRecoveryService {
             if(!updated)throw new IllegalArgumentException("Không thể đổi mật khẩu. Tài khoản có thể đã thay đổi; vui lòng yêu cầu lại.");
         }
     }
+    // OT06g: . Đọc State khôi phục trong session.
+    // .. Không có State thì trả lỗi phiên hết hạn/chưa được xác minh cho Controller.
     private State state(HttpSession session){State state=(State)session.getAttribute(KEY);if(state==null)throw expired();return state;}
     private IllegalArgumentException expired(){return new IllegalArgumentException("Phiên xác thực đã hết hạn hoặc chưa được xác minh. Vui lòng yêu cầu mã mới.");}
 }

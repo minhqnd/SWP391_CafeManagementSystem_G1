@@ -70,12 +70,13 @@ public class AdminCustomersController extends HttpServlet {
     private void createCustomer(HttpServletRequest request, HttpSession session)
             throws SQLException, ClassNotFoundException {
         String fullName = required(request.getParameter("fullName"), "Họ và tên bắt buộc.");
-        String phone = required(request.getParameter("phone"), "Số điện thoại bắt buộc.");
+        String phone = utils.AccountValidation.phone(required(request.getParameter("phone"), "Số điện thoại bắt buộc."));
         String email = optional(request.getParameter("email"));
         String address = optional(request.getParameter("address"));
         if (fullName.length() > 120 || phone.length() > 20 || (email != null && email.length() > 150))
             throw new IllegalArgumentException("Thông tin khách hàng vượt quá độ dài cho phép.");
-        if (!phone.matches("^[0-9+][0-9 .-]{7,19}$")) throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
+        String phoneError = utils.AccountValidation.phoneError(phone);
+        if (phoneError != null) throw new IllegalArgumentException(phoneError);
         if (customerDAO.phoneExists(phone)) throw new IllegalArgumentException("Số điện thoại đã tồn tại.");
         int initialPoints = parseNonNegative(request.getParameter("initialPoints"), "Điểm khởi tạo không hợp lệ.");
         LocalDate birthday = null;

@@ -11,10 +11,9 @@ public class ForgotPasswordController extends HttpServlet {
     private final PasswordRecoveryService recovery;
     public ForgotPasswordController(){this(PasswordRecoveryService.shared());}
     ForgotPasswordController(PasswordRecoveryService recovery){this.recovery=recovery;}
-    // OT02: . Nhận email từ nút Gửi mã OTP và kiểm tra token biểu mẫu.
-    // .. Email hợp lệ mới được xử lý; lỗi được giữ lại để hiển thị ngay dưới trường email.
-    // ... PasswordRecoveryService.start() tìm tài khoản và gửi mã [OT10].
-    // .. Thành công mở tab=otp; thất bại quay lại form email với thông báo phù hợp.
+    // OT05: . Nhận email khôi phục từ JavaScript [OT04] và kiểm tra CSRF.
+    // .. Thành công mở tab OTP; lỗi thì giữ email an toàn và trả thông báo.
+    // ... PasswordRecoveryService.start() [OT06] → form nhập OTP [OT07].
     @Override protected void doPost(HttpServletRequest request,HttpServletResponse response)throws IOException{
         request.setCharacterEncoding("UTF-8");
         if(!AccountCsrf.require(request,response))return;

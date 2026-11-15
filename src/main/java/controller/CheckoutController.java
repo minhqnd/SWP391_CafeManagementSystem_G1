@@ -38,7 +38,7 @@ public class CheckoutController extends HttpServlet {
     public static final String STORE_ADDRESS = "28 Phố Tràng Tiền, Hoàn Kiếm, Hà Nội";
 
     private static final ZoneId SHOP_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    private static final String PHONE_PATTERN = "0\\d{9,10}";
+    private static final String PHONE_PATTERN = "0\\d{9}";
 
     // Quán ở Hà Nội. Phí giao cố định 1 mức cho mọi địa chỉ (shop_settings.delivery_fee, Admin chỉnh ở Cài đặt)
     public static final String CITY = "Hà Nội";
@@ -130,7 +130,7 @@ public class CheckoutController extends HttpServlet {
         if (recipientName.isEmpty() || recipientName.length() > 100) {
             error = "Vui lòng nhập họ tên người nhận (tối đa 100 ký tự).";
         } else if (!recipientPhone.matches(PHONE_PATTERN)) {
-            error = "Số điện thoại không hợp lệ (10 - 11 chữ số, bắt đầu bằng số 0).";
+            error = "Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng số 0.";
         } else if (cart.isDelivery() && (district.length() < 2 || district.length() > 100)) {
             error = "Vui lòng nhập Quận/Huyện giao hàng.";
         } else if (cart.isDelivery() && (ward.length() < 2 || ward.length() > 100)) {

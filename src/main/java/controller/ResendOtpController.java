@@ -8,9 +8,9 @@ import utils.AccountCsrf;
 
 @WebServlet(name="ResendOtpController",urlPatterns={"/resend-otp"})
 public class ResendOtpController extends HttpServlet {
-    // OT08: . Nhận POST từ nút Gửi lại mã OTP và kiểm tra token biểu mẫu.
-    // ... PasswordRecoveryService.resend() tạo và gửi mã mới cho email trong phiên [OT15].
-    // .. Quay lại tab OTP với thông báo gửi thành công hoặc lý do chưa gửi được.
+    // OT07c: . Nhận POST /resend-otp từ nút Gửi lại mã [OT07b].
+    // .. Trở lại tab OTP với thông báo gửi thành công hoặc lý do từ chối.
+    // ... PasswordRecoveryService.resend() [OT07d] → thông báo auth_modal.jsp vùng thông báo trong auth_modal.jsp.
     @Override protected void doPost(HttpServletRequest request,HttpServletResponse response)throws IOException{
         if(!AccountCsrf.require(request,response))return;
         try{

@@ -29,11 +29,11 @@ public class UserDAO extends BaseDAO {
         return false;
     }
 
-    // LG03: . Tìm users theo email hoặc SĐT, kiểm tra ACTIVE và đối chiếu password_hash.
-    // .. Sai thông tin trả null; đúng trả User. Mật khẩu rõ cũ được băm lại khi đăng nhập thành công.
-    // ... Kết quả trả về LoginController.doPost() [LG04].
+    // LG06: . SELECT users theo email/SĐT; yêu cầu ACTIVE và đối chiếu mật khẩu bằng PasswordHasher.verify().
+    // .. Đúng trả User; sai, bị khóa hoặc lỗi trả null. Mật khẩu rõ cũ được băm lại khi đăng nhập đúng.
+    // ... Kết quả về LoginController.doPost() [LG07].
     public User login(String identifier, String password) {
-        if (identifier == null || password == null || password.length() > 255) {
+        if (identifier == null || password == null || identifier.length() > 150 || password.length() > 255) {
             return null;
         }
         identifier = identifier.trim();
@@ -103,9 +103,9 @@ public class UserDAO extends BaseDAO {
         return null;
     }
 
-    // RG04: . Nhận User và mật khẩu đã được RegisterController kiểm tra.
-    // .. Băm mật khẩu rồi INSERT tài khoản ACTIVE vào bảng users; thêm được trả true, lỗi trả false.
-    // ... Kết quả trả về RegisterController.doPost() [RG05] để chọn thông báo và tab.
+    // RG09a: . Băm mật khẩu bằng PasswordHasher.hash() rồi INSERT tài khoản ACTIVE vào users.
+    // .. Có dòng được thêm trả true; lỗi trả false.
+    // ... RegisterController.doPost() xử lý kết quả [RG10].
     public boolean register(User user, String password) {
         String sql = "INSERT INTO users (full_name, phone, email, role, position, status, password_hash) " +
                      "VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?)";
@@ -128,9 +128,9 @@ public class UserDAO extends BaseDAO {
         }
         return false;
     }
-    // RG03: . Truy vấn bảng users theo email đã được RegisterController chuẩn hóa.
-    // .. Có bản ghi trả true để báo email đã tồn tại; không có bản ghi trả false để tiếp tục.
-    // ... Kết quả trả về RegisterController.doPost() [RG02] để gắn lỗi hoặc cho phép lưu.
+    // RG07b: . SELECT users theo email đã được chuẩn hóa.
+    // .. Có bản ghi trả true; không có hoặc lỗi truy vấn trả false theo code hiện tại.
+    // ... RegisterController.doPost() [RG07] gắn lỗi email nếu phát hiện trùng.
     public boolean checkEmailExists(String email) {
         String sql = "SELECT id FROM users WHERE email = ?";
         try (Connection conn = DBContext.getConnection();
@@ -145,9 +145,9 @@ public class UserDAO extends BaseDAO {
         return false;
     }
 
-    // RG06: . Truy vấn bảng users theo SĐT đã được RegisterController chuẩn hóa.
-    // .. Có bản ghi trả true để báo SĐT đã tồn tại; không có bản ghi trả false để tiếp tục.
-    // ... Kết quả trả về RegisterController.doPost() [RG02] để gắn lỗi hoặc cho phép lưu.
+    // RG07a: . SELECT users theo SĐT đã được chuẩn hóa.
+    // .. Có bản ghi trả true; không có hoặc lỗi truy vấn trả false theo code hiện tại.
+    // ... RegisterController.doPost() [RG07] gắn lỗi phone nếu phát hiện trùng.
     public boolean checkPhoneExists(String phone) {
         if (phone == null || phone.trim().isEmpty()) {
             return false;
@@ -166,9 +166,11 @@ public class UserDAO extends BaseDAO {
     }
 
     /** Read-only form check; exclusion is supplied from the authenticated session only. */
-    // RG07/PF10: . Tìm email hoặc SĐT, loại trừ ID đang sửa và chỉ cho phép hai cột đã định nghĩa.
-    // .. Có bản ghi trả true; lỗi database được ném lên để controller trả HTTP 503.
-    // ... Kết quả trả về AccountAvailabilityController.doPost().
+    // RG04d: . SELECT email/SĐT trùng để phục vụ kiểm tra frontend của đăng ký.
+    // .. Có bản ghi trả true; lỗi DB ném lỗi để Controller trả HTTP 503.
+    // ... AccountAvailabilityController trả JSON về bước JavaScript [RG04].
+    // PF10d: . Cùng truy vấn nhưng loại trừ ID đang sửa khi kiểm tra hồ sơ.
+    // ... Kết quả về checkContact() trong bước JavaScript [PF10].
     public boolean contactExists(String field, String value, int excludedUserId) {
         if (!"email".equals(field) && !"phone".equals(field)) throw new IllegalArgumentException("Invalid contact field");
         String column = "email".equals(field) ? "LOWER(TRIM(email))" : "phone";
@@ -183,10 +185,9 @@ public class UserDAO extends BaseDAO {
     }
 
     /** Resolve exactly one active account; ambiguous legacy emails fail closed. */
-    // OT11:
-    // . SELECT theo email chuẩn hóa, lấy tối đa hai bản ghi để phát hiện email trùng dữ liệu cũ.
-    // .. Không có trả null; nhiều bản ghi/không ACTIVE/lỗi DB báo nguyên nhân riêng.
-    // ... [OT10] Trả tài khoản hợp lệ về PasswordRecoveryService.start().
+    // OT06c: . SELECT theo LOWER(TRIM(email)), lấy tối đa hai bản ghi để phát hiện email trùng dữ liệu cũ.
+    // .. Không có trả null; nhiều bản ghi/không ACTIVE/lỗi DB trả lỗi riêng; đúng một ACTIVE thì trả User.
+    // ... PasswordRecoveryService.start() [OT06] nhận tài khoản để gửi OTP.
     public User findActiveAccountByEmail(String email) {
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT id,email,status FROM users WHERE LOWER(TRIM(email))=? LIMIT 2")) {
@@ -210,9 +211,9 @@ public class UserDAO extends BaseDAO {
             throw new utils.RecoveryFailure(null,"Không thể kết nối hoặc tra cứu dữ liệu tài khoản. Vui lòng thử lại sau.");
         }
     }
-    // PF07: . Tìm tài khoản ACTIVE theo ID trong session.
-    // .. Có bản ghi trả User; không có hoặc xảy ra lỗi thì trả null.
-    // ... Kết quả về ProfileController.authorize() [PF06].
+    // PF04: . SELECT users theo ID trong session và điều kiện status=ACTIVE.
+    // .. Có bản ghi trả User; không có hoặc lỗi trả null.
+    // ... ProfileController.authorize() [PF03] quyết định có cho vào hồ sơ không.
     public User getActiveUserById(int id) {
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT id,full_name,phone,email,role,position,status,birthday,address,total_points FROM users WHERE id=? AND status='ACTIVE'")) {
@@ -224,10 +225,9 @@ public class UserDAO extends BaseDAO {
         return new User(rs.getInt("id"),rs.getString("full_name"),rs.getString("phone"),rs.getString("email"),
                 rs.getString("role"),rs.getString("position"),rs.getString("status"),rs.getString("birthday"),rs.getString("address"),rs.getInt("total_points"));
     }
-    // OT14:
-    // . Băm mật khẩu mới và UPDATE users theo ID + email đã xác minh + ACTIVE.
-    // .. Đúng một bản ghi được cập nhật mới trả true.
-    // ... [OT13] Kết quả về PasswordRecoveryService.reset().
+    // OT17: . Kiểm tra rồi băm mật khẩu mới, UPDATE đúng ID/email đã xác minh và status=ACTIVE.
+    // .. Đúng một bản ghi được cập nhật mới trả true; lỗi hoặc không khớp trả false.
+    // ... PasswordHasher.hash() → PasswordRecoveryService.reset() [OT16].
     public boolean resetPasswordById(int id, String verifiedEmail, String password) {
         if (AccountValidation.passwordError(password, password) != null) return false;
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
@@ -236,9 +236,9 @@ public class UserDAO extends BaseDAO {
             return ps.executeUpdate() == 1;
         } catch (Exception e) { return false; }
     }
-    // PW03: . Trong transaction, khóa tài khoản ACTIVE, đối chiếu mật khẩu cũ rồi lưu mật khẩu mới đã băm.
-    // .. Thành công commit; sai mật khẩu hoặc lỗi thì rollback và trả false.
-    // ... Kết quả về nhánh đổi mật khẩu trong ProfileController.doPost() [PW04].
+    // PW06: . Trong transaction, khóa tài khoản ACTIVE, kiểm tra mật khẩu cũ và lưu mật khẩu mới đã băm.
+    // .. Cập nhật thành công thì commit; sai mật khẩu hoặc lỗi thì rollback và trả false.
+    // ... PasswordHasher.verify(), PasswordHasher.hash() → ProfileController.doPost() [PW07].
     public boolean changePasswordById(int id, String current, String password) {
         if (AccountValidation.passwordError(password, password) != null) return false;
         try (Connection conn = getConnection()) {
@@ -258,9 +258,9 @@ public class UserDAO extends BaseDAO {
             } catch(Exception e){conn.rollback();return false;}
         } catch(Exception e){return false;}
     }
-    // PF09: . Tìm password_hash theo ID ACTIVE và đối chiếu mật khẩu xác nhận đổi email.
-    // .. Chỉ trả đúng hoặc sai, không thay đổi mật khẩu.
-    // ... Kết quả về ProfileController.update() [PF08].
+    // PF12g: . SELECT password_hash theo ID ACTIVE để xác nhận quyền đổi email.
+    // .. Trả đúng/sai bằng PasswordHasher.verify(), không đổi mật khẩu.
+    // ... ProfileController.update() nhận kết quả tại [PF12f].
     public boolean verifyPasswordById(int id,String password) {
         try(Connection conn=getConnection();PreparedStatement ps=conn.prepareStatement("SELECT password_hash FROM users WHERE id=? AND status='ACTIVE'")){
             ps.setInt(1,id);try(ResultSet rs=ps.executeQuery()){return rs.next() && PasswordHasher.verify(password,rs.getString(1));}
@@ -271,9 +271,10 @@ public class UserDAO extends BaseDAO {
         User account=findActiveAccountByEmail(email);
         return account!=null && resetPasswordById(account.getId(),account.getEmail(),password);
     }
-    // PF04: . Kiểm tra email thuộc tài khoản khác rồi UPDATE hồ sơ theo ID ACTIVE.
-    // .. Lưu được thì trả success; trùng email/SĐT hoặc lỗi database thì trả thông báo lỗi.
-    // ... Kết quả về ProfileController.update() để cập nhật session hoặc báo lỗi trường [PF08].
+    // PF13: [SLBF10] Update profile
+    // . Kiểm tra email thuộc tài khoản khác rồi UPDATE full_name, phone, email, birthday, address theo ID ACTIVE.
+    // .. Lưu được trả success; ngày sinh trống lưu NULL; trùng dữ liệu hoặc lỗi DB trả thông báo lỗi.
+    // ... ProfileController.update() nhận kết quả trong ProfileController.update() nhận kết quả rồi cập nhật session/thông báo [PF15].
     public String updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
         String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ? WHERE id = ? AND status='ACTIVE'";
         try (Connection conn = getConnection();

@@ -41,7 +41,7 @@ public class IngredientDAO extends BaseDAO {
 
     /** Latest received purchase unit price per ingredient. Draft and ordered POs are not inventory costs. */
     public Map<Integer, BigDecimal> getLatestPurchasePrices() {
-        // RC08: . Ở đây em lấy giá nhập gần nhất của từng nguyên liệu theo điều kiện trong câu truy vấn.
+        // RC04: . lấy giá nhập gần nhất của từng nguyên liệu theo điều kiện trong câu truy vấn.
         // .. Kết quả là bảng tra đơn giá theo mã nguyên liệu; Controller xử lý trường hợp thiếu giá.
         // ... Map giá nhập về AdminRecipeController [RC02] để tính định lượng nhân đơn giá.
         // BF11 - NGUỒN GIÁ VỐN: phiếu PARTIALLY_RECEIVED/RECEIVED/CLOSED; cần giao dịch nhập, riêng RECEIVED giữ tương thích dữ liệu cũ.

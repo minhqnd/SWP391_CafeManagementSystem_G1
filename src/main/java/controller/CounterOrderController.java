@@ -405,21 +405,6 @@ public class CounterOrderController extends HttpServlet {
         }
     }
 
-    private void handleDeliverOrder(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        int orderId = parseInt(request.getParameter("orderId"), -1);
-        if (orderId <= 0) {
-            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Mã đơn không hợp lệ.\"}");
-            return;
-        }
-
-        boolean success = orderDAO.deliverCounterOrder(orderId);
-        if (success) {
-            sendJson(response, HttpServletResponse.SC_OK, "{\"success\":true,\"message\":\"Đã chuyển đơn sang trạng thái Đang giao hàng.\"}");
-        } else {
-            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Không thể chuyển trạng thái giao hàng (chỉ áp dụng cho đơn Online đã pha chế xong).\"}");
-        }
-    }
-
     private void handleCompleteOrder(HttpServletRequest request, HttpServletResponse response) throws IOException {
         int orderId = parseInt(request.getParameter("orderId"), -1);
         if (orderId <= 0) {

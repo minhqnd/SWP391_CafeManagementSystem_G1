@@ -11,7 +11,8 @@ import java.util.UUID;
 public final class AccountCsrf {
     private static final String KEY = "accountCsrfToken";
     private AccountCsrf() {}
-    // . Tạo token trong session; các form gửi lại token bằng input ẩn csrfToken.
+    // . Tạo hoặc lấy accountCsrfToken trong session để đưa vào input ẩn csrfToken.
+    // ... Controller đọc token gửi lại và đối chiếu tại AccountCsrf.require().
     public static String token(HttpSession session) {
         synchronized (session) {
             Object token = session.getAttribute(KEY);
@@ -19,8 +20,8 @@ public final class AccountCsrf {
             return token.toString();
         }
     }
-    // . Đối chiếu csrfToken từ form với token trong session.
-    // .. Thiếu hoặc sai token trả HTTP 403 và dừng; đúng token mới cho controller xử lý dữ liệu.
+    // . Đối chiếu csrfToken của request với accountCsrfToken trong session.
+    // .. Thiếu hoặc sai thì trả HTTP 403; đúng thì Controller tiếp tục xử lý form.
     public static boolean require(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         Object expected = session == null ? null : session.getAttribute(KEY);
@@ -30,5 +31,7 @@ public final class AccountCsrf {
         }
         return true;
     }
+    // . Thay token của form sau khi đặt lại mật khẩu thành công.
+    // .. Form dùng token cũ sẽ phải tải lại trước khi gửi tiếp.
     public static void rotate(HttpSession session) { synchronized(session) { session.setAttribute(KEY, UUID.randomUUID().toString()); } }
 }

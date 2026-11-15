@@ -54,9 +54,10 @@ public class MenuController extends HttpServlet {
         }
 
         // 3. Truy vấn danh sách món ăn đã lọc
-        // MN02: . Ở đây em đọc danh mục và từ khóa khách vừa chọn để tìm món.
+        // MN02: [SLBF11] Load available products in active categories
+        // . đọc danh mục và từ khóa khách vừa chọn để tìm món.
         // .. Có danh mục, danh sách món và điều kiện lọc để hiển thị.
-        // ... CategoryDAO [MN03] và ProductDAO.filterProducts() [MN04] → menu.jsp [MN01].
+        // ... CategoryDAO [MN03] và ProductDAO.filterProducts() [MN04] → menu.jsp [MN06].
         List<Product> products = productDAO.filterProducts(categoryId, keyword);
 
         // 4. Gán thuộc tính gửi sang view menu.jsp
@@ -67,14 +68,16 @@ public class MenuController extends HttpServlet {
         request.setAttribute("currentKeyword", keyword != null ? keyword : "");
 
         // 5. Chuyển tiếp tới giao diện menu.jsp
+        // MN05: . Gắn products/categories vào request rồi forward, không ghi database.
+        // ... menu.jsp lặp danh sách tại [MN07].
         request.getRequestDispatcher("/menu.jsp").forward(request, response);
     }
 
     private void handleProductDetailApi(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        // MN05: . Ở đây em chọn nhánh lấy dữ liệu món vì yêu cầu gửi lên có thao tác xem chi tiết.
-        // .. Em trả thông tin món để hộp chọn món tự hiển thị, không chuyển sang trang khác.
-        // ... ProductDAO.getProductById(mã món) [MN06] → JSON về openProductDetailModal() [MN09].
+        // MN09: . chọn nhánh lấy dữ liệu món vì yêu cầu gửi lên có thao tác xem chi tiết.
+        // .. trả thông tin món để hộp chọn món tự hiển thị, không chuyển sang trang khác.
+        // ... ProductDAO.getAvailableProductById(mã món) [MN10] → JSON về openProductDetailModal() [MN08].
         // JSON API chỉ cung cấp dữ liệu món cho giao diện; không thêm món vào giỏ ở hàm này.
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -88,7 +91,7 @@ public class MenuController extends HttpServlet {
 
         try {
             int id = Integer.parseInt(idParam.trim());
-            Product product = productDAO.getProductById(id);
+            Product product = productDAO.getAvailableProductById(id);
 
             if (product == null) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
