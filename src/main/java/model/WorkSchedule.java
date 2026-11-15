@@ -178,6 +178,11 @@ public class WorkSchedule implements Serializable {
         return new SimpleDateFormat("HH:mm").format(checkInTime);
     }
 
+    /** Giờ bắt đầu ca ở định dạng dùng trực tiếp cho input type="time". */
+    public String getShiftStartFormatted() {
+        return shiftStart == null ? "" : shiftStart.toString().substring(0, 5);
+    }
+
     public String getCheckOutFormatted() {
         if (checkOutTime == null) return "--:--";
         return new SimpleDateFormat("HH:mm").format(checkOutTime);
