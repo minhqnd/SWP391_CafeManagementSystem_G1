@@ -53,6 +53,7 @@ class WorkShiftOvernightTest {
         schedule.setShiftStart(LocalTime.parse("23:00"));
         schedule.setShiftEnd(LocalTime.parse("02:00"));
         assertTrue(schedule.isOvernightShift());
+        assertEquals("23:00", schedule.getShiftStartFormatted());
         assertEquals(LocalDateTime.parse("2026-11-04T22:50"), schedule.atShiftTime(LocalTime.parse("22:50")));
         assertEquals(LocalDateTime.parse("2026-11-04T23:10"), schedule.atShiftTime(LocalTime.parse("23:10")));
         assertEquals(LocalDateTime.parse("2026-11-05T01:55"), schedule.atShiftTime(LocalTime.parse("01:55")));

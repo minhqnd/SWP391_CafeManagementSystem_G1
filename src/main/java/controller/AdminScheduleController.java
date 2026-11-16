@@ -34,6 +34,12 @@ import java.util.Set;
 @WebServlet(name = "AdminScheduleController", urlPatterns = {"/admin/schedules"})
 public class AdminScheduleController extends HttpServlet {
 
+    /*
+     * BF06 - Schedule and Attendance, bước B (phân lịch):
+     * 1. GET tải khung ca đúng tuần, nhân viên ACTIVE và lịch theo bộ lọc để dựng calendar/board/table.
+     * 2. POST add/update kiểm tra nhân viên, ngày làm, ca thuộc đúng tuần và chống phân trùng.
+     * 3. Lịch mới bắt đầu ở SCHEDULED; bước chấm công được xử lý tại AdminAttendanceController.
+     */
     private final WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
     private final UserDAO userDAO = new UserDAO();
     private final WorkShiftDAO workShiftDAO = new WorkShiftDAO();
@@ -100,6 +106,7 @@ public class AdminScheduleController extends HttpServlet {
         }
 
         // Lấy danh sách lịch theo tuần (hoặc ngày nếu là board view)
+        // BF06.B1: Một truy vấn chung cung cấp dữ liệu cho cả ba kiểu hiển thị.
         Date fromDate = "board".equalsIgnoreCase(view) ? Date.valueOf(selectedDate) : Date.valueOf(monday);
         Date toDate = "board".equalsIgnoreCase(view) ? Date.valueOf(selectedDate) : Date.valueOf(sunday);
         List<WorkSchedule> scheduleList = workScheduleDAO.getSchedules(fromDate, toDate, staffId, shiftFilter, statusFilter, positionFilter);
@@ -193,6 +200,7 @@ public class AdminScheduleController extends HttpServlet {
 
         if ("add".equalsIgnoreCase(action)) {
             try {
+                // BF06.B2: Xác thực toàn bộ quan hệ user-date-shift trước khi INSERT work_schedules.
                 int userId = parsePositiveId(request.getParameter("userId"), "Vui lòng chọn nhân viên.");
                 requireActiveStaff(userId);
                 Date workDate = parseWorkDate(request.getParameter("workDate"));
@@ -314,6 +322,7 @@ public class AdminScheduleController extends HttpServlet {
 
     /** Ca được chọn phải thuộc đúng tuần (Thứ 2 - Chủ nhật) chứa ngày làm việc */
     private WorkShift requireShiftOfWeek(String rawShiftId, Date workDate) throws Exception {
+        // BF06.B3: Không cho gắn lịch tuần này với một work_shift được định nghĩa cho tuần khác.
         int shiftId = parsePositiveId(rawShiftId, "Vui lòng chọn ca làm việc.");
         WorkShift shift = workShiftDAO.getById(shiftId);
         LocalDate weekStart = workDate.toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));

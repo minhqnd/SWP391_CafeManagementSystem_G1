@@ -19,6 +19,10 @@ import java.util.List;
  */
 public class WorkScheduleDAO extends BaseDAO {
 
+    /*
+     * BF06 persistence: work_schedules nối nhân viên với work_shift theo ngày làm,
+     * đồng thời giữ trạng thái và timestamp chấm công. BF07 tái sử dụng dữ liệu này để tổng hợp doanh thu ca.
+     */
     /** Cột chung: lịch + nhân viên + ca của tuần đó */
     private static final String SELECT_SCHEDULE =
             "SELECT ws.id, ws.user_id, ws.work_date, ws.shift_id, ws.check_in_time, ws.check_out_time, " +
@@ -143,6 +147,7 @@ public class WorkScheduleDAO extends BaseDAO {
      * Thêm mới ca làm việc
      */
     public boolean addSchedule(WorkSchedule ws) {
+        // BF06.B4: Kiểm tra lần hai tại DAO để giảm nguy cơ tạo lịch trùng từ caller khác.
         if (isShiftExists(ws.getUserId(), ws.getWorkDate(), ws.getShiftId(), null)) {
             return false;
         }
@@ -231,6 +236,7 @@ public class WorkScheduleDAO extends BaseDAO {
      */
     public boolean updateAttendance(int id, Timestamp checkInTime, Timestamp checkOutTime,
                                     String status, String note) {
+        // BF06.C3: Ghi đồng bộ giờ vào, giờ ra, trạng thái và ghi chú trong một UPDATE duy nhất.
         String sql = "UPDATE work_schedules " +
                      "SET check_in_time = ?, check_out_time = ?, status = ?, note = ? " +
                      "WHERE id = ?";
@@ -264,6 +270,7 @@ public class WorkScheduleDAO extends BaseDAO {
      * Tổng hợp các giao dịch thành công do chính thu ngân xử lý trong thời gian ca.
      */
     public ShiftHandoverSummary getShiftHandoverSummary(WorkSchedule schedule, Timestamp fallbackEndTime) {
+        // BF07.2: Khoảng tổng hợp bắt đầu từ check-in và kết thúc tại check-out/thời điểm chốt ca.
         ShiftHandoverSummary summary = new ShiftHandoverSummary();
         summary.setSchedule(schedule);
 

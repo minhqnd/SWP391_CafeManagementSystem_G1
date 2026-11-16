@@ -29,6 +29,13 @@ import java.util.List;
 @WebServlet(name = "CashierShiftHandoverController", urlPatterns = {"/cashier/handover"})
 public class CashierShiftHandoverController extends HttpServlet {
 
+    /*
+     * BF07 - Shift Handover
+     * 1. GET xác định ca PRESENT của thu ngân và lập bản xem trước doanh thu trong ca.
+     * 2. Số dư đầu ca lấy từ actual_cash của biên bản liền trước; expected = opening + cash sales.
+     * 3. POST xác thực ca thuộc thu ngân, kiểm đếm tiền thực tế và yêu cầu giải trình nếu lệch két.
+     * 4. ShiftHandoverDAO chốt lịch + tạo biên bản trong cùng transaction; Admin chỉ đọc lịch sử.
+     */
     private static final BigDecimal MAX_CASH_AMOUNT = new BigDecimal("9999999999");
     private static final BigDecimal CASH_STEP = new BigDecimal("1000");
     private static final int MAX_NOTE_LENGTH = 500;
@@ -52,6 +59,7 @@ public class CashierShiftHandoverController extends HttpServlet {
         LocalDate today = LocalDate.now();
 
         if (scheduleIdStr != null && !scheduleIdStr.trim().isEmpty()) {
+            // BF07.1: Chỉ nhận ca thuộc đúng tài khoản thu ngân; ca khác bị bỏ qua ngay ở bước chọn.
             try {
                 int sId = Integer.parseInt(scheduleIdStr.trim());
                 WorkSchedule s = workScheduleDAO.getScheduleById(sId);
@@ -100,6 +108,7 @@ public class CashierShiftHandoverController extends HttpServlet {
         ShiftHandover previousHandover = null;
         BigDecimal openingCash = BigDecimal.ZERO;
         if (activeShift != null) {
+            // BF07.2: Tiền thực tế cuối ca trước trở thành tiền đầu ca hiện tại.
             try {
                 previousHandover = shiftHandoverDAO.getPreviousHandoverForSchedule(activeShift.getId());
                 if (previousHandover != null && previousHandover.getActualCash() != null) {
@@ -188,6 +197,7 @@ public class CashierShiftHandoverController extends HttpServlet {
 
             int scheduleId = parsePositiveId(request.getParameter("scheduleId"));
             WorkSchedule schedule = workScheduleDAO.getScheduleById(scheduleId);
+            // BF07.3: Chỉ ca PRESENT của chính cashier, thuộc hôm nay (kể cả ca qua đêm), mới được chốt.
             validateOwnedActiveShift(schedule, cashier);
 
             ShiftHandover previousHandover =

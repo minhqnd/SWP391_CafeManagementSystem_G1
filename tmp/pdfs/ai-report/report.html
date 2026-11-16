@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>SWP391 Project - AI Usage Report</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #e8ece9; color: #1c2823; font-family: "Segoe UI", Arial, sans-serif; }
+    body { counter-reset: page; }
+    .page {
+      width: 210mm; height: 297mm; margin: 0 auto 8mm; padding: 17mm 17mm 16mm;
+      background: #fff; position: relative; overflow: hidden; page-break-after: always;
+      counter-increment: page;
+    }
+    .page:last-child { page-break-after: auto; }
+    .page::after {
+      content: "AURA CAFE  /  AI USAGE REPORT     •     " counter(page);
+      position: absolute; left: 17mm; right: 17mm; bottom: 7mm; color: #6c7b73;
+      font-size: 8.5pt; letter-spacing: .8px; border-top: .35mm solid #d5dfd9; padding-top: 3mm;
+    }
+    .cover { padding: 0; color: white; background: #16372a; }
+    .cover::after { color: #dbe8e0; border-color: rgba(255,255,255,.28); left: 19mm; right: 19mm; }
+    .cover-band { position: absolute; inset: 0 0 auto 0; height: 13mm; background: #c99a4a; }
+    .cover-orb { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,.13); }
+    .orb-1 { width: 150mm; height: 150mm; right: -62mm; top: 22mm; }
+    .orb-2 { width: 98mm; height: 98mm; right: -19mm; top: 48mm; background: rgba(201,154,74,.10); }
+    .cover-content { position: absolute; left: 20mm; right: 20mm; top: 46mm; }
+    .eyebrow { font-size: 10pt; font-weight: 700; letter-spacing: 2.8px; text-transform: uppercase; color: #d8b978; }
+    .cover h1 { font-size: 34pt; line-height: 1.08; margin: 10mm 0 5mm; font-weight: 750; letter-spacing: -.6px; }
+    .cover h2 { font-size: 21pt; margin: 0; font-weight: 400; color: #dce9e2; }
+    .gold-rule { width: 31mm; height: 1.2mm; background: #c99a4a; margin: 12mm 0 10mm; }
+    .cover-intro { width: 125mm; color: #d8e5de; font-size: 11pt; line-height: 1.65; }
+    .cover-meta { position: absolute; left: 20mm; right: 20mm; bottom: 36mm; display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
+    .meta-card { border-left: 1.2mm solid #c99a4a; padding-left: 5mm; }
+    .meta-label { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 1.5px; color: #a9beb3; }
+    .meta-value { margin-top: 2mm; font-size: 11pt; line-height: 1.45; }
+    .section-kicker { font-size: 9pt; color: #9a6f2f; text-transform: uppercase; font-weight: 800; letter-spacing: 1.8px; margin-bottom: 2.5mm; }
+    h1.section-title { margin: 0 0 7mm; font-size: 24pt; color: #173b2d; letter-spacing: -.3px; }
+    h2 { font-size: 15pt; color: #173b2d; margin: 7mm 0 3mm; }
+    h3 { font-size: 11.5pt; color: #2f5946; margin: 5mm 0 2.5mm; }
+    p, li { font-size: 9.4pt; line-height: 1.48; }
+    p { margin: 0 0 3.2mm; }
+    ul, ol { margin: 2mm 0 4mm 5mm; padding-left: 4mm; }
+    li { margin: 1.2mm 0; }
+    .lead { font-size: 11pt; line-height: 1.62; color: #3c4d45; }
+    .callout { background: #f1f6f3; border-left: 1.2mm solid #3c765c; padding: 4mm 5mm; margin: 4mm 0; border-radius: 0 2mm 2mm 0; }
+    .callout.gold { background: #fbf6ed; border-color: #c99a4a; }
+    .callout p:last-child { margin-bottom: 0; }
+    .quote { font-style: italic; color: #33473e; }
+    .quote::before { content: "“"; color: #c99a4a; font-size: 18pt; font-weight: 700; vertical-align: -2mm; margin-right: 1mm; }
+    table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; table-layout: fixed; }
+    th { background: #1e4b38; color: #fff; font-size: 8.7pt; line-height: 1.3; padding: 2.5mm 2.2mm; text-align: left; }
+    td { border: .25mm solid #d3ddd7; font-size: 8.7pt; line-height: 1.38; padding: 2.4mm 2.2mm; vertical-align: top; }
+    tr:nth-child(even) td { background: #f6f9f7; }
+    .tight th, .tight td { padding: 1.8mm 1.8mm; font-size: 8.1pt; }
+    .label { display: inline-block; min-width: 8mm; padding: .7mm 1.8mm; border-radius: 6mm; text-align: center; color: white; background: #3c765c; font-size: 7.5pt; font-weight: 800; }
+    .label.d { background: #9a6f2f; }
+    .label.c { background: #4c6884; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 4mm 0 6mm; }
+    .metric { background: #173b2d; color: white; padding: 4mm; border-radius: 2mm; min-height: 29mm; }
+    .metric strong { display: block; font-size: 22pt; color: #e6c985; }
+    .metric span { font-size: 8.2pt; line-height: 1.35; color: #d9e6df; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+    .step { display: grid; grid-template-columns: 9mm 1fr; gap: 3mm; margin: 2.5mm 0; }
+    .step-no { width: 8mm; height: 8mm; border-radius: 50%; display: grid; place-items: center; background: #c99a4a; color: #fff; font-weight: 800; font-size: 8pt; }
+    .step p { margin: .5mm 0 0; }
+    .small { font-size: 8.2pt; line-height: 1.42; }
+    .muted { color: #68786f; }
+    .source { font-family: Consolas, monospace; font-size: 7.8pt; background: #f2f4f3; padding: 2.5mm; border-radius: 1.5mm; word-break: break-word; }
+    .check { color: #287044; font-weight: 800; }
+    .warn { color: #9b6b24; font-weight: 800; }
+    .appendix-item { border-bottom: .25mm solid #d6dfda; padding: 3mm 0; }
+    .appendix-item:last-child { border: 0; }
+    @media print {
+      html, body { background: #fff; }
+      .page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <section class="page cover">
+    <div class="cover-band"></div>
+    <div class="cover-orb orb-1"></div><div class="cover-orb orb-2"></div>
+    <div class="cover-content">
+      <div class="eyebrow">SWP391 Project Report</div>
+      <h1>Aura Cafe<br>Management System</h1>
+      <h2>AI Usage Report</h2>
+      <div class="gold-rule"></div>
+      <p class="cover-intro">Báo cáo tổng hợp cách sử dụng AI trong quá trình phân tích, thiết kế, triển khai và kiểm thử hệ thống quản lý quán cà phê.</p>
+    </div>
+    <div class="cover-meta">
+      <div class="meta-card"><div class="meta-label">Nhóm thực hiện</div><div class="meta-value">SE2064 - Group 1<br>Nguyễn Đức Quang Minh - HE204774</div></div>
+      <div class="meta-card"><div class="meta-label">Thời gian</div><div class="meta-value">Hà Nội<br>Tháng 11, 2026</div></div>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="section-kicker">Phần mở đầu</div>
+    <h1 class="section-title">I. Mục đích của báo cáo</h1>
+    <p class="lead">Báo cáo ghi lại việc sử dụng AI trong Aura Cafe Management System, từ phân tích yêu cầu đến kiểm thử. Nội dung phân biệt rõ phần sinh viên trực tiếp thực hiện, phần AI hỗ trợ và nguồn minh chứng cho từng giai đoạn.</p>
+    <div class="callout gold"><p><strong>Nguyên tắc:</strong> AI được dùng như công cụ lập kế hoạch, rà soát và tăng tốc triển khai. Quyết định nghiệp vụ, việc chấp nhận thay đổi và kết quả kiểm thử cuối cùng do sinh viên review và chịu trách nhiệm.</p></div>
+    <h2>II. Cấu trúc báo cáo</h2>
+    <table>
+      <tr><th style="width:30%">Mục</th><th>Nội dung</th></tr>
+      <tr><td>Nhóm / sinh viên</td><td>SE2064 - Group 1 | Nguyễn Đức Quang Minh - HE204774</td></tr>
+      <tr><td>Công cụ AI đã dùng</td><td>Codex (gpt-6.1-sol trong log phiên trích dẫn) và Google Antigravity (log cục bộ không ghi model).</td></tr>
+      <tr><td>Phạm vi báo cáo</td><td>POS, thanh toán, hóa đơn điện tử, nguyên liệu, kho, nhập hàng và nhà cung cấp.</td></tr>
+      <tr><td>Hình thức lưu log</td><td>Mã phiên và prompt gốc, commit Git, tài liệu dự án, workbook và JSON kiểm thử.</td></tr>
+      <tr><td>Chiến lược tổng thể</td><td>Với POS và thanh toán, sinh viên phác thảo quy trình và expected result trước, sau đó dùng AI review. Với kho và nhập hàng, AI đề xuất kế hoạch ban đầu; sinh viên review vai trò, quyền và điều kiện nghiệp vụ rồi mới triển khai.</td></tr>
+    </table>
+    <h3>Quy ước mức đóng góp</h3>
+    <table class="tight">
+      <tr><th style="width:13%">Mức</th><th>Mô tả</th></tr>
+      <tr><td><span class="label">A</span></td><td>AI tạo gần như nguyên bản, sinh viên chỉ kiểm tra tối thiểu.</td></tr>
+      <tr><td><span class="label">B</span></td><td>AI tạo khung hoặc phần lớn nội dung; sinh viên review, sửa và xác nhận.</td></tr>
+      <tr><td><span class="label c">C</span></td><td>Sinh viên tạo nội dung chính; AI hỗ trợ review, gợi ý hoặc hoàn thiện.</td></tr>
+      <tr><td><span class="label d">D</span></td><td>Sinh viên tự thực hiện; AI không tham gia đáng kể.</td></tr>
+    </table>
+  </section>
+
+  <section class="page">
+    <div class="section-kicker">Phần 1 - Theo từng giai đoạn</div>
+    <h1 class="section-title">1.1 Phân tích yêu cầu</h1>
+    <h3>1.1.1 Contribution Map</h3>
+    <table>
+      <tr><th style="width:34%">Artifact / Mục</th><th style="width:12%">Mức</th><th>Tóm tắt phần sinh viên đã sửa/thêm</th></tr>
+      <tr><td>Quy trình POS và thanh toán</td><td><span class="label c">C</span></td><td>Sinh viên viết luồng và kết quả mong đợi trước. AI review; sinh viên chỉnh quy trình trước khi triển khai.</td></tr>
+      <tr><td>Luồng yêu cầu nhập hàng và duyệt</td><td><span class="label">B</span></td><td>AI lên phương án đầu. Sinh viên review vai trò nhân viên/Admin và cùng chỉnh kế hoạch.</td></tr>
+    </table>
+    <h3>1.1.2 Ví dụ prompt tiêu biểu</h3>
+    <div class="callout"><p class="quote">Hình ảnh nghiệp vụ vẫn chưa đúng lắm... phần nhập kho, ai tạo đơn, barista hay thu ngân tạo rồi manager/admin sẽ duyệt... kiểm tra xem có gộp admin vào manager không?</p></div>
+    <p><strong>Output tóm tắt:</strong> Codex rà lại luồng và quyền người dùng. Phản hồi tiếp theo tập trung vào việc nhân viên không có quyền vào dashboard duyệt.</p>
+    <div class="callout gold"><p><strong>Trích output rút gọn:</strong> “Khi tạo nhân viên, lựa chọn Quản trị được lưu thành <code>role = ADMIN</code>, <code>position = MANAGER</code>. Các màn nhập hàng kiểm tra quyền ADMIN; không có luồng Manager riêng.”</p></div>
+    <h3>1.1.3 Thay đổi so với output AI và lý do</h3>
+    <ul>
+      <li>Kiểm tra lại quyền của người gửi yêu cầu và người duyệt trước khi chốt luồng kho.</li>
+      <li>Dùng thứ tự thao tác và expected result do sinh viên viết làm cơ sở review cho POS.</li>
+      <li>Đối chiếu SRS: POS/thanh toán/hóa đơn ở bản cập nhật 05/10; kho, nguyên liệu, yêu cầu nhập và nhà cung cấp ở bản cập nhật 18/10.</li>
+    </ul>
+    <h3>1.1.4 Vấn đề AI được phát hiện</h3>
+    <p>Phương án đầu chưa tách rõ quyền tạo yêu cầu và quyền duyệt. Sinh viên yêu cầu rà lại và loại bỏ cách mô tả khiến nhân viên có thể truy cập màn quản trị duyệt.</p>
+    <h3>1.1.5 Self-check</h3>
+    <div class="callout"><p><strong>Vì sao quyền tạo yêu cầu và quyền duyệt nhập kho nằm ở hai vai trò?</strong></p><p>Nhân viên gửi yêu cầu nhập hàng; quản lý cửa hàng duyệt bằng vai trò Admin vì dự án gộp Manager vào Admin. Việc tách nhiệm vụ giúp giữ quyền duyệt tại một đầu mối và tránh tự tạo - tự duyệt.</p></div>
+  </section>
+
+  <section class="page">
+    <div class="section-kicker">Phần 1 - Theo từng giai đoạn</div>
+    <h1 class="section-title">1.2 Thiết kế</h1>
+    <h3>1.2.1 Contribution Map</h3>
+    <table>
+      <tr><th style="width:34%">Artifact / Mục</th><th style="width:12%">Mức</th><th>Tóm tắt phần sinh viên đã sửa/thêm</th></tr>
+      <tr><td>Kế hoạch thiết kế luồng kho và nhập hàng</td><td><span class="label">B</span></td><td>AI lập plan; sinh viên review và điều chỉnh bước duyệt, nhận hàng và ghi nhận tồn kho.</td></tr>
+      <tr><td>Bản quy trình POS và thanh toán trước khi code</td><td><span class="label c">C</span></td><td>Sinh viên xác định bước trước/sau và đầu ra của từng bước. AI review; sinh viên chỉnh bản cuối.</td></tr>
+    </table>
+    <h3>1.2.2 Ví dụ prompt tiêu biểu</h3>
+    <div class="callout"><p class="quote">Gộp chung tất cả thay đổi DB vào 1 file aura_cafe kia thôi nhé.</p></div>
+    <p><strong>Output tóm tắt:</strong> Phiên Codex xác nhận mọi thay đổi schema phải cập nhật vào nguồn duy nhất <code>database/aura_cafe.sql</code>.</p>
+    <div class="callout gold"><p><strong>Trích output rút gọn:</strong> “Kiểm nhận theo số lượng thực tế, hỗ trợ giao thiếu, giao bù, hàng thừa và hàng bị từ chối. Chỉ cộng kho khi Admin xác nhận; hỗ trợ điều chỉnh/trả hàng sau nhận.”</p></div>
+    <h3>1.2.3 Thay đổi so với output AI</h3>
+    <div class="two-col">
+      <div>
+        <div class="step"><div class="step-no">1</div><p>Đối chiếu trạng thái phiếu nhận và đơn mua trước khi duyệt.</p></div>
+        <div class="step"><div class="step-no">2</div><p>Chỉ ghi <code>IN_PURCHASE</code> khi giao dịch cập nhật tồn kho thành công.</p></div>
+      </div>
+      <div>
+        <div class="step"><div class="step-no">3</div><p>Xác định điều kiện chuyển bước sau thanh toán trước khi hiện thực giao diện.</p></div>
+        <div class="step"><div class="step-no">4</div><p>Yêu cầu các thay đổi nhiều bảng chạy trong cùng transaction.</p></div>
+      </div>
+    </div>
+    <h3>1.2.4 Vấn đề / sai sót AI</h3>
+    <p>Kế hoạch thiết kế ban đầu chưa đủ bằng chứng cho trường hợp giao thiếu và duyệt lặp. Sinh viên bổ sung điều kiện khóa phiếu, trạng thái hợp lệ và tính idempotent trước khi triển khai.</p>
+    <h3>1.2.5 Self-check</h3>
+    <div class="callout"><p><strong>Vì sao phải phân biệt duyệt yêu cầu mua hàng và xác nhận thực nhận?</strong></p><p>Đơn mua dùng để đặt hàng với nhà cung cấp; phiếu nhận ghi số lượng thực tế được chấp nhận. Nếu đặt 10 nhưng nhận 8, tồn kho chỉ tăng 8 sau khi quản lý duyệt phiếu nhận. Cần kiểm tra trạng thái PO, số lượng đặt, số lượng nhận/chấp nhận và giao dịch tồn kho liên quan.</p></div>
+    <p class="small muted">Nguồn đối chiếu trong repo: <code>docs/TARGET_SYSTEM_DESIGN.md</code>, mục Kho, đề xuất nhập và phiếu nhập.</p>
+  </section>
+
+  <section class="page">
+    <div class="section-kicker">Phần 1 - Theo từng giai đoạn</div>
+    <h1 class="section-title">1.3 Triển khai</h1>
+    <h3>1.3.1 Contribution Map</h3>
+    <table>
+      <tr><th style="width:34%">Artifact / Mục</th><th style="width:12%">Mức</th><th>Tóm tắt phần sinh viên đã sửa/thêm</th></tr>
+      <tr><td>Duyệt và nhận hàng</td><td><span class="label">B</span></td><td>AI code theo plan. Sinh viên review, chạy thử, ghi nhận góp ý Iteration 2, yêu cầu sửa và kiểm tra lại.</td></tr>
+      <tr><td>POS, VietQR và đối soát</td><td><span class="label">B</span></td><td>Sinh viên viết quy trình và expected result, yêu cầu AI lập plan và hỏi lại phần chưa rõ. AI hỗ trợ phần lớn code; sinh viên review và tự chạy luồng.</td></tr>
+    </table>
+    <h3>1.3.2 Ví dụ prompt tiêu biểu</h3>
+    <div class="callout"><p class="quote">Kiểm tra tại sao thanh toán rồi nhưng không thấy update gì; đây là luồng thanh toán trực tiếp tại thu ngân, còn luồng thanh toán qua giỏ hàng đã ổn rồi.</p></div>
+    <p><strong>Output tóm tắt:</strong> Phiên “Fix Payment Webhook Update Issue” khoanh vùng VietQR, polling và điều kiện cho phép tiếp tục xử lý đơn tại POS.</p>
+    <div class="callout gold"><p><strong>Prompt bổ sung:</strong> “Gộp chung tất cả thay đổi DB vào 1 file aura_cafe kia thôi nhé.”</p><p><strong>Kết quả:</strong> Chuẩn hóa schema, luồng restock và quyền Admin; các giao diện nghiệp vụ dùng cùng nguồn dữ liệu.</p></div>
+    <h3>1.3.3 Thay đổi so với output AI</h3>
+    <ul>
+      <li>Tách sự cố theo đúng điểm vào của từng luồng để tránh sửa nhầm checkout khi lỗi nằm ở POS.</li>
+      <li>Bỏ chọn bàn tại màn hình order tại quầy để khớp SRS (commit <code>f176e55</code>).</li>
+      <li>Không cho UI tự quyết định thanh toán thành công; máy chủ phải xác minh trạng thái từ gateway.</li>
+    </ul>
+    <h3>1.3.4 Vấn đề / sai sót AI được phát hiện</h3>
+    <p>Trạng thái thanh toán tại quầy không được cập nhật dù giao dịch đã hoàn tất. Sinh viên phát hiện qua thao tác thực tế, mô tả rõ điểm vào luồng và yêu cầu AI khoanh vùng lại polling/webhook.</p>
+    <h3>1.3.5 Self-check - đường đi của VietQR tại POS</h3>
+    <ol>
+      <li>QR lấy số tiền phải thu và mã đơn.</li>
+      <li>Máy chủ gửi mã đơn, số tiền và nội dung đối soát đến payment gateway.</li>
+      <li>Gateway nhận webhook SePay, đối chiếu nội dung/số tiền và lưu trạng thái.</li>
+      <li>Giao diện polling trạng thái qua máy chủ ứng dụng.</li>
+      <li>Chỉ khi máy chủ xác nhận thành công, UI mới cho tiếp tục xử lý đơn.</li>
+    </ol>
+  </section>
+
+  <section class="page">
+    <div class="section-kicker">Phần 1 - Theo từng giai đoạn</div>
+    <h1 class="section-title">1.4 Kiểm thử</h1>
+    <h3>1.4.1 Contribution Map</h3>
+    <table>
+      <tr><th style="width:34%">Artifact / Mục</th><th style="width:12%">Mức</th><th>Tóm tắt phần sinh viên đã sửa/thêm</th></tr>
+      <tr><td>Bộ ca kiểm thử theo tài liệu</td><td><span class="label">B</span></td><td>AI soạn ca theo SRS/tài liệu. Sinh viên review từng mục và chạy kiểm tra kết quả.</td></tr>
+      <tr><td>Kiểm thử thủ công theo SRS</td><td><span class="label d">D</span></td><td>Sinh viên trực tiếp thao tác luồng chính và các nhánh ngoại lệ trên giao diện.</td></tr>
+    </table>
+    <h3>1.4.2 Ví dụ prompt tiêu biểu</h3>
+    <div class="callout"><p class="quote">Thế thì xem phần test, xem mọi người đã làm những phần nào rồi, phần của tôi thì sao?</p></div>
+    <p><strong>Output tóm tắt:</strong> Codex xác định phạm vi test cá nhân; bộ kết quả gồm 40 cặp Integration/System Test trong BF01, BF02, BF05 và BF08.</p>
+    <div class="callout gold"><p><strong>Trích output rút gọn:</strong> “Phần test đã có test case nhưng chưa có kết quả nghiệm thu đầy đủ. Đã kiểm tra trạng thái, Tester, ghi chú, link ảnh và ảnh nhúng trong hai workbook.”</p></div>
+    <h3>1.4.3 Thay đổi so với output AI</h3>
+    <ul>
+      <li>Review từng test case do AI soạn theo tài liệu trước khi chạy.</li>
+      <li>BF02-002: kiểm tra số tiền và mã đơn VietQR.</li>
+      <li>BF08-010: đối chiếu tồn kho trước/sau duyệt phiếu nhận và giao dịch <code>IN_PURCHASE</code>.</li>
+    </ul>
+    <h3>1.4.4 Vấn đề / sai sót được phát hiện</h3>
+    <table class="tight">
+      <tr><th style="width:22%">Tình huống</th><th style="width:25%">AI/kết quả lịch sử</th><th style="width:25%">Vì sao chưa đủ</th><th>Hướng xử lý</th></tr>
+      <tr><td>BF05-011</td><td>JSON lịch sử ghi Failed.</td><td>Chưa thấy kiểm tra <code>cashReceived</code> phía server.</td><td>Đối chiếu controller hiện tại và chạy lại trên build mới.</td></tr>
+      <tr><td>BF08-017</td><td>JSON lịch sử ghi Failed.</td><td>Controller dùng vô hiệu hóa và giữ công thức cũ, không xóa cứng.</td><td>Đọc lại UC47, chốt expected result và chạy lại.</td></tr>
+    </table>
+    <h3>1.4.5 Self-check</h3>
+    <p><strong>Vì sao BF08-010 phải kiểm tra tồn kho và giao dịch ngoài thông báo thành công?</strong> Vì thông báo UI không chứng minh transaction đã ghi đủ dữ liệu. Cần ghi tồn trước, kiểm tra phiếu chuyển APPROVED/RECEIVED, đối chiếu lượng tăng đúng accepted quantity, tìm đúng giao dịch <code>IN_PURCHASE</code>, rồi thử duyệt lại để xác nhận không ghi lặp.</p>
+  </section>
+
+  <section class="page">
+    <div class="section-kicker">Phần 2</div>
+    <h1 class="section-title">Số liệu tổng hợp</h1>
+    <div class="metric-grid">
+      <div class="metric"><strong>8</strong><span>artifact chính được phân loại</span></div>
+      <div class="metric"><strong>0</strong><span>artifact mức A - AI tạo nguyên bản</span></div>
+      <div class="metric"><strong>5</strong><span>artifact mức B - AI tạo khung, SV review</span></div>
+      <div class="metric"><strong>3</strong><span>artifact mức C/D - SV chủ động</span></div>
+    </div>
+    <table class="tight">
+      <tr><th style="width:19%">Giai đoạn</th><th>Số artifact</th><th>Mức A</th><th>Mức B</th><th>Mức C</th><th>Mức D</th><th style="width:23%">Vòng lặp prompt</th></tr>
+      <tr><td>Phân tích yêu cầu</td><td>2</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1 lượt / mục có log</td></tr>
+      <tr><td>Thiết kế</td><td>2</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1 lượt / mục có log</td></tr>
+      <tr><td>Triển khai</td><td>2</td><td>0</td><td>2</td><td>0</td><td>0</td><td>2 lượt / 2 mục có log</td></tr>
+      <tr><td>Kiểm thử</td><td>2</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1 lượt / mục có log</td></tr>
+    </table>
+    <div class="callout"><p><strong>Cách tính:</strong> Số lượt ở bảng chỉ tính prompt được trích trong từng giai đoạn. Prompt gộp schema xuất hiện ở cả thiết kế và triển khai; toàn báo cáo có 4 prompt riêng biệt.</p></div>
+    <h2>Traceability checklist</h2>
+    <table class="tight">
+      <tr><th style="width:19%">Giai đoạn</th><th style="width:16%">Đạt / tổng</th><th>Mục đạt và kế hoạch xử lý</th></tr>
+      <tr><td>1. Phân tích</td><td><span class="check">2/3</span></td><td>Đã xác định phạm vi từ lịch sử sửa SRS và nối UC19, UC47 với mã ca. Cần bổ sung trích nguyên văn điều kiện nghiệp vụ SRS.</td></tr>
+      <tr><td>2. Thiết kế</td><td><span class="check">2/3</span></td><td>Đã nối quy trình nhận hàng với thiết kế đích và transaction tồn kho. Cần bổ sung vị trí tương ứng trong SDS.</td></tr>
+      <tr><td>3. Triển khai</td><td><span class="check">3/3</span></td><td>Đã truy vết POS, nguyên liệu/công thức và nghiệp vụ nhập kho tới Controller/DAO và commit.</td></tr>
+      <tr><td>4. Kiểm thử</td><td><span class="check">2/3</span></td><td>JSON lịch sử có mã ca và kết quả; BF08-010 có đối chiếu tồn. Cần chạy lại hai ca Failed trên build hiện hành.</td></tr>
+    </table>
+    <p class="small muted">Tổng thể đạt 9/12 mục checklist. Các mục còn thiếu được ghi thành hành động cụ thể thay vì tự suy diễn bằng output AI.</p>
+  </section>
+
+  <section class="page">
+    <div class="section-kicker">Traceability</div>
+    <h1 class="section-title">Đối chiếu bằng chứng kỹ thuật</h1>
+    <h2>Luồng POS và thanh toán</h2>
+    <table class="tight">
+      <tr><th style="width:25%">Yêu cầu</th><th style="width:35%">Mã nguồn / tài liệu</th><th>Bằng chứng kiểm tra</th></tr>
+      <tr><td>Tạo đơn tại quầy</td><td><code>CounterOrderController</code>, <code>cashier-dashboard.jsp</code></td><td>Route <code>/cashier</code>, validate phương thức CASH/BANK_TRANSFER và tính lại phía server.</td></tr>
+      <tr><td>VietQR</td><td><code>PaymentController</code>, <code>PaymentService</code>, payment gateway</td><td>QR theo mã đơn/số tiền; polling trạng thái; chỉ SUCCESS mới chuyển luồng.</td></tr>
+      <tr><td>Hóa đơn</td><td><code>BillController</code>, <code>bill.jsp</code></td><td>Hiển thị theo order và quyền truy cập.</td></tr>
+    </table>
+    <h2>Luồng kho và nhập hàng</h2>
+    <table class="tight">
+      <tr><th style="width:25%">Yêu cầu</th><th style="width:35%">Mã nguồn / tài liệu</th><th>Bằng chứng kiểm tra</th></tr>
+      <tr><td>Yêu cầu nhập hàng</td><td><code>AdminRestockController</code>, <code>RestockRequestDAO</code></td><td>Phân quyền, trạng thái và danh sách item.</td></tr>
+      <tr><td>Đơn mua</td><td><code>AdminPurchaseController</code>, <code>PurchaseOrderDAO</code></td><td>Đơn mua chính thức, trạng thái DRAFT/ORDERED/RECEIVED.</td></tr>
+      <tr><td>Ghi nhận tồn</td><td><code>InventoryMovementDAO</code>, <code>inventory_transactions</code></td><td>Cộng tồn và ghi <code>IN_PURCHASE</code>; kiểm tra tránh ghi lặp.</td></tr>
+      <tr><td>Nguồn schema</td><td><code>database/aura_cafe.sql</code></td><td>Một nguồn hợp nhất cho schema và dữ liệu mẫu MySQL.</td></tr>
+    </table>
+    <h2>Nguyên tắc review được áp dụng</h2>
+    <div class="two-col">
+      <div class="callout"><p><strong>Không tin UI đơn lẻ</strong></p><p>Thông báo thành công phải được đối chiếu với trạng thái DB, tồn kho và lịch sử giao dịch.</p></div>
+      <div class="callout"><p><strong>Không tin output AI đơn lẻ</strong></p><p>Mọi đề xuất phải đối chiếu SRS, thiết kế đích, code hiện hành và hành vi thực tế.</p></div>
+    </div>
+    <div class="two-col">
+      <div class="callout gold"><p><strong>Transaction</strong></p><p>Các thay đổi nhiều bảng phải commit/rollback cùng nhau.</p></div>
+      <div class="callout gold"><p><strong>Idempotency</strong></p><p>Duyệt hoặc nhận lại cùng phiếu không được cộng tồn và ghi giao dịch lần hai.</p></div>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="section-kicker">Phần 3</div>
+    <h1 class="section-title">Phản tư (Reflection)</h1>
+    <h2>1. Việc nào AI làm tốt hơn nhóm tự làm?</h2>
+    <p>AI hỗ trợ tạo phương án đầu để sinh viên có khung review cho luồng nhập hàng. Với POS, AI hữu ích khi rà lại luồng đã phác thảo và lần theo code cập nhật trạng thái thanh toán qua nhiều lớp.</p>
+    <h2>2. Việc nào nhóm làm tốt hơn AI?</h2>
+    <p>Sinh viên xác định thứ tự thao tác, expected result và ràng buộc domain trước khi đưa AI review. Với nhập hàng, sinh viên phải kiểm tra vai trò người gửi, người duyệt và điều kiện ghi nhận số lượng thực nhận - những quyết định phụ thuộc SRS và cách tổ chức vai trò của nhóm.</p>
+    <h2>3. Rủi ro lớn nhất nếu không review kỹ output AI?</h2>
+    <div class="callout gold"><p>Nếu chỉ kiểm tra luồng thanh toán từ giỏ hàng, lỗi cập nhật trạng thái tại quầy có thể bị bỏ sót. Nếu chỉ nhìn thông báo duyệt kho, giao dịch tồn kho có thể bị thiếu hoặc ghi lặp mà không được phát hiện.</p></div>
+    <h2>4. Nếu làm lại từ đầu, nhóm sẽ thay đổi gì?</h2>
+    <ul>
+      <li>Luôn yêu cầu AI lập kế hoạch và hỏi lại điểm chưa rõ trước khi code.</li>
+      <li>Lưu cả bản plan trước và sau review để chứng minh thay đổi.</li>
+      <li>Ghi rõ build, expected, actual và evidence cho mỗi lần chạy test.</li>
+      <li>Gắn prompt, commit và test case với cùng một mã use case.</li>
+    </ul>
+    <h2>Kết luận</h2>
+    <p class="lead">AI giúp tăng tốc tìm kiếm, lập kế hoạch và triển khai; chất lượng dự án vẫn phụ thuộc vào review nghiệp vụ, đối chiếu bằng chứng và kiểm thử thực tế. Giá trị lớn nhất không nằm ở số dòng code AI tạo ra, mà ở khả năng dùng AI có kiểm soát và truy vết được.</p>
+  </section>
+
+  <section class="page">
+    <div class="section-kicker">Phụ lục</div>
+    <h1 class="section-title">AI Conversation Log & Evidence</h1>
+    <div class="appendix-item"><h3>Codex</h3><p>Phiên <span class="source">01a1a548-7b03-77b3-980b-39bb0fb6be6a</span>, ngày 04/11/2026. Trao đổi về SRS, quyền duyệt, schema và phạm vi kiểm thử.</p></div>
+    <div class="appendix-item"><h3>Google Antigravity</h3><p><strong>Fix Payment Webhook Update Issue</strong> - phiên <span class="source">702d4e32-f00e-46aa-a699-84e750d1f355</span>.</p><p><strong>Database Location And IDE Preview</strong> - phiên <span class="source">3b3e5022-2931-4e03-ab91-5a0d26ac8f77</span>, có trao đổi về polling.</p></div>
+    <div class="appendix-item"><h3>Tài liệu nhóm</h3><p><code>G1 / Report doc / SE2064_G1_CafeManagementSystem_SRS_01.docx</code></p><p><code>docs/TARGET_SYSTEM_DESIGN.md</code> và <code>docs/USE_CASE_IMPLEMENTATION_MATRIX.md</code>.</p></div>
+    <div class="appendix-item"><h3>Git</h3><p>PR #179. Kho/nhận hàng: <code>3eb5f53</code>, <code>3b87928</code>. POS: <code>f176e55</code>, <code>d95f457</code>. Đối soát: <code>1027604</code>, <code>eee6dc1</code>. Kiểm thử: <code>5cbeb5a</code>, <code>15bfac9</code>.</p><p class="small muted">Một số hash thuộc nhánh/lịch sử ngoài snapshot hiện tại; commit <code>f176e55</code> được xác minh trong repo đang mở.</p></div>
+    <div class="appendix-item"><h3>Kiểm thử</h3><p><code>G1 / Test report / Evidence_Minh / scripts / minh_execution_results.json</code>; hai workbook <code>Integration-Test_Clean</code> và <code>System-Test_Clean</code>.</p></div>
+    <div class="callout gold" style="margin-top:7mm"><p><strong>Ghi chú về kết quả lịch sử:</strong> JSON ghi 38 ca Passed và 2 ca Failed. Hai ca cần được chạy lại theo SRS và build hiện hành trước khi kết luận trạng thái hiện tại.</p></div>
+    <h2>Checklist bàn giao</h2>
+    <p><span class="check">✓</span> Có phân loại mức đóng góp AI/Sinh viên.</p>
+    <p><span class="check">✓</span> Có prompt và output tiêu biểu theo từng giai đoạn.</p>
+    <p><span class="check">✓</span> Có thay đổi so với output AI và lý do.</p>
+    <p><span class="check">✓</span> Có self-check, số liệu tổng hợp, reflection và nguồn minh chứng.</p>
+  </section>
+
+</body>
+</html>
