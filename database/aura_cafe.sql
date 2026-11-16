@@ -195,6 +195,7 @@ CREATE TABLE `customer_reviews` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `ticket_code` (`ticket_code`),
+  UNIQUE KEY `uq_review_customer_order` (`customer_id`,`order_id`),
   KEY `idx_reviews_customer` (`customer_id`),
   KEY `idx_reviews_order` (`order_id`),
   CONSTRAINT `fk_review_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,

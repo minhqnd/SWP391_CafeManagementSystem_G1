@@ -1,6 +1,7 @@
 package controller;
 
 import dao.WorkScheduleDAO;
+import dao.ShiftHandoverDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -22,6 +23,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Màn hình quản lý chấm công dựa trên dữ liệu bảng work_schedules.
@@ -44,12 +46,18 @@ public class AdminAttendanceController extends HttpServlet {
     private static final int MAX_NOTE_LENGTH = 500;
 
     private final WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
+    private final ShiftHandoverDAO shiftHandoverDAO = new ShiftHandoverDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         if (!isAdmin(request, response)) {
             return;
+        }
+
+        HttpSession session = request.getSession();
+        if (session.getAttribute("attendanceCsrfToken") == null) {
+            session.setAttribute("attendanceCsrfToken", UUID.randomUUID().toString());
         }
 
         LocalDate selectedDate = parseDateOrDefault(request.getParameter("date"), LocalDate.now());
@@ -102,6 +110,15 @@ public class AdminAttendanceController extends HttpServlet {
         HttpSession session = request.getSession();
         LocalDate redirectDate = parseDateOrDefault(request.getParameter("returnDate"), LocalDate.now());
 
+        String expectedCsrf = (String) session.getAttribute("attendanceCsrfToken");
+        String submittedCsrf = request.getParameter("csrfToken");
+        if (expectedCsrf == null || submittedCsrf == null || !expectedCsrf.equals(submittedCsrf)) {
+            session.setAttribute("attendanceErrorMsg", "Phiên biểu mẫu đã hết hạn. Vui lòng tải lại trang và thao tác lại.");
+            response.sendRedirect(request.getContextPath() + "/admin/attendance?date="
+                    + redirectDate.format(DATE_FORMATTER));
+            return;
+        }
+
         try {
             if (!"update".equalsIgnoreCase(request.getParameter("action"))) {
                 throw new IllegalArgumentException("Thao tác chấm công không hợp lệ.");
@@ -114,6 +131,11 @@ public class AdminAttendanceController extends HttpServlet {
             }
             redirectDate = schedule.getWorkDate().toLocalDate();
 
+            if (shiftHandoverDAO.getBySchedule(scheduleId) != null) {
+                throw new IllegalArgumentException(
+                        "Ca này đã chốt két và có biên bản bàn giao nên không thể sửa chấm công.");
+            }
+
             String status = normalizeStatus(request.getParameter("status"));
             String note = normalizeNote(request.getParameter("note"));
             LocalTime checkIn = parseOptionalTime(request.getParameter("checkInTime"), "Giờ vào");
@@ -121,6 +143,15 @@ public class AdminAttendanceController extends HttpServlet {
             // Ca qua đêm (VD 23:00 - 02:00): giờ ra 01:50 được hiểu là sáng hôm sau
             LocalDateTime checkInAt = checkIn == null ? null : schedule.atShiftTime(checkIn);
             LocalDateTime checkOutAt = checkOut == null ? null : schedule.atShiftTime(checkOut);
+            if (schedule.getWorkDate().toLocalDate().isAfter(LocalDate.now())
+                    && !"SCHEDULED".equals(status)) {
+                throw new IllegalArgumentException("Không thể chấm công cho một ca ở ngày tương lai.");
+            }
+            LocalDateTime now = LocalDateTime.now();
+            if ((checkInAt != null && checkInAt.isAfter(now))
+                    || (checkOutAt != null && checkOutAt.isAfter(now))) {
+                throw new IllegalArgumentException("Giờ vào/ra không được nằm trong tương lai.");
+            }
             // BF06.C2: Trạng thái quyết định cặp thời gian hợp lệ trước khi dữ liệu chạm DB.
             validateAttendance(status, checkInAt, checkOutAt);
 
@@ -258,7 +289,7 @@ public class AdminAttendanceController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
-        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+        if (!"ADMIN".equalsIgnoreCase(user.getRole()) || !"ACTIVE".equalsIgnoreCase(user.getStatus())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN,
                     "Chỉ Admin có quyền truy cập trang này.");
             return false;

@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.Set;
 
 /**
  * AdminFeedbackController - Quản lý đánh giá và khiếu nại (bảng customer_reviews)
@@ -32,6 +33,9 @@ public class AdminFeedbackController extends HttpServlet {
      * 4. Kết quả được lưu dưới dạng flash message và redirect về danh sách (PRG pattern).
      */
     private final FeedbackDAO feedbackDAO = new FeedbackDAO();
+    private static final Set<String> VALID_TYPES = Set.of("ALL", "RATING", "COMPLAINT");
+    private static final Set<String> VALID_STATUSES =
+            Set.of("ALL", "PENDING", "PROCESSING", "RESOLVED", "REJECTED");
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -47,8 +51,8 @@ public class AdminFeedbackController extends HttpServlet {
         moveFlash(session, request, "feedbackMessage");
         moveFlash(session, request, "feedbackError");
 
-        String typeFilter = request.getParameter("type");
-        String statusFilter = request.getParameter("status");
+        String typeFilter = normalizeFilter(request.getParameter("type"), VALID_TYPES);
+        String statusFilter = normalizeFilter(request.getParameter("status"), VALID_STATUSES);
 
         try {
             // Lấy toàn bộ danh sách để tính thống kê 4 chỉ số KPI tổng thể
@@ -167,6 +171,12 @@ public class AdminFeedbackController extends HttpServlet {
             request.setAttribute(key, value);
             session.removeAttribute(key);
         }
+    }
+
+    private String normalizeFilter(String rawValue, Set<String> allowedValues) {
+        String value = rawValue == null || rawValue.isBlank()
+                ? "ALL" : rawValue.trim().toUpperCase(Locale.ROOT);
+        return allowedValues.contains(value) ? value : "ALL";
     }
 
     private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {

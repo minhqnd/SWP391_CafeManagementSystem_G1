@@ -160,6 +160,7 @@
             <div class="modal-content attendance-modal-content">
                 <form id="attendanceEditForm" method="post" action="${ctx}/admin/attendance" novalidate>
                     <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.attendanceCsrfToken)}">
                     <input type="hidden" name="id" id="attendanceScheduleId">
                     <input type="hidden" name="returnDate" value="${selectedDate}">
 

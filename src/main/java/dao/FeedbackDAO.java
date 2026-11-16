@@ -214,50 +214,81 @@ public class FeedbackDAO extends BaseDAO {
     }
 
     public boolean createFeedback(Feedback fb) {
-        // BF09.4: INSERT phiếu trước, sau đó dùng generated key để sinh ticket_code dễ tra cứu.
+        if (fb == null || fb.getCustomerId() <= 0 || fb.getOrderId() <= 0
+                || fb.getContent() == null || fb.getContent().trim().isEmpty()
+                || fb.getContent().trim().length() > 2000
+                || (!"RATING".equalsIgnoreCase(fb.getIssueType())
+                    && !"COMPLAINT".equalsIgnoreCase(fb.getIssueType()))
+                || ("RATING".equalsIgnoreCase(fb.getIssueType())
+                    && (fb.getRating() < 1 || fb.getRating() > 5))) {
+            return false;
+        }
+
+        String lockOrderSql = "SELECT id FROM orders "
+                + "WHERE id = ? AND customer_id = ? AND status = 'COMPLETED' FOR UPDATE";
+        String duplicateSql = "SELECT 1 FROM customer_reviews WHERE customer_id = ? AND order_id = ? LIMIT 1";
+        // BF09.4: Khóa đơn hàng rồi kiểm tra trùng và INSERT trong cùng transaction.
         String sql = "INSERT INTO customer_reviews (customer_id, order_id, issue_type, rating, content, status, admin_response) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setInt(1, fb.getCustomerId());
-            ps.setInt(2, fb.getOrderId());
-            ps.setString(3, fb.getIssueType()); // 'RATING' or 'COMPLAINT'
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement lockOrder = conn.prepareStatement(lockOrderSql)) {
+                    lockOrder.setInt(1, fb.getOrderId());
+                    lockOrder.setInt(2, fb.getCustomerId());
+                    try (ResultSet rs = lockOrder.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return false;
+                        }
+                    }
+                }
+                try (PreparedStatement duplicate = conn.prepareStatement(duplicateSql)) {
+                    duplicate.setInt(1, fb.getCustomerId());
+                    duplicate.setInt(2, fb.getOrderId());
+                    try (ResultSet rs = duplicate.executeQuery()) {
+                        if (rs.next()) {
+                            conn.rollback();
+                            return false;
+                        }
+                    }
+                }
 
-            // Ràng buộc ràng buộc kiểm tra check constraint chk_review_type trong MySQL:
-            // Nếu COMPLAINT -> rating BẮT BUỘC là NULL
-            // Nếu RATING -> rating từ 1 đến 5
-            if ("COMPLAINT".equalsIgnoreCase(fb.getIssueType())) {
-                ps.setNull(4, Types.INTEGER);
-            } else {
-                int r = fb.getRating();
-                if (r < 1) r = 1;
-                if (r > 5) r = 5;
-                ps.setInt(4, r);
-            }
-
-            ps.setString(5, fb.getContent());
-            ps.setString(6, fb.getStatus() != null ? fb.getStatus() : "PENDING");
-            ps.setString(7, fb.getAdminResponse());
-
-            int affected = ps.executeUpdate();
-            if (affected > 0) {
                 int feedbackId = 0;
-                try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        feedbackId = rs.getInt(1);
+                try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setInt(1, fb.getCustomerId());
+                    ps.setInt(2, fb.getOrderId());
+                    ps.setString(3, fb.getIssueType().trim().toUpperCase());
+                    if ("COMPLAINT".equalsIgnoreCase(fb.getIssueType())) {
+                        ps.setNull(4, Types.INTEGER);
+                    } else {
+                        ps.setInt(4, fb.getRating());
+                    }
+                    ps.setString(5, fb.getContent().trim());
+                    // Trạng thái và phản hồi Admin không bao giờ được tin từ request tạo mới.
+                    ps.setString(6, "PENDING");
+                    ps.setNull(7, Types.LONGVARCHAR);
+                    ps.executeUpdate();
+                    try (ResultSet rs = ps.getGeneratedKeys()) {
+                        if (rs.next()) feedbackId = rs.getInt(1);
                     }
                 }
-                if (feedbackId > 0) {
-                    fb.setId(feedbackId);
-                    fb.setTicketCode("#CR-" + String.format("%04d", feedbackId));
-                    try (PreparedStatement updateTicket = conn.prepareStatement(
-                            "UPDATE customer_reviews SET ticket_code = ? WHERE id = ?")) {
-                        updateTicket.setString(1, fb.getTicketCode());
-                        updateTicket.setInt(2, feedbackId);
-                        updateTicket.executeUpdate();
-                    }
+                if (feedbackId <= 0) {
+                    throw new IllegalStateException("Không nhận được mã phiếu phản hồi vừa tạo.");
                 }
+                fb.setId(feedbackId);
+                fb.setTicketCode("#CR-" + String.format("%04d", feedbackId));
+                try (PreparedStatement updateTicket = conn.prepareStatement(
+                        "UPDATE customer_reviews SET ticket_code = ? WHERE id = ?")) {
+                    updateTicket.setString(1, fb.getTicketCode());
+                    updateTicket.setInt(2, feedbackId);
+                    updateTicket.executeUpdate();
+                }
+                conn.commit();
                 return true;
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -269,7 +300,7 @@ public class FeedbackDAO extends BaseDAO {
         List<String[]> list = new ArrayList<>();
         String sql = "SELECT o.id, o.order_code, o.created_at, o.final_amount, o.status " +
                      "FROM orders o " +
-                     "WHERE o.customer_id = ? " +
+                     "WHERE o.customer_id = ? AND o.status = 'COMPLETED' " +
                      "AND NOT EXISTS (" +
                      "    SELECT 1 FROM customer_reviews cr " +
                      "    WHERE cr.customer_id = o.customer_id AND cr.order_id = o.id" +
@@ -304,7 +335,7 @@ public class FeedbackDAO extends BaseDAO {
         try {
             int orderId = Integer.parseInt(clean);
             String sql = "SELECT o.id FROM orders o " +
-                         "WHERE o.id = ? AND o.customer_id = ? " +
+                         "WHERE o.id = ? AND o.customer_id = ? AND o.status = 'COMPLETED' " +
                          "AND NOT EXISTS (" +
                          "    SELECT 1 FROM customer_reviews cr " +
                          "    WHERE cr.customer_id = o.customer_id AND cr.order_id = o.id" +
@@ -320,7 +351,8 @@ public class FeedbackDAO extends BaseDAO {
         } catch (Exception ignored) {}
 
         String sql = "SELECT o.id FROM orders o " +
-                     "WHERE o.customer_id = ? AND (o.order_code = ? OR o.order_code = ?) " +
+                     "WHERE o.customer_id = ? AND o.status = 'COMPLETED' " +
+                     "AND (o.order_code = ? OR o.order_code = ?) " +
                      "AND NOT EXISTS (" +
                      "    SELECT 1 FROM customer_reviews cr " +
                      "    WHERE cr.customer_id = o.customer_id AND cr.order_id = o.id" +

@@ -107,9 +107,10 @@ public class AdminShiftController extends HttpServlet {
             throws SQLException, ClassNotFoundException {
         // BF06.A1: Validate ca và bảo đảm thao tác update chỉ tác động đúng tuần đang xem.
         int id = 0;
+        WorkShift existing = null;
         if (isUpdate) {
             id = parseId(form.get("id"));
-            WorkShift existing = workShiftDAO.getById(id);
+            existing = workShiftDAO.getById(id);
             if (existing == null || !existing.getWeekStart().equals(weekStart)) {
                 throw new IllegalArgumentException("Không tìm thấy ca cần sửa trong tuần này.");
             }
@@ -124,6 +125,12 @@ public class AdminShiftController extends HttpServlet {
         LocalTime end = parseTime(form.get("endTime"), "Giờ kết thúc");
         // Giờ kết thúc nhỏ hơn giờ bắt đầu = ca qua đêm, kết thúc sáng hôm sau (VD 23:00 - 02:00)
         if (end.equals(start)) throw new IllegalArgumentException("Giờ kết thúc không được trùng giờ bắt đầu.");
+        if (existing != null && existing.getScheduleCount() > 0
+                && (!existing.getStartTime().equals(start) || !existing.getEndTime().equals(end))) {
+            throw new IllegalArgumentException(
+                    "Ca đã có nhân viên được xếp lịch nên không thể đổi giờ. "
+                            + "Hãy gỡ các lịch liên quan trước hoặc chỉ đổi tên ca.");
+        }
 
         if (workShiftDAO.nameExists(weekStart, name, id)) {
             throw new IllegalArgumentException("Tuần này đã có ca tên \"" + name + "\".");
@@ -255,7 +262,7 @@ public class AdminShiftController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/?tab=login");
             return false;
         }
-        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+        if (!"ADMIN".equalsIgnoreCase(user.getRole()) || !"ACTIVE".equalsIgnoreCase(user.getStatus())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ Admin có quyền truy cập trang này.");
             return false;
         }
