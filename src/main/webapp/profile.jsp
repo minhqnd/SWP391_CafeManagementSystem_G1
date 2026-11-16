@@ -402,8 +402,8 @@
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Địa chỉ Email</label>
                                                         <%-- PF06c: . Ô Email gửi name=email; đúng định dạng, tối đa 150 ký tự và không trùng tài khoản khác.
-                                                             .. Đổi email cần mật khẩu hiện tại tại ô [PF06f].
-                                                             ... validate() kiểm tra email trong validate(), kiểm tra trùng checkContact() trong account-validation.js → ProfileController [PF12c], [PF12f] → DAO [PF13]. --%>
+                                                             .. Email phải có đuôi @gmail.com và không trùng tài khoản khác.
+                                                             ... validate() và checkContact() trong account-validation.js → ProfileController [PF12c] → DAO [PF13]. --%>
                                                         <input type="email" name="email" maxlength="150"
                                                             class="form-control-custom w-100 profile-input"
                                                             value="${fn:escapeXml(sessionScope.user.email)}" readonly required>
@@ -438,13 +438,6 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="mt-3">
-                                                    <label class="form-label-custom" for="profilePassword">Mật khẩu hiện tại (chỉ cần khi đổi email)</label>
-                                                    <%-- PF06f: . Ô mật khẩu hiện tại gửi profilePassword để xác nhận khi đổi email.
-                                                         .. Dữ liệu này không phải mật khẩu mới và không được lưu lại trong form lỗi.
-                                                         ... ProfileController [PF12f] → UserDAO.verifyPasswordById() [PF12g]. --%>
-                                                    <input id="profilePassword" name="profilePassword" type="password" maxlength="255" autocomplete="current-password" class="form-control-custom w-100">
-                                                </div>
                                                 <div id="editActions"
                                                     class="mt-4 pt-3 border-top d-none justify-content-end gap-2">
                                                     <button type="button" id="btnCancelEdit"

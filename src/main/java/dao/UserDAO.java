@@ -258,14 +258,6 @@ public class UserDAO extends BaseDAO {
             } catch(Exception e){conn.rollback();return false;}
         } catch(Exception e){return false;}
     }
-    // PF12g: . SELECT password_hash theo ID ACTIVE để xác nhận quyền đổi email.
-    // .. Trả đúng/sai bằng PasswordHasher.verify(), không đổi mật khẩu.
-    // ... ProfileController.update() nhận kết quả tại [PF12f].
-    public boolean verifyPasswordById(int id,String password) {
-        try(Connection conn=getConnection();PreparedStatement ps=conn.prepareStatement("SELECT password_hash FROM users WHERE id=? AND status='ACTIVE'")){
-            ps.setInt(1,id);try(ResultSet rs=ps.executeQuery()){return rs.next() && PasswordHasher.verify(password,rs.getString(1));}
-        }catch(Exception e){return false;}
-    }
     /** Compatibility wrapper: never update several accounts sharing an old email. */
     public boolean updatePassword(String email, String password) {
         User account=findActiveAccountByEmail(email);

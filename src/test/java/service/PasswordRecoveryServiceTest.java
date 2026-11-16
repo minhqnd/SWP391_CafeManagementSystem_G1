@@ -22,20 +22,27 @@ class PasswordRecoveryServiceTest {
         };
         service=new PasswordRecoveryService(users,(email,code)->{sends++;delivered=code;return mailWorks;},now::get);
     }
-    private void start(){service.start(mock.session,"a@example.com","ip");}
+    private void start(){service.start(mock.session,"a@gmail.com","ip");}
     private void verified(){start();service.verify(mock.session,delivered);}
+    @Test void rejectsMistypedEmailBeforeLookupOrSendingMail(){
+        PasswordRecoveryService guarded=new PasswordRecoveryService(new UserDAO(){
+            @Override public User findActiveAccountByEmail(String email){fail("Invalid email reached lookup");return null;}
+        },(email,code)->{fail("Invalid email sent OTP");return true;},now::get);
+        for(String email:new String[]{"nguyen@gmaill.comm","nguyen@gmail.comm","nguyen@yahoo.com"})
+            assertEquals("Sai định dạng email.",assertThrows(IllegalArgumentException.class,()->guarded.start(mock.session,email,"ip")).getMessage());
+    }
     @Test void bindsResetToVerifiedAccountAndConsumesGrant(){
-        verified();mock.sessionValues.put("forgotEmail","b@example.com");
+        verified();mock.sessionValues.put("forgotEmail","b@gmail.com");
         service.reset(mock.session,"newSecret1","newSecret1");
-        assertEquals(1,resetId);assertEquals("a@example.com",resetEmail);
+        assertEquals(1,resetId);assertEquals("a@gmail.com",resetEmail);
         assertThrows(IllegalArgumentException.class,()->service.reset(mock.session,"newSecret2","newSecret2"));assertEquals(1,updates.get());
     }
     @Test void newTargetRevokesPreviousGrant(){
-        verified();service.start(mock.session,"b@example.com","ip");
+        verified();service.start(mock.session,"b@gmail.com","ip");
         assertThrows(IllegalArgumentException.class,()->service.reset(mock.session,"newSecret1","newSecret1"));assertEquals(0,updates.get());
     }
     @Test void rejectedNewRequestAlsoRevokesGrant(){
-        verified();assertThrows(IllegalArgumentException.class,()->service.start(mock.session,"a@example.com","ip"));
+        verified();assertThrows(IllegalArgumentException.class,()->service.start(mock.session,"a@gmail.com","ip"));
         assertThrows(IllegalArgumentException.class,()->service.reset(mock.session,"newSecret1","newSecret1"));assertEquals(0,updates.get());
     }
     @Test void expiresOtpAtFiveMinutes(){start();now.addAndGet(PasswordRecoveryService.TTL);assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,delivered));}
@@ -47,7 +54,7 @@ class PasswordRecoveryServiceTest {
     }
     @Test void resendAndInitialRequestsShareCooldownAcrossSessions(){
         start();assertThrows(IllegalArgumentException.class,()->service.resend(mock.session,"ip"));
-        assertThrows(IllegalArgumentException.class,()->service.start(new ServletMocks().session,"a@example.com","other-ip"));
+        assertThrows(IllegalArgumentException.class,()->service.start(new ServletMocks().session,"a@gmail.com","other-ip"));
         assertEquals(1,sends);now.addAndGet(60000);service.resend(mock.session,"ip");assertEquals(2,sends);
     }
     @Test void resendRevokesVerifiedGrant(){verified();now.addAndGet(60000);service.resend(mock.session,"ip");assertThrows(IllegalArgumentException.class,()->service.reset(mock.session,"newSecret1","newSecret1"));}
@@ -66,7 +73,7 @@ class PasswordRecoveryServiceTest {
         try{Future<Boolean> a=pool.submit(action),b=pool.submit(action);gate.countDown();assertNotEquals(a.get(3,TimeUnit.SECONDS),b.get(3,TimeUnit.SECONDS));assertEquals(1,updates.get());}finally{pool.shutdownNow();}
     }
     @Test void limitsRequestsFromOneSource(){
-        for(int i=0;i<10;i++)service.start(new ServletMocks().session,"qa"+i+"@example.com","same-ip");
-        assertThrows(IllegalArgumentException.class,()->service.start(new ServletMocks().session,"extra@example.com","same-ip"));assertEquals(10,sends);
+        for(int i=0;i<10;i++)service.start(new ServletMocks().session,"qa"+i+"@gmail.com","same-ip");
+        assertThrows(IllegalArgumentException.class,()->service.start(new ServletMocks().session,"extra@gmail.com","same-ip"));assertEquals(10,sends);
     }
 }

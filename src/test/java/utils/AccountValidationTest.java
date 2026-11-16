@@ -17,14 +17,23 @@ class AccountValidationTest {
         assertEquals(java.util.Set.of("password","confirm_password"),errors.keySet());
     }
     @Test void validatesContactsAndNormalizesConsistently(){
-        assertEquals("qa@example.com",AccountValidation.email(" QA@EXAMPLE.COM "));
+        assertEquals("qa@gmail.com",AccountValidation.email(" QA@GMAIL.COM "));
         assertEquals("0987111222",AccountValidation.phone("0987.111-222"));
         for(String bad:new String[]{"", "a@b", "a@@example.com",".a@example.com","a..b@example.com","a@-bad.com","a@bad_.com","a".repeat(151)+"@example.com"})assertNotNull(AccountValidation.emailError(bad),bad);
-        assertNull(AccountValidation.emailError("qa+test@example.com"));
+        assertNull(AccountValidation.emailError("qa+test@gmail.com"));
         assertNull(AccountValidation.phoneError("0987111222"));
         assertNotNull(AccountValidation.phoneError("12345"));
         for(String invalid:new String[]{"098711122","09871112223","09871112a2","+84987111222"})
             assertNotNull(AccountValidation.phoneError(invalid),invalid);
+    }
+    @Test void acceptsOnlyExactGmailDomainAndKeepsLengthErrorsSeparate(){
+        for(String bad:new String[]{null,"nguyen@gmaill.comm","nguyen@gmail.comm","nguyen@gmaill.com",
+                "nguyen@gmail.com.evil.com","nguyen@sub.gmail.com","nguyen@yahoo.com",
+                "nguyen@gmailcom","nguyen@@gmail.com",".nguyen@gmail.com","nguyen..a@gmail.com","nguyen@gmail.com\n"})
+            assertEquals("Sai định dạng email.",AccountValidation.emailError(bad),bad);
+        assertNull(AccountValidation.emailError(AccountValidation.email(" NGUYEN@GMAIL.COM ")));
+        assertNull(AccountValidation.emailError("a".repeat(140)+"@gmail.com"));
+        assertEquals("Email tối đa 150 ký tự.",AccountValidation.emailError("a".repeat(141)+"@gmail.com"));
     }
     @Test void rejectsOverlongNameInvalidDateAndFutureBirthday(){
         assertNotNull(AccountValidation.nameError(""));assertNotNull(AccountValidation.nameError("x".repeat(121)));
