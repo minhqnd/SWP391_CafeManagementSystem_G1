@@ -34,6 +34,11 @@ import java.util.regex.Pattern;
 @WebServlet(name = "AdminShiftController", urlPatterns = {"/admin/shifts"})
 public class AdminShiftController extends HttpServlet {
 
+    /*
+     * BF06 - Schedule and Attendance, bước A (định nghĩa khung ca):
+     * Admin tạo bộ work_shifts riêng cho từng tuần, kiểm tra trùng tên/chồng giờ rồi mới lưu.
+     * Các ca này là dữ liệu đầu vào bắt buộc cho bước phân lịch tại AdminScheduleController.
+     */
     private static final Pattern TIME_PATTERN = Pattern.compile("([01]\\d|2[0-3]):[0-5]\\d");
     private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final int MAX_NAME_LENGTH = 50;
@@ -100,6 +105,7 @@ public class AdminShiftController extends HttpServlet {
 
     private void save(LocalDate weekStart, Map<String, String> form, boolean isUpdate, HttpSession session)
             throws SQLException, ClassNotFoundException {
+        // BF06.A1: Validate ca và bảo đảm thao tác update chỉ tác động đúng tuần đang xem.
         int id = 0;
         if (isUpdate) {
             id = parseId(form.get("id"));
@@ -123,6 +129,7 @@ public class AdminShiftController extends HttpServlet {
             throw new IllegalArgumentException("Tuần này đã có ca tên \"" + name + "\".");
         }
         WorkShift overlap = workShiftDAO.findOverlap(weekStart, start, end, id);
+        // BF06.A2: Chặn chồng giờ, kể cả phần sau nửa đêm của ca qua đêm.
         if (overlap != null) {
             throw new IllegalArgumentException("Bị chồng giờ với " + overlap.getLabel() + ".");
         }

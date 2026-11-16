@@ -18,6 +18,11 @@ import java.util.List;
  */
 public class FeedbackDAO extends BaseDAO {
 
+    /*
+     * BF09 persistence flow:
+     * customer_reviews là nguồn dữ liệu duy nhất cho feedback. Phiếu mới ở PENDING;
+     * Admin có thể chuyển sang PROCESSING/RESOLVED/REJECTED. Phiếu terminal không được mở lại.
+     */
     public enum ResponseUpdateResult {
         UPDATED,
         NOT_FOUND,
@@ -124,6 +129,7 @@ public class FeedbackDAO extends BaseDAO {
 
     public ResponseUpdateResult updateFeedbackResponse(
             int id, FeedbackStatus targetStatus, String adminResponse) throws Exception {
+        // BF09.5: Validate dữ liệu trước khi mở transaction để giảm thời gian giữ khóa DB.
         if (id <= 0) {
             throw new IllegalArgumentException("Mã phiếu không hợp lệ.");
         }
@@ -145,6 +151,7 @@ public class FeedbackDAO extends BaseDAO {
             conn.setAutoCommit(false);
             try {
                 FeedbackStatus currentStatus;
+                // BF09.6: FOR UPDATE chống hai Admin cùng trả lời/đóng một phiếu tại cùng thời điểm.
                 try (PreparedStatement select = conn.prepareStatement(selectSql)) {
                     select.setInt(1, id);
                     try (ResultSet rs = select.executeQuery()) {
@@ -157,6 +164,7 @@ public class FeedbackDAO extends BaseDAO {
                 }
 
                 if (currentStatus.isTerminal()) {
+                    // BF09.7: RESOLVED/REJECTED là trạng thái kết thúc, không cho chỉnh sửa hoặc mở lại.
                     conn.rollback();
                     return ResponseUpdateResult.ALREADY_CLOSED;
                 }
@@ -173,6 +181,7 @@ public class FeedbackDAO extends BaseDAO {
                 conn.commit();
                 return ResponseUpdateResult.UPDATED;
             } catch (Exception ex) {
+                // BF09.8: Lỗi ở bất kỳ bước nào đều rollback để trạng thái và nội dung không lệch nhau.
                 conn.rollback();
                 throw ex;
             }
@@ -205,6 +214,7 @@ public class FeedbackDAO extends BaseDAO {
     }
 
     public boolean createFeedback(Feedback fb) {
+        // BF09.4: INSERT phiếu trước, sau đó dùng generated key để sinh ticket_code dễ tra cứu.
         String sql = "INSERT INTO customer_reviews (customer_id, order_id, issue_type, rating, content, status, admin_response) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBContext.getConnection();
