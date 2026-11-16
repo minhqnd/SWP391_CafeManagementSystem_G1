@@ -63,6 +63,9 @@ public class AdminCategoriesController extends HttpServlet {
                 request.setAttribute("selectedCategory", draft);
             } else {
                 // Nút bút chì gửi editId bằng GET; selectedCategory điền dữ liệu cũ vào form bên phải.
+                // CA02b: . Nhận editId từ nút Sửa [CA02a] khi không có bản nháp cần phục hồi.
+                // .. Tìm thấy thì đặt selectedCategory; mã sai định dạng hoặc không tìm thấy thì không chọn danh mục.
+                // ... CategoryDAO.getCategoryById() [CA02c] → form [CA04] → nút Lưu [CA09] → kiểm tra [CA11] → lưu [CA16].
                 String editId = request.getParameter("editId");
                 if (editId != null && !editId.isBlank()) {
                 try {

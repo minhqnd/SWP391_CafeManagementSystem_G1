@@ -128,13 +128,22 @@
                         <td class="text-end fw-bold text-nowrap"><c:out value="${product.formattedPrice}" /></td>
                         <td class="text-center"><c:choose><c:when test="${product.available}"><span class="badge rounded-pill text-bg-success">Đang bán</span></c:when><c:otherwise><span class="badge rounded-pill text-bg-secondary">Tạm ngưng</span></c:otherwise></c:choose></td>
                         <td class="text-end text-nowrap">
+                            <%-- PR02a: . Nút Sửa gửi editId của sản phẩm bằng GET và đưa đến form productEditor.
+                                 .. Chỉ nạp dữ liệu cũ; chưa lưu thay đổi.
+                                 ... AdminProductsController.doGet() [PR02b] → DAO [PR02c] → form [PR04]. --%>
                             <a class="btn btn-sm btn-outline-primary" href="${ctx}/admin/products?editId=${product.id}#productEditor" title="Sửa"><span class="material-symbols-outlined fs-6 align-middle">edit</span></a>
+                            <%-- PR27a: . Nút mắt gửi action=toggle, id và available ngược với trạng thái hiện tại.
+                                 .. Ngừng bán cần xác nhận; Cancel không gửi. Khôi phục bán gửi trực tiếp; lịch sử đơn hàng được giữ.
+                                 ... POST /admin/products → doPost() [PR15] → toggle() [PR27] → DAO [PR28] → danh sách [PR02]. --%>
                             <form method="post" action="${ctx}/admin/products" class="d-inline" onsubmit="return this.elements.available.value === 'true' || confirm('Ngừng bán món này? Món sẽ được ẩn khỏi menu, lịch sử đơn hàng vẫn được giữ.');">
                                 <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="${product.id}">
                                 <input type="hidden" name="available" value="${!product.available}">
                                 <c:choose><c:when test="${product.available}"><button class="btn btn-sm btn-outline-secondary" title="Ngừng bán"><span class="material-symbols-outlined fs-6 align-middle">visibility_off</span></button></c:when><c:otherwise><button class="btn btn-sm btn-outline-success" title="Khôi phục bán"><span class="material-symbols-outlined fs-6 align-middle">visibility</span></button></c:otherwise></c:choose>
                             </form>
                             <c:if test="${not product.available}">
+                                <%-- PR29a: . Nút Xóa chỉ hiện khi sản phẩm đã ngừng bán; xác nhận rồi gửi action=delete và id.
+                                     .. Cancel không gửi; server từ chối nếu sản phẩm đã có trong đơn hàng.
+                                     ... POST /admin/products → doPost() [PR15] → delete() [PR29] → DAO [PR30] → danh sách [PR02]. --%>
                                 <form method="post" action="${ctx}/admin/products" class="d-inline" onsubmit="return confirm('Xóa vĩnh viễn sản phẩm này? Chỉ tiếp tục nếu sản phẩm chưa có trong đơn hàng.');">
                                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="${product.id}">
                                     <button class="btn btn-sm btn-outline-danger" title="Xóa sản phẩm"><span class="material-symbols-outlined fs-6 align-middle">delete_forever</span></button>
