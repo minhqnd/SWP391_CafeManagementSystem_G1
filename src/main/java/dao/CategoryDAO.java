@@ -263,6 +263,9 @@ public class CategoryDAO extends BaseDAO {
     }
 
     public Category getCategoryById(int id) {
+        // CA02c: . SELECT danh mục theo id, kèm thông tin có ảnh lưu trong category_images.
+        // .. Có dữ liệu trả Category; không có hoặc lỗi đọc trả null.
+        // ... AdminCategoriesController.doGet() [CA02b] điền selectedCategory vào form [CA04]; hàm cũng dùng khi kiểm tra/lưu danh mục.
         String sql = "SELECT c.id, c.name, c.status, c.image_url, "
                 + "(ci.category_id IS NOT NULL) AS has_stored_image "
                 + "FROM categories c LEFT JOIN category_images ci ON ci.category_id = c.id WHERE c.id = ?";
