@@ -134,6 +134,12 @@
                                 <input type="hidden" name="available" value="${!product.available}">
                                 <c:choose><c:when test="${product.available}"><button class="btn btn-sm btn-outline-secondary" title="Ngừng bán"><span class="material-symbols-outlined fs-6 align-middle">visibility_off</span></button></c:when><c:otherwise><button class="btn btn-sm btn-outline-success" title="Khôi phục bán"><span class="material-symbols-outlined fs-6 align-middle">visibility</span></button></c:otherwise></c:choose>
                             </form>
+                            <c:if test="${not product.available}">
+                                <form method="post" action="${ctx}/admin/products" class="d-inline" onsubmit="return confirm('Xóa vĩnh viễn sản phẩm này? Chỉ tiếp tục nếu sản phẩm chưa có trong đơn hàng.');">
+                                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="${product.id}">
+                                    <button class="btn btn-sm btn-outline-danger" title="Xóa sản phẩm"><span class="material-symbols-outlined fs-6 align-middle">delete_forever</span></button>
+                                </form>
+                            </c:if>
                         </td>
                     </tr>
                         </c:forEach>
@@ -147,23 +153,35 @@
         <section class="col-12 col-xl-4" id="productEditor">
         <div class="product-card product-editor">
         <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-            <div><h2 class="h6 fw-bold mb-0"><c:choose><c:when test="${not empty selectedProduct}">Sửa sản phẩm</c:when><c:otherwise>Thêm sản phẩm mới</c:otherwise></c:choose></h2><p class="small text-muted mb-0 mt-1">Danh mục, giá và ảnh tại đây sẽ dùng trên menu khách hàng.</p></div>
-            <c:if test="${not empty selectedProduct}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedProduct.id}" /></span></c:if>
+            <div><h2 class="h6 fw-bold mb-0"><c:choose><c:when test="${not empty selectedProduct and selectedProduct.id gt 0}">Sửa sản phẩm</c:when><c:otherwise>Thêm sản phẩm mới</c:otherwise></c:choose></h2><p class="small text-muted mb-0 mt-1">Danh mục, giá và ảnh tại đây sẽ dùng trên menu khách hàng.</p></div>
+            <c:if test="${not empty selectedProduct and selectedProduct.id gt 0}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedProduct.id}" /></span></c:if>
         </div>
         <%-- BF11 - LƯU MÓN: POST tên/danh mục/giá/ảnh và các mảng size/topping; Controller dựng variants_config. --%>
-        <%-- PR01: . Ở đây em hiển thị danh sách món; nếu Admin chọn sửa thì điền sẵn thông tin món đó vào form.
-             .. Bấm Lưu gửi thông tin món, size, topping và ảnh; nút mắt dùng để bật hoặc tắt bán.
-             ... POST /admin/products → doPost() [PR04]; dữ liệu hiển thị lấy từ doGet() [PR02]. --%>
+        <%-- PR04: [SLBF11] Enter product information, price, sizes and toppings
+             . hiển thị danh sách món; nếu Admin chọn sửa thì điền sẵn thông tin món đó vào form.
+             .. Bấm Lưu gửi thông tin món, size, topping và ảnh; nút mắt bật/tắt bán, nút xóa chỉ hiện cho món đã ngừng bán.
+             ... POST /admin/products → doPost() [PR15]; dữ liệu hiển thị lấy từ doGet() [PR02]. --%>
         <form id="productForm" method="post" action="${ctx}/admin/products" enctype="multipart/form-data">
             <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="${empty selectedProduct ? 0 : selectedProduct.id}">
             <input type="hidden" id="variantsConfig" value="${fn:escapeXml(selectedProduct.variantsConfig)}">
                 <div class="row product-form-grid">
+                <%-- PR05: . Ô name nhận tên món, bắt buộc và tối đa 150 ký tự.
+                     ... save() [PR17] kiểm tra tên; [PR21] kiểm tra trùng. --%>
                 <div class="col-12"><label for="name" class="form-label">Tên món *</label><input id="name" name="name" class="form-control" required maxlength="150" value="${fn:escapeXml(selectedProduct.name)}"></div>
-                <div class="col-12"><label for="categoryId" class="form-label">Danh mục *</label><select id="categoryId" name="categoryId" class="form-select" required <c:if test="${empty categories}">disabled</c:if>><option value="">Chọn danh mục</option><c:forEach var="category" items="${categories}"><option value="${category.id}" <c:if test="${selectedProduct.categoryId eq category.id}">selected</c:if>><c:out value="${category.name}" /><c:if test="${category.status ne 'ACTIVE'}"> · Tạm ẩn</c:if></option></c:forEach></select></div>
-                <div class="col-12"><label for="basePrice" class="form-label">Giá bán cơ bản (VNĐ) *</label><input id="basePrice" name="basePrice" type="number" min="0" step="0.01" class="form-control" required value="${empty selectedProduct ? '' : selectedProduct.basePriceInputValue}"></div>
-                <div class="col-12"><label for="description" class="form-label">Mô tả</label><textarea id="description" name="description" rows="2" class="form-control">${fn:escapeXml(selectedProduct.description)}</textarea></div>
+                <%-- PR06: [SLBF11] Select the active category
+                     . Ô categoryId chỉ liệt kê danh mục ACTIVE.
+                     ... save() [PR20] kiểm tra lại tồn tại và trạng thái tại server. --%>
+                <div class="col-12"><label for="categoryId" class="form-label">Danh mục *</label><select id="categoryId" name="categoryId" class="form-select" required <c:if test="${empty categories}">disabled</c:if>><option value="">Chọn danh mục</option><c:forEach var="category" items="${categories}"><c:if test="${category.status eq 'ACTIVE'}"><option value="${category.id}" <c:if test="${selectedProduct.categoryId eq category.id}">selected</c:if>><c:out value="${category.name}" /></option></c:if></c:forEach></select></div>
+                <%-- PR07: . Ô basePrice nhận giá cơ bản không âm, bước nhập 0.01.
+                     ... save() [PR22] kiểm tra định dạng và giới hạn DECIMAL(12,2). --%>
+                <div class="col-12"><label for="basePrice" class="form-label">Giá bán cơ bản (VNĐ) *</label><input id="basePrice" name="basePrice" type="number" min="0" step="0.01" class="form-control" required value="${not empty productDraftBasePrice ? fn:escapeXml(productDraftBasePrice) : (empty selectedProduct ? '' : selectedProduct.basePriceInputValue)}"></div>
+                <%-- PR08: . Ô description không bắt buộc, tối đa 5000 ký tự.
+                     ... save() [PR18] kiểm tra lại độ dài. --%>
+                <div class="col-12"><label for="description" class="form-label">Mô tả</label><textarea id="description" name="description" rows="2" maxlength="5000" class="form-control">${fn:escapeXml(selectedProduct.description)}</textarea></div>
                 <div class="col-12">
                     <label for="imageFile" class="form-label">Ảnh sản phẩm</label>
+                    <%-- PR09: . Ô imageFile nhận ảnh tùy chọn; removeImage yêu cầu xóa ảnh hiện tại.
+                         ... save() [PR19] kiểm tra ảnh tối đa 5 MB, MIME và chữ ký; DAO [PR25] lưu ảnh. --%>
                     <input id="imageFile" name="imageFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="form-control">
                     <div class="form-text">JPG, PNG, GIF hoặc WebP; tối đa 5 MB. Ảnh được lưu trực tiếp trong database.</div>
                     <c:set var="selectedHasImage" value="${not empty selectedProduct and (selectedProduct.storedImage or not empty selectedProduct.imageUrl)}" />
@@ -171,10 +189,17 @@
                     <div class="mt-2"><img id="productImagePreview" class="product-image-preview" src="${fn:escapeXml(selectedImageSrc)}" alt="Xem trước ảnh sản phẩm" <c:if test="${not selectedHasImage}">hidden</c:if>><div id="productImagePlaceholder" class="product-image-placeholder" style="width:100%;max-width:250px;height:130px" <c:if test="${selectedHasImage}">hidden</c:if>>Chưa có ảnh</div></div>
                     <c:if test="${selectedHasImage}"><div class="form-check mt-2"><input id="removeImage" name="removeImage" value="true" type="checkbox" class="form-check-input"><label for="removeImage" class="form-check-label small">Xóa ảnh hiện tại</label></div></c:if>
                 </div>
+                <%-- PR10: . Thêm size tạo cặp sizeName/sizeDelta; nút thùng rác chỉ xóa dòng đang nhập.
+                     ... addVariantRow() [PR12] tạo ô; submit [PR14] rồi backend buildVariantsConfig() [PR24]. --%>
                 <div class="col-12"><div class="variant-editor"><div class="variant-heading"><span>Size &amp; phụ thu</span><button type="button" class="btn btn-sm btn-outline-primary" id="addSize"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm size</button></div><div id="sizesList"></div></div></div>
+                <%-- PR11: . Thêm topping tạo cặp toppingName/toppingPrice; topping không bắt buộc.
+                     ... addVariantRow() [PR12] tạo ô; backend kiểm tra và dựng JSON tại [PR24]. --%>
                 <div class="col-12"><div class="variant-editor"><div class="variant-heading"><span>Topping &amp; giá</span><button type="button" class="btn btn-sm btn-outline-primary" id="addTopping"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm topping</button></div><div id="toppingsList"></div><div class="form-text">Không bắt buộc.</div></div></div>
                 </div>
-            <div class="d-flex flex-wrap gap-2 mt-4"><button type="submit" class="btn btn-aura fw-bold" <c:if test="${empty categories}">disabled</c:if>><span class="material-symbols-outlined fs-6 align-middle">check</span> <c:choose><c:when test="${not empty selectedProduct}">Lưu thay đổi</c:when><c:otherwise>Thêm sản phẩm</c:otherwise></c:choose></button><c:if test="${not empty selectedProduct}"><a href="${ctx}/admin/products" class="btn btn-light">Hủy sửa</a></c:if></div>
+            <%-- PR13: [SLBF11] Click "Add Product"
+                 . Nút Thêm sản phẩm/Lưu thay đổi gửi form với action=save và id.
+                 ... Sự kiện submit [PR14] → POST /admin/products → doPost() [PR15]. --%>
+            <div class="d-flex flex-wrap gap-2 mt-4"><button type="submit" class="btn btn-aura fw-bold" <c:if test="${empty categories}">disabled</c:if>><span class="material-symbols-outlined fs-6 align-middle">check</span> <c:choose><c:when test="${not empty selectedProduct and selectedProduct.id gt 0}">Lưu thay đổi</c:when><c:otherwise>Thêm sản phẩm</c:otherwise></c:choose></button><c:if test="${not empty selectedProduct and selectedProduct.id gt 0}"><a href="${ctx}/admin/products" class="btn btn-light">Hủy sửa</a></c:if></div>
         </form>
         </div>
         </section>
@@ -191,6 +216,9 @@
     const placeholder = document.getElementById('productImagePlaceholder');
     const removeImage = document.getElementById('removeImage');
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    // PR12: . Tạo ô tên/giá cho size hoặc topping theo đúng nameField/amountField.
+    // .. Thêm/xóa dòng chỉ thay đổi form; dữ liệu chưa lưu vào database.
+    // ... Nhập xong, bấm nút Thêm sản phẩm/Lưu thay đổi [PR13] để gửi form.
     const addVariantRow = (container, name, amount, nameField, amountField, namePlaceholder, amountPlaceholder) => {
         const row = document.createElement('div');
         row.className = 'variant-row';
@@ -208,6 +236,9 @@
     const toppings = Array.isArray(config.toppings) ? config.toppings : [];
     sizes.forEach(([name, delta]) => addVariantRow(sizesList, name, delta, 'sizeName', 'sizeDelta', 'Tên size', 'Phụ thu'));
     toppings.forEach(t => addVariantRow(toppingsList, typeof t === 'string' ? t : t.name, typeof t === 'string' ? null : t.price, 'toppingName', 'toppingPrice', 'Tên topping', 'Giá'));
+    // PR14: . Kiểm tra có size và có ít nhất một size phụ thu 0 trước khi gửi.
+    // .. Sai thì preventDefault() và focus ô; hợp lệ gửi form, server kiểm tra lại.
+    // ... AdminProductsController.doPost() [PR15] → save() [PR16].
     form.addEventListener('submit', event => {
         const sizeRows = Array.from(sizesList.querySelectorAll('.variant-row')).filter(row =>
             row.querySelector('[name="sizeName"]').value.trim()

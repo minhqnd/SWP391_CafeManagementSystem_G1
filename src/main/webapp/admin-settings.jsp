@@ -44,6 +44,7 @@
             </c:when>
             <c:otherwise>
                 <form method="post" action="${ctx}/admin/settings">
+                    <input type="hidden" name="csrfToken" value="${sessionScope.settingsCsrfToken}">
                     <c:forEach var="group" items="${settingGroups}">
                         <section class="aura-card settings-group p-3 p-md-4 mb-4">
                             <h2 class="section-title">

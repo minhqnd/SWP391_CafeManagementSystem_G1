@@ -32,6 +32,10 @@ public class AdminSettingsController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         if (!isAdmin(request, response)) return;
+        HttpSession session = request.getSession();
+        if (session.getAttribute("settingsCsrfToken") == null) {
+            session.setAttribute("settingsCsrfToken", java.util.UUID.randomUUID().toString());
+        }
         CartController.moveFlashMessage(request.getSession(), request, "settingsMessage");
         showSettings(request, response, shopSettingDAO.findAll(), null);
     }
@@ -41,6 +45,12 @@ public class AdminSettingsController extends HttpServlet {
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         if (!isAdmin(request, response)) return;
+        HttpSession session = request.getSession();
+        Object expectedToken = session.getAttribute("settingsCsrfToken");
+        if (expectedToken == null || !expectedToken.equals(request.getParameter("csrfToken"))) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Yêu cầu không hợp lệ.");
+            return;
+        }
 
         List<ShopSettingEntry> entries = shopSettingDAO.findAll();
         Map<String, String> form = new LinkedHashMap<>();
@@ -65,7 +75,7 @@ public class AdminSettingsController extends HttpServlet {
             showSettings(request, response, entries, form);
             return;
         }
-        request.getSession().setAttribute("settingsMessage",
+        session.setAttribute("settingsMessage",
                 changed.isEmpty() ? "Không có thay đổi nào." : "Đã lưu cấu hình cửa hàng.");
         response.sendRedirect(request.getContextPath() + "/admin/settings");
     }
@@ -144,7 +154,7 @@ public class AdminSettingsController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/?tab=login");
             return false;
         }
-        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+        if (!"ACTIVE".equalsIgnoreCase(user.getStatus()) || !"ADMIN".equalsIgnoreCase(user.getRole())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ Admin được thay đổi cấu hình cửa hàng.");
             return false;
         }

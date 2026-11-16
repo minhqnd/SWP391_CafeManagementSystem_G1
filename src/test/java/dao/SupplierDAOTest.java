@@ -10,6 +10,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.Tag("database")
 @DisplayName("SupplierDAO Integration & Unit Tests")
 public class SupplierDAOTest {
 

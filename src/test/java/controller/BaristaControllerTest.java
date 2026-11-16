@@ -71,7 +71,7 @@ class BaristaControllerTest {
         });
         final HttpServletResponse response = proxy(HttpServletResponse.class, (p, m, a) -> {
             switch (m.getName()) {
-                case "setStatus": status = (Integer) a[0]; break;
+                case "setStatus": case "sendError": status = (Integer) a[0]; break;
                 case "getWriter": return new PrintWriter(body);
                 case "sendRedirect": redirected = (String) a[0]; break;
             }

@@ -11,6 +11,7 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Opt-in: use only an isolated MySQL schema, never the application's configured DB. */
+@org.junit.jupiter.api.Tag("database")
 @EnabledIfSystemProperty(named="inventory.test.url",matches=".+")
 class InventoryWorkflowIntegrationTest {
     Connection connection()throws SQLException{return DriverManager.getConnection(System.getProperty("inventory.test.url"), System.getProperty("inventory.test.user",System.getenv().getOrDefault("DB_USER","root")), System.getProperty("inventory.test.password",System.getenv().getOrDefault("DB_PASSWORD","")));}

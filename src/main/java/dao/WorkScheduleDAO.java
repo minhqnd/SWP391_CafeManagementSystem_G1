@@ -3,7 +3,6 @@ package dao;
 import model.ShiftHandoverSummary;
 import model.WorkSchedule;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;

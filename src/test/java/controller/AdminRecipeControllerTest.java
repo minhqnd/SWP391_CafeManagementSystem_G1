@@ -42,6 +42,7 @@ class AdminRecipeControllerTest {
     void setUp() {
         User admin = new User();
         admin.setRole("ADMIN");
+        admin.setStatus("ACTIVE");
         sessionValues.put("user", admin);
         sessionValues.put("recipeCsrfToken", "test-csrf");
         parameters.put("action", new String[]{"save"});
