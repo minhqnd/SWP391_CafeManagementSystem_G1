@@ -1,0 +1,71 @@
+@startuml
+skinparam style strictuml
+skinparam ActivityFontSize 12
+skinparam ActivityDiamondFontSize 11
+
+|#LightCyan|Customer|
+|#AliceBlue|CMS (Aura Cafe Server)|
+|#LightYellow|Payment Gateway (Cloudflare Worker)|
+
+|Customer|
+start
+:Open Payment page;
+
+|CMS (Aura Cafe Server)|
+:Register order to Gateway & generate VietQR;
+
+|Payment Gateway (Cloudflare Worker)|
+:Store pending order in Gateway D1;
+
+|Customer|
+:View VietQR payment screen\n(Default: Ready to pay);
+
+if (Cancel order?) then (yes)
+  |CMS (Aura Cafe Server)|
+  :Validate unpaid PENDING order;
+  :Cancel order & refund redeemed points;
+  stop
+else (no)
+endif
+
+if (Switch to COD?) then (yes)
+  |CMS (Aura Cafe Server)|
+  :Update payment method to COD;
+  :Set order CONFIRMED;
+  :Push order to Barista queue (KDS);
+  stop
+else (no (Default))
+endif
+
+|Customer|
+:[Default: Bank Transfer]\nScan VietQR code &\ntransfer via banking app;
+
+|Payment Gateway (Cloudflare Worker)|
+:Receive SePay webhook notification;
+:Reconcile transfer with order amount:\nExtract order code, amount, balance;
+
+if (Reconciliation status?) then (UNDERPAID)
+  :Keep order in PENDING status\n(Wait for remaining transfer);
+  stop
+elseif (OVERPAID) then (OVERPAID)
+  :Log refund note\n(Chuyển thừa);
+  :Update order SUCCESS & store ref (FT...);
+else (MATCHED)
+  :Update order SUCCESS & store ref (FT...);
+endif
+
+|Customer|
+:Auto-polling checks status (2s);
+
+|CMS (Aura Cafe Server)|
+:Query Gateway order status;
+note left: Gateway status = SUCCESS
+
+:Save payment SUCCESS and order CONFIRMED;
+:Earn points once;
+:Push order to Barista queue (KDS);
+
+|Customer|
+:Redirect to e-Bill page;
+stop
+@enduml

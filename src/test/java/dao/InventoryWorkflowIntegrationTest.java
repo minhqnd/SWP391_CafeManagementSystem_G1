@@ -37,6 +37,46 @@ class InventoryWorkflowIntegrationTest {
     String state(String table,int id)throws Exception {try(Connection c=connection();Statement s=c.createStatement();ResultSet r=s.executeQuery("SELECT status FROM "+table+" WHERE id="+id)){r.next();return r.getString(1);}}
     BigDecimal stock()throws Exception{return scalar("SELECT current_stock FROM ingredients WHERE id="+ingredient);}
     void stock(String expected)throws Exception {assertEquals(0,n(expected).compareTo(stock()));}
+    @Test void adminMustPlaceDraftBeforeReceiptAndCanCompletePartialDelivery() throws Exception {
+        PurchaseOrder order = new PurchaseOrder();
+        order.setSupplierId(1);
+        order.setCreatorId(1);
+        int po = orders.create(order, List.of(new PurchaseOrderItem(ingredient, n("10"), n("100"))));
+        int item = line(po);
+        String firstReceipt = UUID.randomUUID().toString();
+        List<Item> firstDelivery = List.of(new Item(item, n("8"), n("8")));
+        assertThrows(IllegalArgumentException.class,
+                () -> receipts.confirm(po, 1, firstReceipt, "Nhận 8 kg", firstDelivery, false));
+        assertEquals("DRAFT", state("purchase_orders", po));
+        stock("100");
+
+        orders.changeStatus(po, 1, "order", "");
+        receipts.confirm(po, 1, firstReceipt, "Nhận 8 kg", firstDelivery, false);
+        assertEquals("PARTIALLY_RECEIVED", state("purchase_orders", po));
+        stock("108");
+        assertThrows(IllegalArgumentException.class,
+                () -> receipts.confirm(po, 1, firstReceipt, "Gửi lại", firstDelivery, false));
+        stock("108");
+
+        receipts.confirm(po, 1, UUID.randomUUID().toString(), "Nhận nốt 2 kg",
+                List.of(new Item(item, n("2"), n("2"))), false);
+        assertEquals("RECEIVED", state("purchase_orders", po));
+        stock("110");
+        assertEquals(2, scalar("SELECT COUNT(*) FROM inventory_transactions WHERE transaction_type='IN_PURCHASE' AND reference_type='PURCHASE_ORDER' AND reference_id=" + po).intValue());
+    }
+
+    @Test void placingPurchaseOnCreateDoesNotReceiveStock() throws Exception {
+        PurchaseOrder order = new PurchaseOrder();
+        order.setSupplierId(1);
+        order.setCreatorId(1);
+
+        int po = orders.create(order, List.of(new PurchaseOrderItem(ingredient, n("10"), n("100"))), true);
+
+        assertEquals("ORDERED", state("purchase_orders", po));
+        stock("100");
+        assertEquals(0, scalar("SELECT COUNT(*) FROM purchase_receipts WHERE po_id=" + po).intValue());
+    }
+
     @Test void partialThenSupplementOnlyAddsAcceptedAndRecordsRejected()throws Exception {
         int po=po(),r=submit(po,"10","8");stock("100");receipts.review(r,1,true,"2kg hỏng, chờ giao bù");stock("108");assertEquals("PARTIALLY_RECEIVED",state("purchase_orders",po));
         int second=submit(po,"2","2");receipts.review(second,1,true,"Giao bù đủ");stock("110");assertEquals("RECEIVED",state("purchase_orders",po));
@@ -135,8 +175,24 @@ class InventoryWorkflowIntegrationTest {
         requests.transition(request,1,true,"approve","Đồng ý");
         PurchaseOrder order=new PurchaseOrder();order.setSupplierId(1);order.setCreatorId(1);order.setRestockRequestId(request);
         assertThrows(IllegalArgumentException.class,()->orders.create(order,List.of(new PurchaseOrderItem(ingredient,n("10"),n("100")))));
-        int id=orders.create(order,List.of(new PurchaseOrderItem(ingredient,n("10"),n("100")),new PurchaseOrderItem(second,n("2"),n("50"))));
+        List<PurchaseOrderItem> items = List.of(new PurchaseOrderItem(ingredient,n("10"),n("100")),
+                new PurchaseOrderItem(second,n("2"),n("50")));
+        int id=orders.create(order,items);
         assertEquals(2,orders.findItems(id).size());
+        assertEquals(id, requests.getRestockRequests("APPROVED").stream()
+                .filter(approved -> approved.getId() == request).findFirst().orElseThrow().getPurchaseOrderId());
+        IllegalArgumentException duplicate = assertThrows(IllegalArgumentException.class,
+                () -> orders.create(order,items));
+        assertTrue(duplicate.getMessage().contains("PO-" + id));
+    }
+    @Test void pendingProposalCanBeRejectedButCannotBeCancelled() throws Exception {
+        int id = requests.createRestockRequest(barista, "PENDING_APPROVAL", "Mua thêm", "",
+                List.of(new RestockRequest.RestockItem(ingredient, "", "", n("1"))));
+        assertThrows(IllegalArgumentException.class, () -> requests.transition(id, 1, "cancel", ""));
+        assertThrows(IllegalArgumentException.class, () -> requests.transitionFromUi(id, 1, true, "cancel", ""));
+        assertEquals("PENDING_APPROVAL", state("restock_requests", id));
+        requests.transitionFromUi(id, 1, true, "reject", "Chưa cần nhập");
+        assertEquals("REJECTED", state("restock_requests", id));
     }
     @Test void concurrentApprovalOnlyCommitsOnce()throws Exception {
         int po=po(),id=submit(po,"4","4");ExecutorService pool=Executors.newFixedThreadPool(2);
