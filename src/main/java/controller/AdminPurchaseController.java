@@ -46,6 +46,13 @@ public class AdminPurchaseController extends HttpServlet {
                 }
             }
 
+            Map<Integer, String> receiptKeys = new HashMap<>();
+            for (PurchaseOrder po : orders) {
+                if (List.of("ORDERED", "PARTIALLY_RECEIVED").contains(po.getStatus())) {
+                    receiptKeys.put(po.getId(), UUID.randomUUID().toString());
+                }
+            }
+            r.setAttribute("receiptKeys", receiptKeys);
             r.setAttribute("purchaseOrders", orders);
             r.setAttribute("receiptsByPo", receiptsByPo);
             r.setAttribute("totalOrdersCount", orders.size());
@@ -54,7 +61,10 @@ public class AdminPurchaseController extends HttpServlet {
             r.setAttribute("totalSpendAmount", totalSpend);
             r.setAttribute("activeSuppliers", new SupplierDAO().getActiveSuppliers());
             r.setAttribute("allIngredients", new IngredientDAO().getActiveIngredientsWithDetails());
-            r.setAttribute("approvedRequests", new RestockRequestDAO().getRestockRequests("APPROVED"));
+            List<RestockRequest> availableRequests = new RestockRequestDAO().getRestockRequests("APPROVED").stream()
+                    .filter(request -> request.getPurchaseOrderId() == null)
+                    .toList();
+            r.setAttribute("approvedRequests", availableRequests);
             r.setAttribute("history", new InventoryWorkflowDAO().history("PURCHASE", null));
             r.getRequestDispatcher("/admin-purchases.jsp").forward(r, p);
         } catch (Exception e) {
@@ -70,7 +80,7 @@ public class AdminPurchaseController extends HttpServlet {
 
         try {
             String action = r.getParameter("action");
-            if ("create".equals(action) || "createAndReceive".equals(action)) {
+            if ("createDraft".equals(action) || "create".equals(action)) {
                 List<PurchaseOrderItem> items = parseItems(r);
 
                 int supplier = Integer.parseInt(r.getParameter("supplierId"));
@@ -84,25 +94,10 @@ public class AdminPurchaseController extends HttpServlet {
                     po.setRestockRequestId(Integer.parseInt(rr));
                 }
 
-                int poId = dao.create(po, items);
-                String saveMode = r.getParameter("saveMode");
-                if (!"draft".equalsIgnoreCase(saveMode)) {
-                    dao.changeStatus(poId, u.getId(), "order", "Đặt hàng nhà cung cấp");
-                }
-
-                if ("createAndReceive".equals(action) || "receiveNow".equalsIgnoreCase(saveMode)) {
-                    List<PurchaseOrderItem> createdLines = dao.findItems(poId);
-                    List<PurchaseReceipt.Item> receiptItems = new ArrayList<>();
-                    for (PurchaseOrderItem line : createdLines) {
-                        receiptItems.add(new PurchaseReceipt.Item(line.getId(), line.getQuantity(), line.getQuantity()));
-                    }
-                    String rNote = (note != null && !note.isBlank()) ? note.trim() : "Nhập kho trực tiếp khi lập phiếu";
-                    int receiptId = receipts.submit(poId, u.getId(), UUID.randomUUID().toString(), rNote, receiptItems);
-                    receipts.review(receiptId, u.getId(), true, rNote, true);
-                    r.getSession().setAttribute("workflowMessage", "Đã tạo phiếu nhập PO-" + poId + " và cộng tồn kho thành công!");
-                } else {
-                    r.getSession().setAttribute("workflowMessage", "Đã tạo phiếu đặt hàng PO-" + poId + " thành công!");
-                }
+                boolean draft = "createDraft".equals(action) || "draft".equalsIgnoreCase(r.getParameter("saveMode"));
+                int poId = dao.create(po, items, !draft);
+                String result = draft ? "Đã lưu phiếu nháp PO-" : "Đã đặt hàng cho PO-";
+                r.getSession().setAttribute("workflowMessage", result + poId + ".");
 
             } else if ("edit".equals(action)) {
                 int poId = Integer.parseInt(r.getParameter("id"));
@@ -119,15 +114,6 @@ public class AdminPurchaseController extends HttpServlet {
 
             } else if ("receive".equals(action)) {
                 int poId = Integer.parseInt(r.getParameter("poId"));
-                // Nếu phiếu đang ở trạng thái DRAFT thì tự động chuyển sang ORDERED trước khi nhận hàng
-                List<PurchaseOrder> allOrders = dao.findAll("ALL");
-                for (PurchaseOrder po : allOrders) {
-                    if (po.getId() == poId && "DRAFT".equals(po.getStatus())) {
-                        dao.changeStatus(poId, u.getId(), "order", "Xác nhận đặt hàng để kiểm nhận");
-                        break;
-                    }
-                }
-
                 String[] itemIds = r.getParameterValues("itemId");
                 if (itemIds == null || itemIds.length == 0) {
                     throw new IllegalArgumentException("Thiếu danh sách nguyên liệu kiểm nhận.");
@@ -138,10 +124,7 @@ public class AdminPurchaseController extends HttpServlet {
                     String delStr = r.getParameter("delivered_" + itemId);
                     String accStr = r.getParameter("accepted_" + itemId);
                     BigDecimal accepted = new BigDecimal(accStr != null && !accStr.isBlank() ? accStr.trim() : "0");
-                    BigDecimal delivered = new BigDecimal(delStr != null && !delStr.isBlank() ? delStr.trim() : accStr.trim());
-                    if (delivered.compareTo(accepted) < 0) {
-                        delivered = accepted;
-                    }
+                    BigDecimal delivered = new BigDecimal(delStr != null && !delStr.isBlank() ? delStr.trim() : "0");
                     items.add(new PurchaseReceipt.Item(itemId, delivered, accepted));
                 }
 
@@ -149,18 +132,8 @@ public class AdminPurchaseController extends HttpServlet {
                 if (note == null || note.trim().length() < 3) {
                     note = "Kiểm nhận và nhập kho nguyên liệu";
                 }
-                int receiptId = receipts.submit(poId, u.getId(), UUID.randomUUID().toString(), note.trim(), items);
-                receipts.review(receiptId, u.getId(), true, note.trim(), true);
-
-                if ("yes".equalsIgnoreCase(r.getParameter("closeRemainder"))) {
-                    List<PurchaseOrder> refreshed = dao.findAll("ALL");
-                    for (PurchaseOrder po : refreshed) {
-                        if (po.getId() == poId && "PARTIALLY_RECEIVED".equals(po.getStatus())) {
-                            dao.changeStatus(poId, u.getId(), "close", note.trim() + " (Chốt đóng phần giao thiếu)");
-                            break;
-                        }
-                    }
-                }
+                receipts.confirm(poId, u.getId(), r.getParameter("submissionKey"), note.trim(), items,
+                        "yes".equalsIgnoreCase(r.getParameter("closeRemainder")));
                 r.getSession().setAttribute("workflowMessage", "Đã kiểm nhận và cộng tồn kho cho phiếu PO-" + poId + " thành công!");
 
             } else if ("adjust".equals(action)) {
@@ -196,7 +169,8 @@ public class AdminPurchaseController extends HttpServlet {
                 int poId = Integer.parseInt(r.getParameter("id"));
                 String reason = r.getParameter("reason");
                 if (reason == null || reason.trim().length() < 3) {
-                    reason = "cancel".equals(action) ? "Hủy phiếu nhập hàng" : "Chốt đóng phần còn thiếu";
+                    reason = "order".equals(action) ? "Đã đặt hàng với nhà cung cấp"
+                            : "cancel".equals(action) ? "Hủy phiếu nhập hàng" : "Chốt đóng phần còn thiếu";
                 }
                 dao.changeStatus(poId, u.getId(), action, reason);
                 r.getSession().setAttribute("workflowMessage", "Đã cập nhật trạng thái phiếu PO-" + poId + " thành công!");

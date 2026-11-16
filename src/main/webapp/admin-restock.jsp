@@ -77,7 +77,7 @@
             <div>
                 <span class="table-ref">Bảng: restock_requests · restock_request_items</span>
                 <h1 class="page-title">Đề xuất nhập nguyên liệu</h1>
-                <p class="page-subtitle">Quầy pha chế (Barista) báo nguyên liệu sắp hết; Quản trị viên duyệt và chuyển thành phiếu nhập hàng chỉ với 1 click.</p>
+                <p class="page-subtitle">Barista gửi đề xuất bổ sung nguyên liệu. Khi Admin duyệt, hệ thống mở form lập phiếu mua.</p>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <c:if test="${workflowAdmin}">
@@ -182,8 +182,11 @@
                                     <c:when test="${r.status eq 'APPROVED'}">
                                         <span class="rr-badge rr-approved">Đã duyệt</span>
                                     </c:when>
-                                    <c:when test="${r.status eq 'REJECTED' or r.status eq 'CANCELLED'}">
-                                        <span class="rr-badge rr-rejected">${r.status eq 'REJECTED' ? 'Từ chối' : 'Đã hủy'}</span>
+                                    <c:when test="${r.status eq 'REJECTED'}">
+                                        <span class="rr-badge rr-rejected">Từ chối</span>
+                                    </c:when>
+                                    <c:when test="${r.status eq 'CANCELLED'}">
+                                        <span class="rr-badge rr-draft">Đã kết thúc</span>
                                     </c:when>
                                     <c:otherwise>
                                         <span class="rr-badge rr-draft"><c:out value="${r.status}"/></span>
@@ -192,16 +195,12 @@
                             </td>
                             <td class="text-end">
                                 <div class="d-inline-flex flex-wrap justify-content-end gap-1">
-                                    <c:if test="${workflowAdmin and (r.status eq 'PENDING_APPROVAL' or r.status eq 'DRAFT' or r.status eq 'CHANGES_REQUESTED')}">
-                                        <form method="post" class="d-inline">
+                                    <c:if test="${workflowAdmin and r.status eq 'PENDING_APPROVAL'}">
+                                        <form method="post" class="d-inline-flex flex-wrap justify-content-end gap-1">
                                             <input type="hidden" name="csrfToken" value="${sessionScope.inventoryWorkflowToken}">
                                             <input type="hidden" name="id" value="${r.id}">
-                                            <input type="hidden" name="reviewNote" value="Đồng ý duyệt và lập phiếu nhập">
-                                            <button type="submit" class="btn btn-sm btn-success fw-semibold" name="action" value="approveAndOrder" title="Duyệt và chuyển thẳng sang Lập phiếu nhập hàng">
-                                                Duyệt &amp; Nhập hàng
-                                            </button>
-                                            <button type="submit" class="btn btn-sm btn-outline-success" name="action" value="approve">
-                                                Chỉ duyệt
+                                            <button type="submit" class="btn btn-sm btn-success fw-semibold" name="action" value="approveAndOrder">
+                                                Duyệt &amp; Lập phiếu mua
                                             </button>
                                             <button type="submit" class="btn btn-sm btn-outline-danger" name="action" value="reject">
                                                 Từ chối
@@ -209,23 +208,25 @@
                                         </form>
                                     </c:if>
 
-                                    <c:if test="${workflowAdmin and r.status eq 'APPROVED'}">
+                                    <c:if test="${workflowAdmin and r.status eq 'APPROVED' and empty r.purchaseOrderId}">
                                         <a href="${ctx}/admin/purchases?fromRequestId=${r.id}" class="btn btn-sm btn-aura py-1 px-2 d-inline-flex align-items-center gap-1">
                                             <span class="material-symbols-outlined" style="font-size: 15px;">shopping_cart_checkout</span>
-                                            <span>Lập phiếu nhập</span>
+                                            <span>Lập phiếu mua</span>
                                         </a>
                                     </c:if>
 
                                     <c:if test="${(workflowAdmin or r.requesterId == sessionScope.user.id) and (r.status eq 'DRAFT' or r.status eq 'PENDING_APPROVAL' or r.status eq 'CHANGES_REQUESTED')}">
+                                        <c:if test="${r.status eq 'DRAFT' or r.status eq 'CHANGES_REQUESTED'}">
+                                            <form method="post" class="d-inline">
+                                                <input type="hidden" name="csrfToken" value="${sessionScope.inventoryWorkflowToken}">
+                                                <input type="hidden" name="id" value="${r.id}">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary" name="action" value="submit">Gửi duyệt</button>
+                                            </form>
+                                        </c:if>
                                         <button type="button" class="btn btn-sm btn-light border"
                                                 data-bs-toggle="modal" data-bs-target="#editRestockModal-${r.id}">
                                             Sửa
                                         </button>
-                                        <form method="post" class="d-inline">
-                                            <input type="hidden" name="csrfToken" value="${sessionScope.inventoryWorkflowToken}">
-                                            <input type="hidden" name="id" value="${r.id}">
-                                            <button type="submit" class="btn btn-sm btn-light border text-danger" name="action" value="cancel">Hủy</button>
-                                        </form>
                                     </c:if>
                                 </div>
                             </td>

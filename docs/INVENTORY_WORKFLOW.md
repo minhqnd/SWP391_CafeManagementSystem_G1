@@ -12,7 +12,7 @@ Admin và Manager dùng chung tài khoản `role=ADMIN`, `position=MANAGER`. Bar
 
 Barista sửa nháp hoặc đề xuất được yêu cầu sửa, rồi gửi lại. Đề xuất đang chờ không cho Barista chỉnh. Admin sửa nội dung trước khi duyệt, bắt buộc lý do và ghi cả trước/sau vào lịch sử. Yêu cầu sửa và từ chối phải có lý do; REJECTED là kết thúc, cần tạo đề xuất mới. Người tạo không được tự duyệt. Admin có thể tạo đề xuất nhưng cần một Admin khác duyệt.
 
-Đề xuất được duyệt không làm tăng tồn. Có thể hủy nháp/chờ duyệt/yêu cầu sửa. Đề xuất đã duyệt hoặc kết thúc không sửa trực tiếp.
+Đề xuất được duyệt không làm tăng tồn. Đề xuất đã duyệt hoặc kết thúc không sửa trực tiếp.
 
 ## Đơn mua
 

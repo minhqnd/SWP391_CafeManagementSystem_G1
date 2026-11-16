@@ -8,8 +8,22 @@ public class PurchaseOrderDAO extends BaseDAO{
    try(PreparedStatement ip=c.prepareStatement("SELECT pi.*,i.name ingredient_name,i.unit FROM purchase_order_items pi JOIN ingredients i ON i.id=pi.ingredient_id ORDER BY pi.id");ResultSet rs=ip.executeQuery()){while(rs.next()){PurchaseOrder o=map.get(rs.getInt("po_id"));if(o!=null)o.getItems().add(mapItem(rs));}}
   }catch(ClassNotFoundException e){throw new SQLException(e);}return list;
  }
- public List<PurchaseOrderItem> findItems(int poId)throws SQLException{List<PurchaseOrderItem> l=new ArrayList<>();try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement("SELECT pi.*,i.name ingredient_name,i.unit FROM purchase_order_items pi JOIN ingredients i ON i.id=pi.ingredient_id WHERE po_id=?")){ps.setInt(1,poId);try(ResultSet rs=ps.executeQuery()){while(rs.next())l.add(mapItem(rs));}}catch(ClassNotFoundException e){throw new SQLException(e);}return l;}
- public int create(PurchaseOrder order,List<PurchaseOrderItem> items)throws SQLException{
+ public List<PurchaseOrderItem> findItems(int poId)throws SQLException {
+  try(Connection c=getConnection()){return findItems(c,poId);}
+  catch(ClassNotFoundException e){throw new SQLException(e);}
+ }
+ private List<PurchaseOrderItem> findItems(Connection c,int poId)throws SQLException {
+  List<PurchaseOrderItem> items=new ArrayList<>();
+  try(PreparedStatement p=c.prepareStatement("SELECT pi.*,i.name ingredient_name,i.unit FROM purchase_order_items pi JOIN ingredients i ON i.id=pi.ingredient_id WHERE po_id=? ORDER BY pi.id")){
+   p.setInt(1,poId);
+   try(ResultSet r=p.executeQuery()){while(r.next())items.add(mapItem(r));}
+  }
+  return items;
+ }
+ public int create(PurchaseOrder order,List<PurchaseOrderItem> items)throws SQLException {
+  return create(order,items,false);
+ }
+ public int create(PurchaseOrder order,List<PurchaseOrderItem> items,boolean placed)throws SQLException {
   if(items==null||items.isEmpty())throw new IllegalArgumentException("Phiếu nhập phải có nguyên liệu.");
   order.setNote(service.InventoryRules.text(order.getNote(),false));
   Set<Integer> unique=new HashSet<>();for(PurchaseOrderItem i:items){if(!unique.add(i.getIngredientId()))throw new IllegalArgumentException("Nguyên liệu bị trùng.");if(i.getUnitPrice()==null||i.getUnitPrice().signum()<0||i.getUnitPrice().scale()>service.InventoryRules.PURCHASE_PRICE_SCALE||i.getUnitPrice().compareTo(new BigDecimal("100000000000000"))>=0)throw new IllegalArgumentException("Đơn giá không hợp lệ.");}
@@ -20,11 +34,19 @@ public class PurchaseOrderDAO extends BaseDAO{
    for(PurchaseOrderItem item:items) {IngredientDAO.requireActive(c,item.getIngredientId());service.InventoryRules.quantity(item.getQuantity(),true);}
    if(order.getRestockRequestId()!=null){try(PreparedStatement check=c.prepareStatement("SELECT status FROM restock_requests WHERE id=? FOR UPDATE")){check.setInt(1,order.getRestockRequestId());try(ResultSet rs=check.executeQuery()){if(!rs.next()||!"APPROVED".equals(rs.getString(1)))throw new IllegalArgumentException("Chỉ đề xuất đã duyệt mới được chuyển thành phiếu nhập.");}}}
    if(order.getRestockRequestId()!=null){
+    try(PreparedStatement p=c.prepareStatement("SELECT id FROM purchase_orders WHERE restock_request_id=? FOR UPDATE")){
+     p.setInt(1,order.getRestockRequestId());
+     try(ResultSet r=p.executeQuery()){
+      if(r.next())throw new IllegalArgumentException("Đề xuất này đã có phiếu mua PO-"+r.getInt(1)+".");
+     }
+    }
     Set<Integer> requested=new HashSet<>();try(PreparedStatement p=c.prepareStatement("SELECT ingredient_id FROM restock_request_items WHERE request_id=?")){p.setInt(1,order.getRestockRequestId());try(ResultSet r=p.executeQuery()){while(r.next())requested.add(r.getInt(1));}}
     if(!requested.equals(unique))throw new IllegalArgumentException("Đơn mua phải chứa đúng các nguyên liệu trong đề xuất đã duyệt.");
    }
    try(PreparedStatement ps=c.prepareStatement("INSERT INTO purchase_orders(supplier_id,creator_id,restock_request_id,total_cost,status,note) VALUES(?,?,?,?,'DRAFT',?)",Statement.RETURN_GENERATED_KEYS)){ps.setInt(1,order.getSupplierId());ps.setInt(2,order.getCreatorId());if(order.getRestockRequestId()==null)ps.setNull(3,Types.INTEGER);else ps.setInt(3,order.getRestockRequestId());ps.setBigDecimal(4,total);ps.setString(5,order.getNote());ps.executeUpdate();try(ResultSet rs=ps.getGeneratedKeys()){if(!rs.next())throw new SQLException("Không tạo được phiếu nhập.");id=rs.getInt(1);}}
-   try(PreparedStatement ps=c.prepareStatement("INSERT INTO purchase_order_items(po_id,ingredient_id,quantity,unit_price) VALUES(?,?,?,?)")){for(PurchaseOrderItem i:items){if(i.getQuantity().signum()<=0||i.getUnitPrice().signum()<0)throw new IllegalArgumentException("Số lượng hoặc đơn giá không hợp lệ.");ps.setInt(1,id);ps.setInt(2,i.getIngredientId());ps.setBigDecimal(3,i.getQuantity());ps.setBigDecimal(4,i.getUnitPrice());ps.addBatch();}ps.executeBatch();}InventoryWorkflowDAO.audit(c,"PURCHASE",id,order.getCreatorId(),"CREATE","supplier="+order.getSupplierId()+"; total="+total+"; request="+order.getRestockRequestId()+"; items="+items.stream().map(i->i.getIngredientId()+":"+i.getQuantity()+"@"+i.getUnitPrice()).toList());c.commit();return id;
+   try(PreparedStatement ps=c.prepareStatement("INSERT INTO purchase_order_items(po_id,ingredient_id,quantity,unit_price) VALUES(?,?,?,?)")){for(PurchaseOrderItem i:items){if(i.getQuantity().signum()<=0||i.getUnitPrice().signum()<0)throw new IllegalArgumentException("Số lượng hoặc đơn giá không hợp lệ.");ps.setInt(1,id);ps.setInt(2,i.getIngredientId());ps.setBigDecimal(3,i.getQuantity());ps.setBigDecimal(4,i.getUnitPrice());ps.addBatch();}ps.executeBatch();}InventoryWorkflowDAO.audit(c,"PURCHASE",id,order.getCreatorId(),"CREATE","supplier="+order.getSupplierId()+"; total="+total+"; request="+order.getRestockRequestId()+"; items="+items.stream().map(i->i.getIngredientId()+":"+i.getQuantity()+"@"+i.getUnitPrice()).toList());
+   if(placed)changeStatus(c,id,order.getCreatorId(),"order","Đã đặt hàng với nhà cung cấp");
+   c.commit();return id;
   }catch(Exception e){c.rollback();if(e instanceof SQLException)throw(SQLException)e;if(e instanceof RuntimeException)throw(RuntimeException)e;throw new SQLException(e);}}
   catch(ClassNotFoundException e){throw new SQLException(e);}
  }
@@ -72,8 +94,13 @@ public class PurchaseOrderDAO extends BaseDAO{
   try(PreparedStatement p=c.prepareStatement("SELECT status FROM suppliers WHERE id=? FOR UPDATE")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){if(!r.next()||!"ACTIVE".equals(r.getString(1)))throw new IllegalArgumentException("Nhà cung cấp phải đang hoạt động.");}}
  }
  public boolean changeStatus(int id,int actor,String action,String reason)throws SQLException,ClassNotFoundException {
-  reason=service.InventoryRules.text(reason,!"order".equals(action));
   try(Connection c=getConnection()){c.setAutoCommit(false);try{
+   changeStatus(c,id,actor,action,reason);
+   c.commit();return true;
+  }catch(Exception e){c.rollback();throw e;}}
+ }
+ static void changeStatus(Connection c,int id,int actor,String action,String reason)throws SQLException {
+   reason=service.InventoryRules.text(reason,!"order".equals(action));
    InventoryWorkflowDAO.requireActor(c,actor,true);String state;int supplier;
    try(PreparedStatement p=c.prepareStatement("SELECT status,supplier_id FROM purchase_orders WHERE id=? FOR UPDATE")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){if(!r.next())throw new IllegalArgumentException("Không tìm thấy đơn mua.");state=r.getString(1);supplier=r.getInt(2);}}
    String next;
@@ -83,8 +110,7 @@ public class PurchaseOrderDAO extends BaseDAO{
    else throw new IllegalArgumentException("Không thể thay đổi đơn ở trạng thái hiện tại.");
    try(PreparedStatement p=c.prepareStatement("SELECT id FROM purchase_receipts WHERE po_id=? AND status='PENDING'")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){if(r.next())throw new IllegalArgumentException("Hãy xử lý các phiếu kiểm nhận đang chờ trước.");}}
    try(PreparedStatement p=c.prepareStatement("UPDATE purchase_orders SET status=?,ordered_at=IF(?='ORDERED',NOW(),ordered_at) WHERE id=?")){p.setString(1,next);p.setString(2,next);p.setInt(3,id);p.executeUpdate();}
-   InventoryWorkflowDAO.audit(c,"PURCHASE",id,actor,action,state+" -> "+next+"; "+reason);c.commit();return true;
-  }catch(Exception e){c.rollback();throw e;}}
+   InventoryWorkflowDAO.audit(c,"PURCHASE",id,actor,action,state+" -> "+next+"; "+reason);
  }
  private PurchaseOrder map(ResultSet rs)throws SQLException{PurchaseOrder o=new PurchaseOrder();o.setId(rs.getInt("id"));o.setSupplierId(rs.getInt("supplier_id"));o.setCreatorId(rs.getInt("creator_id"));o.setRestockRequestId((Integer)rs.getObject("restock_request_id"));o.setSupplierName(rs.getString("supplier_name"));o.setCreatorName(rs.getString("creator_name"));o.setTotalCost(rs.getBigDecimal("total_cost"));o.setStatus(rs.getString("status"));o.setNote(rs.getString("note"));o.setCreatedAt(rs.getTimestamp("created_at"));o.setOrderedAt(rs.getTimestamp("ordered_at"));o.setReceivedAt(rs.getTimestamp("received_at"));return o;}
  private PurchaseOrderItem mapItem(ResultSet rs)throws SQLException{PurchaseOrderItem i=new PurchaseOrderItem();i.setId(rs.getInt("id"));i.setPoId(rs.getInt("po_id"));i.setIngredientId(rs.getInt("ingredient_id"));i.setIngredientName(rs.getString("ingredient_name"));i.setUnit(rs.getString("unit"));i.setQuantity(rs.getBigDecimal("quantity"));i.setUnitPrice(rs.getBigDecimal("unit_price"));return i;}

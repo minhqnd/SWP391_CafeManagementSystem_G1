@@ -77,7 +77,7 @@
             <div class="d-flex align-items-center gap-2">
                 <a href="${ctx}/admin/restock-requests" class="btn btn-light border fw-semibold d-flex align-items-center gap-1" style="border-radius: 10px;">
                     <span class="material-symbols-outlined fs-5">notification_important</span>
-                    <span>Đề xuất từ Barista (${fn:length(approvedRequests)})</span>
+                    <span>Đề xuất nhập hàng (${fn:length(approvedRequests)})</span>
                 </a>
                 <button type="button" class="btn btn-aura d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createPoModal">
                     <span class="material-symbols-outlined fs-5">add_circle</span>
@@ -218,7 +218,7 @@
                             </td>
                             <td class="text-end">
                                 <div class="d-inline-flex flex-wrap justify-content-end gap-1">
-                                    <c:if test="${po.status eq 'DRAFT' or po.status eq 'ORDERED' or po.status eq 'PARTIALLY_RECEIVED'}">
+                                    <c:if test="${po.status eq 'ORDERED' or po.status eq 'PARTIALLY_RECEIVED'}">
                                         <button type="button" class="btn btn-sm btn-success fw-semibold d-inline-flex align-items-center gap-1"
                                                 data-bs-toggle="modal" data-bs-target="#receiveModal-${po.id}">
                                             <span class="material-symbols-outlined" style="font-size: 16px;">inventory</span>
@@ -307,7 +307,7 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Liên kết đề xuất từ Barista (Không bắt buộc)</label>
+                            <label class="form-label fw-bold small text-secondary">Đề xuất đã duyệt (không bắt buộc)</label>
                             <select class="form-select" name="restockRequestId" id="purchaseRequest">
                                 <option value="">-- Lập phiếu độc lập (Không liên kết) --</option>
                                 <c:forEach var="r" items="${approvedRequests}">
@@ -327,13 +327,12 @@
                 </div>
                 <div class="modal-footer bg-light d-flex justify-content-between">
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Đóng</button>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-outline-primary fw-semibold" name="action" value="create">
-                            Lưu phiếu đặt hàng (Chờ giao)
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-outline-secondary" name="action" value="createDraft">
+                            Lưu nháp
                         </button>
-                        <button type="submit" class="btn btn-aura d-flex align-items-center gap-1" name="action" value="createAndReceive">
-                            <span class="material-symbols-outlined fs-6">bolt</span>
-                            <span>Tạo &amp; Nhập kho ngay</span>
+                        <button type="submit" class="btn btn-aura fw-semibold" name="action" value="create">
+                            Đặt hàng
                         </button>
                     </div>
                 </div>
@@ -400,13 +399,14 @@
     </c:if>
 
     <!-- MODAL KIỂM NHẬN HÀNG GIAO (XỬ LÝ ĐỦ / GIAO THIẾU / GIAO THỪA / HÀNG HỎNG) -->
-    <c:if test="${po.status eq 'DRAFT' or po.status eq 'ORDERED' or po.status eq 'PARTIALLY_RECEIVED'}">
+    <c:if test="${po.status eq 'ORDERED' or po.status eq 'PARTIALLY_RECEIVED'}">
         <div class="modal fade" id="receiveModal-${po.id}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content border-0 shadow">
                     <form method="post" action="${ctx}/admin/purchases">
                         <input type="hidden" name="csrfToken" value="${sessionScope.inventoryWorkflowToken}">
                         <input type="hidden" name="action" value="receive">
+                        <input type="hidden" name="submissionKey" value="${receiptKeys[po.id]}">
                         <input type="hidden" name="poId" value="${po.id}">
                         <div class="modal-header bg-light">
                             <div>
@@ -422,7 +422,7 @@
                             </div>
 
                             <c:forEach var="it" items="${po.items}">
-                                <c:set var="defaultRecv" value="${it.remainingQuantity > 0 ? it.remainingQuantity : it.quantity}" />
+                                <c:set var="defaultRecv" value="${it.remainingQuantity}" />
                                 <div class="p-3 rounded-3 border bg-light mb-3 receive-item-card"
                                      data-expected="${defaultRecv}" data-unit="${fn:escapeXml(it.unit)}">
                                     <input type="hidden" name="itemId" value="${it.id}">
@@ -577,20 +577,24 @@
             badge.className = 'badge bg-success-subtle text-success border border-success-subtle diff-status-badge';
             badge.innerText = '✔ Nhận đủ hàng (100%)';
             detail.innerText = 'Khớp đúng số lượng cần nhận' + extraNote;
-            if (shortBox) shortBox.classList.add('d-none');
         } else if (diff < 0) {
             const missing = Math.abs(diff).toFixed(3).replace(/\.?0+$/, '');
             badge.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle diff-status-badge';
             badge.innerText = '⚠ Giao thiếu -' + missing + ' ' + unit;
             detail.innerText = 'Thiếu ' + missing + ' ' + unit + ' so với số lượng đặt. Mặc định phiếu sẽ chuyển sang trạng thái "Nhận một phần (Chờ giao bù)"' + extraNote;
-            if (shortBox) shortBox.classList.remove('d-none');
         } else {
             const excess = diff.toFixed(3).replace(/\.?0+$/, '');
             badge.className = 'badge diff-status-badge';
             badge.style.cssText = 'background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;';
             badge.innerText = '⬆ Giao thừa +' + excess + ' ' + unit;
             detail.innerText = 'Nhận vượt đơn đặt +' + excess + ' ' + unit + ' (Hệ thống sẽ cộng toàn bộ số thực nhận vào kho)' + extraNote;
-            if (shortBox) shortBox.classList.add('d-none');
+        }
+        if (shortBox) {
+            const hasShortDelivery = Array.from(modal.querySelectorAll('.receive-item-card')).some(line =>
+                Number(line.querySelector('.accepted-input').value) < Number(line.dataset.expected)
+            );
+            shortBox.classList.toggle('d-none', !hasShortDelivery);
+            if (!hasShortDelivery) shortBox.querySelector('input').checked = false;
         }
     }
 
@@ -606,10 +610,11 @@
             }
             if (reqId) {
                 const reqSelect = document.getElementById('purchaseRequest');
-                if (reqSelect) {
-                    reqSelect.value = reqId;
-                    reqSelect.dispatchEvent(new Event('change'));
+                if (!reqSelect || !Array.from(reqSelect.options).some(option => option.value === reqId)) {
+                    return;
                 }
+                reqSelect.value = reqId;
+                reqSelect.dispatchEvent(new Event('change'));
             }
             new bootstrap.Modal(document.getElementById('createPoModal')).show();
         }

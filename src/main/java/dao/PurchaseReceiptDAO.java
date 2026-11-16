@@ -31,44 +31,65 @@ public class PurchaseReceiptDAO extends BaseDAO {
         try(PreparedStatement p=c.prepareStatement(sql)){p.setInt(1,poId);p.setInt(2,ingredient);p.setInt(3,itemId);try(ResultSet r=p.executeQuery()){r.next();return r.getBigDecimal(1);}}
     }
     public int submit(int poId,int actor,String key,String note,List<Item> items)throws SQLException,ClassNotFoundException {
+        try(Connection c=getConnection()){c.setAutoCommit(false);try {
+            int id=submit(c,poId,actor,key,note,items);
+            c.commit();return id;
+        }catch(Exception e){c.rollback();throw e;}}
+    }
+    private static int submit(Connection c,int poId,int actor,String key,String note,List<Item> items)throws SQLException {
         note=InventoryRules.text(note,true);validateKey(key);
         if(items==null||items.isEmpty()||items.size()>100)throw new IllegalArgumentException("Phiếu kiểm nhận phải có nguyên liệu.");
         Set<Integer> ids=new HashSet<>();BigDecimal delivered=BigDecimal.ZERO;
         for(Item i:items){InventoryRules.receipt(i.getDelivered(),i.getAccepted());if(!ids.add(i.getPoItemId()))throw new IllegalArgumentException("Nguyên liệu bị trùng.");delivered=delivered.add(i.getDelivered());}
         if(delivered.signum()==0)throw new IllegalArgumentException("Số lượng giao phải lớn hơn 0.");
-        try(Connection c=getConnection()){c.setAutoCommit(false);try {
-            InventoryWorkflowDAO.requireActor(c,actor,false);String state=lockPo(c,poId);
-            try(PreparedStatement p=c.prepareStatement("SELECT id,po_id,receiver_id FROM purchase_receipts WHERE submission_key=?")){p.setString(1,key);try(ResultSet r=p.executeQuery()){if(r.next()){if(r.getInt(2)!=poId||r.getInt(3)!=actor)throw new IllegalArgumentException("Mã gửi phiếu không hợp lệ.");c.rollback();return r.getInt(1);}}}
-            if(!List.of("ORDERED","PARTIALLY_RECEIVED").contains(state))throw new IllegalArgumentException("Đơn mua chưa đặt hoặc đã kết thúc.");
-            for(Item item:items)try(PreparedStatement p=c.prepareStatement("SELECT id FROM purchase_order_items WHERE id=? AND po_id=?")){p.setInt(1,item.getPoItemId());p.setInt(2,poId);try(ResultSet r=p.executeQuery()){if(!r.next())throw new IllegalArgumentException("Nguyên liệu không thuộc đơn mua.");}}
-            int id;try(PreparedStatement p=c.prepareStatement("INSERT INTO purchase_receipts(po_id,receiver_id,submission_key,note) VALUES(?,?,?,?)",Statement.RETURN_GENERATED_KEYS)){p.setInt(1,poId);p.setInt(2,actor);p.setString(3,key);p.setString(4,note);p.executeUpdate();try(ResultSet r=p.getGeneratedKeys()){if(!r.next())throw new SQLException("Không tạo được phiếu kiểm nhận.");id=r.getInt(1);}}
-            try(PreparedStatement p=c.prepareStatement("INSERT INTO purchase_receipt_items(receipt_id,po_item_id,delivered_quantity,accepted_quantity) VALUES(?,?,?,?)")){
-                for(Item i:items){p.setInt(1,id);p.setInt(2,i.getPoItemId());p.setBigDecimal(3,i.getDelivered());p.setBigDecimal(4,i.getAccepted());p.addBatch();}p.executeBatch();}
-            InventoryWorkflowDAO.audit(c,"PURCHASE",poId,actor,"INSPECT","Phiếu #"+id+"; "+note);c.commit();return id;
-        }catch(Exception e){c.rollback();throw e;}}
+        InventoryWorkflowDAO.requireActor(c,actor,false);String state=lockPo(c,poId);
+        try(PreparedStatement p=c.prepareStatement("SELECT id,po_id,receiver_id FROM purchase_receipts WHERE submission_key=?")){p.setString(1,key);try(ResultSet r=p.executeQuery()){if(r.next()){if(r.getInt(2)!=poId||r.getInt(3)!=actor)throw new IllegalArgumentException("Mã gửi phiếu không hợp lệ.");return r.getInt(1);}}}
+        if(!List.of("ORDERED","PARTIALLY_RECEIVED").contains(state))throw new IllegalArgumentException("Đơn mua chưa đặt hoặc đã kết thúc.");
+        for(Item item:items)try(PreparedStatement p=c.prepareStatement("SELECT id FROM purchase_order_items WHERE id=? AND po_id=?")){p.setInt(1,item.getPoItemId());p.setInt(2,poId);try(ResultSet r=p.executeQuery()){if(!r.next())throw new IllegalArgumentException("Nguyên liệu không thuộc đơn mua.");}}
+        int id;try(PreparedStatement p=c.prepareStatement("INSERT INTO purchase_receipts(po_id,receiver_id,submission_key,note) VALUES(?,?,?,?)",Statement.RETURN_GENERATED_KEYS)){p.setInt(1,poId);p.setInt(2,actor);p.setString(3,key);p.setString(4,note);p.executeUpdate();try(ResultSet r=p.getGeneratedKeys()){if(!r.next())throw new SQLException("Không tạo được phiếu kiểm nhận.");id=r.getInt(1);}}
+        try(PreparedStatement p=c.prepareStatement("INSERT INTO purchase_receipt_items(receipt_id,po_item_id,delivered_quantity,accepted_quantity) VALUES(?,?,?,?)")){
+            for(Item i:items){p.setInt(1,id);p.setInt(2,i.getPoItemId());p.setBigDecimal(3,i.getDelivered());p.setBigDecimal(4,i.getAccepted());p.addBatch();}p.executeBatch();}
+        InventoryWorkflowDAO.audit(c,"PURCHASE",poId,actor,"INSPECT","Phiếu #"+id+"; "+note);return id;
     }
     public void review(int id,int actor,boolean approve,String note)throws SQLException,ClassNotFoundException {review(id,actor,approve,note,false);}
     public void review(int id,int actor,boolean approve,String note,boolean acceptExcess)throws SQLException,ClassNotFoundException {
-        note=InventoryRules.text(note,true);
         try(Connection c=getConnection()){c.setAutoCommit(false);try{
-            InventoryWorkflowDAO.requireActor(c,actor,true);int poId=receiptPo(c,id);String poState=lockPo(c,poId);
-            try(PreparedStatement p=c.prepareStatement("SELECT status FROM purchase_receipts WHERE id=? FOR UPDATE")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){if(!r.next()||!"PENDING".equals(r.getString(1)))throw new IllegalArgumentException("Phiếu đã được xử lý. Hãy tải lại.");}}
-            if(approve&&!List.of("ORDERED","PARTIALLY_RECEIVED").contains(poState))throw new IllegalArgumentException("Đơn mua đã kết thúc, không thể cộng kho.");
-            if(approve){
-                try(PreparedStatement p=c.prepareStatement("SELECT pi.ingredient_id,ri.accepted_quantity,pi.id,pi.quantity FROM purchase_receipt_items ri JOIN purchase_order_items pi ON pi.id=ri.po_item_id WHERE ri.receipt_id=? ORDER BY pi.ingredient_id")){
-                    p.setInt(1,id);try(ResultSet r=p.executeQuery()){while(r.next()){
-                        BigDecimal qty=r.getBigDecimal(2);if(qty.signum()==0)continue;
-                        if(received(c,poId,r.getInt(3),r.getInt(1)).add(qty).compareTo(r.getBigDecimal(4))>0&&!acceptExcess)
-                            throw new IllegalArgumentException("Số lượng vượt đơn đặt. Quản lý phải xác nhận nhận phần thừa.");
-                        changeStock(c,r.getInt(1),qty,"IN_PURCHASE","PURCHASE_ORDER",poId,"Phiếu kiểm nhận #"+id+"; "+note);
-                    }}
-                }
-            }
-            try(PreparedStatement p=c.prepareStatement("UPDATE purchase_receipts SET status=?,reviewer_id=?,review_note=?,reviewed_at=NOW() WHERE id=? AND status='PENDING'")){
-                p.setString(1,approve?"APPROVED":"REJECTED");p.setInt(2,actor);p.setString(3,note);p.setInt(4,id);if(p.executeUpdate()!=1)throw new SQLException("Phiếu đã thay đổi.");}
-            if(approve)refreshPo(c,poId,poState);
-            InventoryWorkflowDAO.audit(c,"PURCHASE",poId,actor,approve?"RECEIPT_APPROVE":"RECEIPT_REJECT","Phiếu #"+id+"; "+note);c.commit();
+            review(c,id,actor,approve,note,acceptExcess);
+            c.commit();
         }catch(Exception e){c.rollback();throw e;}}
+    }
+    public void confirm(int poId,int actor,String key,String note,List<Item> items,boolean closeRemainder)throws SQLException,ClassNotFoundException {
+        try(Connection c=getConnection()){c.setAutoCommit(false);try{
+            confirm(c,poId,actor,key,note,items);
+            if(closeRemainder&&"PARTIALLY_RECEIVED".equals(lockPo(c,poId))){
+                PurchaseOrderDAO.changeStatus(c,poId,actor,"close",note+" (Chốt đóng phần giao thiếu)");
+            }
+            c.commit();
+        }catch(Exception e){c.rollback();throw e;}}
+    }
+    private static void confirm(Connection c,int poId,int actor,String key,String note,List<Item> items)throws SQLException {
+        int id=submit(c,poId,actor,key,note,items);
+        review(c,id,actor,true,note,true);
+    }
+    private static void review(Connection c,int id,int actor,boolean approve,String note,boolean acceptExcess)throws SQLException {
+        note=InventoryRules.text(note,true);
+        InventoryWorkflowDAO.requireActor(c,actor,true);int poId=receiptPo(c,id);String poState=lockPo(c,poId);
+        try(PreparedStatement p=c.prepareStatement("SELECT status FROM purchase_receipts WHERE id=? FOR UPDATE")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){if(!r.next()||!"PENDING".equals(r.getString(1)))throw new IllegalArgumentException("Phiếu đã được xử lý. Hãy tải lại.");}}
+        if(approve&&!List.of("ORDERED","PARTIALLY_RECEIVED").contains(poState))throw new IllegalArgumentException("Đơn mua đã kết thúc, không thể cộng kho.");
+        if(approve){
+            try(PreparedStatement p=c.prepareStatement("SELECT pi.ingredient_id,ri.accepted_quantity,pi.id,pi.quantity FROM purchase_receipt_items ri JOIN purchase_order_items pi ON pi.id=ri.po_item_id WHERE ri.receipt_id=? ORDER BY pi.ingredient_id")){
+                p.setInt(1,id);try(ResultSet r=p.executeQuery()){while(r.next()){
+                    BigDecimal qty=r.getBigDecimal(2);if(qty.signum()==0)continue;
+                    if(received(c,poId,r.getInt(3),r.getInt(1)).add(qty).compareTo(r.getBigDecimal(4))>0&&!acceptExcess)
+                        throw new IllegalArgumentException("Số lượng vượt đơn đặt. Quản lý phải xác nhận nhận phần thừa.");
+                    changeStock(c,r.getInt(1),qty,"IN_PURCHASE","PURCHASE_ORDER",poId,"Phiếu kiểm nhận #"+id+"; "+note);
+                }}
+            }
+        }
+        try(PreparedStatement p=c.prepareStatement("UPDATE purchase_receipts SET status=?,reviewer_id=?,review_note=?,reviewed_at=NOW() WHERE id=? AND status='PENDING'")){
+            p.setString(1,approve?"APPROVED":"REJECTED");p.setInt(2,actor);p.setString(3,note);p.setInt(4,id);if(p.executeUpdate()!=1)throw new SQLException("Phiếu đã thay đổi.");}
+        if(approve)refreshPo(c,poId,poState);
+        InventoryWorkflowDAO.audit(c,"PURCHASE",poId,actor,approve?"RECEIPT_APPROVE":"RECEIPT_REJECT","Phiếu #"+id+"; "+note);
     }
     public void adjust(int receiptItem,int actor,String key,BigDecimal delta,String reason)throws SQLException,ClassNotFoundException {
         reason=InventoryRules.text(reason,true);validateKey(key);

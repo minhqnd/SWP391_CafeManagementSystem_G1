@@ -1,0 +1,59 @@
+@startuml
+title BF-08 — Ingredient Restock and Purchasing
+
+skinparam style strictuml
+skinparam ActivityFontSize 12
+skinparam ActivityDiamondFontSize 11
+
+|#LightYellow|Barista|
+|#LightCyan|Admin|
+|#AliceBlue|CMS (Aura Cafe Server)|
+
+|Admin|
+start
+:Review stock and movement history\nUpdate supplier or ingredient if needed;
+
+if (Use a restock request?) then (yes)
+  |Barista|
+  :Submit a restock request\n(Admin can also submit);
+  |CMS (Aura Cafe Server)|
+  :Validate ingredient and quantity\nSave as PENDING_APPROVAL;
+  |Admin|
+  if (Approve & create PO?) then (yes)
+    |CMS (Aura Cafe Server)|
+    :Save as APPROVED and open PO form\nwith the request selected;
+  else (no)
+    |CMS (Aura Cafe Server)|
+    :Save as REJECTED;
+    stop
+  endif
+else (no)
+endif
+
+|Admin|
+:Select supplier and enter ingredients,\nquantities and lot totals;
+:Place the order now or save as DRAFT\nand place it later;
+|CMS (Aura Cafe Server)|
+:Save PO as ORDERED;
+
+repeat
+  |Admin|
+  :Enter delivered and accepted quantities;
+  |CMS (Aura Cafe Server)|
+  if (PO and receipt valid?) then (yes)
+    :Commit stock, IN_PURCHASE & PO;
+    note right
+      Full → RECEIVED
+      Partial → PARTIALLY_RECEIVED
+      None accepted → ORDERED
+    end note
+  else (no)
+    :Reject duplicate or invalid receipt;
+    stop
+  endif
+  |Admin|
+repeat while (Expect another delivery?) is (yes) not (no / close)
+
+:Review stock and movement history;
+stop
+@enduml

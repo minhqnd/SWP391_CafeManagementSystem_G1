@@ -11,6 +11,7 @@ public class RestockRequest implements Serializable {
     private int requesterId;
     private String requesterName;
     private Integer reviewerId;
+    private Integer purchaseOrderId;
     private String reviewerName;
     private String status;
     private String reason;
@@ -35,6 +36,7 @@ public class RestockRequest implements Serializable {
     public int getId(){return id;}public void setId(int v){id=v;}public int getRequesterId(){return requesterId;}public void setRequesterId(int v){requesterId=v;}
     public String getRequesterName(){return requesterName;}public void setRequesterName(String v){requesterName=v;}public Integer getReviewerId(){return reviewerId;}public void setReviewerId(Integer v){reviewerId=v;}
     public String getReviewerName(){return reviewerName;}public void setReviewerName(String v){reviewerName=v;}public String getStatus(){return status;}public void setStatus(String v){status=v;}
+    public Integer getPurchaseOrderId(){return purchaseOrderId;}public void setPurchaseOrderId(Integer v){purchaseOrderId=v;}
     public String getReason(){return reason;}public void setReason(String v){reason=v;}public String getNote(){return note;}public void setNote(String v){note=v;}
     public String getReviewNote(){return reviewNote;}public void setReviewNote(String v){reviewNote=v;}public Timestamp getCreatedAt(){return createdAt;}public void setCreatedAt(Timestamp v){createdAt=v;}
     public Timestamp getReviewedAt(){return reviewedAt;}public void setReviewedAt(Timestamp v){reviewedAt=v;}public List<RestockItem> getItems(){return items;}public void setItems(List<RestockItem> v){items=v;}

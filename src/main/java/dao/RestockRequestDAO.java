@@ -16,10 +16,10 @@ public class RestockRequestDAO extends BaseDAO{
     }
     public List<RestockRequest> getRestockRequests(String status){
         List<RestockRequest> list=new ArrayList<>();Map<Integer,RestockRequest> map=new LinkedHashMap<>();
-        String sql="SELECT r.*,u.full_name requester_name,rv.full_name reviewer_name FROM restock_requests r JOIN users u ON u.id=r.requester_id LEFT JOIN users rv ON rv.id=r.reviewer_id WHERE (?='ALL' OR r.status=?) ORDER BY r.created_at DESC";
+        String sql="SELECT r.*,u.full_name requester_name,rv.full_name reviewer_name,po.id purchase_order_id FROM restock_requests r JOIN users u ON u.id=r.requester_id LEFT JOIN users rv ON rv.id=r.reviewer_id LEFT JOIN purchase_orders po ON po.restock_request_id=r.id WHERE (?='ALL' OR r.status=?) ORDER BY r.created_at DESC";
         try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
             String filter=status==null||status.isBlank()?"ALL":status.toUpperCase();ps.setString(1,filter);ps.setString(2,filter);
-            try(ResultSet rs=ps.executeQuery()){while(rs.next()){RestockRequest r=new RestockRequest();r.setId(rs.getInt("id"));r.setRequesterId(rs.getInt("requester_id"));r.setRequesterName(rs.getString("requester_name"));r.setReviewerId((Integer)rs.getObject("reviewer_id"));r.setReviewerName(rs.getString("reviewer_name"));r.setStatus(rs.getString("status"));r.setReason(rs.getString("reason"));r.setNote(rs.getString("note"));r.setReviewNote(rs.getString("review_note"));r.setCreatedAt(rs.getTimestamp("created_at"));r.setReviewedAt(rs.getTimestamp("reviewed_at"));list.add(r);map.put(r.getId(),r);}}
+            try(ResultSet rs=ps.executeQuery()){while(rs.next()){RestockRequest r=new RestockRequest();r.setId(rs.getInt("id"));r.setRequesterId(rs.getInt("requester_id"));r.setRequesterName(rs.getString("requester_name"));r.setReviewerId((Integer)rs.getObject("reviewer_id"));r.setReviewerName(rs.getString("reviewer_name"));r.setStatus(rs.getString("status"));r.setPurchaseOrderId((Integer)rs.getObject("purchase_order_id"));r.setReason(rs.getString("reason"));r.setNote(rs.getString("note"));r.setReviewNote(rs.getString("review_note"));r.setCreatedAt(rs.getTimestamp("created_at"));r.setReviewedAt(rs.getTimestamp("reviewed_at"));list.add(r);map.put(r.getId(),r);}}
             if(!map.isEmpty()){try(PreparedStatement ip=c.prepareStatement("SELECT ri.*,i.name ingredient_name,i.unit FROM restock_request_items ri JOIN ingredients i ON i.id=ri.ingredient_id ORDER BY ri.id");ResultSet rs=ip.executeQuery()){while(rs.next()){RestockRequest r=map.get(rs.getInt("request_id"));if(r!=null){RestockItem it=new RestockItem(rs.getInt("ingredient_id"),rs.getString("ingredient_name"),rs.getString("unit"),rs.getBigDecimal("quantity"));it.setId(rs.getInt("id"));it.setRequestId(rs.getInt("request_id"));it.setItemNote(rs.getString("item_note"));r.getItems().add(it);}}}}
         }catch(Exception e){throw new IllegalStateException("Cannot load restock requests",e);}return list;
     }
@@ -71,7 +71,6 @@ public class RestockRequestDAO extends BaseDAO{
             String target;
             if(review&&"PENDING_APPROVAL".equals(current))target=switch(action){case "approve"->"APPROVED";case "reject"->"REJECTED";default->"CHANGES_REQUESTED";};
             else if("submit".equals(action)&&List.of("DRAFT","CHANGES_REQUESTED").contains(current))target="PENDING_APPROVAL";
-            else if("cancel".equals(action)&&InventoryRules.editableRequest(current))target="CANCELLED";
             else throw new IllegalArgumentException("Trạng thái đề xuất không cho phép thao tác này.");
             try(PreparedStatement p=c.prepareStatement("UPDATE restock_requests SET status=?,reviewer_id=?,review_note=?,reviewed_at=NOW() WHERE id=?")){
                 p.setString(1,target);if(review)p.setInt(2,actor);else p.setNull(2,Types.INTEGER);p.setString(3,reviewNote);p.setInt(4,id);p.executeUpdate();}
@@ -124,9 +123,8 @@ public class RestockRequestDAO extends BaseDAO{
                 }
             }
             String target;
-            if(review&&List.of("PENDING_APPROVAL","DRAFT","CHANGES_REQUESTED").contains(current))target=switch(action){case "approve"->"APPROVED";case "reject"->"REJECTED";default->"CHANGES_REQUESTED";};
+            if(review&&"PENDING_APPROVAL".equals(current))target=switch(action){case "approve"->"APPROVED";case "reject"->"REJECTED";default->"CHANGES_REQUESTED";};
             else if("submit".equals(action)&&List.of("DRAFT","CHANGES_REQUESTED").contains(current))target="PENDING_APPROVAL";
-            else if("cancel".equals(action)&&InventoryRules.editableRequest(current))target="CANCELLED";
             else throw new IllegalArgumentException("Trạng thái đề xuất không cho phép thao tác này.");
             try(PreparedStatement p=c.prepareStatement("UPDATE restock_requests SET status=?,reviewer_id=?,review_note=?,reviewed_at=NOW() WHERE id=?")){
                 p.setString(1,target);if(review)p.setInt(2,actor);else p.setNull(2,Types.INTEGER);p.setString(3,reviewNote);p.setInt(4,id);p.executeUpdate();}
