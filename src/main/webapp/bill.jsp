@@ -22,6 +22,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            // Giữ class collapse của Bootstrap cho menu trong header dùng chung.
+            blocklist: ['collapse'],
             corePlugins: {
                 preflight: false,
             },
@@ -110,7 +112,7 @@
     <main class="flex-grow w-full px-margin md:px-margin-lg py-space-lg max-w-4xl mx-auto">
 
         <!-- Banner thông báo thanh toán thành công (ẩn khi in) -->
-        <div class="no-print mb-space-lg bg-emerald-50 border border-emerald-200 text-emerald-800 p-space-md md:p-space-lg rounded-2xl shadow-sm flex items-center justify-between gap-space-md">
+        <div class="no-print mb-space-lg bg-emerald-50 border border-emerald-200 text-emerald-800 p-space-md md:p-space-lg rounded-2xl shadow-sm">
             <div class="flex items-center gap-space-md">
                 <div class="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
                     <span class="material-symbols-outlined text-[28px]">check_circle</span>
@@ -133,10 +135,6 @@
                     </span>
                 </div>
             </div>
-            <a href="${pageContext.request.contextPath}/menu" class="hidden sm:inline-flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
-                <span>Đặt thêm món</span>
-                <span class="material-symbols-outlined text-[18px]">add</span>
-            </a>
         </div>
 
         <!-- Electronic Bill Card -->
@@ -322,7 +320,7 @@
                 </div>
             </div>
 
-            <!-- In / Theo dõi tiến trình Buttons (ẩn khi in) -->
+            <!-- Các thao tác sau hóa đơn (ẩn khi in) -->
             <div class="no-print flex flex-col sm:flex-row gap-3 pt-4 border-t border-surface-container">
                 <button type="button" onclick="window.print()" class="flex-1 h-12 bg-primary hover:bg-[#780815] text-white rounded-xl font-label-lg flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer font-semibold border-0">
                     <span class="material-symbols-outlined text-[20px]">print</span>
@@ -331,6 +329,10 @@
                 <a href="${pageContext.request.contextPath}/orders?orderId=${order.id}" class="flex-1 h-12 bg-[#eff4ff] hover:bg-[#dee9fc] text-[#900b1a] rounded-xl font-label-lg flex items-center justify-center gap-2 border border-[#dee9fc] transition-colors font-semibold text-decoration-none">
                     <span class="material-symbols-outlined text-[20px]">moped</span>
                     <span>Theo dõi tiến trình</span>
+                </a>
+                <a href="${pageContext.request.contextPath}/menu" class="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-label-lg flex items-center justify-center gap-2 shadow-sm transition-colors font-semibold text-decoration-none">
+                    <span class="material-symbols-outlined text-[20px]">add</span>
+                    <span>Đặt thêm món</span>
                 </a>
             </div>
 
