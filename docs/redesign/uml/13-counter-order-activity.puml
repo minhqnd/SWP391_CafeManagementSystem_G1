@@ -1,0 +1,122 @@
+@startuml
+title Counter Order — Cash, VietQR and Handoff
+
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam ArrowColor #1E343D
+skinparam activity {
+  BackgroundColor #7ACFF5
+  BorderColor #1E343D
+  DiamondBackgroundColor #7ACFF5
+  DiamondBorderColor #1E343D
+  FontColor black
+  StartColor black
+  EndColor black
+}
+skinparam swimlane {
+  TitleBackgroundColor #7ACFF5
+  BorderColor #1E343D
+}
+skinparam note {
+  BackgroundColor white
+  BorderColor #1E343D
+}
+
+|Cashier|
+|CMS (Aura Cafe Server)|
+|Payment Gateway (Cloudflare Worker)|
+|Barista|
+
+|Cashier|
+start
+:Select products and options;
+:Add items to the cart;
+:Choose Dine-in or Takeaway;
+if (Member?) then (yes)
+  :Enter phone number;
+  |CMS (Aura Cafe Server)|
+  :Find member and return available points;
+  |Cashier|
+  :Apply available points if requested;
+else (guest)
+endif
+:Open payment and choose Cash or VietQR;
+|CMS (Aura Cafe Server)|
+:Validate products, re-price items\nand cap points used;
+
+|Cashier|
+if (Payment method?) then (Cash, default)
+  :Collect cash and confirm payment;
+  |CMS (Aura Cafe Server)|
+  :Save order CONFIRMED and payment SUCCESS\nDeduct redeemed points if used;
+else (VietQR)
+  |CMS (Aura Cafe Server)|
+  :Save order and bank payment as PENDING\nDeduct redeemed points if used;
+  :Register order and amount with Gateway;
+  |Payment Gateway (Cloudflare Worker)|
+  :Store pending order in D1;
+  |Cashier|
+  :Show VietQR for customer to scan;
+
+  repeat
+    |Cashier|
+    :POS polls CMS every 2 seconds;
+    |CMS (Aura Cafe Server)|
+    :While order is PENDING, query Gateway by order code;
+    |Payment Gateway (Cloudflare Worker)|
+    :Return stored payment status;
+    note right
+      SePay webhook runs independently of polling.
+      Gateway matches transfers by order code.
+      Below amount due → PENDING
+      At least amount due → SUCCESS
+    end note
+    |Cashier|
+    if (Still unpaid and QR closed\nor switched to Cash?) then (yes)
+      |CMS (Aura Cafe Server)|
+      :Cancel the QR order and restore redeemed points;
+      note left
+        If switching to Cash, return to payment
+        and create a new cash order.
+      end note
+      stop
+    else (no)
+    endif
+  repeat while (Gateway still PENDING?) is (yes) not (SUCCESS)
+
+  |CMS (Aura Cafe Server)|
+  :Save payment SUCCESS and confirm order;
+endif
+
+|CMS (Aura Cafe Server)|
+:Award eligible member points once;
+:Show confirmed, paid order in Barista queue;
+note left
+  Once paid, Cashier can select Continue & Print
+  for VietQR and choose whether to open the receipt.
+  Barista can start independently.
+end note
+
+|Cashier|
+if (Cancel before preparation?) then (yes)
+  |CMS (Aura Cafe Server)|
+  :Set order CANCELLED and reverse points;
+  stop
+else (no)
+  |Barista|
+  :Start preparing;
+  |CMS (Aura Cafe Server)|
+  :Check and deduct recipe ingredients;
+  |Barista|
+  :Prepare items and mark READY;
+  |Cashier|
+  :See READY in today's orders;
+  :Hand over items and mark complete;
+  |CMS (Aura Cafe Server)|
+  :Set order COMPLETED;
+  stop
+endif
+
+@enduml

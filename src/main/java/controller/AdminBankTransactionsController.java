@@ -453,10 +453,10 @@ public class AdminBankTransactionsController extends HttpServlet {
 
     private String extractOrderCode(String content) {
         if (content == null) return null;
-        // Bắt mã đơn dạng AURA26... hoặc ORD-...
-        Matcher m = Pattern.compile("(AURA\\d+|ORD-[A-Z0-9-]+)").matcher(content.toUpperCase());
+        Matcher m = Pattern.compile("(AURA[0-9][A-Z0-9]*|ORD-(\\d{6})-([A-Z0-9]+)|ORD(\\d{6})([A-F0-9]{8}))(?![A-Z0-9])")
+                .matcher(content.toUpperCase(java.util.Locale.ROOT));
         if (m.find()) {
-            return m.group(1);
+            return m.group(4) == null ? m.group(1) : "ORD-" + m.group(4) + "-" + m.group(5);
         }
         return null;
     }

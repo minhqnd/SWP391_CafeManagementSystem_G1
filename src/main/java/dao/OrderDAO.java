@@ -683,6 +683,7 @@ public class OrderDAO extends BaseDAO {
         order.setId(rs.getInt("id"));
         order.setOrderCode(rs.getString("order_code"));
         order.setCustomerId(rs.getObject("customer_id", Integer.class));
+        order.setCashierId(rs.getObject("cashier_id", Integer.class));
         order.setOrderType(rs.getString("order_type"));
         order.setStatus(rs.getString("status"));
         order.setTotalAmount(rs.getDouble("total_amount"));

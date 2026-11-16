@@ -80,7 +80,6 @@
                                         <c:when test="${key == 'payment_account_name'}"><c:set var="label" value="Tên chủ tài khoản" /></c:when>
                                         <c:when test="${key == 'payment_gateway_url'}"><c:set var="label" value="Địa chỉ cổng thanh toán" /></c:when>
                                         <c:when test="${key == 'payment_callback_secret'}"><c:set var="label" value="Mã xác thực thanh toán" /></c:when>
-                                        <c:when test="${key == 'payment_test_mode'}"><c:set var="label" value="Chế độ thử nghiệm thanh toán" /></c:when>
                                     </c:choose>
                                     <div class="col-md-6 col-lg-4">
                                         <label for="setting_${fn:escapeXml(key)}" class="form-label small fw-semibold mb-1"><c:out value="${label}" /></label>

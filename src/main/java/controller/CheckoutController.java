@@ -38,6 +38,11 @@ public class CheckoutController extends HttpServlet {
     public static final String STORE_ADDRESS = "28 Phố Tràng Tiền, Hoàn Kiếm, Hà Nội";
 
     private static final ZoneId SHOP_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
+    static String newOrderCode() {
+        return "AURA" + LocalDateTime.now(SHOP_ZONE).format(DateTimeFormatter.ofPattern("yyMMddHHmm"))
+                + UUID.randomUUID().toString().replace("-", "").substring(0, 5);
+    }
     private static final String PHONE_PATTERN = "0\\d{9}";
 
     // Quán ở Hà Nội. Phí giao cố định 1 mức cho mọi địa chỉ (shop_settings.delivery_fee, Admin chỉnh ở Cài đặt)
@@ -162,8 +167,7 @@ public class CheckoutController extends HttpServlet {
         int pointsUsed = cart.getPointsUsed();
 
         Order order = new Order();
-        String orderCode = "AURA" + LocalDateTime.now(SHOP_ZONE).format(DateTimeFormatter.ofPattern("yyMMddHHmm"))
-                + UUID.randomUUID().toString().replace("-", "").substring(0, 5);
+        String orderCode = newOrderCode();
         order.setOrderCode(orderCode);
         order.setCustomerId(user.getId());
         order.setOrderType(cart.getOrderType());

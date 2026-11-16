@@ -2485,14 +2485,6 @@
                             </div>
                         </div>
 
-                        <c:if test="${shopSettings.paymentTestMode}">
-                            <div class="text-center mt-2">
-                                <button type="button" class="btn btn-sm btn-outline-warning border-dashed py-1 px-3" id="btnSimulatePay" onclick="triggerSimulatePayment()">
-                                    <span class="material-symbols-outlined fs-6 align-middle">bolt</span>
-                                    <span>Giả lập khách đã quét QR (Test)</span>
-                                </button>
-                            </div>
-                        </c:if>
                     </div>
                 </div>
                 <div class="modal-footer pay-modal-footer">
@@ -3139,8 +3131,14 @@
                     const res = await fetch(`\${CONTEXT_PATH}/cashier?action=check-payment&orderId=\${orderId}`);
                     if (!res.ok) return;
                     const data = await res.json();
-                    if (data && data.paid) {
-                        handleQrPaymentSuccess(data.orderCode || (currentQrOrder ? currentQrOrder.code : ''));
+                    if (currentQrOrder?.id !== orderId || selectedPaymentMethod !== 'BANK_TRANSFER') return;
+                    if (data?.status === 'CANCELLED') {
+                        stopPaymentPolling();
+                        currentQrOrder = null;
+                        document.getElementById('qrStatusPill').textContent = 'Đơn VietQR đã hủy.';
+                        document.getElementById('btnSubmitOrderText').textContent = 'Đơn đã hủy';
+                    } else if (data?.paid) {
+                        handleQrPaymentSuccess(data.orderCode || currentQrOrder.code);
                     }
                 } catch (e) {
                     console.warn('Lỗi polling thanh toán:', e);
@@ -3172,33 +3170,6 @@
             if (btnSubmitText) btnSubmitText.textContent = 'Tiếp tục & In hóa đơn';
 
             showToast('Đã nhận tiền thành công đơn #' + orderCode + '!');
-        }
-
-        async function triggerSimulatePayment() {
-            if (!currentQrOrder) return;
-            const btnSim = document.getElementById('btnSimulatePay');
-            if (btnSim) {
-                btnSim.disabled = true;
-                btnSim.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...';
-            }
-            try {
-                const res = await fetch(`\${CONTEXT_PATH}/cashier?action=simulate-payment&orderId=\${currentQrOrder.id}`, {
-                    method: 'POST',
-                    headers: { 'Accept': 'application/json' }
-                });
-                const data = await res.json();
-                if (data && data.paid) {
-                    handleQrPaymentSuccess(currentQrOrder.code);
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Lỗi giả lập thanh toán');
-            } finally {
-                if (btnSim) {
-                    btnSim.disabled = false;
-                    btnSim.innerHTML = '<span class="material-symbols-outlined fs-6 align-middle">bolt</span><span>Giả lập khách đã quét QR (Test)</span>';
-                }
-            }
         }
 
         function handleSubmitOrContinue() {

@@ -6,11 +6,31 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("CounterOrderController Unit Tests")
 public class CounterOrderControllerTest {
+
+    @Test
+    void qrPollingRequiresAConfirmedBankTransferAndRejectsCancelledOrders() {
+        Order order = new Order();
+        order.setPaymentMethod("BANK_TRANSFER");
+        order.setStatus("CONFIRMED");
+        assertFalse(CounterOrderController.isVerifiedQrPayment(order));
+
+        order.setPaidAt(LocalDateTime.of(2026, 1, 1, 12, 0));
+        assertTrue(CounterOrderController.isVerifiedQrPayment(order));
+
+        order.setStatus("CANCELLED");
+        assertFalse(CounterOrderController.isVerifiedQrPayment(order));
+
+        order.setStatus("COMPLETED");
+        assertTrue(CounterOrderController.isVerifiedQrPayment(order));
+        order.setPaymentMethod("CASH");
+        assertFalse(CounterOrderController.isVerifiedQrPayment(order));
+    }
 
     @Test
     @DisplayName("TC-POS-01: Kiểm tra tính toán đơn POS tại quầy và định dạng tiền")

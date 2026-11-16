@@ -37,7 +37,7 @@ public class AdminSettingsController extends HttpServlet {
             session.setAttribute("settingsCsrfToken", java.util.UUID.randomUUID().toString());
         }
         CartController.moveFlashMessage(request.getSession(), request, "settingsMessage");
-        showSettings(request, response, shopSettingDAO.findAll(), null);
+        showSettings(request, response, editableSettings(), null);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class AdminSettingsController extends HttpServlet {
             return;
         }
 
-        List<ShopSettingEntry> entries = shopSettingDAO.findAll();
+        List<ShopSettingEntry> entries = editableSettings();
         Map<String, String> form = new LinkedHashMap<>();
         Map<String, String> changed = new LinkedHashMap<>();
         String error = entries.isEmpty() ? "Không tải được cấu hình cửa hàng để lưu." : null;
@@ -78,6 +78,12 @@ public class AdminSettingsController extends HttpServlet {
         session.setAttribute("settingsMessage",
                 changed.isEmpty() ? "Không có thay đổi nào." : "Đã lưu cấu hình cửa hàng.");
         response.sendRedirect(request.getContextPath() + "/admin/settings");
+    }
+
+    private List<ShopSettingEntry> editableSettings() {
+        return shopSettingDAO.findAll().stream()
+                .filter(entry -> !ShopSettings.KEY_PAYMENT_TEST_MODE.equals(entry.getKey()))
+                .toList();
     }
 
     private void showSettings(HttpServletRequest request, HttpServletResponse response,
