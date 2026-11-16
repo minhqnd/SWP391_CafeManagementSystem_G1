@@ -199,9 +199,6 @@ public class ShopSettingDAO extends BaseDAO {
                 case ShopSettings.KEY_POINTS_EARN_UNIT:
                     settings.setPointsEarnUnit(Double.parseDouble(value.trim()));
                     break;
-                case ShopSettings.KEY_PAYMENT_TEST_MODE:
-                    settings.setPaymentTestMode(Boolean.parseBoolean(value.trim()));
-                    break;
                 case ShopSettings.KEY_PAYMENT_GATEWAY_URL:
                     settings.setPaymentGatewayUrl(value.trim());
                     break;

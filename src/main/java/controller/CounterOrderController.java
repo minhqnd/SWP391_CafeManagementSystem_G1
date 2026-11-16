@@ -33,7 +33,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -152,8 +151,6 @@ public class CounterOrderController extends HttpServlet {
             handleCancelOrder(request, response);
         } else if ("complete-order".equals(action)) {
             handleCompleteOrder(request, response);
-        } else if ("simulate-payment".equals(action)) {
-            handleSimulatePayment(request, response);
         } else {
             sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Hành động không hợp lệ.\"}");
         }
@@ -317,9 +314,7 @@ public class CounterOrderController extends HttpServlet {
         finalAmount = Math.max(0, totalAmount - discountAmount);
         paymentMethod = "BANK_TRANSFER".equalsIgnoreCase(paymentMethod) ? "BANK_TRANSFER" : "CASH";
 
-        // Tạo mã đơn hàng độc nhất dạng ORD-YYMMDD-XXXX
-        String datePrefix = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-        String orderCode = "ORD-" + datePrefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        String orderCode = CheckoutController.newOrderCode();
 
         Order order = new Order();
         order.setOrderCode(orderCode);
@@ -390,11 +385,10 @@ public class CounterOrderController extends HttpServlet {
             return;
         }
 
-        // Nếu đơn hàng đã được chuyển sang trạng thái CONFIRMED / COMPLETED (đã thanh toán)
-        if (!"PENDING".equalsIgnoreCase(order.getStatus())) {
+        if (!order.isPending()) {
             sendJson(response, HttpServletResponse.SC_OK,
-                    String.format("{\"paid\":true,\"status\":\"%s\",\"orderCode\":\"%s\"}",
-                            escapeJson(order.getStatus()), escapeJson(order.getOrderCode())));
+                    String.format("{\"paid\":%b,\"status\":\"%s\",\"orderCode\":\"%s\"}",
+                            isVerifiedQrPayment(order), escapeJson(order.getStatus()), escapeJson(order.getOrderCode())));
             return;
         }
 
@@ -424,24 +418,8 @@ public class CounterOrderController extends HttpServlet {
                         escapeJson(order.getOrderCode())));
     }
 
-    private void handleSimulatePayment(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        int orderId = parseInt(request.getParameter("orderId"), -1);
-        Order order = orderId > 0 ? orderDAO.getOrderById(orderId) : null;
-        if (order == null || !isOwnedCounterOrder(request, order)) {
-            sendJson(response, HttpServletResponse.SC_NOT_FOUND, "{\"success\":false,\"error\":\"Không tìm thấy đơn hàng.\"}");
-            return;
-        }
-        ShopSettings settings = shopSettingDAO.getSettings();
-        String txCode = "QR-" + order.getOrderCode();
-        BigDecimal amount = BigDecimal.valueOf(Math.round(order.getFinalAmount()));
-        String payload = "{\"orderCode\":\"" + escapeJson(order.getOrderCode()) + "\",\"status\":\"SUCCESS\",\"source\":\"pos-simulator\"}";
-        PaymentDAO.CallbackResult res = paymentDAO.applyGatewayCallback(
-                order.getOrderCode(), txCode, amount, "SUCCESS",
-                "SIMULATE-POS", payload, settings.getPointsEarnUnit()
-        );
-        sendJson(response, HttpServletResponse.SC_OK,
-                String.format("{\"success\":%b,\"paid\":true,\"status\":\"CONFIRMED\",\"orderCode\":\"%s\"}",
-                        res.successful(), escapeJson(order.getOrderCode())));
+    static boolean isVerifiedQrPayment(Order order) {
+        return order.isPaid() && "BANK_TRANSFER".equals(order.getPaymentMethod()) && order.getPaidAt() != null;
     }
 
     private void handleGetOrders(HttpServletRequest request, HttpServletResponse response) throws IOException {

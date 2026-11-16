@@ -31,7 +31,6 @@ public class ShopSettings implements Serializable {
     private int pointsStep = 10;                // mốc điểm: khách dùng 10, 20, 30... điểm
     private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm
     private double pointsEarnUnit = 10000;      // số tiền hàng sau giảm để nhận 1 điểm
-    private boolean paymentTestMode = true;
     private String paymentGatewayUrl = "https://payment-gateway.zemorts.workers.dev"; // Live Cloudflare Worker URL
     private String paymentCallbackSecret = "AURA-LOCAL-DEMO-SECRET";
     private String paymentBankId = "MBBank";
@@ -58,8 +57,6 @@ public class ShopSettings implements Serializable {
     public double getPointsEarnUnit() { return pointsEarnUnit; }
     public void setPointsEarnUnit(double pointsEarnUnit) { this.pointsEarnUnit = pointsEarnUnit; }
 
-    public boolean isPaymentTestMode() { return paymentTestMode; }
-    public void setPaymentTestMode(boolean paymentTestMode) { this.paymentTestMode = paymentTestMode; }
 
     public String getPaymentGatewayUrl() { return paymentGatewayUrl; }
     public void setPaymentGatewayUrl(String paymentGatewayUrl) {
