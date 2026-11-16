@@ -57,6 +57,9 @@ public class ProductDAO extends BaseDAO {
     }
 
     public Product getProductForAdmin(int id) throws SQLException, ClassNotFoundException {
+        // PR02c: . SELECT sản phẩm theo id cho Admin, gồm danh mục và thông tin có ảnh lưu.
+        // .. Trả Product nếu tìm thấy, null nếu không có; lỗi SQL đưa về nơi gọi.
+        // ... AdminProductsController.doGet() [PR02b] điền selectedProduct vào form [PR04]; hàm cũng dùng khi kiểm tra sản phẩm.
         String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?";
         try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);

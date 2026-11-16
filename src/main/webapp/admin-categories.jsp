@@ -102,13 +102,21 @@
                                 <td class="text-end fw-bold font-monospace"><c:out value="${category.productCount}" /></td>
                                 <td><c:choose><c:when test="${category.status eq 'ACTIVE'}"><span class="badge rounded-pill text-bg-success">Hoạt động</span></c:when><c:otherwise><span class="badge rounded-pill text-bg-secondary">Tạm ẩn</span></c:otherwise></c:choose></td>
                                 <td class="text-end text-nowrap">
+                                    <%-- CA02a: . Nút Sửa gửi editId của danh mục bằng GET; chưa cập nhật database.
+                                         ... AdminCategoriesController.doGet() [CA02b] đọc danh mục và điền form [CA04]. --%>
                                     <a class="btn btn-sm btn-outline-primary" href="${ctx}/admin/categories?editId=${category.id}" title="Sửa"><span class="material-symbols-outlined fs-6 align-middle">edit</span></a>
                                     <%-- BF11 - ẨN/HIỆN: POST action=toggle -> AdminCategoriesController.toggle() -> UPDATE status. --%>
+                                    <%-- CA18a: . Nút mắt gửi id và trạng thái đích: ACTIVE thành INACTIVE hoặc ngược lại.
+                                         .. Chỉ đổi trạng thái, không xóa danh mục và sản phẩm.
+                                         ... POST /admin/categories → doPost() [CA10] → toggle() [CA18] → DAO [CA19] → danh sách [CA02]. --%>
                                     <form method="post" action="${ctx}/admin/categories" class="d-inline">
                                         <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="${category.id}">
                                         <c:choose><c:when test="${category.status eq 'ACTIVE'}"><input type="hidden" name="status" value="INACTIVE"><button class="btn btn-sm btn-outline-secondary" title="Tạm ẩn"><span class="material-symbols-outlined fs-6 align-middle">visibility_off</span></button></c:when><c:otherwise><input type="hidden" name="status" value="ACTIVE"><button class="btn btn-sm btn-outline-success" title="Hiện lại"><span class="material-symbols-outlined fs-6 align-middle">visibility</span></button></c:otherwise></c:choose>
                                     </form>
                                     <%-- BF11 - XÓA DANH MỤC: xác nhận xóa danh mục và sản phẩm liên quan; backend giữ ràng buộc lịch sử đơn hàng. --%>
+                                    <%-- CA20a: . Nút Xóa danh mục mở xác nhận trước khi gửi action=delete và id.
+                                         .. Cancel giữ nguyên; OK gửi yêu cầu, server kiểm tra lịch sử đơn hàng trước khi xóa.
+                                         ... POST /admin/categories → doPost() [CA10] → delete() [CA20] → DAO [CA21] → danh sách [CA02]. --%>
                                     <form method="post" action="${ctx}/admin/categories" class="d-inline"
                                           onsubmit="return confirm('Xóa vĩnh viễn danh mục này và tất cả sản phẩm thuộc danh mục? Nếu có sản phẩm đã bán, hệ thống sẽ từ chối để giữ lịch sử đơn hàng.');">
                                         <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="${category.id}">

@@ -94,6 +94,9 @@ public class AdminProductsController extends HttpServlet {
                 request.setAttribute("selectedProduct", selected);
                 request.setAttribute("productDraftBasePrice", draft.basePrice);
             } else {
+                // PR02b: . Nhận editId từ nút Sửa [PR02a] khi không có bản nháp cần phục hồi.
+                // .. Tìm thấy thì đặt selectedProduct để form hiển thị dữ liệu cũ; chưa ghi database.
+                // ... ProductDAO.getProductForAdmin() [PR02c] → form [PR04] → nút Lưu [PR13] → kiểm tra [PR16] → lưu [PR25].
                 String editId = request.getParameter("editId");
                 if (editId != null && !editId.isBlank()) {
                 try {
