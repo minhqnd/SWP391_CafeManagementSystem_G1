@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Màn hình chốt két và bàn giao ca dành riêng cho Thu ngân (SRS 2.5 / UC60).
@@ -51,6 +52,11 @@ public class CashierShiftHandoverController extends HttpServlet {
         User cashier = getAuthorizedCashier(request, response);
         if (cashier == null) {
             return;
+        }
+
+        HttpSession session = request.getSession();
+        if (session.getAttribute("handoverCsrfToken") == null) {
+            session.setAttribute("handoverCsrfToken", UUID.randomUUID().toString());
         }
 
         String scheduleIdStr = request.getParameter("scheduleId");
@@ -189,6 +195,13 @@ public class CashierShiftHandoverController extends HttpServlet {
         }
 
         HttpSession session = request.getSession();
+        String expectedCsrf = (String) session.getAttribute("handoverCsrfToken");
+        String submittedCsrf = request.getParameter("csrfToken");
+        if (expectedCsrf == null || submittedCsrf == null || !expectedCsrf.equals(submittedCsrf)) {
+            session.setAttribute("handoverErrorMsg", "Phiên biểu mẫu đã hết hạn. Vui lòng tải lại trang và thao tác lại.");
+            response.sendRedirect(request.getContextPath() + "/cashier/handover?mode=close");
+            return;
+        }
         String action = request.getParameter("action");
         try {
             if (!"close-shift".equalsIgnoreCase(action)) {
@@ -261,6 +274,9 @@ public class CashierShiftHandoverController extends HttpServlet {
         }
         if (!"PRESENT".equalsIgnoreCase(schedule.getStatus())) {
             throw new IllegalStateException("Chỉ ca đang làm việc mới có thể chốt và bàn giao.");
+        }
+        if (schedule.getCheckInTime() == null) {
+            throw new IllegalStateException("Ca chưa có giờ vào hợp lệ nên chưa thể chốt và bàn giao.");
         }
     }
 

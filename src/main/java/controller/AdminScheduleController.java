@@ -23,9 +23,8 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 
 /**
  * AdminScheduleController - Màn hình Lịch phân ca nhân viên (Employee Schedule Screen)
@@ -46,7 +45,6 @@ public class AdminScheduleController extends HttpServlet {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final Set<String> VALID_STATUSES = Set.of("SCHEDULED", "PRESENT", "ABSENT", "COMPLETED");
     private static final int MAX_NOTE_LENGTH = 500;
 
     @Override
@@ -55,6 +53,11 @@ public class AdminScheduleController extends HttpServlet {
 
         if (!isAdmin(request, response)) {
             return;
+        }
+
+        HttpSession session = request.getSession();
+        if (session.getAttribute("scheduleCsrfToken") == null) {
+            session.setAttribute("scheduleCsrfToken", UUID.randomUUID().toString());
         }
 
         // View mode: calendar (mặc định) hoặc table
@@ -111,6 +114,12 @@ public class AdminScheduleController extends HttpServlet {
         Date toDate = "board".equalsIgnoreCase(view) ? Date.valueOf(selectedDate) : Date.valueOf(sunday);
         List<WorkSchedule> scheduleList = workScheduleDAO.getSchedules(fromDate, toDate, staffId, shiftFilter, statusFilter, positionFilter);
 
+        // Danh sách không áp dụng bộ lọc dùng riêng cho validation phía giao diện.
+        // Nhờ đó dropdown luôn ẩn đúng nhân viên đã có lịch ở ngày + ca đang chọn,
+        // kể cả khi bảng hiện tại đang lọc theo nhân viên, vị trí hoặc trạng thái.
+        List<WorkSchedule> occupiedWeekSchedules = workScheduleDAO.getSchedules(
+                Date.valueOf(monday), Date.valueOf(sunday), null, null, null, null);
+
         // Tính toán các chỉ số theo dõi trạng thái lịch làm việc
         int totalShifts = scheduleList.size();
         int liveActiveCount = 0;
@@ -151,6 +160,7 @@ public class AdminScheduleController extends HttpServlet {
         request.setAttribute("nextWeekDate", nextWeekDate.format(DATE_FORMATTER));
         request.setAttribute("weekDays", weekDays);
         request.setAttribute("scheduleList", scheduleList);
+        request.setAttribute("occupiedWeekSchedules", occupiedWeekSchedules);
         request.setAttribute("calendarSlotMap", calendarSlotMap);
         request.setAttribute("staffList", staffList);
         request.setAttribute("weekShifts", weekShifts);
@@ -169,7 +179,6 @@ public class AdminScheduleController extends HttpServlet {
         request.setAttribute("scheduledCount", scheduledCount);
 
         // Flash message
-        HttpSession session = request.getSession();
         if (session.getAttribute("scheduleSuccessMsg") != null) {
             request.setAttribute("scheduleSuccessMsg", session.getAttribute("scheduleSuccessMsg"));
             session.removeAttribute("scheduleSuccessMsg");
@@ -197,6 +206,13 @@ public class AdminScheduleController extends HttpServlet {
         if (returnView == null || returnView.trim().isEmpty()) returnView = "calendar";
 
         HttpSession session = request.getSession();
+        String expectedCsrf = (String) session.getAttribute("scheduleCsrfToken");
+        String submittedCsrf = request.getParameter("csrfToken");
+        if (expectedCsrf == null || submittedCsrf == null || !expectedCsrf.equals(submittedCsrf)) {
+            session.setAttribute("scheduleErrorMsg", "Phiên biểu mẫu đã hết hạn. Vui lòng tải lại trang và thao tác lại.");
+            redirectToPage(request, response, returnDate, returnView);
+            return;
+        }
 
         if ("add".equalsIgnoreCase(action)) {
             try {
@@ -233,16 +249,20 @@ public class AdminScheduleController extends HttpServlet {
         } else if ("update".equalsIgnoreCase(action)) {
             try {
                 int id = parsePositiveId(request.getParameter("id"), "Ca làm việc không hợp lệ.");
-                if (workScheduleDAO.getScheduleById(id) == null) {
+                WorkSchedule existing = workScheduleDAO.getScheduleById(id);
+                if (existing == null) {
                     throw new IllegalArgumentException("Ca làm việc không tồn tại hoặc đã bị xóa.");
+                }
+                if (!"SCHEDULED".equalsIgnoreCase(existing.getStatus())) {
+                    throw new IllegalArgumentException(
+                            "Chỉ được đổi nhân viên/ngày/ca khi lịch còn ở trạng thái Đã xếp lịch. "
+                                    + "Hãy dùng màn Chấm công để cập nhật trạng thái làm việc.");
                 }
 
                 int userId = parsePositiveId(request.getParameter("userId"), "Vui lòng chọn nhân viên.");
                 requireActiveStaff(userId);
                 Date workDate = parseWorkDate(request.getParameter("workDate"));
                 WorkShift shift = requireShiftOfWeek(request.getParameter("shiftId"), workDate);
-                String status = requireAllowedValue(request.getParameter("status"), VALID_STATUSES,
-                        "Trạng thái ca làm việc không hợp lệ.");
                 String note = validateNote(request.getParameter("note"));
 
                 if (workScheduleDAO.isShiftExists(userId, workDate, shift.getId(), id)) {
@@ -254,7 +274,8 @@ public class AdminScheduleController extends HttpServlet {
                 ws.setUserId(userId);
                 ws.setWorkDate(workDate);
                 ws.setShiftId(shift.getId());
-                ws.setStatus(status);
+                // Phân lịch không được tự tạo trạng thái PRESENT/COMPLETED thiếu giờ vào/ra.
+                ws.setStatus(existing.getStatus());
                 ws.setNote(note);
 
                 boolean ok = workScheduleDAO.updateSchedule(ws);
@@ -269,31 +290,31 @@ public class AdminScheduleController extends HttpServlet {
                 e.printStackTrace();
                 session.setAttribute("scheduleErrorMsg", "Không thể cập nhật do lỗi hệ thống. Vui lòng thử lại.");
             }
-        } else if ("quick_status".equalsIgnoreCase(action)) {
-            try {
-                int id = Integer.parseInt(request.getParameter("id"));
-                String status = request.getParameter("status");
-                boolean ok = workScheduleDAO.updateScheduleStatus(id, status);
-                if (ok) {
-                    session.setAttribute("scheduleSuccessMsg", "Đã cập nhật trạng thái ca làm việc!");
-                } else {
-                    session.setAttribute("scheduleErrorMsg", "Không thể cập nhật trạng thái ca!");
-                }
-            } catch (Exception e) {
-                session.setAttribute("scheduleErrorMsg", "Lỗi: " + e.getMessage());
-            }
         } else if ("delete".equalsIgnoreCase(action)) {
             try {
-                int id = Integer.parseInt(request.getParameter("id"));
+                int id = parsePositiveId(request.getParameter("id"), "Ca làm việc không hợp lệ.");
+                WorkSchedule existing = workScheduleDAO.getScheduleById(id);
+                if (existing == null) {
+                    throw new IllegalArgumentException("Ca làm việc không tồn tại hoặc đã bị xóa.");
+                }
+                if (!"SCHEDULED".equalsIgnoreCase(existing.getStatus())
+                        || existing.getCheckInTime() != null || existing.getCheckOutTime() != null) {
+                    throw new IllegalArgumentException(
+                            "Chỉ được hủy lịch chưa bắt đầu. Lịch đã chấm công phải được lưu để đối soát.");
+                }
                 boolean ok = workScheduleDAO.deleteSchedule(id);
                 if (ok) {
                     session.setAttribute("scheduleSuccessMsg", "Đã hủy ca làm việc thành công!");
                 } else {
                     session.setAttribute("scheduleErrorMsg", "Không thể xóa ca làm việc.");
                 }
+            } catch (IllegalArgumentException e) {
+                session.setAttribute("scheduleErrorMsg", e.getMessage());
             } catch (Exception e) {
-                session.setAttribute("scheduleErrorMsg", "Lỗi xóa ca: " + e.getMessage());
+                session.setAttribute("scheduleErrorMsg", "Không thể xóa ca làm việc do lỗi hệ thống.");
             }
+        } else {
+            session.setAttribute("scheduleErrorMsg", "Thao tác phân lịch không hợp lệ.");
         }
 
         redirectToPage(request, response, returnDate, returnView);
@@ -344,17 +365,6 @@ public class AdminScheduleController extends HttpServlet {
         }
     }
 
-    private String requireAllowedValue(String rawValue, Set<String> allowedValues, String errorMessage) {
-        if (rawValue == null || rawValue.trim().isEmpty()) {
-            throw new IllegalArgumentException(errorMessage);
-        }
-        String normalized = rawValue.trim().toUpperCase(Locale.ROOT);
-        if (!allowedValues.contains(normalized)) {
-            throw new IllegalArgumentException(errorMessage);
-        }
-        return normalized;
-    }
-
     private String validateNote(String rawValue) {
         String note = rawValue == null ? "" : rawValue.trim();
         if (note.length() > MAX_NOTE_LENGTH) {
@@ -365,6 +375,16 @@ public class AdminScheduleController extends HttpServlet {
 
     private void redirectToPage(HttpServletRequest request, HttpServletResponse response,
                                 String returnDate, String returnView) throws IOException {
+        if (!"calendar".equalsIgnoreCase(returnView)
+                && !"table".equalsIgnoreCase(returnView)
+                && !"board".equalsIgnoreCase(returnView)) {
+            returnView = "calendar";
+        }
+        try {
+            returnDate = LocalDate.parse(returnDate, DATE_FORMATTER).format(DATE_FORMATTER);
+        } catch (Exception e) {
+            returnDate = LocalDate.now().format(DATE_FORMATTER);
+        }
         StringBuilder redirectUrl = new StringBuilder(request.getContextPath() + "/admin/schedules?");
         if (returnView != null && !returnView.isEmpty()) {
             redirectUrl.append("view=").append(returnView).append("&");
@@ -386,7 +406,7 @@ public class AdminScheduleController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/?tab=login");
             return false;
         }
-        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+        if (!"ADMIN".equalsIgnoreCase(user.getRole()) || !"ACTIVE".equalsIgnoreCase(user.getStatus())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ Admin có quyền truy cập trang này.");
             return false;
         }

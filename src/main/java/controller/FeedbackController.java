@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * FeedbackController - Trung tâm hỗ trợ & Phản ánh khách hàng (Customer Care &
@@ -32,6 +33,7 @@ public class FeedbackController extends HttpServlet {
      * 4. Phần xử lý/đóng phiếu tiếp tục tại AdminFeedbackController.
      */
     private final FeedbackDAO feedbackDAO = new FeedbackDAO();
+    private static final int MAX_CONTENT_LENGTH = 2000;
 
     @Override
     // lấy lịch sử phản hồi, đơn hàng
@@ -42,13 +44,17 @@ public class FeedbackController extends HttpServlet {
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
         List<Feedback> feedbacks;
-        if (user != null) {
+        if (isActiveCustomer(user)) {
             // BF09.1: Khách đã đăng nhập chỉ thấy phiếu và đơn hàng thuộc chính tài khoản của mình.
             feedbacks = feedbackDAO.getFeedbacksByCustomerId(user.getId());
             List<String[]> userOrders = feedbackDAO.getRecentOrdersForCustomer(user.getId());
             request.setAttribute("userOrders", userOrders);
+            if (session.getAttribute("feedbackSubmitCsrfToken") == null) {
+                session.setAttribute("feedbackSubmitCsrfToken", UUID.randomUUID().toString());
+            }
         } else {
-            feedbacks = feedbackDAO.getAllFeedbacks(10);
+            // Lịch sử phiếu là dữ liệu riêng tư; khách chưa đăng nhập/nhân viên không được xem phiếu của người khác.
+            feedbacks = List.of();
         }
 
         request.setAttribute("feedbacks", feedbacks);
@@ -69,10 +75,17 @@ public class FeedbackController extends HttpServlet {
         HttpSession session = request.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
-        if (user == null) {
+        if (!isActiveCustomer(user)) {
             // BF09.2: Tạo feedback làm phát sinh dữ liệu khách hàng nên bắt buộc có phiên đăng nhập.
             sendError(request, response, ajax, HttpServletResponse.SC_UNAUTHORIZED,
                     "Vui lòng đăng nhập trước khi gửi phản hồi!");
+            return;
+        }
+        String expectedCsrf = (String) session.getAttribute("feedbackSubmitCsrfToken");
+        String submittedCsrf = request.getParameter("csrfToken");
+        if (expectedCsrf == null || submittedCsrf == null || !expectedCsrf.equals(submittedCsrf)) {
+            sendError(request, response, ajax, HttpServletResponse.SC_FORBIDDEN,
+                    "Phiên biểu mẫu đã hết hạn. Vui lòng tải lại trang và thao tác lại.");
             return;
         }
         // lấy dữ liệu form, kiểm tra nội dung, loại phản hồi, số sao và xác minh đơn
@@ -95,22 +108,32 @@ public class FeedbackController extends HttpServlet {
                 return;
             }
         }
+        content = content.trim();
+        if (content.length() > MAX_CONTENT_LENGTH) {
+            sendError(request, response, ajax, HttpServletResponse.SC_BAD_REQUEST,
+                    "Nội dung phản hồi không được vượt quá 2.000 ký tự.");
+            return;
+        }
 
         // Xác định loại vấn đề theo schema database: issue_type ENUM('RATING',
         // 'COMPLAINT')
-        String issueType = "RATING".equalsIgnoreCase(issueTypeParam) ? "RATING" : "COMPLAINT";
+        if (!"RATING".equalsIgnoreCase(issueTypeParam)
+                && !"COMPLAINT".equalsIgnoreCase(issueTypeParam)) {
+            sendError(request, response, ajax, HttpServletResponse.SC_BAD_REQUEST,
+                    "Loại phản hồi không hợp lệ.");
+            return;
+        }
+        String issueType = issueTypeParam.trim().toUpperCase(java.util.Locale.ROOT);
 
-        int rating = 5;
+        int rating = 0;
         if ("RATING".equals(issueType)) {
             try {
-                if (ratingStr != null && !ratingStr.trim().isEmpty()) {
-                    rating = Integer.parseInt(ratingStr.trim());
-                    if (rating < 1)
-                        rating = 1;
-                    if (rating > 5)
-                        rating = 5;
-                }
-            } catch (NumberFormatException ignored) {
+                rating = Integer.parseInt(ratingStr == null ? "" : ratingStr.trim());
+                if (rating < 1 || rating > 5) throw new NumberFormatException();
+            } catch (NumberFormatException e) {
+                sendError(request, response, ajax, HttpServletResponse.SC_BAD_REQUEST,
+                        "Số sao đánh giá phải từ 1 đến 5.");
+                return;
             }
         } else {
             rating = 0; // Khiếu nại (COMPLAINT) không có rating (lưu NULL theo DB chk_review_type)
@@ -136,7 +159,7 @@ public class FeedbackController extends HttpServlet {
         fb.setOrderCode(orderCode);
         fb.setIssueType(issueType);
         fb.setRating(rating);
-        fb.setContent(content.trim());
+        fb.setContent(content);
         fb.setStatus("PENDING");
         // BF09.4: Phiếu mới luôn đi vào hàng chờ PENDING để Admin tiếp nhận và xử lý.
         boolean saved = feedbackDAO.createFeedback(fb);
@@ -175,5 +198,11 @@ public class FeedbackController extends HttpServlet {
 
         request.setAttribute("errorMessage", message);
         doGet(request, response);
+    }
+
+    private boolean isActiveCustomer(User user) {
+        return user != null
+                && "CUSTOMER".equalsIgnoreCase(user.getRole())
+                && "ACTIVE".equalsIgnoreCase(user.getStatus());
     }
 }

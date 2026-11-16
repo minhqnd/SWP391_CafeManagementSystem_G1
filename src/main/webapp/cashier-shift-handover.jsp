@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <fmt:setLocale value="vi_VN" />
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <!DOCTYPE html>
@@ -238,6 +239,7 @@
                                 </div>
 
                                 <form method="post" action="${ctx}/cashier/handover" id="closeShiftForm">
+                                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.handoverCsrfToken)}">
                                     <input type="hidden" name="action" value="close-shift">
                                     <input type="hidden" name="scheduleId" value="${activeShift.id}">
 

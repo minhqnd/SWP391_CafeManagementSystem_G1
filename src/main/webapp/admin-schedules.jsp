@@ -125,6 +125,7 @@
                                                     <form method="post" action="${ctx}/admin/schedules" class="employee-card-delete"
                                                           onsubmit="event.stopPropagation(); return confirm('Bạn có chắc muốn hủy ca làm này?');">
                                                         <input type="hidden" name="action" value="delete">
+                                                        <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.scheduleCsrfToken)}">
                                                         <input type="hidden" name="id" value="${item.id}">
                                                         <input type="hidden" name="returnDate" value="${selectedDate}">
                                                         <input type="hidden" name="returnView" value="calendar">
@@ -156,6 +157,7 @@
             <div class="modal-content">
                 <form method="post" action="${ctx}/admin/schedules" id="addScheduleForm" novalidate>
                     <input type="hidden" name="action" value="add">
+                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.scheduleCsrfToken)}">
                     <input type="hidden" name="returnDate" value="${selectedDate}">
                     <input type="hidden" name="returnView" value="calendar">
 
@@ -217,6 +219,7 @@
             <div class="modal-content">
                 <form method="post" action="${ctx}/admin/schedules" id="editScheduleForm" novalidate>
                     <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.scheduleCsrfToken)}">
                     <input type="hidden" name="id" id="editId">
                     <input type="hidden" name="returnDate" value="${selectedDate}">
                     <input type="hidden" name="returnView" value="calendar">
@@ -232,6 +235,7 @@
                         <div class="mb-3">
                             <label for="editUserId" class="form-label">Nhân viên <span class="text-danger">*</span></label>
                             <select class="form-select aura-input" id="editUserId" name="userId" required aria-describedby="editUserError">
+                                <option value="">Chọn nhân viên</option>
                                 <c:forEach items="${staffList}" var="staff">
                                     <option value="${staff.id}" data-position="${staff.position}"><c:out value="${staff.fullName}" /> — ${staff.position} (${staff.phone})</option>
                                 </c:forEach>
@@ -256,13 +260,13 @@
                         </div>
                         <div class="mb-3">
                             <label for="editStatus" class="form-label">Trạng thái <span class="text-danger">*</span></label>
-                            <select class="form-select aura-input" id="editStatus" name="status" required aria-describedby="editStatusError">
+                            <select class="form-select aura-input" id="editStatus" disabled aria-describedby="editStatusError">
                                 <option value="SCHEDULED">Đã xếp lịch</option>
                                 <option value="PRESENT">Có mặt</option>
                                 <option value="ABSENT">Vắng mặt</option>
                                 <option value="COMPLETED">Hoàn thành</option>
                             </select>
-                            <div class="invalid-feedback" id="editStatusError">Vui lòng chọn trạng thái ca làm việc.</div>
+                            <div class="form-text" id="editStatusError">Trạng thái và giờ vào/ra được cập nhật tại màn Chấm công.</div>
                         </div>
                         <div>
                             <div class="field-label-row">
@@ -289,6 +293,64 @@
         const editScheduleModal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
         const addScheduleForm = document.getElementById('addScheduleForm');
         const editScheduleForm = document.getElementById('editScheduleForm');
+
+        // Dữ liệu lịch đầy đủ của tuần, không phụ thuộc bộ lọc đang hiển thị.
+        // Backend vẫn kiểm tra trùng lần nữa khi POST để chống request thủ công.
+        const occupiedSchedules = [
+            <c:forEach items="${occupiedWeekSchedules}" var="item">
+            { id: ${item.id}, userId: ${item.userId}, workDate: '${item.workDateFormatted}', shiftId: ${item.shiftId} },
+            </c:forEach>
+        ];
+
+        function filterAvailableEmployees(select, workDate, shiftId, excludedScheduleId) {
+            const normalizedShiftId = Number(shiftId || 0);
+            const normalizedExcludedId = Number(excludedScheduleId || 0);
+            let availableCount = 0;
+
+            Array.from(select.options).forEach((option, index) => {
+                if (index === 0 || !option.value) return;
+
+                const userId = Number(option.value);
+                const alreadyScheduled = occupiedSchedules.some((schedule) =>
+                    schedule.userId === userId
+                    && schedule.workDate === workDate
+                    && schedule.shiftId === normalizedShiftId
+                    && schedule.id !== normalizedExcludedId
+                );
+
+                // hidden loại nhân viên khỏi dropdown; disabled là lớp bảo vệ bổ sung.
+                option.hidden = alreadyScheduled;
+                option.disabled = alreadyScheduled;
+                if (!alreadyScheduled) availableCount++;
+            });
+
+            const placeholder = select.options[0];
+            placeholder.textContent = availableCount > 0
+                ? 'Chọn nhân viên'
+                : 'Không còn nhân viên trống trong ca này';
+
+            const selectedOption = select.options[select.selectedIndex];
+            if (selectedOption && selectedOption.disabled) select.value = '';
+            select.setCustomValidity('');
+        }
+
+        function refreshAddEmployeeOptions() {
+            filterAvailableEmployees(
+                document.getElementById('addUserId'),
+                document.getElementById('addWorkDate').value,
+                document.getElementById('addShiftId').value,
+                0
+            );
+        }
+
+        function refreshEditEmployeeOptions() {
+            filterAvailableEmployees(
+                document.getElementById('editUserId'),
+                document.getElementById('editWorkDate').value,
+                document.getElementById('editShiftId').value,
+                document.getElementById('editId').value
+            );
+        }
 
         function resetValidation(form) {
             form.classList.remove('was-validated');
@@ -328,10 +390,14 @@
                 document.getElementById('addWorkDate').value = button.dataset.date || '${selectedDate}';
                 const addShiftSelect = document.getElementById('addShiftId');
                 if (button.dataset.shiftId) addShiftSelect.value = button.dataset.shiftId;
+                refreshAddEmployeeOptions();
                 updateNoteCounter(document.getElementById('addNote'), document.getElementById('addNoteCount'));
                 addScheduleModal.show();
             });
         });
+
+        document.getElementById('addWorkDate').addEventListener('change', refreshAddEmployeeOptions);
+        document.getElementById('addShiftId').addEventListener('change', refreshAddEmployeeOptions);
 
         function openEditSchedule(card) {
             document.getElementById('editId').value = card.dataset.id;
@@ -342,9 +408,15 @@
             document.getElementById('editNote').value = card.dataset.note || '';
 
             resetValidation(editScheduleForm);
+            refreshEditEmployeeOptions();
+            // Lịch đang sửa được loại khỏi phép kiểm tra nên nhân viên hiện tại vẫn được chọn.
+            document.getElementById('editUserId').value = card.dataset.userId;
             updateNoteCounter(document.getElementById('editNote'), document.getElementById('editNoteCount'));
             editScheduleModal.show();
         }
+
+        document.getElementById('editWorkDate').addEventListener('change', refreshEditEmployeeOptions);
+        document.getElementById('editShiftId').addEventListener('change', refreshEditEmployeeOptions);
 
         document.querySelectorAll('.edit-schedule-trigger').forEach((card) => {
             card.addEventListener('click', (event) => {

@@ -38,6 +38,10 @@ public class ShiftHandoverDAO extends BaseDAO {
      */
     public int submitHandover(int scheduleId, int cashierId, BigDecimal openingCash, BigDecimal cashSales,
                               BigDecimal actualCash, String note) throws SQLException, ClassNotFoundException {
+        if (scheduleId <= 0 || cashierId <= 0 || openingCash == null || cashSales == null || actualCash == null
+                || openingCash.signum() < 0 || cashSales.signum() < 0 || actualCash.signum() < 0) {
+            throw new IllegalArgumentException("Dữ liệu bàn giao ca không hợp lệ.");
+        }
         BigDecimal expected = openingCash.add(cashSales);
         BigDecimal difference = actualCash.subtract(expected);
 

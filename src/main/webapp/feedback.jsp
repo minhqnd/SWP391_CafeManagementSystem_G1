@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ taglib prefix="c" uri="jakarta.tags.core" %>
         <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+            <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
             <!DOCTYPE html>
             <html lang="vi">
 
@@ -424,6 +425,7 @@
                                     method="POST">
                                     <!-- Trường DB: issue_type ENUM('RATING', 'COMPLAINT') -->
                                     <input type="hidden" name="issueType" id="selectedIssueType" value="COMPLAINT">
+                                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.feedbackSubmitCsrfToken)}">
                                     <!-- Trường DB: rating INT NULL (chỉ có khi RATING) -->
                                     <input type="hidden" name="rating" id="selectedRating" value="">
 
@@ -499,7 +501,7 @@
                                         <label class="form-label-custom" for="contentInput">
                                             Nội dung chi tiết (content)
                                         </label>
-                                        <textarea class="form-control-custom" id="contentInput" name="content" rows="5"
+                                        <textarea class="form-control-custom" id="contentInput" name="content" rows="5" maxlength="2000"
                                             placeholder="Mô tả cụ thể sự cố bạn gặp phải với đơn hàng..."
                                             required></textarea>
                                     </div>
