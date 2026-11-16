@@ -11,21 +11,47 @@ import java.util.Properties;
 
 public class EmailUtil {
 
-    // TODO: BẠN CẦN THAY ĐỔI EMAIL VÀ MẬT KHẨU ỨNG DỤNG CỦA BẠN VÀO ĐÂY
-    private static final String SENDER_EMAIL = "nguyen.nguyenquoc2004@gmail.com"; 
-    private static final String SENDER_PASSWORD = "ozhupnrjrrlvlkii"; // Lấy mật khẩu ứng dụng gồm 16 ký tự từ tài khoản Google (đã xóa dấu cách)
+    private static final Properties SMTP_CONFIG = loadSmtpConfig();
+    private static final String SENDER_EMAIL = smtpValue("AURA_SMTP_EMAIL", "smtp.email");
+    private static final String SMTP_PASSWORD = smtpValue("AURA_SMTP_PASSWORD", "smtp.password");
+
+    // . Đọc cấu hình SMTP riêng trên máy; biến môi trường được ưu tiên, không đưa mật khẩu vào comment.
+    private static Properties loadSmtpConfig() {
+        Properties config = new Properties();
+        String configuredPath = System.getenv("AURA_SMTP_CONFIG");
+        java.nio.file.Path path = configuredPath == null || configuredPath.isBlank()
+                ? java.nio.file.Path.of(System.getProperty("user.home"), ".auracafe", "smtp.properties")
+                : java.nio.file.Path.of(configuredPath);
+        if (java.nio.file.Files.isRegularFile(path)) {
+            try (java.io.Reader reader = java.nio.file.Files.newBufferedReader(path, java.nio.charset.StandardCharsets.UTF_8)) {
+                config.load(reader);
+            } catch (java.io.IOException e) {
+                System.err.println("Unable to read private SMTP configuration: " + e.getClass().getSimpleName());
+            }
+        }
+        return config;
+    }
+
+    private static String smtpValue(String environmentName, String propertyName) {
+        String value = System.getenv(environmentName);
+        return value == null || value.isBlank() ? SMTP_CONFIG.getProperty(propertyName) : value;
+    }
 
     public static boolean sendNewPassword(String recipientEmail, String newPassword) {
+        if (SENDER_EMAIL == null || SENDER_EMAIL.isBlank() || SMTP_PASSWORD == null || SMTP_PASSWORD.isBlank()) return false;
         Properties properties = new Properties();
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.smtp.starttls.enable", "true");
         properties.put("mail.smtp.host", "smtp.gmail.com");
         properties.put("mail.smtp.port", "587");
+        properties.put("mail.smtp.connectiontimeout", "10000");
+        properties.put("mail.smtp.timeout", "10000");
+        properties.put("mail.smtp.writetimeout", "10000");
 
         Session session = Session.getInstance(properties, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(SENDER_EMAIL, SENDER_PASSWORD);
+                return new PasswordAuthentication(SENDER_EMAIL, SMTP_PASSWORD);
             }
         });
 
@@ -55,24 +81,24 @@ public class EmailUtil {
         }
     }
 
+    // OT06e: . Nhận email và mã từ service rồi gửi thư OTP qua SMTP Gmail bằng Jakarta Mail.
+    // .. Trả true khi gửi được, false khi thiếu cấu hình hoặc gửi lỗi.
+    // ... Kết quả về PasswordRecoveryService.start() [OT06].
     public static boolean sendOTP(String recipientEmail, String otp) {
-        // BF10: helper gửi email qua SMTP, trả true/false cho ForgotPassword/ResendOtp; không xác minh OTP.
-        System.out.println("\n=========================================");
-        System.out.println("YÊU CẦU GỬI OTP KHÔI PHỤC MẬT KHẨU");
-        System.out.println("Gửi đến Email: " + recipientEmail);
-        System.out.println("MÃ OTP CỦA BẠN LÀ: " + otp);
-        System.out.println("=========================================\n");
-
+        if (SENDER_EMAIL == null || SENDER_EMAIL.isBlank() || SMTP_PASSWORD == null || SMTP_PASSWORD.isBlank()) return false;
         Properties properties = new Properties();
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.smtp.starttls.enable", "true");
         properties.put("mail.smtp.host", "smtp.gmail.com");
         properties.put("mail.smtp.port", "587");
+        properties.put("mail.smtp.connectiontimeout", "10000");
+        properties.put("mail.smtp.timeout", "10000");
+        properties.put("mail.smtp.writetimeout", "10000");
 
         Session session = Session.getInstance(properties, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(SENDER_EMAIL, SENDER_PASSWORD);
+                return new PasswordAuthentication(SENDER_EMAIL, SMTP_PASSWORD);
             }
         });
 

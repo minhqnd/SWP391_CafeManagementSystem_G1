@@ -16,6 +16,9 @@ public class CategoryDAO extends BaseDAO {
 
     /** Returns every category, including inactive ones, with the number of linked products. */
     public List<Category> getAllCategoriesWithCount() {
+        // CA03: . lấy các danh mục cùng số món thuộc từng danh mục.
+        // .. Danh sách gồm cả danh mục đang hiện và đang ẩn để Admin quản lý.
+        // ... List<Category> về Controller [CA02]; trang sản phẩm cũng dùng để chọn danh mục.
         // BF11: danh sách quản trị gồm mọi trạng thái và số món; khác danh sách công khai chỉ ACTIVE.
         List<Category> list = new ArrayList<>();
         String sql = "SELECT c.id, c.name, c.status, c.image_url, "
@@ -58,6 +61,22 @@ public class CategoryDAO extends BaseDAO {
         }
     }
 
+    /** Returns the number of products in a category that are referenced by order history. */
+    public int getOrderedProductCountByCategory(int categoryId) {
+        String sql = "SELECT COUNT(DISTINCT p.id) "
+                + "FROM products p JOIN order_items oi ON oi.product_id = p.id "
+                + "WHERE p.category_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, categoryId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not check product order history", e);
+        }
+    }
+
     public boolean categoryNameExists(String name, int exceptId) {
         String sql = "SELECT 1 FROM categories WHERE LOWER(name) = LOWER(?) AND id <> ? LIMIT 1";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -78,6 +97,10 @@ public class CategoryDAO extends BaseDAO {
     public boolean saveCategory(Category category, byte[] imageData, String contentType,
                                 String fileName, boolean removeImage)
             throws SQLException, ClassNotFoundException {
+        // CA16: [SLBF11] Save category
+        // . lưu thông tin danh mục và ảnh của danh mục cùng nhau.
+        // .. Lưu đủ thì xác nhận; có lỗi thì hoàn tác để tránh chỉ lưu được một phần.
+        // ... Trả boolean về AdminCategoriesController.save() [CA11].
         // BF11: lưu categories và category_images cùng transaction; lỗi ảnh thì hoàn tác cả danh mục.
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
@@ -167,6 +190,9 @@ public class CategoryDAO extends BaseDAO {
     }
 
     public boolean updateCategoryStatus(int id, String status) throws SQLException, ClassNotFoundException {
+        // CA19: . cập nhật trạng thái của danh mục được chọn.
+        // .. trả kết quả cập nhật được hay không.
+        // ... Kết quả về AdminCategoriesController.toggle() [CA18].
         // BF11: chỉ UPDATE status, không xóa danh mục/sản phẩm.
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement("UPDATE categories SET status = ? WHERE id = ?")) {
@@ -176,14 +202,42 @@ public class CategoryDAO extends BaseDAO {
         }
     }
 
-    public boolean deleteCategory(int id) throws SQLException, ClassNotFoundException {
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM categories WHERE id = ?")) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
+    /**
+     * Deletes a category together with its products in one transaction.
+     * Product rows that are referenced by order_items are protected by the
+     * foreign key so the transaction fails instead of destroying order history.
+     */
+    // CA21: . Xóa sản phẩm rồi danh mục trong một transaction.
+    // .. Thành công commit; lỗi SQL rollback; khóa ngoại bảo vệ sản phẩm có order_items.
+    // ... Trả kết quả về AdminCategoriesController.delete() [CA20].
+    public boolean deleteCategoryAndProducts(int id) throws SQLException, ClassNotFoundException {
+        if (id <= 0) throw new IllegalArgumentException("Category id must be positive.");
+        try (Connection conn = getConnection()) {
+            boolean previousAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try (PreparedStatement deleteProducts = conn.prepareStatement("DELETE FROM products WHERE category_id = ?");
+                 PreparedStatement deleteCategory = conn.prepareStatement("DELETE FROM categories WHERE id = ?")) {
+                deleteProducts.setInt(1, id);
+                deleteProducts.executeUpdate();
+
+                deleteCategory.setInt(1, id);
+                boolean deleted = deleteCategory.executeUpdate() > 0;
+                if (deleted) conn.commit();
+                else conn.rollback();
+                return deleted;
+            } catch (SQLException e) {
+                try { conn.rollback(); } catch (SQLException ignored) { }
+                throw e;
+            } finally {
+                try { conn.setAutoCommit(previousAutoCommit); } catch (SQLException ignored) { }
+            }
         }
     }
 
     public List<Category> getAllActiveCategoriesWithCount() {
+        // MN03: . lấy những danh mục đang được phép hiển thị cho khách.
+        // .. Mỗi danh mục đi kèm số món để giao diện hiển thị.
+        // ... Danh sách về MenuController [MN02]; trang chủ cũng gọi hàm này.
         // BF10/BF11: danh mục công khai lấy ACTIVE; dùng ở trang chủ và menu.
         List<Category> list = new ArrayList<>();
         String sql = "SELECT c.id, c.name, c.status, c.image_url, " +
@@ -228,6 +282,9 @@ public class CategoryDAO extends BaseDAO {
     }
 
     public CategoryImage getCategoryImage(int categoryId) {
+        // IM02: . đọc nội dung và loại ảnh của danh mục trong cơ sở dữ liệu.
+        // .. trả ảnh nếu có, hoặc kết quả rỗng nếu chưa lưu ảnh.
+        // ... CategoryImage về CategoryImageController [IM01].
         String sql = "SELECT image_data, content_type FROM category_images WHERE category_id = ?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, categoryId);

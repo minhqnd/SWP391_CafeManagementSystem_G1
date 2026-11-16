@@ -41,9 +41,7 @@ public class AdminEmployeesController extends HttpServlet {
             "Phiên làm việc đã được làm mới (VD vừa đăng nhập lại). Kiểm tra lại thông tin, nhập lại mật khẩu và bấm lưu lần nữa.";
 
     // Giống quy tắc SĐT của màn đăng ký; SĐT là tên đăng nhập
-    private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9]{9,11}$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    private static final int MIN_PASSWORD_LENGTH = 6;
     private static final int MAX_ADDRESS_LENGTH = 500;
 
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
@@ -166,9 +164,8 @@ public class AdminEmployeesController extends HttpServlet {
 
         String phone = form.get("phone");
         if (phone.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập số điện thoại.");
-        if (!PHONE_PATTERN.matcher(phone).matches()) {
-            throw new IllegalArgumentException("Số điện thoại không hợp lệ (9-11 chữ số, VD: 0912345678).");
-        }
+        String phoneError = utils.AccountValidation.phoneError(phone);
+        if (phoneError != null) throw new IllegalArgumentException(phoneError);
         if (employeeDAO.phoneExists(phone, id)) {
             throw new IllegalArgumentException("Số điện thoại đã được dùng cho tài khoản khác.");
         }
@@ -217,18 +214,16 @@ public class AdminEmployeesController extends HttpServlet {
 
     /**
      * Mật khẩu bắt buộc khi thêm mới; khi sửa bỏ trống = giữ nguyên (trả về null).
-     * Cắt khoảng trắng 2 đầu giống UserDAO.login() để tài khoản đăng nhập được bằng đúng mật khẩu vừa đặt.
+     * Giữ nguyên ký tự mật khẩu; áp dụng cùng quy tắc với đăng ký và đặt lại mật khẩu.
      */
     private String validatePassword(String rawPassword, boolean isNew) {
-        String password = rawPassword == null ? "" : rawPassword.trim();
+        String password = rawPassword == null ? "" : rawPassword;
         if (password.isEmpty()) {
             if (isNew) throw new IllegalArgumentException("Vui lòng nhập mật khẩu cho tài khoản mới.");
             return null;
         }
-        if (password.length() < MIN_PASSWORD_LENGTH) {
-            throw new IllegalArgumentException("Mật khẩu phải từ " + MIN_PASSWORD_LENGTH + " ký tự trở lên.");
-        }
-        if (password.length() > 255) throw new IllegalArgumentException("Mật khẩu tối đa 255 ký tự.");
+        String error = utils.AccountValidation.passwordError(password, password);
+        if (error != null) throw new IllegalArgumentException(error);
         return password;
     }
 

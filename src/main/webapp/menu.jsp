@@ -399,6 +399,9 @@
 
                         <!-- Menu Search Box -->
                         <div class="menu-search-container flex-grow-1 flex-md-grow-0">
+                            <%-- MN06: . hiển thị menu và cho khách tìm món theo danh mục hoặc từ khóa.
+                                 .. Bấm tìm thì gửi điều kiện lọc; chọn đồ uống thì có thể mở hộp chọn size và topping.
+                                 ... GET /menu → MenuController.doGet() [MN02]; hộp chọn món bắt đầu tại [MN08]. --%>
                             <form action="${pageContext.request.contextPath}/menu" method="GET"
                                 class="position-relative w-100">
                                 <c:if test="${not empty currentCategory}">
@@ -464,6 +467,10 @@
                     <c:choose>
                         <c:when test="${not empty products}">
                             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="productsGrid">
+                                <%-- MN07: [SLBF11] Display product on the menu
+                                     . Lặp products được MenuController nạp và hiển thị thẻ từng món.
+                                     .. Chỉ sản phẩm đang bán trong danh mục ACTIVE được truy vấn; không kiểm tra đã có công thức.
+                                     ... Dữ liệu từ filterProducts() [MN04] → controller [MN05] → giao diện. --%>
                                 <c:forEach var="p" items="${products}">
                                     <div class="col">
                                         <c:set var="product" value="${p}" scope="request" />

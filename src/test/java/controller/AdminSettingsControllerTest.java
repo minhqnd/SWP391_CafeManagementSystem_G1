@@ -36,7 +36,10 @@ class AdminSettingsControllerTest {
         BaristaControllerTest.Exchange x = new BaristaControllerTest.Exchange();
         User admin = new User();
         admin.setRole("ADMIN");
+        admin.setStatus("ACTIVE");
         x.sessionValues.put("user", admin);
+        x.sessionValues.put("settingsCsrfToken", "settings-test-token");
+        x.params.put("csrfToken", "settings-test-token");
         dao.values.forEach((key, value) -> x.params.put("setting_" + key, value));
         return x;
     }
@@ -89,6 +92,17 @@ class AdminSettingsControllerTest {
         assertEquals("New bank", ((Map<?, ?>) failed.attributes.get("form")).get("payment_bank_name"));
         assertEquals("MBBank", dao.values.get("payment_bank_name"));
         assertNotNull(failed.attributes.get("settingsError"));
+    }
+
+    @Test void missingCsrfCannotSaveSettings() throws Exception {
+        FakeDAO dao = new FakeDAO();
+        BaristaControllerTest.Exchange post = exchange(dao);
+        post.params.remove("csrfToken");
+        new AdminSettingsController(dao).doPost(post.request, post.response);
+        assertEquals(403, post.status);
+        assertNull(dao.saved);
+        assertNull(post.redirected);
+        assertNull(post.forwarded);
     }
 
     @Test void validatesExistingNumericAndShiftRules() {

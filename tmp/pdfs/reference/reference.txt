@@ -1,0 +1,370 @@
+    SWP391 PROJECT REPORT
+
+                   AI Usage Report
+
+                                    ­ Hanoi, Nov 2026 ­
+
+I. Mc ích ca báo cáo
+Báo cáo tng hp vic s dng AI trong Aura Cafe Management System, t phân
+tích yêu cu n kim th. Tôi ghi li phn mình trc tip thc hin, phn AI h tr
+và ngun minh chng cho tng giai on.
+
+II. Cu trúc báo cáo
+
+Phn 0 - Thông Tin Chung
+
+Mc                    Ni dung cn in
+Nhóm / sinh viên
+Công c AI ã           SE2064 ­ Group 1 | Nguyn c Quang Minh ­ HE204774
+dùng
+Phm vi báo cáo        Codex (gpt-6.1-sol trong log phiên trích dn) và Google
+                      Antigravity (log c c cha ghi model).
+Hình thc lu log
+                      Tng hp cui k. POS, thanh toán, hóa n in t,
+Chin lc tng           nguyên liu, kho, nhp hàng và nhà cung cp.
+th
+                      Mã phiên và prompt gc, commit Git, workbook và JSON
+                      kim th. Xem ph lc.
+
+                      Vi POS và thanh toán, tôi t phác tho quy trình, th t các
+                      bc và kt qu mong i, a AI review, ri sa li trc
+                      khi trin khai. Vi kho và nhp hàng, AI lên k hoch ban
+                      u, tôi review và cùng chnh các bc và quyn thc hin
+                      cho phù hp nghip v.
+
+Phn 1 - Báo Cáo Theo Tng Giai on
+
+1.1 Phân tích yêu cu
+
+1.1.1 - Bng phân công AI  Sinh viên (Contribution Map)
+
+Artifact / Mc           Mc Tóm tt phn SV ã sa/thêm (nu B hoc
+                                 C)
+Quy trình POS và thanh
+toán                      C Tôi vit lung và kt qu mong i trc. AI
+                                 review, sau ó tôi chnh quy trình trc khi
+Lung yêu cu nhp hàng             trin khai.
+và duyt
+                          B AI lên phng án u. Tôi review vai trò nhân
+                                 viên và Admin ri cùng chnh k hoch.
+
+1.1.2 - Ví d Prompt Tiêu Biu
+
+Prompt nguyên vn ­ "hình nh nghip v vn cha úng lm úng không, kiu
+nh là phn nhp kho, tôi nh có gì mà cô bo là thng nào to n (tôi
+không nh) hình nh là barista hay thu ngân to ri manager (hay là admin,
+kim tra xem có gp admin vào manager không) s duyt úng không, ri cái
+gì mà nó s duyt, nhng mà ang thiu có th"
+Output tóm tt ­ Codex rà lung và quyn ngi dùng. Phn hi tip theo
+ca tôi tp trung vào vic nhân viên không có quyn vào dashboard 
+duyt.
+
+Trích output Codex (rút gn) ­ "... Khi to nhân viên, la chn Qun tr
+c lu thành `role = ADMIN`, `position = MANAGER`. Các màn nhp hàng
+kim tra quyn `ADMIN`, không có lung Manager riêng. ..."
+
+1.1.3 - Thay i So Vi Output AI & Lý Do
+
+          Vi kho, tôi kim tra li quyn ca ngi gi yêu cu và ngi
+
+             duyt. Vi POS, tôi dùng th t thao tác và kt qu mong i do
+             mình vit làm c s review. SRS ghi phm vi POS, thanh toán và hóa
+             n trong mc cp nht ngày 05/10, và kho, nguyên liu, yêu cu
+             nhp hàng, nhà cung cp  mc ngày 18/10.
+
+1.1.4 - Vn  / Sai Sót Ca AI ã Phát Hin
+
+Cn trích li úng  xut ã b khi phng án kho  mô t trng hp này y
+.
+
+1.1.5 - T ánh Giá Hiu Bài (Self-Check)
+
+    1. Vì sao quyn to yêu cu và quyn duyt nhp kho nm  hai vai trò? Hãy k
+         li lung chính.
+
+Nhân viên gi yêu cu nhp hàng. Ngi duyt là qun lý ca hàng, dùng vai trò
+Admin vì d án gp hai vai trò. Cách này giúp gi quyn duyt  mt u mi.
+
+1.2 Thit k
+
+1.2.1 - Bng phân công AI  Sinh viên (Contribution Map)
+
+Artifact / Mc            Mc Tóm tt phn SV ã sa/thêm (nu B hoc
+                                  C)
+
+K hoch thit k lung       B AI lên plan. Tôi review ri cùng iu chnh
+kho và nhp hàng                 bc duyt và nhn hàng.
+
+Bn quy trình POS và      C Tôi xác nh bc trc, bc sau và u ra
+thanh toán trc khi code         ca tng bc. AI review, tôi chnh bn cui
+                                trc khi code.
+
+1.2.2 - Ví d Prompt Tiêu Biu
+
+Prompt nguyên vn ­ "gp chung tt c thay i db vào 1 file aura_cafe kia
+thôi nhé"
+
+Output tóm tt ­ Yêu cu trong phiên Codex xác nh mt file schema cn cp
+nht. Commit trin khai lung kho là 3eb5f53. on output tng ng ca
+prompt cn b sung t log.
+Trích output Codex (rút gn) ­ "... Kim nhn theo s lng thc t, h
+tr giao thiu, giao bù, hàng tha và hàng b t chi. ... Ch cng kho khi
+Admin xác nhn; h tr iu chnh/tr hàng sau nhn. ..."
+
+1.2.3 - Thay i So Vi Output AI & Lý Do
+
+          Khi duyt phiu nhn, cn i chiu trng thái phiu, trng thái n
+             mua và giao dch tng kho. Vi quy trình POS, cn xác nh iu kin
+             chuyn bc sau thanh toán trc khi hin thc giao din và x lý
+             phía máy ch.
+
+1.2.4 - Vn  / Sai Sót Ca AI ã Phát Hin
+
+Cha có trích on  ng cnh ca  xut b loi  giai on thit k.
+
+1.2.5 - T ánh Giá Hiu Bài (Self-Check)
+
+    2. Vì sao cn phân bit duyt yêu cu mua hàng vi xác nhn thc nhn? Nu
+         nhn thiu, cn kim tra nhng d liu nào?
+
+n mua dùng  t hàng vi nhà cung cp. Phiu nhn ghi s lng c chp
+nhn. Nu t 10 nhng nhn 8, tôi chnh s lng trên phiu nhn. Tn tng 8 khi
+qun lý duyt phiu.
+
+1.3 Trin khai
+
+1.3.1 - Bng phân công AI  Sinh viên (Contribution Map)
+
+Artifact / Mc          Mc Tóm tt phn SV ã sa/thêm (nu B hoc
+Duyt và nhn hàng                C)
+POS, VietQR và i soát
+                         B AI code theo plan. Tôi review và chy th, ghi
+                                góp ý ca cô trong Iteration 2, yêu cu AI sa
+                                ri kim tra li.
+
+                         B Tôi vit quy trình và kt qu mong i, yêu
+                                cu AI lp plan và hi li ch cha rõ. AI vit
+                                phn ln code theo quy trình ã cht. Tôi
+                                review và t chy lung.
+
+1.3.2 - Ví d Prompt Tiêu Biu
+
+Prompt nguyên vn ­ "kim tra ti sao thanh toán ri nhng không thy
+update gì, ây là lung thanh toán trc tip ti thu ngân, còn lung thanh
+toán qua gi hàng ã n ri"
+
+Output tóm tt ­ Phiên Fix Payment Webhook Update Issue ghi nhn yêu cu
+ca tôi. Bn trích ang có xác minh c prompt. Diff d95f457 ghi thay i
+hin th VietQR, polling và iu kin tip tc ti POS.
+Prompt b sung (Codex, nguyên vn) ­ "gp chung tt c thay i db vào 1
+file aura_cafe kia thôi nhé"
+
+Trích output Codex (rút gn) ­ "ã sa trên nhánh
+**`feature/inventory-approval-and-receiving`**: ... - Barista to/sa/gi
+ xut t giao din riêng. - Admin sa, duyt, yêu cu sa hoc t chi;
+lu lý do và lch s. ..."
+
+1.3.3 - Thay i So Vi Output AI & Lý Do
+
+          Tôi tách s c theo im vào ca lung  khoanh vùng vic review.
+             Mt thay i khác ã ghi trong Git là b chn bàn khi màn hình t
+             ti quy  khp SRS (f176e55).
+
+1.3.4 - Vn  / Sai Sót Ca AI ã Phát Hin
+
+Tình hung trng thái thanh toán cha cp nht là hin tng ng dng mà tôi nêu
+trong prompt. Cn output gc  xác nh AI có  xut sai và tôi ã b  xut ó
+hay không.
+
+1.3.5 - T ánh Giá Hiu Bài (Self-Check)
+
+    3. Gii thích ng i t lúc m QR  POS n khi giao din bit n ã c
+         xác nhn thanh toán.
+
+QR ly s tin phi thu ca n. Máy ch gi mã n và s tin lên gateway.
+Gateway nhn webhook SePay, i chiu ni dung và s tin, ri lu trng thái
+thanh toán vào c s d liu riêng. Giao din nh k hi trng thái qua ng dng.
+Khi máy ch xác nhn thanh toán, giao din cho tip tc x lý n.
+
+1.4 Kim th
+
+1.4.1 - Bng phân công AI  Sinh viên (Contribution Map)
+
+Artifact / Mc             Mc Tóm tt phn SV ã sa/thêm (nu B hoc
+                                   C)
+B ca kim th theo tài liu
+                            B AI son ca theo tài liu. Tôi review tng mc
+Kim th th công theo                và chy kim tra kt qu.
+SRS
+                            D Tôi trc tip thao tác lung chính và th ngoi
+                                   l trên giao din.
+
+1.4.2 - Ví d Prompt Tiêu Biu
+
+Prompt nguyên vn ­ "th thì xem phn test, xem mi ngi ã làm nhng
+phn nào ri, phn ca tôi thì sao"
+
+Output tóm tt ­ Phiên Codex dùng  xác nh phm vi test cá nhân. B kt
+qu lu 40 cp IT/ST trong bn nhóm BF01, BF02, BF05 và BF08.
+Trích output Codex (rút gn) ­ "Phn test ca bn ã có test case, nhng
+cha có kt qu nghim thu y . Mình ã kim tra c trng thái, Tester,
+ghi chú, link nh và nh nhúng trong hai workbook."
+
+1.4.3 - Thay i So Vi Output AI & Lý Do
+
+ Tôi review tng mc AI son theo tài liu, ri t thao tác c lung
+
+    chính và ngoi l  xem kt qu có khp SRS. BF02-002 kim tra s
+    tin và mã n VietQR. BF08-010 i chiu lng tn trc và sau
+    duyt phiu nhn.
+
+1.4.4 - Vn  / Sai Sót Ca AI ã Phát Hin
+
+Tình hung  AI ã làm/ xut Vì sao sai/ko phù Nhóm ã làm gì
+
+           gì                               hp
+
+Kt qu test lch s JSON ghi 38 cp             Cha có lt chy     ã c code hin
+                            Passed và 2 cp  li trên bn build  ti. BF05-011: cha
+                            Failed.         hin ti.           thy kim tra
+                                                              cashReceived  máy
+                                                              ch. BF08-017:
+                                                              controller h tr
+                                                              ngng dùng và gi
+                                                              công thc c, không
+                                                              có action xóa cng.
+                                                              Cn c quy nh
+                                                              UC47 v vic gi
+                                                              công thc c và
+                                                              chy li c hai ca
+                                                              trên môi trng kim
+                                                              th.
+
+1.4.5 - T ánh Giá Hiu Bài (Self-Check)
+
+    4. Vì sao BF08-010 cn kim tra lng tn và giao dch nhp kho ngoài thông
+         báo duyt thành công?
+
+Tôi s ghi tn trc khi duyt, kim tra phiu chuyn sang APPROVED, i chiu
+tn tng úng accepted_quantity và tìm giao dch IN_PURCHASE ca úng phiu
+và nguyên liu. Sau ó tôi th duyt li cùng phiu và kim tra tn cùng s giao dch
+không i. PurchaseReceiptDAO.review khóa phiu, ch x lý trng thái PENDING
+và ghi thay i trong mt giao dch.
+
+Phn 2 - S Liu Tng Hp (Quantitative Summary)
+Giai on  S artifact  Mc A (AI  Mc B (AI Mc C Mc D             S vòng
+         chính       to, gi    to khung, (SV to, (SV t        lp prompt
+                     nguyên)   SV sa) AI h tr) làm)           TrB
+                                                              /artifact
+Phân tích 2          0         1           1       0
+                                                              1 lt / 1
+yêu cu                                                        mc có log
+
+Thit k 2             0         1           1       0          1 lt / 1
+                                                              mc có log
+3. Trin 2            0         2           0       0
+                                                              2 lt / 2
+khai                                                          mc có log
+
+4. Kim 2             0         1           0       1          1 lt / 1
+                                                              mc có log
+th
+
+Checklist Traceability t i chiu
+
+S lt  bng trên ch tính prompt c trích trong mi giai on. Trung bình trong
+mu trích là 1 lt/mc có log  mi giai on. Prompt gp schema xut hin  c
+thit k và trin khai, nên toàn báo cáo có 4 prompt riêng bit. Checklist di ây do
+tôi lp, mi giai on gm 3 tiêu chí.
+
+Giai on S mc checklist t / Mc cha t (nu có) + k hoch x lý
+                             tng
+
+      1              2/3          t: xác nh phm vi t lch s sa SRS và ni
+
+                                  c UC19, UC47 vi mã ca. Còn thiu: trích
+
+                                  nguyên vn iu kin nghip v t SRS cho c
+
+                                  hai ca.
+
+      2              2/3          t: truy c quy trình nhn hàng trong
+
+                                  docs/INVENTORY_WORKFLOW.md và ni
+
+                                  bc duyt vi PurchaseReceiptDAO.review.
+
+                                  Còn thiu: v trí tng ng trong SDS.
+
+      3              3/3          t: truy c UC19 
+
+                                  CounterOrderController.handleCreateOrder 
+
+                                  BF05-011, UC47 
+
+                                  AdminIngredientController.toggle  BF08-017,
+
+                                  và nghip v nhn hàng 
+
+                                  PurchaseReceiptDAO.review 
+
+                                  IN_PURCHASE.
+
+      4              2/3          t: JSON lch s có mã ca và kt qu,
+
+                                  BF08-010 có i chiu tn trc/sau. Còn thiu:
+
+                                  lt chy li hai ca Failed trên bn build hin
+
+                                  hành.
+
+Phn 3 - Phn T (Reflection)
+    1. Vic nào AI làm tt hn nhóm t làm? Vì sao?
+
+AI h tr lên phng án  tôi có bn u review cho lung nhp hàng. Vi POS, AI
+giúp rà lung tôi phác tho và ln theo code cp nht trng thái thanh toán.
+
+    2. Vic nào nhóm làm tt hn AI / AI không th làm tt? Vì sao (kin thc
+         domain, ràng buc  bài, kinh nghim thc t...)?
+
+Tôi xác nh th t thao tác và kt qu mong i ca POS trc khi a AI review.
+Vi nhp hàng, tôi kim tra vai trò ngi gi, ngi duyt và iu kin ghi nhn
+hàng thc nhn khi sa k hoch.
+
+    3. Ri ro ln nht nu KHÔNG review k output ca AI trong project này là
+         gì? Cho 1 ví d c th ã/suýt xy ra.
+
+Nu kim tra mi lung thanh toán t gi hàng, li cp nht trng thái  quy có th
+b b sót. Khi kim tra nhp kho, ch nhìn thông báo duyt cng có th b qua giao
+dch tn kho b thiu hoc ghi lp.
+
+    4. Nu làm li t u, nhóm s thay i gì trong cách dùng AI (ví d: prompt
+         khác, th t khác, công c khác)?
+
+Tôi s tip tc bt ch  lp k hoch và yêu cu AI hi li mi im cha rõ trc
+khi code. Tôi s lu bn plan trc và sau review, ri ghi bn build, expected, actual
+và minh chng khi chy test.
+
+Ph Lc - AI Conversation Log
+
+          Codex ­ Phiên 01a1a548-7b03-77b3-980b-39bb0fb6be6a, ngày
+             04/11/2026. Các trao i v SRS, quyn duyt, schema và phm vi test.
+
+          Antigravity ­ Fix Payment Webhook Update Issue, phiên
+             702d4e32-f00e-46aa-a699-84e750d1f355. Database Location And IDE
+             Preview, phiên 3b3e5022-2931-4e03-ab91-5a0d26ac8f77, có trao i v
+             polling.
+
+          Tài liu nhóm ­ G1 / Report doc /
+             SE2064_G1_CafeManagementSystem_SRS_01.docx.
+
+          Git ­ PR #179. Kho và nhn hàng: 3eb5f53, 3b87928. POS: f176e55,
+             d95f457. i soát: 1027604, eee6dc1. Kim th: 5cbeb5a, 15bfac9.
+
+          Kim th ­ G1 / Test report / Evidence_Minh / scripts /
+             minh_execution_results.json. Hai workbook Integration-Test_Clean và
+             System-Test_Clean trong Test report.
+S liu kim th ly t JSON lch s. Script gán nhãn FAILED c nh cho hai ca có
+thao tác kim tra và truy vn d liu. Hai ca cn chy li theo SRS và bn build hin
+hành trc khi kt lun v tình trng hin ti.
+

@@ -564,6 +564,9 @@
 </head>
 
 <body>
+<%-- MN12: . Ở đây em hiển thị món và các món liên quan mà máy chủ vừa gửi sang.
+     .. Bấm một món liên quan thì mở trang chi tiết của món đó.
+     ... GET /product-detail?id=... → ProductDetailController [MN11]. --%>
 
     <!-- Shared Header -->
     <jsp:include page="/components/header.jsp">
@@ -901,7 +904,7 @@
                 var tHtml = '';
                 toppings.forEach(function (t, idx) {
                     var tName = typeof t === 'string' ? t : t.name;
-                    var tPrice = typeof t === 'object' && t.price ? t.price : 8000;
+                    var tPrice = typeof t === 'object' && t.price != null ? Number(t.price) : 8000;
                     tHtml += '<div class="topping-card" onclick="toggleTopping(this, \'' + tName + '\', ' + tPrice + ')" data-name="' + tName + '" data-price="' + tPrice + '">'
                         + '  <div class="d-flex align-items-center gap-2">'
                         + '    <div class="topping-check"><span class="material-symbols-outlined" style="font-size: 14px; color: #fff;">check</span></div>'

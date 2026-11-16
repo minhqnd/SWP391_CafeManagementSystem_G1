@@ -1,3 +1,11 @@
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%
+    if (request.getDispatcherType() != jakarta.servlet.DispatcherType.FORWARD) {
+        response.sendRedirect(request.getContextPath() + "/profile");
+        if (true) return;
+    }
+%>
+<% utils.AccountCsrf.token(session); %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ taglib prefix="c" uri="jakarta.tags.core" %>
         <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
@@ -268,7 +276,7 @@
                                     </div>
                                     <div class="text-end border-start ps-4">
                                         <div class="text-muted mb-2" style="font-size: 0.9rem; font-weight: 500;">
-                                            Chủ tài khoản: <span class="text-dark fw-bold">${sessionScope.user.fullName}</span>
+                                            Chủ tài khoản: <span class="text-dark fw-bold">${fn:escapeXml(sessionScope.user.fullName)}</span>
                                         </div>
                                         <div class="d-flex align-items-center justify-content-end gap-2 text-muted">
                                             <span id="memberIdBadge" style="font-family: monospace; font-size: 1rem; background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 0.5rem; border: 1px dashed #ced4da; font-weight: 600; color: var(--primary);">#AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}</span>
@@ -283,6 +291,11 @@
                             </div>
                         </div>
 
+                        <%-- PF17: [SLBF10] Show update success message
+                             . Hiển thị successMsg sau khi lưu hồ sơ thành công.
+                             .. Đây là kết quả của bước cập nhật session [PF15] và trả trang [PF16].
+                             PW09: . Cùng vùng thông báo này hiển thị kết quả đổi mật khẩu thành công.
+                             .. Chỉ có successMsg khi nhánh đổi mật khẩu đã thành công tại [PW07]. --%>
                         <c:if test="${not empty successMsg}">
                             <div
                                 class="alert alert-success fw-bold border-0 py-3 mb-4 shadow-sm d-flex align-items-center gap-2">
@@ -329,7 +342,7 @@
                                                 </div>
                                             </div>
 
-                                            <h2 class="fs-4 fw-bold mb-1">${sessionScope.user.fullName}</h2>
+                                            <h2 class="fs-4 fw-bold mb-1">${fn:escapeXml(sessionScope.user.fullName)}</h2>
                                             <p class="text-muted mb-3"
                                                 style="font-size: 0.85rem; font-family: monospace;">
                                                 #AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}</p>
@@ -348,61 +361,80 @@
                                                     <p class="text-muted mb-0" style="font-size: 0.85rem;">Quản lý dữ
                                                         liệu để nhận quà sinh nhật và giao hàng nhanh</p>
                                                 </div>
+                                                <%-- PF07: [SLBF10] Edit profile information
+                                                     . Nút Chỉnh sửa kích hoạt sự kiện click để mở các trường hồ sơ.
+                                                     ... Script trong profile.jsp [PF08] mở khóa và hiện Lưu/Hủy. --%>
                                                 <button type="button" id="btnEditProfile"
                                                     class="btn-outline-primary-custom d-flex align-items-center gap-2">
                                                     <span class="material-symbols-outlined fs-5">edit</span> Chỉnh sửa
                                                 </button>
                                             </div>
 
-                                            <%-- BF10 - HỒ SƠ: POST action=update -> ProfileController -> updateUserProfile() -> cập nhật session khi lưu được. --%>
+                                            <%-- PF06: [SLBF10] View profile information
+                                                 . Hiển thị họ tên, SĐT, email, ngày sinh và địa chỉ từ session.user.
+                                                 .. Các trường bị khóa trước khi bấm Chỉnh sửa; chưa gửi dữ liệu khi chỉ xem.
+                                                 ... Chỉnh sửa [PF07] → Lưu thay đổi [PF09] → JavaScript [PF10] → ProfileController [PF11]. --%>
                                             <form id="profileForm"
                                                 action="${pageContext.request.contextPath}/profile?action=update"
                                                 method="POST">
+                                                <input type="hidden" name="csrfToken" value="${sessionScope.accountCsrfToken}">
                                                 <div class="row g-4">
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Họ và tên</label>
+                                                        <%-- PF06a: . Ô Họ và tên gửi name=fullName, bắt buộc từ 1 đến 100 ký tự sau chuẩn hóa.
+                                                             ... validate() kiểm tra họ tên trong validate() → ProfileController.update() [PF12a] → AccountValidation.nameError(). --%>
                                                         <input type="text" name="fullName"
                                                             class="form-control-custom w-100 profile-input"
-                                                            value="${sessionScope.user.fullName}" minlength="2" readonly
+                                                            value="${fn:escapeXml(sessionScope.user.fullName)}" minlength="1" readonly
                                                             required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Số điện thoại</label>
+                                                        <%-- PF06b: . Ô SĐT gửi name=phone; đủ 10 số và bắt đầu bằng 0 sau chuẩn hóa.
+                                                             ... validate() kiểm tra SĐT trong validate() → ProfileController [PF12b] → AccountValidation.phoneError(). --%>
                                                         <input type="tel" name="phone"
                                                             class="form-control-custom w-100 profile-input"
-                                                            value="${sessionScope.user.phone}"
-                                                            pattern="^(84|0)[3|5|7|8|9][0-9]{8}$"
-                                                            title="Vui lòng nhập số điện thoại Việt Nam hợp lệ (VD: 0912345678)"
-                                                            readonly>
+                                                            value="${fn:escapeXml(sessionScope.user.phone)}"
+                                                            pattern="0[0-9]{9}" inputmode="numeric"
+                                                            title="Nhập 10 chữ số và bắt đầu bằng số 0"
+                                                            readonly required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Địa chỉ Email</label>
-                                                        <input type="email" name="email"
+                                                        <%-- PF06c: . Ô Email gửi name=email; đúng định dạng, tối đa 150 ký tự và không trùng tài khoản khác.
+                                                             .. Email phải có đuôi @gmail.com và không trùng tài khoản khác.
+                                                             ... validate() và checkContact() trong account-validation.js → ProfileController [PF12c] → DAO [PF13]. --%>
+                                                        <input type="email" name="email" maxlength="150"
                                                             class="form-control-custom w-100 profile-input"
-                                                            value="${sessionScope.user.email}" readonly required>
+                                                            value="${fn:escapeXml(sessionScope.user.email)}" readonly required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Ngày sinh nhật</label>
                                                         <div class="d-flex gap-2">
-                                                            <select id="birthDay"
+                                                            <%-- PF06d: . Ba ô ngày sinh gửi birthDay, birthMonth và birthYear; cùng trống hoặc đủ ba phần.
+                                                                 ... updateDays()/syncBirthday() [PF06g], [PF06h] → validate() kiểm tra ngày sinh trong validate() → Controller [PF12d]. --%>
+                                                            <select id="birthDay" name="birthDay"
                                                                 class="form-select form-control-custom w-100 profile-input"
                                                                 disabled></select>
-                                                            <select id="birthMonth"
+                                                            <select id="birthMonth" name="birthMonth"
                                                                 class="form-select form-control-custom w-100 profile-input"
                                                                 disabled></select>
-                                                            <select id="birthYear"
+                                                            <select id="birthYear" name="birthYear"
                                                                 class="form-select form-control-custom w-100 profile-input"
                                                                 disabled></select>
                                                         </div>
+                                                        
                                                         <input type="hidden" name="birthday" id="birthdayHidden"
-                                                            value="${sessionScope.user.birthday}">
+                                                            value="${fn:escapeXml(sessionScope.user.birthday)}">
                                                     </div>
                                                     <div class="col-12">
                                                         <label class="form-label-custom">Địa chỉ nhận hàng mặc
                                                             định</label>
-                                                        <input type="text" name="address"
+                                                        <%-- PF06e: . Ô Địa chỉ gửi name=address; không bắt buộc, tối đa 500 ký tự.
+                                                             ... validate() kiểm tra địa chỉ trong validate() → ProfileController [PF12e] → UserDAO.updateUserProfile() [PF13]. --%>
+                                                        <input type="text" name="address" maxlength="500"
                                                             class="form-control-custom w-100 profile-input"
-                                                            value="${sessionScope.user.address}" readonly>
+                                                            value="${fn:escapeXml(sessionScope.user.address)}" readonly>
                                                     </div>
                                                 </div>
 
@@ -410,6 +442,10 @@
                                                     class="mt-4 pt-3 border-top d-none justify-content-end gap-2">
                                                     <button type="button" id="btnCancelEdit"
                                                         class="btn btn-light fw-bold px-4">Hủy</button>
+                                                    <%-- PF09: [SLBF10] Click "Save Changes"
+                                                         . Bấm Lưu thay đổi để submit profileForm.
+                                                         .. Nút chỉ bật khi dữ liệu khác ban đầu; bấm nút chưa đồng nghĩa đã lưu database.
+                                                         ... account-validation.js, sự kiện submit [PF10] kiểm tra trước khi gửi backend. --%>
                                                     <button type="submit" id="btnSaveProfile"
                                                         class="btn btn-secondary px-4 fw-bold" disabled>Lưu thay
                                                         đổi</button>
@@ -438,15 +474,20 @@
                                             </div>
 
                                             <div class="collapse mt-4" id="passwordCollapse">
-                                                <%-- BF10 - ĐỔI MẬT KHẨU: POST action=changePassword; server kiểm tra mật khẩu cũ, mới và xác nhận. --%>
+                                                <%-- PW01: . Hiển thị form mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới.
+                                                     .. Nhập dữ liệu chưa thay đổi mật khẩu trong database.
+                                                     ... Nút Cập nhật mật khẩu [PW02] → JavaScript [PW03] → ProfileController.doPost() [PW05]. --%>
                                                 <form id="passwordForm"
                                                     action="${pageContext.request.contextPath}/profile?action=changePassword"
                                                     method="POST">
+                                                    <input type="hidden" name="csrfToken" value="${sessionScope.accountCsrfToken}">
                                                     <div class="row g-4">
                                                         <div class="col-12">
                                                             <label class="form-label-custom">Mật khẩu hiện tại</label>
                                                             <div class="input-group">
-                                                                <input type="password" name="oldPassword"
+                                                                <%-- PW01a: . Ô mật khẩu hiện tại gửi name=oldPassword; bắt buộc nhập và phải khớp dữ liệu đã lưu.
+                                                                     ... ProfileController [PW05] → UserDAO.changePasswordById() [PW06] → PasswordHasher.verify(). --%>
+                                                                <input type="password" name="oldPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
                                                                     placeholder="Nhập mật khẩu hiện tại" required>
                                                                 <span
@@ -461,10 +502,12 @@
                                                         <div class="col-md-6">
                                                             <label class="form-label-custom">Mật khẩu mới</label>
                                                             <div class="input-group">
+                                                                <%-- PW01b: . Ô mật khẩu mới gửi name=newPassword; yêu cầu 8–255 ký tự và có chữ lẫn số.
+                                                                     ... passwordError() trong account-validation.js → ProfileController [PW05] → AccountValidation.passwordErrors(). --%>
                                                                 <input type="password" id="newPassword"
-                                                                    name="newPassword"
+                                                                    name="newPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
-                                                                    placeholder="Nhập mật khẩu mới" minlength="6"
+                                                                    placeholder="Nhập mật khẩu mới" minlength="8"
                                                                     required>
                                                                 <span
                                                                     class="input-group-text bg-white border-start-0 cursor-pointer"
@@ -475,14 +518,16 @@
                                                                 </span>
                                                             </div>
                                                             <div class="invalid-feedback" id="newPasswordFeedback">Mật
-                                                                khẩu phải từ 6 ký tự trở lên.</div>
+                                                                khẩu phải có ít nhất 8 ký tự, gồm chữ và số.</div>
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label class="form-label-custom">Xác nhận mật khẩu
                                                                 mới</label>
                                                             <div class="input-group">
+                                                                <%-- PW01c: . Ô xác nhận gửi name=confirmPassword và phải giống newPassword trong cùng form.
+                                                                     ... validate() kiểm tra xác nhận trong validate() → ProfileController [PW05] → AccountValidation.passwordErrors(). --%>
                                                                 <input type="password" id="confirmPassword"
-                                                                    name="confirmPassword"
+                                                                    name="confirmPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
                                                                     placeholder="Nhập lại mật khẩu mới" required>
                                                                 <span
@@ -499,6 +544,8 @@
                                                     </div>
 
                                                     <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+                                                        <%-- PW02: . Bấm Cập nhật mật khẩu để gửi form passwordForm.
+                                                             ... account-validation.js, sự kiện submit [PW03] → Controller [PW04]. --%>
                                                         <button type="submit"
                                                             class="btn btn-outline-primary-custom px-4 fw-bold">Cập nhật
                                                             mật khẩu</button>
@@ -533,7 +580,10 @@
                                                 </div>
                                             </c:when>
                                             <c:otherwise>
-                                                <%-- BF10/BF12: lịch sử riêng do ProfileController nạp theo ID người đăng nhập; JSP chỉ hiển thị. --%>
+                                                
+                                                <%-- PH03: . Hiển thị từng giao dịch điểm của người đang đăng nhập.
+                                                     .. Người dùng xem được điểm đã tích, đã đổi và đã hoàn.
+                                                     Nguồn/ghi chú: Danh sách lấy từ UserDAO [PH02] qua ProfileController [PF02]. --%>
                                                 <c:forEach var="txn" items="${loyaltyHistory}" varStatus="loop">
                                                     <div
                                                         class="d-flex justify-content-between align-items-center py-3 ${not loop.last ? 'border-bottom' : ''}">
@@ -596,14 +646,16 @@
                         const editActions = document.getElementById('editActions');
                         const profileInputs = document.querySelectorAll('.profile-input');
 
-                        // Store original values
                         const originalValues = {};
 
-                        // Check if form changed
+
+                        // PF08a: . So từng giá trị hồ sơ với originalValues để xác định có thay đổi hay chưa.
+                        // .. Có thay đổi thì bật Lưu thay đổi; giống ban đầu thì khóa nút.
+                        // ... Nút Lưu thay đổi [PF09] gửi form qua JavaScript [PF10].
                         function checkFormChanged() {
                             let isChanged = false;
                             profileInputs.forEach(input => {
-                                if (input.value !== originalValues[input.name]) {
+                                if (input.value !== originalValues[input.name || input.id]) {
                                     isChanged = true;
                                 }
                             });
@@ -624,26 +676,25 @@
                             input.addEventListener('change', checkFormChanged);
                         });
 
-                        // ---------------- BIRTHDAY 3 SELECTS LOGIC ----------------
                         const birthDay = document.getElementById('birthDay');
                         const birthMonth = document.getElementById('birthMonth');
                         const birthYear = document.getElementById('birthYear');
                         const birthdayHidden = document.getElementById('birthdayHidden');
 
-                        // Populate Year (Current year - 80 to Current year)
                         const curYear = new Date().getFullYear();
                         birthYear.innerHTML = '<option value="">Năm</option>';
-                        for (let i = curYear; i >= curYear - 80; i--) {
+                        for (let i = curYear; i >= 1900; i--) {
                             birthYear.innerHTML += '<option value="' + i + '">' + i + '</option>';
                         }
 
-                        // Populate Month (1 - 12)
                         birthMonth.innerHTML = '<option value="">Tháng</option>';
                         for (let i = 1; i <= 12; i++) {
                             birthMonth.innerHTML += '<option value="' + i + '">Tháng ' + i + '</option>';
                         }
 
-                        // Populate Day dynamically based on Month and Year
+                        // PF06g: . Tạo danh sách ngày theo tháng/năm, tính cả năm nhuận.
+                        // .. Giữ ngày cũ nếu vẫn hợp lệ với tháng/năm đang chọn.
+                        // ... syncBirthday() [PF06h] ghép ba ô thành birthdayHidden.
                         function updateDays() {
                             const d = birthDay.value;
                             const m = parseInt(birthMonth.value) || 1;
@@ -655,7 +706,6 @@
                                 birthDay.innerHTML += '<option value="' + i + '">' + i + '</option>';
                             }
 
-                            // Restore selected day if possible
                             if (d && parseInt(d) <= daysInMonth) {
                                 birthDay.value = d;
                             }
@@ -664,8 +714,13 @@
                         birthMonth.addEventListener('change', updateDays);
                         birthYear.addEventListener('change', updateDays);
 
-                        // Sync with Hidden Input
+
+                        // PF06h: . Ghép đủ ba phần ngày sinh thành yyyy-MM-dd trong birthdayHidden.
+                        // .. Thiếu phần thì đặt thông báo; chưa đủ ba phần thì hidden trống.
+                        // ... Khi gửi, ProfileController.update() [PF12d] kiểm tra lại ba tham số gốc.
                         function syncBirthday() {
+                            const selected = [birthYear.value, birthMonth.value, birthDay.value].filter(Boolean).length;
+                            birthDay.setCustomValidity(selected === 0 || selected === 3 ? '' : 'Vui lòng chọn đủ ngày, tháng và năm sinh.');
                             if (birthYear.value && birthMonth.value && birthDay.value) {
                                 const y = birthYear.value;
                                 const m = birthMonth.value.padStart(2, '0');
@@ -681,7 +736,6 @@
                         birthMonth.addEventListener('change', syncBirthday);
                         birthYear.addEventListener('change', syncBirthday);
 
-                        // Initial load
                         updateDays();
                         if (birthdayHidden.value) {
                             const parts = birthdayHidden.value.split('-'); // YYYY-MM-DD
@@ -692,16 +746,17 @@
                                 birthDay.value = parseInt(parts[2]).toString();
                             }
                         }
-                        // Lấy giá trị ban đầu để so sánh khi Cancel
                         originalValues['birthdayHidden'] = birthdayHidden.value;
                         originalValues['birthDay'] = birthDay.value;
                         originalValues['birthMonth'] = birthMonth.value;
                         originalValues['birthYear'] = birthYear.value;
-                        // ---------------------------------------------------------
+                        profileInputs.forEach(input => { originalValues[input.name || input.id] = input.value; });
 
 
+                        // PF08: . Nhận click Chỉnh sửa [PF07], bỏ readonly/disabled và hiện các nút Lưu/Hủy.
+                        // .. Chỉ mở các trường để sửa; chưa gửi dữ liệu và chưa cập nhật database.
+                        // ... checkFormChanged() [PF08a] quản lý nút Lưu thay đổi [PF09].
                         btnEdit.addEventListener('click', function () {
-                            // Enable inputs
                             profileInputs.forEach(input => {
                                 if (input.id !== 'birthdayHidden') { // Bỏ qua input ảo
                                     if (input.tagName === 'SELECT') {
@@ -717,18 +772,17 @@
                                 }
                             });
 
-                            // Focus first input
                             if (profileInputs.length > 0 && profileInputs[0].tagName !== 'SELECT') profileInputs[0].focus();
 
-                            // Show actions, hide edit button
                             editActions.classList.remove('d-none');
                             editActions.classList.add('d-flex');
                             btnEdit.classList.add('d-none');
                             checkFormChanged(); // Reset button state
                         });
 
+                        // PF08b: . Bấm Hủy thì phục hồi originalValues, khóa lại các trường và ẩn nút Lưu/Hủy.
+                        // .. Dữ liệu đã gõ chưa được gửi xuống Controller hoặc database.
                         btnCancel.addEventListener('click', function () {
-                            // Restore inputs
                             profileInputs.forEach(input => {
                                 if (input.name && originalValues[input.name] !== undefined) {
                                     input.value = originalValues[input.name];
@@ -747,15 +801,14 @@
                             });
 
                             birthdayHidden.value = originalValues['birthdayHidden'];
+                            birthDay.setCustomValidity('');
 
-                            // Hide actions, show edit button
                             editActions.classList.remove('d-flex');
                             editActions.classList.add('d-none');
                             btnEdit.classList.remove('d-none');
                         });
                     });
 
-                    // Toast notification helper
                     function showToast(message) {
                         const toastEl = document.getElementById('profileToast');
                         const toastMsg = document.getElementById('profileToastMsg');
@@ -812,31 +865,6 @@
                             icon.classList.remove('text-primary-custom');
                         }
                     }
-
-                    // Validate password form before submission
-                    document.getElementById('passwordForm').addEventListener('submit', function (event) {
-                        const newPassword = document.getElementById('newPassword');
-                        const confirmPassword = document.getElementById('confirmPassword');
-                        let isValid = true;
-
-                        if (newPassword.value.length < 6) {
-                            newPassword.classList.add('is-invalid');
-                            isValid = false;
-                        } else {
-                            newPassword.classList.remove('is-invalid');
-                        }
-
-                        if (newPassword.value !== confirmPassword.value) {
-                            confirmPassword.classList.add('is-invalid');
-                            isValid = false;
-                        } else {
-                            confirmPassword.classList.remove('is-invalid');
-                        }
-
-                        if (!isValid) {
-                            event.preventDefault(); // Stop form submission
-                        }
-                    });
 
                     // Handle direct navigation to tabs via URL hash
                     window.addEventListener('DOMContentLoaded', (event) => {

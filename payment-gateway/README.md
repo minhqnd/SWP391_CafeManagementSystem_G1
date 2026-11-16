@@ -1,217 +1,217 @@
-# ⚡ Universal Payment Gateway & Webhook Hub
+# ⚡ Universal Payment Gateway & SePay Webhook Hub
 
-> **Microservice Cổng thanh toán & Điều phối Webhook tập trung** chạy trên nền tảng **Cloudflare Workers** + **Cloudflare D1 (SQLite)**. Dùng chung được cho nhiều ứng dụng độc lập (*Aura Café, Web bán hàng, Mobile App, v.v.*) với dịch vụ thanh toán tự động qua **SePay / VietQR**.
+Hệ thống Cổng thanh toán & Điều phối Webhook SePay siêu nhẹ được xây dựng bằng **TypeScript**, framework **Hono**, chạy trên nền tảng **Cloudflare Workers** và sử dụng cơ sở dữ liệu **Cloudflare D1 (SQLite)**.
 
----
-
-## 📌 1. Thông tin triển khai hiện tại
-
-- **Trạng thái:** `Operational` (Đang hoạt động 24/7)
-- **Domain Gateway:** `https://payment-gateway.zemorts.workers.dev`
-- **Dashboard xem giao dịch trực quan:** Mở trực tiếp [https://payment-gateway.zemorts.workers.dev](https://payment-gateway.zemorts.workers.dev)
-- **Database Cloudflare D1:** `payment-gateway-db` (ID: `969b7f48-a740-45bf-ac46-48493a240202`)
-- **SePay Webhook URL:** `https://payment-gateway.zemorts.workers.dev/api/webhooks/sepay`
+Hệ thống được thiết kế theo phong cách đơn giản, trực quan, dễ bảo trì, phục vụ việc nhận tiền chuyển khoản qua mã VietQR từ SePay và đối soát với ứng dụng Aura Café Management System.
 
 ---
 
-## 🏗️ 2. Mô hình kiến trúc & Luồng hoạt động
+## 1. Cơ chế hoạt động
+
+```
+[Khách hàng]
+     │ Quét mã VietQR và chuyển khoản ngân hàng
+     ▼
+[Ngân hàng] ──(Biến động số dư)──► [SePay]
+                                      │
+                                      ▼ Bắn Webhook (POST /api/webhooks/sepay)
+                             [Cloudflare Worker]
+                             ┌──────────────────────────────────────┐
+                             │ 1. Lưu log vào bảng webhook_logs     │
+                             │ 2. Dò mã đơn trong nội dung CK       │
+                             │ 3. Cộng dồn tiền, khớp -> SUCCESS   │
+                             └──────────────────────────────────────┘
+                                      ▲
+                                      │ Polling hỏi trạng thái (GET /api/orders/:code/status)
+                             [Backend Java (Tomcat)]
+                             ┌──────────────────────────────────────┐
+                             │ Thấy SUCCESS -> Chốt đơn & Cộng điểm │
+                             └──────────────────────────────────────┘
+```
+
+1. **Khách đặt hàng**: Hệ thống Java tạo đơn hàng và gọi API `POST /api/orders/register` lên Gateway để đăng ký đơn chờ thanh toán (`PENDING`).
+2. **Khách quét mã QR và chuyển khoản**: SePay nhận được tiền từ ngân hàng sẽ gửi Webhook `POST /api/webhooks/sepay` sang Gateway.
+3. **Gateway xử lý**:
+   - Lưu vết giao dịch vào bảng `webhook_logs` (tự động loại trừ trùng lặp).
+   - Quét tìm đơn hàng `PENDING` có mã đơn trùng khớp với nội dung chuyển khoản.
+   - Tính tổng số tiền khách đã chuyển (hỗ trợ chuyển nhiều lần cộng dồn). Nếu đủ tiền, cập nhật trạng thái đơn sang `SUCCESS`.
+4. **Java cập nhật**: Backend Java định kỳ gọi `GET /api/orders/:code/status`, khi thấy `SUCCESS` sẽ chốt đơn sang `CONFIRMED` và cộng điểm tích luỹ cho khách.
+
+---
+
+## 2. Cấu trúc Source Code
 
 ```text
-               ┌───────────────────────┐
-               │    Ngân hàng / App    │
-               │   (Quét mã VietQR)    │
-               └──────────┬────────────┘
-                          │ (Tiền vào tài khoản)
-                          ▼
-               ┌───────────────────────┐
-               │    SePay Service      │
-               └──────────┬────────────┘
-                          │ (1) Gửi HTTP POST Webhook
-                          ▼
-         ┌───────────────────────────────────┐
-         │     CLOUDFLARE WORKER GATEWAY     │
-         │  (payment-gateway.workers.dev)    │
-         │   • Xác thực chữ ký SePay         │
-         │   • Chống trùng lặp (Idempotent)  │
-         │   • Khớp mã đơn & số tiền         │
-         │   • Ký chữ ký HMAC-SHA256         │
-         └─────────────┬─────────────────────┘
-                       │ Lưu trữ giao dịch
-                       ▼
-              [ Cloudflare D1 SQL ]
-                       ▲
-                       │ (2) Polling mỗi 2s (GET /status)
-                       │     (Nhận SUCCESS + Signature)
-                       │
-             ┌─────────┴─────────┐
-             │  Client Browser   │
-             │  (Trang checkout) │
-             └─────────┬─────────┘
-                       │ (3) POST Callback kèm Signature
-                       ▼
-         ┌───────────────────────────┐
-         │    CORE BACKEND SERVER    │
-         │   (Java / Node / Python)  │
-         │   • Verify HMAC Signature │
-         │   • Chốt đơn & Cộng điểm  │
-         └───────────────────────────┘
+payment-gateway/
+├── src/
+│   ├── index.ts              # Khởi tạo Hono app, cấu hình CORS, Health Check và gắn Route
+│   ├── types.ts              # Khai báo biến môi trường Cloudflare (Bindings: DB, ALLOW_TEST_SIMULATION)
+│   ├── routes/
+│   │   ├── orders.ts         # API đăng ký đơn hàng, kiểm tra trạng thái và giả lập
+│   │   ├── webhooks.ts       # API nhận Webhook SePay, ghi log & tự động khớp mã đơn
+│   │   └── dashboard.ts      # API lấy danh sách giao dịch & trang chủ Dashboard
+│   └── views/
+│       └── dashboard.ts      # Giao diện HTML Dashboard trực quan xem lịch sử đơn hàng
+├── test/
+│   └── reconciliation.test.mjs  # Unit test kiểm tra luồng thanh toán & cộng dồn tiền
+├── schema.sql                # Cấu trúc cơ sở dữ liệu SQLite D1 (orders, webhook_logs)
+├── wrangler.toml             # File cấu hình deploy Cloudflare Worker & D1 Database
+└── package.json              # Khai báo thư viện và các script lệnh
 ```
 
 ---
 
-## 🚀 3. Hướng dẫn kết nối với SePay (my.sepay.vn)
+## 3. Hướng dẫn chạy thử ở Local (Local Development)
 
-### A. Chế độ Test / Demo (Không cần xác thực)
-Dành cho việc test nhanh mà không cần cấu hình khóa bí mật:
-1. Đăng nhập [my.sepay.vn](https://my.sepay.vn) ➔ Vào menu **Webhooks** ➔ **Thêm webhook**.
-2. **URL Webhook:** `https://payment-gateway.zemorts.workers.dev/api/webhooks/sepay`
-3. **Loại giao dịch:** Chọn `Tất cả` (hoặc `Tiền vào in`).
-4. **Phương thức xác thực:** Chọn **Không xác thực**.
-5. Bấm **Lưu** ➔ Bấm **Gửi thử** để kiểm tra (kết quả trả về `Thành công` là xong).
-
-### B. Chế độ Production (Bảo mật tối đa với HMAC-SHA256)
-1. Khi tạo/sửa Webhook trên SePay, chọn **Phương thức xác thực: HMAC-SHA256**.
-2. Copy chuỗi **Secret Key** do SePay hiển thị.
-3. Mở terminal tại thư mục này và gán secret vào Worker:
-   ```bash
-   cd payment-gateway
-   npx wrangler secret put SEPAY_WEBHOOK_SECRET
-   # Dán Secret Key vào rồi nhấn Enter
-   ```
-4. Khi đã gán key, Worker sẽ tự động kiểm tra chữ ký `X-SePay-Signature` và chống tấn công Replay Attack (quá 5 phút).
-
----
-
-## 🔌 4. Tài liệu chi tiết các API của Gateway
-
-### 1. Đăng ký đơn hàng mới (`POST /api/orders/register`)
-Được gọi từ **Backend** (Java, Node, v.v.) ngay khi khách tạo đơn hàng để báo cho Gateway biết đơn cần chờ thanh toán:
-
-- **Endpoint:** `POST /api/orders/register`
-- **Headers:** `Content-Type: application/json`
-- **Body:**
-  ```json
-  {
-    "appId": "aura_cafe",
-    "orderCode": "AUR-10023",
-    "amount": 45000,
-    "transactionCode": "TX-10023-17290000"
-  }
-  ```
-- **Response (200 OK):**
-  ```json
-  {
-    "success": true,
-    "message": "Order registered successfully",
-    "orderCode": "AUR-10023",
-    "transactionCode": "TX-10023-17290000",
-    "amount": 45000
-  }
-  ```
-
----
-
-### 2. Kiểm tra trạng thái đơn hàng (`GET /api/orders/:orderCode/status`)
-Được gọi từ **Frontend (Javascript)** hoặc **Backend** định kỳ (Polling mỗi 2 giây) để biết đơn đã thanh toán hay chưa:
-
-- **Endpoint:** `GET /api/orders/AUR-10023/status`
-- **Response khi đang chờ (PENDING):**
-  ```json
-  {
-    "success": true,
-    "orderCode": "AUR-10023",
-    "transactionCode": "TX-10023-17290000",
-    "amount": 45000,
-    "status": "PENDING",
-    "signature": null,
-    "gatewayReference": null,
-    "paidAt": null
-  }
-  ```
-- **Response khi đã thanh toán thành công (SUCCESS):**
-  ```json
-  {
-    "success": true,
-    "orderCode": "AUR-10023",
-    "transactionCode": "TX-10023-17290000",
-    "amount": 45000,
-    "status": "SUCCESS",
-    "signature": "bc6ef036961b8076de47e8b6db24e851d331c67c1195c1ef562253ece4cdb289",
-    "gatewayReference": "FT24012345678",
-    "paidAt": "2026-10-26 14:20:00"
-  }
-  ```
-
-> **Ghi chú về `signature`:** Chữ ký được Worker sinh ra bằng thuật toán `HMAC-SHA256` dựa trên chuỗi chuẩn:  
-> `canonical = orderCode + "|" + transactionCode + "|" + amount + "|SUCCESS"`  
-> Backend của bạn chỉ cần đối soát chữ ký này bằng `SECRET_KEY` là đảm bảo an toàn tuyệt đối, chống làm giả.
-
----
-
-### 3. Endpoint nhận Webhook từ SePay (`POST /api/webhooks/sepay`)
-Endpoint công khai dành riêng cho SePay gửi thông báo khi có giao dịch ngân hàng:
-
-- **Endpoint:** `POST /api/webhooks/sepay`
-- **Payload chuẩn từ SePay:**
-  ```json
-  {
-    "id": 92704,
-    "gateway": "MBBank",
-    "transactionDate": "2026-10-26 14:20:00",
-    "accountNumber": "234556688",
-    "code": "AURA261026001",
-    "content": "AURA261026001 chuyen tien",
-    "transferType": "in",
-    "transferAmount": 45000,
-    "referenceCode": "FT24012345678"
-  }
-  ```
-- **Phản hồi của Worker:** Luôn trả về `{"success": true}` trong vòng chưa tới 10ms.
-
----
-
-### 4. Giả lập thanh toán thành công (`POST /api/orders/:orderCode/simulate-pay`)
-Dành riêng cho dev / trình diễn đồ án khi không muốn chuyển tiền thật:
-
-- **Endpoint:** `POST /api/orders/AUR-10023/simulate-pay`
-- **Tác dụng:** Chuyển ngay đơn hàng sang `SUCCESS` và tự động sinh chữ ký HMAC hợp lệ trong D1.
-
----
-
-### 5. Xem lịch sử tất cả giao dịch (`GET /api/transactions`)
-- **Endpoint:** `GET /api/transactions`
-- Trả về danh sách 50 đơn hàng và 50 log webhook gần nhất lưu trong Cloudflare D1.
-
----
-
-## 💻 5. Cách tích hợp vào dự án mới trong tương lai
-
-Dịch vụ này được thiết kế theo chuẩn **đa dự án (Multi-tenant)** thông qua tham số `appId`.
-
-Khi làm dự án mới (ví dụ: `project_bán_quần_áo`), bạn chỉ cần:
-1. Gửi `appId = "shop_fashion"` khi đăng ký đơn:
-   ```json
-   POST /api/orders/register
-   { "appId": "shop_fashion", "orderCode": "FASHION-999", "amount": 250000 }
-   ```
-2. Cho khách quét mã VietQR có nội dung `FASHION-999`.
-3. Frontend polling: `GET /api/orders/FASHION-999/status`.
-4. Không cần deploy thêm bất kỳ Worker hay Database nào khác!
-
----
-
-## 🛠️ 6. Các lệnh quản trị thông dụng
-
+### Bước 1: Cài đặt thư viện
+Mở Terminal tại thư mục `payment-gateway`:
 ```bash
-# Xem log request thời gian thực của Worker
-npx wrangler tail
-
-# Chạy thử nghiệm Worker tại Localhost (cổng 8787)
-npm run dev
-
-# Chạy câu lệnh SQL trực tiếp trên Cloudflare D1
-npx wrangler d1 execute payment-gateway-db --remote --command="SELECT * FROM orders LIMIT 10"
-
-# Cập nhật code mới lên Cloudflare
-npx wrangler deploy
+cd payment-gateway
+npm install
 ```
+
+### Bước 2: Chạy kiểm tra lỗi kiểu dữ liệu & Unit test
+```bash
+npm run typecheck
+npm test
+```
+*(Cả 3 test case tự động sẽ chạy trên cơ sở dữ liệu SQLite in-memory và báo Pass).*
+
+### Bước 3: Khởi tạo cơ sở dữ liệu SQLite D1 ở local
+```bash
+npm run db:init:local
+```
+Lệnh này sẽ chạy file `schema.sql` để tạo các bảng `orders` và `webhook_logs` tại môi trường local của Wrangler.
+
+### Bước 4: Chạy Gateway ở Local
+```bash
+npm run dev
+```
+Server local sẽ khởi động tại: `http://localhost:8787`
+- Mở trình duyệt truy cập `http://localhost:8787` để xem Dashboard trực quan.
+- Kiểm tra Health check: `http://localhost:8787/api/health`
+
+### Bước 5: Bật giả lập thanh toán khi test local (Tùy chọn)
+Nếu muốn test giả lập thanh toán mà không cần chuyển tiền thật:
+1. Tạo file `.dev.vars` trong thư mục `payment-gateway` với nội dung:
+   ```env
+   ALLOW_TEST_SIMULATION=true
+   ```
+2. Chạy lại `npm run dev`. Khi đó bạn có thể dùng cURL để đánh dấu đơn hàng thành công ngay lập tức:
+   ```bash
+   curl -X POST http://localhost:8787/api/orders/AUR-20261109-001/simulate-pay
+   ```
+
+---
+
+## 4. Hướng dẫn Deploy lên Cloudflare Workers
+
+Khi muốn triển khai lên server Cloudflare để nhận Webhook thật từ SePay ngoài Internet:
+
+### Bước 1: Đăng nhập vào tài khoản Cloudflare
+Chạy lệnh sau trên terminal để đăng nhập qua trình duyệt:
+```bash
+npx wrangler login
+```
+Kiểm tra xem đã đăng nhập đúng tài khoản chưa:
+```bash
+npx wrangler whoami
+```
+
+### Bước 2: Kiểm tra cấu hình cơ sở dữ liệu Cloudflare D1
+Trong file [wrangler.toml](wrangler.toml) đã có sẵn ID của database D1:
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "payment-gateway-db"
+database_id = "969b7f48-a740-45bf-ac46-48493a240202"
+```
+
+Khởi tạo các bảng trên cơ sở dữ liệu D1 Cloudflare thật (chỉ cần chạy một lần duy nhất hoặc khi có thay đổi cấu trúc bảng):
+```bash
+npm run db:init:remote
+```
+
+### Bước 3: Deploy Worker lên Cloudflare
+Chạy lệnh:
+```bash
+npm run deploy
+```
+Wrangler sẽ tự động build mã TypeScript và đẩy lên mạng lưới toàn cầu của Cloudflare.
+Sau khi chạy xong, terminal sẽ in ra đường dẫn công khai của Worker, ví dụ:
+```text
+Uploaded payment-gateway (X.XX sec)
+Deployed payment-gateway triggers (X.XX sec)
+  https://payment-gateway.zemorts.workers.dev
+```
+
+### Bước 4: Xem log thời gian thực khi có lỗi (Debug)
+Nếu muốn theo dõi log khi SePay gửi webhook tới Worker trên production:
+```bash
+npx wrangler tail
+```
+
+---
+
+## 5. Cấu hình Webhook trên trang quản trị SePay
+
+1. Đăng nhập vào tài khoản SePay: [https://my.sepay.vn](https://my.sepay.vn).
+2. Vào mục **Tích hợp Webhook** -> **Thêm Webhook mới**.
+3. Điền các thông tin:
+   - **URL Webhook**: `https://<domain-worker-cua-ban>/api/webhooks/sepay`
+     *(Ví dụ: `https://payment-gateway.zemorts.workers.dev/api/webhooks/sepay`)*
+   - **Sự kiện (Event)**: Chọn biến động số dư tiền vào tài khoản.
+   - **Kiểu dữ liệu**: JSON.
+4. Bấm **Lưu** và thử tính năng **Gửi thử Webhook** từ giao diện SePay để kiểm tra kết quả trả về `HTTP 200 {"success":true}`.
+
+---
+
+## 6. Danh sách các API Endpoints
+
+| Phương thức | Đường dẫn API | Mô tả | Ai gọi |
+|---|---|---|---|
+| `GET` | `/api/health` | Kiểm tra server có đang hoạt động bình thường không | Mọi người |
+| `GET` | `/` | Giao diện Dashboard xem 50 đơn hàng và 50 webhook mới nhất | Quản trị viên / Trình duyệt |
+| `GET` | `/api/transactions` | Lấy dữ liệu JSON cho Dashboard | Frontend Dashboard |
+| `POST` | `/api/orders/register` | Đăng ký đơn hàng mới với trạng thái `PENDING` | Backend Java khi tạo đơn |
+| `GET` | `/api/orders/:orderCode/status` | Kiểm tra trạng thái đơn (`PENDING` hoặc `SUCCESS`) | Backend Java kiểm tra tiền về |
+| `POST` | `/api/webhooks/sepay` | Nhận thông báo tiền về từ ngân hàng | SePay tự động gọi |
+| `POST` | `/api/orders/:orderCode/simulate-pay` | Giả lập khách đã thanh toán thành công (khi test local) | Tester / Developer |
+
+---
+
+## 7. Ví dụ gọi thử API bằng cURL
+
+### 1. Đăng ký đơn hàng mới
+```bash
+curl -X POST http://localhost:8787/api/orders/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "appId": "aura_cafe",
+    "orderCode": "AUR-101",
+    "transactionCode": "TX-AUR-101",
+    "amount": 55000
+  }'
+```
+
+### 2. Kiểm tra trạng thái đơn
+```bash
+curl http://localhost:8787/api/orders/AUR-101/status
+```
+
+### 3. Bắn Webhook giả lập SePay báo tiền về
+```bash
+curl -X POST http://localhost:8787/api/webhooks/sepay \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 1001,
+    "gateway": "MBBank",
+    "accountNumber": "0987654321",
+    "transferType": "in",
+    "transferAmount": 55000,
+    "content": "Chuyen tien ca phe don hang AUR-101",
+    "referenceCode": "MB-123456",
+    "transactionDate": "2026-11-09 11:30:00"
+  }'
+```
+Sau lệnh trên, kiểm tra lại trạng thái đơn sẽ thấy chuyển sang `SUCCESS`!

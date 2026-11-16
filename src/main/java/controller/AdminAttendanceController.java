@@ -30,6 +30,12 @@ import java.util.Set;
 @WebServlet(name = "AdminAttendanceController", urlPatterns = {"/admin/attendance"})
 public class AdminAttendanceController extends HttpServlet {
 
+    /*
+     * BF06 - Schedule and Attendance, bước C (chấm công):
+     * 1. GET tải lịch theo ngày, tính KPI và đánh dấu đi muộn so với shift_start.
+     * 2. POST đổi giờ HH:mm thành LocalDateTime đúng ngày làm (hỗ trợ ca qua đêm), rồi validate trạng thái.
+     * 3. WorkScheduleDAO lưu check-in/check-out/status/note; controller redirect về đúng ngày đang xem.
+     */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final DateTimeFormatter DATE_DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
@@ -57,6 +63,7 @@ public class AdminAttendanceController extends HttpServlet {
         int absentCount = 0;
 
         for (WorkSchedule schedule : attendanceList) {
+            // BF06.C1: Thông tin đi muộn là dữ liệu suy diễn để hiển thị, không lưu thành cột riêng.
             applyLateInformation(schedule);
 
             if ("PRESENT".equalsIgnoreCase(schedule.getStatus())
@@ -114,6 +121,7 @@ public class AdminAttendanceController extends HttpServlet {
             // Ca qua đêm (VD 23:00 - 02:00): giờ ra 01:50 được hiểu là sáng hôm sau
             LocalDateTime checkInAt = checkIn == null ? null : schedule.atShiftTime(checkIn);
             LocalDateTime checkOutAt = checkOut == null ? null : schedule.atShiftTime(checkOut);
+            // BF06.C2: Trạng thái quyết định cặp thời gian hợp lệ trước khi dữ liệu chạm DB.
             validateAttendance(status, checkInAt, checkOutAt);
 
             Timestamp checkInTimestamp = checkInAt == null ? null : Timestamp.valueOf(checkInAt);

@@ -10,5 +10,10 @@
             <goals>
                 <goal>package</goal>
             </goals>
+            <properties>
+                <netbeans.deploy>true</netbeans.deploy>
+                <netbeans.deploy.open.in.browser>true</netbeans.deploy.open.in.browser>
+                <netbeans.deploy.clientUrlPart>/</netbeans.deploy.clientUrlPart>
+            </properties>
         </action>
     </actions>

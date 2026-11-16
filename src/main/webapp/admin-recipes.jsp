@@ -138,6 +138,10 @@
                                     </div>
                                 </div>
                             </div>
+                            <%-- RC20: [SLBF11] Show recipe and ingredient cost
+                                 . Sau khi lưu, GET tải lại danh sách công thức và giá vốn theo từng món.
+                                 .. Giá vốn là tổng định lượng nhân giá nhập; nguyên liệu thiếu giá được đánh dấu.
+                                 ... AdminRecipeController.doGet() [RC05] chuyển productSummaries sang các thẻ này. --%>
                             <div class="recipe-financials">
                                 <div><span>Giá bán</span><strong><c:out value="${product.formattedPrice}" /></strong></div>
                                 <div><span>Giá vốn theo định mức</span><strong class="cost"><c:choose><c:when test="${summary.costComplete}"><fmt:formatNumber value="${summary.recipeCost}" pattern="#,##0.##" />đ</c:when><c:when test="${summary.hasRecipe}"><fmt:formatNumber value="${summary.recipeCost}" pattern="#,##0.##" />đ · thiếu giá</c:when><c:otherwise>Chưa có định mức</c:otherwise></c:choose></strong></div>
@@ -158,6 +162,9 @@
                         </div>
                         <div class="recipe-card-footer">
                             <c:choose><c:when test="${summary.hasRecipe}"><span class="recipe-badge has">Đã có công thức</span></c:when><c:otherwise><span class="recipe-badge empty">Chưa có công thức</span></c:otherwise></c:choose>
+                            <%-- RC06: [SLBF11] Select the product
+                                 . Nút Thêm/Sửa định mức gửi productId bằng GET để mở popup đúng món.
+                                 ... AdminRecipeController.doGet() [RC02] nạp công thức và giá nhập. --%>
                             <a class="recipe-edit" href="${ctx}/admin/recipes?productId=${product.id}"><span class="material-symbols-outlined" style="font-size:16px">edit</span><c:choose><c:when test="${summary.hasRecipe}">Sửa định mức</c:when><c:otherwise>Thêm định mức</c:otherwise></c:choose></a>
                         </div>
                     </article>
@@ -172,7 +179,8 @@
         <section class="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="recipeModalTitle">
             <header class="recipe-modal-head">
                 <h2 id="recipeModalTitle">Định mức: <c:out value="${selectedProduct.name}" /></h2>
-                <a href="${ctx}/admin/recipes" class="btn-close" aria-label="Đóng"></a>
+                <a href="${ctx}/admin/recipes" class="btn-close recipe-modal-close" aria-label="Đóng"
+                   onclick="document.getElementById('recipeFormError')?.remove(); document.querySelector('.recipe-modal-backdrop')?.remove(); return false;"></a>
             </header>
             <div class="recipe-modal-body">
                 <c:if test="${not empty recipeError}">
@@ -183,8 +191,13 @@
                 </c:if>
                 <%-- BF11 - LƯU BOM: POST productId, ingredientId[], quantity[] -> AdminRecipeController -> saveRecipe(). --%>
                 <%-- Nếu lỗi: recipeDraft giữ dữ liệu vừa nhập, recipeError được hiển thị trong popup để sửa lại. --%>
+                <%-- RC07: . hiển thị công thức và giá vốn; chọn món nào thì mở form của món đó.
+                     .. Bấm Lưu thì gửi mã món cùng các cặp nguyên liệu và định lượng.
+                     ... POST /admin/recipes → doPost() [RC16]; thông tin hiển thị lấy từ doGet() [RC02]. --%>
                 <form method="post" action="${ctx}/admin/recipes" class="recipe-editor" id="recipeForm">
                     <input type="hidden" name="action" value="save">
+                    <%-- RC08: . productId ẩn xác định món cần lưu; ô tên sản phẩm chỉ hiển thị readonly.
+                         ... doPost() [RC16] kiểm tra id và món còn tồn tại. --%>
                     <input type="hidden" name="productId" value="${selectedProduct.id}">
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.recipeCsrfToken)}">
                     <div class="mb-3">
@@ -193,12 +206,18 @@
                     </div>
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                         <div><h3 class="h6 fw-bold mb-1">Nguyên liệu cho một phần</h3><div class="text-muted" style="font-size:.68rem">Nhập số nguyên theo đơn vị hiện dưới ô định lượng.</div></div>
+                        <%-- RC09: . Nút Thêm nguyên liệu sao chép template, chưa lưu công thức.
+                             ... Sự kiện click [RC12] thêm dòng; nút × xóa dòng rồi tính lại giá vốn. --%>
                         <button type="button" class="btn btn-sm btn-outline-danger" id="addIngredient" <c:if test="${empty ingredients}">disabled</c:if>>+ Thêm nguyên liệu</button>
                     </div>
                     <c:choose>
                         <c:when test="${empty ingredients}"><div class="alert alert-warning small">Chưa có nguyên liệu trong database.</div></c:when>
                         <c:otherwise>
                             <div class="ingredient-table-labels"><span>Nguyên liệu</span><span>Định lượng</span><span class="text-end">Cost / phần</span><span></span></div>
+                            <%-- RC10: [SLBF11] Enter ingredients and quantities
+                                 . Mỗi dòng gửi ingredientId và quantity cùng vị trí trong hai mảng.
+                                 .. Nguyên liệu mới chỉ chọn ACTIVE; dòng cũ có thể giữ nguyên liệu ngừng sử dụng.
+                                 ... parseIngredients() [RC17] kiểm tra cặp dữ liệu; DAO [RC18] kiểm tra nguyên liệu thêm mới. --%>
                             <div id="ingredientRows">
                                 <c:choose>
                                     <c:when test="${not empty recipeFormRows}">
@@ -221,13 +240,25 @@
                                     </c:otherwise>
                                 </c:choose>
                             </div>
+                            <%-- RC11: . Ô ingredientId chọn mã nguyên liệu; ô quantity nhận lượng dương theo đơn vị hiển thị.
+                                 .. min=0.001, max=999999999.999, step=0.001; dòng trống hoàn toàn được server bỏ qua.
+                                 ... parseIngredients() [RC17] kiểm tra số, giới hạn và nguyên liệu trùng. --%>
                             <template id="ingredientRowTemplate"><div class="ingredient-row"><div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><c:if test="${ingredient.active}"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}"><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)</option></c:if></c:forEach></select><div class="ingredient-unit-cost"></div></div><div class="ingredient-quantity"><input class="form-control" type="number" name="quantity" min="0.001" max="999999999.999" step="0.001" placeholder="0.001" aria-label="Định lượng"><div class="quantity-unit"></div></div><div class="ingredient-line-cost">—</div><button type="button" class="btn btn-sm btn-light text-danger remove-ingredient" aria-label="Xóa nguyên liệu">×</button></div></template>
                         </c:otherwise>
                     </c:choose>
+                    <%-- RC14: . Hiển thị giá vốn trong popup đang sửa công thức.
+                         . Hiển thị định lượng × giá nhập cho từng nguyên liệu và tổng giá vốn một phần.
+                         .. Thiếu giá thì ghi rõ phần chưa đủ; đây không phải giá bán.
+                         ... Controller [RC05] tính khi tải trang; JavaScript [RC13] tính xem trước khi sửa. --%>
                     <div class="recipe-cost-card" id="recipeCostCard">
                             <div><span class="text-muted small fw-bold">GIÁ VỐN NGUYÊN LIỆU / PHẦN</span><strong id="recipeCostValue"><c:choose><c:when test="${recipeCostComplete}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ</c:when><c:when test="${recipeHasIngredients}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ · thiếu giá</c:when><c:otherwise>Chưa có định lượng</c:otherwise></c:choose></strong><small id="recipeCostNote"><c:choose><c:when test="${not empty missingCostIngredients}">Chưa có giá nhập đã nhận: <c:forEach items="${missingCostIngredients}" var="missingName" varStatus="loop"><c:if test="${loop.index gt 0}">, </c:if><c:out value="${missingName}" /></c:forEach>.</c:when><c:otherwise>Đơn giá của lần nhập đã nhận gần nhất; chưa gồm bao bì, nhân công, hao hụt.</c:otherwise></c:choose></small></div>
                     </div>
-                    <div class="d-flex justify-content-end gap-2 mt-3"><a href="${ctx}/admin/recipes" class="btn btn-light">Hủy</a><button type="submit" class="btn btn-aura fw-bold" <c:if test="${empty ingredients}">disabled</c:if>>Lưu công thức</button></div>
+                    <%-- RC15: [SLBF11] Click "Save Recipe"
+                         . Nút Lưu công thức submit action=save, productId và các cặp nguyên liệu/định lượng.
+                         .. Hủy/đóng popup chỉ bỏ giao diện đang sửa, không lưu database.
+                         ... POST /admin/recipes → AdminRecipeController.doPost() [RC16]. --%>
+                    <div class="d-flex justify-content-end gap-2 mt-3"><a href="${ctx}/admin/recipes" class="btn btn-light recipe-modal-cancel"
+                        onclick="document.getElementById('recipeFormError')?.remove(); document.querySelector('.recipe-modal-backdrop')?.remove(); return false;">Hủy</a><button type="submit" class="btn btn-aura fw-bold" <c:if test="${empty ingredients}">disabled</c:if>>Lưu công thức</button></div>
                 </form>
             </div>
         </section>
@@ -244,12 +275,26 @@
         });
     });
 
+    const recipeBackdrop = document.querySelector('.recipe-modal-backdrop');
+    const closeRecipeModal = event => {
+        if (!recipeBackdrop) return;
+        event.preventDefault();
+        document.getElementById('recipeFormError')?.remove();
+        recipeBackdrop.remove();
+        window.history.replaceState({}, document.title, '${ctx}/admin/recipes');
+    };
+    document.querySelector('.recipe-modal-close')?.addEventListener('click', closeRecipeModal);
+    document.querySelector('.recipe-modal-cancel')?.addEventListener('click', closeRecipeModal);
+
     const rows = document.getElementById('ingredientRows');
     const template = document.getElementById('ingredientRowTemplate');
     const costValue = document.getElementById('recipeCostValue');
     const costNote = document.getElementById('recipeCostNote');
     const money = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
 
+    // RC13: . Tính xem trước quantity × data-unit-cost của option được chọn.
+    // .. Không gọi API/lưu database; thiếu lượng hoặc giá thì đánh dấu chưa đủ.
+    // ... Khi tải lại, giá vốn do controller tính tại [RC05].
     function recalculateCost() {
         // BF11: chỉ cập nhật số tiền xem trước từ lượng nhập và giá đã nạp; server tính lại khi tải trang.
         if (!rows || !costValue) return;
@@ -290,6 +335,8 @@
         costNote.textContent = complete ? 'Đơn giá của lần nhập đã nhận gần nhất; chưa gồm bao bì, nhân công, hao hụt.' : 'Có nguyên liệu thiếu định lượng hoặc chưa có phiếu nhập đã nhận; số tiền là phần đã tính được.';
     }
 
+    // RC12: . Thêm dòng từ template; input/change tính lại giá; nút × bỏ dòng đang sửa.
+    // ... recalculateCost() [RC13]; chỉ nút Lưu [RC15] mới gửi dữ liệu backend.
     document.getElementById('addIngredient')?.addEventListener('click', () => { if (rows && template) rows.appendChild(template.content.cloneNode(true)); });
     rows?.addEventListener('input', recalculateCost);
     rows?.addEventListener('change', recalculateCost);

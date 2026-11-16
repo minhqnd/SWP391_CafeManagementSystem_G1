@@ -32,3 +32,28 @@ CREATE TABLE IF NOT EXISTS webhook_logs (
 
 CREATE INDEX IF NOT EXISTS idx_orders_lookup ON orders (app_id, order_code);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status);
+
+-- Append-only bank ledger. Reapply this canonical schema to create the new table
+-- on an existing D1 database; no existing rows are modified or reconstructed.
+CREATE TABLE IF NOT EXISTS bank_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sepay_id INTEGER NOT NULL UNIQUE,
+    order_id INTEGER REFERENCES orders(id),
+    gateway TEXT NOT NULL,
+    account_number TEXT NOT NULL,
+    transfer_type TEXT NOT NULL,
+    received_amount INTEGER NOT NULL CHECK(received_amount > 0),
+    expected_amount REAL,
+    allocated_amount REAL NOT NULL DEFAULT 0,
+    excess_amount REAL NOT NULL DEFAULT 0,
+    reconciliation_status TEXT NOT NULL CHECK(reconciliation_status IN
+        ('MATCHED','OVERPAID','UNDERPAID','DUPLICATE_PAYMENT','UNMATCHED',
+         'AMBIGUOUS','NOT_PAYABLE')),
+    content TEXT NOT NULL,
+    reference_code TEXT NOT NULL,
+    transaction_date TEXT NOT NULL,
+    raw_webhook TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_bank_transactions_order ON bank_transactions(order_id);
+CREATE INDEX IF NOT EXISTS idx_bank_transactions_review ON bank_transactions(reconciliation_status, id);

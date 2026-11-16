@@ -126,6 +126,7 @@
                                             data-shift="${fn:escapeXml(item.shiftDisplayName)} (${fn:escapeXml(item.shiftTime)})"
                                             data-status="${item.status}"
                                             data-overnight="${item.overnightShift}"
+                                            data-shift-start="${item.shiftStartFormatted}"
                                             data-check-in="${empty item.checkInTime ? '' : item.checkInFormatted}"
                                             data-check-out="${empty item.checkOutTime ? '' : item.checkOutFormatted}"
                                             data-note="${fn:escapeXml(item.note)}">
@@ -281,7 +282,9 @@
                     employeeLabel.textContent = button.dataset.name;
                     shiftLabel.textContent = button.dataset.shift;
                     statusInput.value = button.dataset.status;
-                    checkInInput.value = button.dataset.checkIn;
+                    // Chưa chấm giờ vào thì mặc định theo đúng giờ bắt đầu của ca.
+                    // Bản ghi đã có giờ vào thực tế luôn được giữ nguyên.
+                    checkInInput.value = button.dataset.checkIn || button.dataset.shiftStart || '';
                     checkOutInput.value = button.dataset.checkOut;
                     noteInput.value = button.dataset.note || '';
                     form.dataset.overnight = button.dataset.overnight;

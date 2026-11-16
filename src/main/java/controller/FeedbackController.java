@@ -24,6 +24,13 @@ import java.util.List;
 @WebServlet(name = "FeedbackController", urlPatterns = { "/feedback" })
 public class FeedbackController extends HttpServlet {
 
+    /*
+     * BF09 - Feedback Resolution (phía khách hàng)
+     * 1. GET tải lịch sử feedback và các đơn hàng có thể phản hồi.
+     * 2. POST xác thực đăng nhập, chuẩn hóa loại feedback/rating và kiểm tra quyền sở hữu đơn.
+     * 3. FeedbackDAO tạo phiếu PENDING; controller trả JSON cho AJAX hoặc redirect cho form thường.
+     * 4. Phần xử lý/đóng phiếu tiếp tục tại AdminFeedbackController.
+     */
     private final FeedbackDAO feedbackDAO = new FeedbackDAO();
 
     @Override
@@ -36,6 +43,7 @@ public class FeedbackController extends HttpServlet {
 
         List<Feedback> feedbacks;
         if (user != null) {
+            // BF09.1: Khách đã đăng nhập chỉ thấy phiếu và đơn hàng thuộc chính tài khoản của mình.
             feedbacks = feedbackDAO.getFeedbacksByCustomerId(user.getId());
             List<String[]> userOrders = feedbackDAO.getRecentOrdersForCustomer(user.getId());
             request.setAttribute("userOrders", userOrders);
@@ -62,6 +70,7 @@ public class FeedbackController extends HttpServlet {
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
         if (user == null) {
+            // BF09.2: Tạo feedback làm phát sinh dữ liệu khách hàng nên bắt buộc có phiên đăng nhập.
             sendError(request, response, ajax, HttpServletResponse.SC_UNAUTHORIZED,
                     "Vui lòng đăng nhập trước khi gửi phản hồi!");
             return;
@@ -115,6 +124,7 @@ public class FeedbackController extends HttpServlet {
         // aura_cafe.sql)
         int orderId = feedbackDAO.findOrderId(orderCode, customerId);
         if (orderId <= 0) {
+            // BF09.3: Không cho phản hồi đơn của người khác hoặc phản hồi lặp lại cùng một đơn.
             sendError(request, response, ajax, HttpServletResponse.SC_CONFLICT,
                     "Đơn hàng không hợp lệ hoặc đã được bạn phản hồi trước đó.");
             return;
@@ -128,7 +138,7 @@ public class FeedbackController extends HttpServlet {
         fb.setRating(rating);
         fb.setContent(content.trim());
         fb.setStatus("PENDING");
-        // trả kết quả thành công hoặc báo lỗi
+        // BF09.4: Phiếu mới luôn đi vào hàng chờ PENDING để Admin tiếp nhận và xử lý.
         boolean saved = feedbackDAO.createFeedback(fb);
 
         if (ajax) {

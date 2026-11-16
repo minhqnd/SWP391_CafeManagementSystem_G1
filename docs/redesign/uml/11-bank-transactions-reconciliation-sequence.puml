@@ -1,0 +1,46 @@
+@startuml 11-bank-transactions-reconciliation-sequence
+title Sequence - Bank Transfer Webhook and Admin Reconciliation (UC12, UC75)
+autonumber
+actor "Customer" as C
+boundary "Payment Page\n/payment" as PayUI
+boundary "Admin Bank Dashboard\n/admin/bank-transactions" as AdminUI
+control "Payment Gateway\n(Cloudflare Worker)" as Worker
+boundary "Payment Callback\n/payment/callback" as Callback
+control "AdminBankTransactionsController\n/admin/bank-transactions" as AdminC
+entity "PaymentDAO" as PayDAO
+entity "OrderDAO" as ODAO
+database "MySQL (CMS DB)" as DB
+actor "Admin" as Admin
+
+== Online Payment & Real-time Webhook ==
+C -> PayUI : Scan VietQR and transfer via Mobile Banking
+PayUI -> Worker : Poll payment status (/orders/{id}/status)
+... Customer completes bank transfer ...
+[-> Worker : SePay Webhook POST (gateway_reference, amount, content, transfer_date)
+Worker -> Worker : Store raw transaction in D1 DB\nExtract order code from transfer content
+Worker -> Callback : POST /payment/callback (signed with HMAC-SHA256)
+Callback -> PayDAO : applyGatewayCallback(orderId, amount, transCode, reference)
+PayDAO -> DB : SELECT * FROM orders WHERE id = ?
+alt Amount matches required order total
+  PayDAO -> DB : UPDATE payments SET status='SUCCESS', paid_at=NOW()
+  PayDAO -> DB : UPDATE orders SET status='CONFIRMED'
+  PayDAO -> DB : INSERT INTO loyalty_transactions (EARN)
+  Callback --> Worker : HTTP 200 {status: "CONFIRMED"}
+  Worker --> PayUI : Status changed -> CONFIRMED
+  PayUI --> C : Auto-redirect to /bill?orderId=... (Order Success)
+else Discrepancy (Overpaid / Underpaid / Duplicate)
+  PayDAO -> DB : Record unverified payment attempt & discrepancy note
+  Callback --> Worker : HTTP 200 / 400 with discrepancy state
+end
+
+== Admin Bank Reconciliation (UC75) ==
+Admin -> AdminUI : Open /admin/bank-transactions
+AdminUI -> AdminC : GET /admin/bank-transactions
+AdminC -> Worker : Fetch bank transactions feed (/api/transactions)
+Worker --> AdminC : Return raw transactions list
+AdminC -> ODAO : Reconcile each transaction against orders table
+ODAO -> DB : Match order code, expected amount, payment status
+AdminC -> AdminC : Compute reconciliation status:\n- MATCHED: Exact amount & confirmed\n- OVERPAID: Received > expected (refund note)\n- UNDERPAID: Received < expected (collect remaining)\n- DUPLICATE: Multiple transfers for 1 order\n- ORDER_NOT_FOUND: Invalid order code in content\n- ORDER_CANCELLED: Transferred to cancelled order
+AdminC --> AdminUI : Render reconciliation cards, table, and 5s auto-polling timer
+AdminUI --> Admin : Displays full bank audit & discrepancy alerts
+@enduml

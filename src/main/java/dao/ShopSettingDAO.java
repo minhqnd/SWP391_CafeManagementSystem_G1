@@ -2,6 +2,7 @@ package dao;
 
 import model.ShopSettings;
 import model.ShopSettingEntry;
+import utils.LoyaltyValidation;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -78,6 +79,9 @@ public class ShopSettingDAO extends BaseDAO {
      * (Khung giờ ca theo tuần nằm ở bảng work_shifts - xem WorkShiftDAO.)
      */
     public ShopSettings getSettings() {
+        // RU03: . Đọc shop_settings thành ShopSettings; thiếu khóa hoặc lỗi đọc thì giữ giá trị mặc định.
+        // .. Hàm này chỉ đọc, không tự lưu cấu hình và không tạo giao dịch điểm.
+        // ... AdminLoyaltyController.doGet() [RU02] đặt request.settings → form [RU04].
         ShopSettings settings = new ShopSettings();
         String sql = "SELECT setting_key, setting_value FROM shop_settings";
         try (Connection conn = getConnection();
@@ -92,10 +96,43 @@ public class ShopSettingDAO extends BaseDAO {
         return settings;
     }
 
+    /** BF12 only writes the three loyalty keys; unrelated shop settings are preserved. */
+    public boolean saveLoyaltyRules(long earnUnit, int pointsStep, long stepValue) {
+        // RU22: [SLBF12] Save loyalty rules
+        // . Kiểm tra lại biên rồi upsert đúng points_earn_unit, points_step và points_step_value.
+        // .. Ba khóa nằm trong một transaction; thành công commit, lỗi SQL rollback; không ghi phí giao hàng.
+        // ... Trả true/false về updateRules() [RU14]; thành công báo kết quả tại [RU23].
+        LoyaltyValidation.requireRange(earnUnit, "Số tiền chi tiêu", 1, LoyaltyValidation.MAX_RULE_MONEY);
+        LoyaltyValidation.requireRange(pointsStep, "Mốc đổi điểm", 1, LoyaltyValidation.MAX_POINTS);
+        LoyaltyValidation.requireRange(stepValue, "Tiền giảm", 0, LoyaltyValidation.MAX_RULE_MONEY);
+        String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) "
+                + "ON DUPLICATE KEY UPDATE setting_value = ?";
+        try (Connection conn = getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                addValue(ps, ShopSettings.KEY_POINTS_EARN_UNIT, earnUnit);
+                addValue(ps, ShopSettings.KEY_POINTS_STEP, pointsStep);
+                addValue(ps, ShopSettings.KEY_POINTS_STEP_VALUE, stepValue);
+                ps.executeBatch();
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(autoCommit);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            return false;
+        }
+    }
+
     /** Lưu toàn bộ cấu hình trong 1 transaction. Trả về false nếu lỗi (VD chưa tạo bảng shop_settings). */
     public boolean saveSettings(ShopSettings settings) {
-        // BF12: Controller đã kiểm tra quy tắc; DAO lưu các khóa cấu hình theo dạng key/value.
-        // Khóa đã có thì UPDATE, chưa có thì INSERT; các khóa được lưu cùng một transaction.
+        // . Lưu toàn bộ thiết lập cửa hàng vào cơ sở dữ liệu.
+        // .. Đã có thì cập nhật, chưa có thì thêm; sáu thiết lập được lưu cùng nhau.
+        // .. BF12 dùng saveLoyaltyRules() [RU22] để không ghi đè các thiết lập khác.
         String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) "
                 + "ON DUPLICATE KEY UPDATE setting_value = ?";
 

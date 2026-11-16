@@ -18,6 +18,10 @@ import java.util.List;
  */
 public class ShiftHandoverDAO extends BaseDAO {
 
+    /*
+     * BF07 persistence boundary: work_schedules và shift_handovers phải thay đổi cùng nhau.
+     * Vì vậy submitHandover luôn dùng một transaction và điều kiện status='PRESENT' để chống chốt lặp.
+     */
     private static final String SELECT_HANDOVER =
             "SELECT h.*, ws.work_date, s.shift_name, s.start_time, s.end_time, " +
             "       c.full_name AS cashier_name " +
@@ -46,6 +50,7 @@ public class ShiftHandoverDAO extends BaseDAO {
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
+                // BF07.4: Đóng ca có điều kiện; 0 row nghĩa là ca đã chốt hoặc bị thay đổi đồng thời.
                 try (PreparedStatement ps = conn.prepareStatement(closeSql)) {
                     ps.setString(1, note);
                     ps.setInt(2, scheduleId);
@@ -56,6 +61,7 @@ public class ShiftHandoverDAO extends BaseDAO {
                     }
                 }
                 int id;
+                // BF07.5: Chỉ tạo biên bản sau khi ca chuyển PRESENT -> COMPLETED thành công.
                 try (PreparedStatement ps = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt(1, scheduleId);
                     ps.setInt(2, cashierId);
@@ -73,6 +79,7 @@ public class ShiftHandoverDAO extends BaseDAO {
                 conn.commit();
                 return id;
             } catch (SQLException | RuntimeException e) {
+                // BF07.6: Không để tồn tại ca COMPLETED mà thiếu biên bản, hoặc biên bản của ca chưa đóng.
                 conn.rollback();
                 throw e;
             }

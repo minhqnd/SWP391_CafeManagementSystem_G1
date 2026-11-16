@@ -27,6 +27,9 @@ public class ProductImageController extends HttpServlet {
 
         ProductImage image;
         try {
+            // IM03: . Ở đây em nhận yêu cầu tải ảnh món và kiểm tra mã món.
+            // .. Có ảnh thì trả nội dung ảnh cho trình duyệt; không có thì báo không tìm thấy.
+            // ... productDAO.getProductImage(mã món) [IM04] → ghi byte ảnh vào response.
             image = productDAO.getProductImage(productId);
         } catch (RuntimeException e) {
             getServletContext().log("Failed to load product image " + productId, e);

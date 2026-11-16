@@ -10,6 +10,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.Tag("database")
 @DisplayName("ProductIngredientDAO Integration Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ProductIngredientDAOTest {
@@ -54,6 +55,7 @@ public class ProductIngredientDAOTest {
 
     @Test
     @Order(3)
+    @org.junit.jupiter.api.condition.EnabledIfSystemProperty(named="cafe.database.writeTests", matches="true")
     @DisplayName("TC-BOM-03: Cập nhật định mức nguyên liệu thành công")
     void testSaveRecipe_HappyPath() {
         Product beforeProduct = productDAO.getProductById(TEST_PRODUCT_ID);

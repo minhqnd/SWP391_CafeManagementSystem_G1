@@ -16,6 +16,7 @@ import java.sql.ResultSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.Tag("database")
 @DisplayName("CategoryDAO Integration & Unit Tests")
 public class CategoryDAOTest {
 

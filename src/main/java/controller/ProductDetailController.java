@@ -26,6 +26,9 @@ public class ProductDetailController extends HttpServlet {
             throws ServletException, IOException {
 
         String idParam = request.getParameter("id");
+        // MN11: . Ở đây em nhận mã món khách muốn xem ở trang chi tiết riêng.
+        // .. Em đọc món đó và các món liên quan rồi gửi sang trang hiển thị.
+        // ... ProductDAO.getAvailableProductById() [MN10] → request → product-detail.jsp [MN12].
 
         // Validate tham số id
         if (idParam == null || idParam.trim().isEmpty()) {
@@ -35,9 +38,8 @@ public class ProductDetailController extends HttpServlet {
 
         try {
             int productId = Integer.parseInt(idParam.trim());
-            // BF11: nhận ID từ URL -> DAO trả Product -> gán request -> product-detail.jsp.
-            // getProductById chỉ lọc ID; không coi thông báo "ngừng kinh doanh" là kiểm tra trạng thái ở đây.
-            Product product = productDAO.getProductById(productId);
+            // BF11: nhận ID từ URL -> DAO chỉ trả món còn bán trong danh mục ACTIVE -> gán request -> product-detail.jsp.
+            Product product = productDAO.getAvailableProductById(productId);
 
             if (product == null) {
                 // Sản phẩm không tồn tại -> chuyển về menu

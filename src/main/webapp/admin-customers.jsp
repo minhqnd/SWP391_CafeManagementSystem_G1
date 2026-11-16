@@ -92,7 +92,7 @@
         <div class="modal-header"><div><small>USERS · CUSTOMER</small><h2 class="modal-title">Thêm khách hàng</h2></div><button class="btn-close" type="button" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
             <div class="customer-field"><label for="fullName">Họ và tên *</label><input id="fullName" name="fullName" required maxlength="120"></div>
-            <div class="row g-3"><div class="col-sm-6 customer-field"><label for="phone">Số điện thoại *</label><input id="phone" name="phone" required maxlength="20"></div><div class="col-sm-6 customer-field"><label for="birthday">Ngày sinh</label><input id="birthday" name="birthday" type="date"></div></div>
+            <div class="row g-3"><div class="col-sm-6 customer-field"><label for="phone">Số điện thoại *</label><input id="phone" name="phone" type="tel" required maxlength="10" pattern="[0-9]{10}" inputmode="numeric" title="Nhập đúng 10 chữ số"></div><div class="col-sm-6 customer-field"><label for="birthday">Ngày sinh</label><input id="birthday" name="birthday" type="date"></div></div>
             <div class="customer-field"><label for="email">Email</label><input id="email" name="email" type="email" maxlength="150"></div>
             <div class="customer-field"><label for="address">Địa chỉ</label><input id="address" name="address"></div>
             <div class="customer-field"><label for="initialPoints">Điểm tặng khởi tạo</label><input id="initialPoints" name="initialPoints" type="number" min="0" value="0"><small>Được ghi vào loyalty_transactions với loại EARN.</small></div>

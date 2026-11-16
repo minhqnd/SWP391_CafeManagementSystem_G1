@@ -20,6 +20,7 @@ import java.util.List;
  */
 public class WorkShiftDAO extends BaseDAO {
 
+    /* BF06.A persistence: CRUD khung ca theo week_start và đếm lịch đang tham chiếu để bảo vệ dữ liệu. */
     private static final String SELECT_SHIFT =
             "SELECT s.id, s.week_start, s.shift_name, s.start_time, s.end_time, "
             + "(SELECT COUNT(*) FROM work_schedules ws WHERE ws.shift_id = s.id) AS schedule_count "

@@ -24,6 +24,13 @@ import java.util.UUID;
 @WebServlet(name = "AdminFeedbackController", urlPatterns = {"/admin/feedback"})
 public class AdminFeedbackController extends HttpServlet {
 
+    /*
+     * BF09 - Feedback Resolution (phía Admin)
+     * 1. GET kiểm tra quyền Admin, tạo CSRF token, tải KPI và danh sách theo bộ lọc.
+     * 2. POST kiểm tra CSRF, nội dung phản hồi và trạng thái đích.
+     * 3. FeedbackDAO khóa phiếu, kiểm tra chuyển trạng thái rồi cập nhật trong transaction.
+     * 4. Kết quả được lưu dưới dạng flash message và redirect về danh sách (PRG pattern).
+     */
     private final FeedbackDAO feedbackDAO = new FeedbackDAO();
 
     @Override
@@ -33,6 +40,7 @@ public class AdminFeedbackController extends HttpServlet {
         }
 
         HttpSession session = request.getSession();
+        // BF09.1: Token gắn với session bảo vệ thao tác trả lời/đóng phiếu khỏi CSRF.
         if (session.getAttribute("feedbackCsrfToken") == null) {
             session.setAttribute("feedbackCsrfToken", UUID.randomUUID().toString());
         }
@@ -44,6 +52,7 @@ public class AdminFeedbackController extends HttpServlet {
 
         try {
             // Lấy toàn bộ danh sách để tính thống kê 4 chỉ số KPI tổng thể
+            // BF09.2: KPI luôn tính trên toàn bộ dữ liệu; bộ lọc chỉ tác động danh sách hiển thị.
             List<Feedback> allFeedbacks = feedbackDAO.getAdminFeedbacks(null, null);
 
             long totalCount = allFeedbacks.size();
@@ -94,6 +103,7 @@ public class AdminFeedbackController extends HttpServlet {
         HttpSession session = request.getSession();
         String sessionCsrf = (String) session.getAttribute("feedbackCsrfToken");
         String paramCsrf = request.getParameter("csrfToken");
+        // BF09.3: Dừng trước khi đọc/cập nhật phiếu nếu request không thuộc form hợp lệ của session.
         if (sessionCsrf == null || paramCsrf == null || !sessionCsrf.equals(paramCsrf)) {
             session.setAttribute("feedbackError", "Phiên biểu mẫu đã hết hạn. Vui lòng thao tác lại.");
             response.sendRedirect(request.getContextPath() + "/admin/feedback");
@@ -115,6 +125,7 @@ public class AdminFeedbackController extends HttpServlet {
                 }
 
                 FeedbackStatus targetStatus = FeedbackStatus.from(request.getParameter("status"));
+                // BF09.4: DAO quyết định kết quả UPDATED/NOT_FOUND/ALREADY_CLOSED một cách nguyên tử.
                 FeedbackDAO.ResponseUpdateResult result = feedbackDAO.updateFeedbackResponse(
                         id, targetStatus, responseText);
 

@@ -5,11 +5,14 @@ import model.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import utils.AccountValidation;
+import utils.PasswordHasher;
 
 /**
  * UserDAO - Tương tác dữ liệu người dùng (tài khoản, phân quyền)
  */
 public class UserDAO extends BaseDAO {
+
 
     private boolean hasColumn(ResultSet rs, String columnName) {
         try {
@@ -26,14 +29,14 @@ public class UserDAO extends BaseDAO {
         return false;
     }
 
+    // LG06: . SELECT users theo email/SĐT; yêu cầu ACTIVE và đối chiếu mật khẩu bằng PasswordHasher.verify().
+    // .. Đúng trả User; sai, bị khóa hoặc lỗi trả null. Mật khẩu rõ cũ được băm lại khi đăng nhập đúng.
+    // ... Kết quả về LoginController.doPost() [LG07].
     public User login(String identifier, String password) {
-        // BF10: xác thực và dựng User trả về LoginController để tạo session.
-        // Lưu ý code hiện tìm theo email HOẶC phone; không mô tả backend này là email-only.
-        if (identifier == null || password == null) {
+        if (identifier == null || password == null || identifier.length() > 150 || password.length() > 255) {
             return null;
         }
         identifier = identifier.trim();
-        password = password.trim();
         String sql = "SELECT * FROM users WHERE (email = ? OR phone = ?)";
 
         try (Connection conn = getConnection();
@@ -50,21 +53,16 @@ public class UserDAO extends BaseDAO {
                         return null; 
                     }
 
-                    // Lưu ý: tên cột là password_hash nhưng hiện so trực tiếp và có nhánh demo_hash.
-                    // Đây chưa phải xác minh mật khẩu bằng thuật toán hash an toàn.
                     String dbHash = rs.getString("password_hash");
-                    boolean passwordMatches = false;
-                    if (dbHash != null) {
-                        if (dbHash.equals(password)) {
-                            passwordMatches = true;
-                        } else if ("demo_hash".equals(dbHash) && 
-                                  ("123456".equals(password) || "1234".equals(password) || "demo_hash".equals(password) || "admin123".equals(password) || "password".equals(password) || "an123".equals(password))) {
-                            passwordMatches = true;
-                        }
-                    }
-
-                    if (!passwordMatches) {
+                    if (!PasswordHasher.verify(password, dbHash)) {
                         return null;
+                    }
+                    if (!PasswordHasher.encoded(dbHash)) {
+                        try (PreparedStatement upgrade = conn.prepareStatement("UPDATE users SET password_hash=? WHERE id=? AND password_hash=? AND status='ACTIVE'")) {
+                            upgrade.setString(1, PasswordHasher.hash(password));
+                            upgrade.setInt(2, rs.getInt("id")); upgrade.setString(3, dbHash);
+                            if (upgrade.executeUpdate() != 1) return null;
+                        }
                     }
 
                     String birthdayStr = "";
@@ -105,13 +103,14 @@ public class UserDAO extends BaseDAO {
         return null;
     }
 
+    // RG09a: . Băm mật khẩu bằng PasswordHasher.hash() rồi INSERT tài khoản ACTIVE vào users.
+    // .. Có dòng được thêm trả true; lỗi trả false.
+    // ... RegisterController.doPost() xử lý kết quả [RG10].
     public boolean register(User user, String password) {
-        // BF10: INSERT tài khoản ACTIVE; Controller đã đặt role CUSTOMER cho đăng ký từ web.
-        // Kết quả true/false được Controller chuyển thành thông báo; mật khẩu hiện chưa hash.
         String sql = "INSERT INTO users (full_name, phone, email, role, position, status, password_hash) " +
                      "VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?)";
 
-        try (Connection conn = DBContext.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setString(1, user.getFullName());
@@ -119,7 +118,7 @@ public class UserDAO extends BaseDAO {
             ps.setString(3, user.getEmail());
             ps.setString(4, user.getRole());
             ps.setString(5, user.getPosition());
-            ps.setString(6, password); // TODO: Hash password before saving
+            ps.setString(6, PasswordHasher.hash(password));
             
             int affectedRows = ps.executeUpdate();
             return affectedRows > 0;
@@ -129,12 +128,14 @@ public class UserDAO extends BaseDAO {
         }
         return false;
     }
+    // RG07b: . SELECT users theo email đã được chuẩn hóa.
+    // .. Có bản ghi trả true; không có hoặc lỗi truy vấn trả false theo code hiện tại.
+    // ... RegisterController.doPost() [RG07] gắn lỗi email nếu phát hiện trùng.
     public boolean checkEmailExists(String email) {
-        // BF10: kiểm tra email có bản ghi users để chống trùng hoặc xác định luồng quên mật khẩu.
         String sql = "SELECT id FROM users WHERE email = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, email);
+            ps.setString(1, AccountValidation.email(email));
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -144,8 +145,10 @@ public class UserDAO extends BaseDAO {
         return false;
     }
 
+    // RG07a: . SELECT users theo SĐT đã được chuẩn hóa.
+    // .. Có bản ghi trả true; không có hoặc lỗi truy vấn trả false theo code hiện tại.
+    // ... RegisterController.doPost() [RG07] gắn lỗi phone nếu phát hiện trùng.
     public boolean checkPhoneExists(String phone) {
-        // BF10: kiểm tra trùng số điện thoại khi đăng ký, không đồng nghĩa đây là thao tác đăng nhập.
         if (phone == null || phone.trim().isEmpty()) {
             return false;
         }
@@ -162,24 +165,116 @@ public class UserDAO extends BaseDAO {
         return false;
     }
 
-    public boolean updatePassword(String email, String newPassword) {
-        // BF10: dùng chung cho reset sau OTP và đổi mật khẩu trong hồ sơ; UPDATE theo email.
-        String sql = "UPDATE users SET password_hash = ? WHERE email = ?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newPassword); // TODO: Hash password
-            ps.setString(2, email);
-            return ps.executeUpdate() > 0;
+    /** Read-only form check; exclusion is supplied from the authenticated session only. */
+    // RG04d: . SELECT email/SĐT trùng để phục vụ kiểm tra frontend của đăng ký.
+    // .. Có bản ghi trả true; lỗi DB ném lỗi để Controller trả HTTP 503.
+    // ... AccountAvailabilityController trả JSON về bước JavaScript [RG04].
+    // PF10d: . Cùng truy vấn nhưng loại trừ ID đang sửa khi kiểm tra hồ sơ.
+    // ... Kết quả về checkContact() trong bước JavaScript [PF10].
+    public boolean contactExists(String field, String value, int excludedUserId) {
+        if (!"email".equals(field) && !"phone".equals(field)) throw new IllegalArgumentException("Invalid contact field");
+        String column = "email".equals(field) ? "LOWER(TRIM(email))" : "phone";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "SELECT id FROM users WHERE " + column + "=? AND id<>? LIMIT 1")) {
+            ps.setString(1, value);
+            ps.setInt(2, excludedUserId);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không kiểm tra được thông tin. Vui lòng thử lại.");
         }
-        return false;
     }
+
+    /** Resolve exactly one active account; ambiguous legacy emails fail closed. */
+    // OT06c: . SELECT theo LOWER(TRIM(email)), lấy tối đa hai bản ghi để phát hiện email trùng dữ liệu cũ.
+    // .. Không có trả null; nhiều bản ghi/không ACTIVE/lỗi DB trả lỗi riêng; đúng một ACTIVE thì trả User.
+    // ... PasswordRecoveryService.start() [OT06] nhận tài khoản để gửi OTP.
+    public User findActiveAccountByEmail(String email) {
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "SELECT id,email,status FROM users WHERE LOWER(TRIM(email))=? LIMIT 2")) {
+            ps.setString(1, AccountValidation.email(email));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                User user = new User();
+                user.setId(rs.getInt("id"));
+                user.setEmail(rs.getString("email"));
+                user.setStatus(rs.getString("status"));
+                if (rs.next()) throw new utils.RecoveryFailure(null,
+                        "Email đang được liên kết với nhiều tài khoản. Vui lòng liên hệ quản trị viên để kiểm tra dữ liệu.");
+                if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) throw new utils.RecoveryFailure(null,
+                        "Tài khoản đã bị khóa hoặc ngừng hoạt động. Vui lòng liên hệ quản trị viên.");
+                return user;
+            }
+        } catch (utils.RecoveryFailure e) { throw e; }
+        catch (Exception e) {
+            java.util.logging.Logger.getLogger(UserDAO.class.getName()).log(java.util.logging.Level.WARNING,
+                    "Password recovery account lookup failed", e);
+            throw new utils.RecoveryFailure(null,"Không thể kết nối hoặc tra cứu dữ liệu tài khoản. Vui lòng thử lại sau.");
+        }
+    }
+    // PF04: . SELECT users theo ID trong session và điều kiện status=ACTIVE.
+    // .. Có bản ghi trả User; không có hoặc lỗi trả null.
+    // ... ProfileController.authorize() [PF03] quyết định có cho vào hồ sơ không.
+    public User getActiveUserById(int id) {
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "SELECT id,full_name,phone,email,role,position,status,birthday,address,total_points FROM users WHERE id=? AND status='ACTIVE'")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next() ? accountFromRow(rs) : null; }
+        } catch (Exception e) { return null; }
+    }
+    private User accountFromRow(ResultSet rs) throws java.sql.SQLException {
+        return new User(rs.getInt("id"),rs.getString("full_name"),rs.getString("phone"),rs.getString("email"),
+                rs.getString("role"),rs.getString("position"),rs.getString("status"),rs.getString("birthday"),rs.getString("address"),rs.getInt("total_points"));
+    }
+    // OT17: . Kiểm tra rồi băm mật khẩu mới, UPDATE đúng ID/email đã xác minh và status=ACTIVE.
+    // .. Đúng một bản ghi được cập nhật mới trả true; lỗi hoặc không khớp trả false.
+    // ... PasswordHasher.hash() → PasswordRecoveryService.reset() [OT16].
+    public boolean resetPasswordById(int id, String verifiedEmail, String password) {
+        if (AccountValidation.passwordError(password, password) != null) return false;
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "UPDATE users SET password_hash=? WHERE id=? AND LOWER(TRIM(email))=? AND status='ACTIVE'")) {
+            ps.setString(1, PasswordHasher.hash(password)); ps.setInt(2,id); ps.setString(3,AccountValidation.email(verifiedEmail));
+            return ps.executeUpdate() == 1;
+        } catch (Exception e) { return false; }
+    }
+    // PW06: . Trong transaction, khóa tài khoản ACTIVE, kiểm tra mật khẩu cũ và lưu mật khẩu mới đã băm.
+    // .. Cập nhật thành công thì commit; sai mật khẩu hoặc lỗi thì rollback và trả false.
+    // ... PasswordHasher.verify(), PasswordHasher.hash() → ProfileController.doPost() [PW07].
+    public boolean changePasswordById(int id, String current, String password) {
+        if (AccountValidation.passwordError(password, password) != null) return false;
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement read = conn.prepareStatement("SELECT password_hash FROM users WHERE id=? AND status='ACTIVE' FOR UPDATE")) {
+                    read.setInt(1,id);
+                    try (ResultSet rs=read.executeQuery()) {
+                        if (!rs.next() || !PasswordHasher.verify(current,rs.getString(1))) { conn.rollback(); return false; }
+                    }
+                }
+                try (PreparedStatement ps = conn.prepareStatement("UPDATE users SET password_hash=? WHERE id=? AND status='ACTIVE'")) {
+                    ps.setString(1,PasswordHasher.hash(password));ps.setInt(2,id);
+                    if(ps.executeUpdate()!=1){conn.rollback();return false;}
+                }
+                conn.commit();return true;
+            } catch(Exception e){conn.rollback();return false;}
+        } catch(Exception e){return false;}
+    }
+    /** Compatibility wrapper: never update several accounts sharing an old email. */
+    public boolean updatePassword(String email, String password) {
+        User account=findActiveAccountByEmail(email);
+        return account!=null && resetPasswordById(account.getId(),account.getEmail(),password);
+    }
+    // PF13: [SLBF10] Update profile
+    // . Kiểm tra email thuộc tài khoản khác rồi UPDATE full_name, phone, email, birthday, address theo ID ACTIVE.
+    // .. Lưu được trả success; ngày sinh trống lưu NULL; trùng dữ liệu hoặc lỗi DB trả thông báo lỗi.
+    // ... ProfileController.update() nhận kết quả trong ProfileController.update() nhận kết quả rồi cập nhật session/thông báo [PF15].
     public String updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
-        // BF10: UPDATE đúng ID của phiên đăng nhập; lỗi khóa duy nhất được đổi thành thông báo trùng.
-        String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ? WHERE id = ?";
-        try (Connection conn = DBContext.getConnection();
+        String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ? WHERE id = ? AND status='ACTIVE'";
+        try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+            try (PreparedStatement duplicate=conn.prepareStatement("SELECT id FROM users WHERE LOWER(TRIM(email))=? AND id<>? LIMIT 1")) {
+                duplicate.setString(1,AccountValidation.email(email));duplicate.setInt(2,userId);
+                try(ResultSet rs=duplicate.executeQuery()){if(rs.next())return "Email đã được sử dụng bởi tài khoản khác!";}
+            }
             ps.setString(1, fullName);
             ps.setString(2, phone);
             ps.setString(3, email);
@@ -199,12 +294,15 @@ public class UserDAO extends BaseDAO {
             return "Số điện thoại hoặc Email đã được sử dụng bởi tài khoản khác!";
         } catch (Exception e) {
             e.printStackTrace();
-            return "Lỗi hệ thống: " + e.getMessage();
+            return "Không thể lưu hồ sơ. Vui lòng thử lại sau.";
         }
     }
 
     /** Điểm Aura hiện tại (đọc lại sau khi thanh toán / đổi điểm để cập nhật user trong session) */
     public int getTotalPoints(int userId) {
+        // PH04: . Truy vấn số điểm hiện có của khách trong cơ sở dữ liệu.
+        // .. Hàm chỉ trả số dư để nơi gọi sử dụng, không thưởng thêm điểm.
+        // ... UserDAO.getTotalPoints(mã khách) trả số dư; giỏ nhận tại [RD03].
         String sql = "SELECT total_points FROM users WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -221,6 +319,9 @@ public class UserDAO extends BaseDAO {
     }
 
     public java.util.List<model.LoyaltyTransaction> getLoyaltyHistoryByUserId(int userId) {
+        // PH02: . Truy vấn lịch sử điểm theo mã người dùng.
+        // .. Tạo danh sách giao dịch, sắp giao dịch mới trước.
+        // ... List về ProfileController [PF02] → vòng lặp lịch sử [PH03].
         // BF10/BF12: đọc lịch sử riêng theo customer_id; ProfileController đặt vào loyaltyHistory cho JSP.
         java.util.List<model.LoyaltyTransaction> list = new java.util.ArrayList<>();
         String sql = "SELECT id, customer_id, order_id, points_change, transaction_type, created_at " +

@@ -28,7 +28,7 @@
     } else if ("remove".equals(action)) {
         cart.removeItem(lineId);
     } else if ("clear".equals(action)) {
-        cart.getItems().clear();
+        cart.clear();
     }
 
     double totalAmount = 0;

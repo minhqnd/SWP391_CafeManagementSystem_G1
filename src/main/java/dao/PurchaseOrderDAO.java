@@ -12,8 +12,9 @@ public class PurchaseOrderDAO extends BaseDAO{
  public int create(PurchaseOrder order,List<PurchaseOrderItem> items)throws SQLException{
   if(items==null||items.isEmpty())throw new IllegalArgumentException("Phiếu nhập phải có nguyên liệu.");
   order.setNote(service.InventoryRules.text(order.getNote(),false));
-  Set<Integer> unique=new HashSet<>();for(PurchaseOrderItem i:items){if(!unique.add(i.getIngredientId()))throw new IllegalArgumentException("Nguyên liệu bị trùng.");if(i.getUnitPrice()==null||i.getUnitPrice().signum()<0||i.getUnitPrice().scale()>2)throw new IllegalArgumentException("Đơn giá không hợp lệ.");}
+  Set<Integer> unique=new HashSet<>();for(PurchaseOrderItem i:items){if(!unique.add(i.getIngredientId()))throw new IllegalArgumentException("Nguyên liệu bị trùng.");if(i.getUnitPrice()==null||i.getUnitPrice().signum()<0||i.getUnitPrice().scale()>service.InventoryRules.PURCHASE_PRICE_SCALE||i.getUnitPrice().compareTo(new BigDecimal("100000000000000"))>=0)throw new IllegalArgumentException("Đơn giá không hợp lệ.");}
   BigDecimal total=items.stream().map(PurchaseOrderItem::getSubtotal).reduce(BigDecimal.ZERO,BigDecimal::add);
+  service.InventoryRules.money(total);
   try(Connection c=getConnection()){c.setAutoCommit(false);try{int id;
    InventoryWorkflowDAO.requireActor(c,order.getCreatorId(),true);requireSupplier(c,order.getSupplierId());
    for(PurchaseOrderItem item:items) {IngredientDAO.requireActive(c,item.getIngredientId());service.InventoryRules.quantity(item.getQuantity(),true);}
@@ -44,7 +45,24 @@ public class PurchaseOrderDAO extends BaseDAO{
    List<PurchaseOrderItem> lines=new ArrayList<>();try(PreparedStatement p=c.prepareStatement("SELECT id,ingredient_id,quantity,unit_price FROM purchase_order_items WHERE po_id=?")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){while(r.next()){PurchaseOrderItem i=new PurchaseOrderItem(r.getInt(2),r.getBigDecimal(3),r.getBigDecimal(4));i.setId(r.getInt(1));lines.add(i);}}}
    if(lines.size()!=1)throw new IllegalArgumentException("Đơn nhiều nguyên liệu cần giữ nguyên; hãy hủy nháp và lập lại.");
    PurchaseOrderItem line=lines.get(0);IngredientDAO.requireActive(c,line.getIngredientId());before+="; quantity="+line.getQuantity()+"; unitPrice="+line.getUnitPrice();
-   BigDecimal price=total.divide(quantity,2,java.math.RoundingMode.HALF_UP);BigDecimal storedTotal=price.multiply(quantity).setScale(2,java.math.RoundingMode.HALF_UP);
+   BigDecimal price=service.InventoryRules.purchaseUnitPrice(quantity,total);BigDecimal storedTotal=service.InventoryRules.money(total);
+   try(PreparedStatement p=c.prepareStatement("UPDATE purchase_order_items SET quantity=?,unit_price=? WHERE id=?")){p.setBigDecimal(1,quantity);p.setBigDecimal(2,price);p.setInt(3,line.getId());p.executeUpdate();}
+   try(PreparedStatement p=c.prepareStatement("UPDATE purchase_orders SET supplier_id=?,total_cost=?,note=? WHERE id=?")){p.setInt(1,supplierId);p.setBigDecimal(2,storedTotal);p.setString(3,note);p.setInt(4,id);p.executeUpdate();}
+   InventoryWorkflowDAO.audit(c,"PURCHASE",id,actor,"EDIT",reason+" | Trước: "+before+" | Sau: supplier="+supplierId+"; quantity="+quantity+"; total="+storedTotal+"; "+note);c.commit();
+  }catch(Exception e){c.rollback();throw e;}}
+ }
+ public void updatePendingOrder(int id,int actor,int supplierId,BigDecimal quantity,BigDecimal total,String note,String reason)throws SQLException,ClassNotFoundException {
+  service.InventoryRules.quantity(quantity,true);note=service.InventoryRules.text(note,false);
+  reason=(reason==null||reason.isBlank())?"Cập nhật thông tin phiếu nhập":service.InventoryRules.text(reason,false);
+  if(total==null||total.signum()<0||total.scale()>2||total.compareTo(new BigDecimal("9999999999.99"))>0)throw new IllegalArgumentException("Tổng tiền không hợp lệ.");
+  try(Connection c=getConnection()){c.setAutoCommit(false);try{
+   InventoryWorkflowDAO.requireActor(c,actor,true);String before;
+   try(PreparedStatement p=c.prepareStatement("SELECT status,supplier_id,total_cost,note FROM purchase_orders WHERE id=? FOR UPDATE")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){if(!r.next()||!List.of("DRAFT","ORDERED").contains(r.getString(1)))throw new IllegalArgumentException("Chỉ được sửa phiếu nhập khi chưa nhận hàng.");before=r.getInt(2)+"; "+r.getBigDecimal(3)+"; "+r.getString(4);}}
+   requireSupplier(c,supplierId);
+   List<PurchaseOrderItem> lines=new ArrayList<>();try(PreparedStatement p=c.prepareStatement("SELECT id,ingredient_id,quantity,unit_price FROM purchase_order_items WHERE po_id=?")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){while(r.next()){PurchaseOrderItem i=new PurchaseOrderItem(r.getInt(2),r.getBigDecimal(3),r.getBigDecimal(4));i.setId(r.getInt(1));lines.add(i);}}}
+   if(lines.size()!=1)throw new IllegalArgumentException("Chỉ sửa được phiếu nhập có một nguyên liệu.");
+   PurchaseOrderItem line=lines.get(0);IngredientDAO.requireActive(c,line.getIngredientId());before+="; quantity="+line.getQuantity()+"; unitPrice="+line.getUnitPrice();
+   BigDecimal price=service.InventoryRules.purchaseUnitPrice(quantity,total);BigDecimal storedTotal=service.InventoryRules.money(total);
    try(PreparedStatement p=c.prepareStatement("UPDATE purchase_order_items SET quantity=?,unit_price=? WHERE id=?")){p.setBigDecimal(1,quantity);p.setBigDecimal(2,price);p.setInt(3,line.getId());p.executeUpdate();}
    try(PreparedStatement p=c.prepareStatement("UPDATE purchase_orders SET supplier_id=?,total_cost=?,note=? WHERE id=?")){p.setInt(1,supplierId);p.setBigDecimal(2,storedTotal);p.setString(3,note);p.setInt(4,id);p.executeUpdate();}
    InventoryWorkflowDAO.audit(c,"PURCHASE",id,actor,"EDIT",reason+" | Trước: "+before+" | Sau: supplier="+supplierId+"; quantity="+quantity+"; total="+storedTotal+"; "+note);c.commit();

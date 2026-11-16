@@ -110,7 +110,7 @@ public class EmployeeDAO extends BaseDAO {
     }
 
     /**
-     * Tạo tài khoản nhân viên. Mật khẩu lưu đúng dạng mà UserDAO.login() đang so sánh với password_hash,
+     * Tạo tài khoản nhân viên. Mật khẩu lưu bằng PBKDF2 dùng chung với UserDAO.login(),
      * để tài khoản mới đăng nhập được ngay. Trả về id mới.
      */
     public int createEmployee(User employee, String password) throws SQLException, ClassNotFoundException {
@@ -121,7 +121,7 @@ public class EmployeeDAO extends BaseDAO {
             ps.setString(1, employee.getFullName());
             ps.setString(2, employee.getPhone());
             setNullableString(ps, 3, employee.getEmail());
-            ps.setString(4, password);
+            ps.setString(4, utils.PasswordHasher.hash(password));
             setNullableDate(ps, 5, employee.getBirthday());
             setNullableString(ps, 6, employee.getAddress());
             ps.setString(7, employee.getRole());
@@ -158,7 +158,7 @@ public class EmployeeDAO extends BaseDAO {
                 setNullableDate(ps, i++, employee.getHireDate());
                 ps.setString(i++, employee.getStatus());
                 if (newPassword != null) {
-                    ps.setString(i++, newPassword);
+                    ps.setString(i++, utils.PasswordHasher.hash(newPassword));
                 }
                 ps.setInt(i, employee.getId());
                 ps.executeUpdate();

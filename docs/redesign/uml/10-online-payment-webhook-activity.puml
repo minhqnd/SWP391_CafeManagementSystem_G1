@@ -1,0 +1,53 @@
+@startuml 10-online-payment-webhook-activity
+' SRS 2.2 Online Payment - BF-02 / UC12 Pay by Bank Transfer, UC13 Choose COD
+title Online Payment and Webhook Confirmation (BF-02)
+
+|Customer|
+start
+:Open Payment page (/payment?orderId=...);
+if (Choose payment method?) then (Cash on Delivery - COD)
+  :Click "Thanh toán khi nhận hàng (COD)";
+  |System (CMS)|
+  :Create CASH payment COD-<code> (PENDING);
+  :orders = CONFIRMED;
+  :Push order to Barista queue;
+  |Customer|
+  :Redirect to e-Bill (/bill?orderId=...);
+  stop
+else (VietQR Bank Transfer)
+  :Scan VietQR with Mobile Banking app\n(Transfer content = Order code);
+  :Confirm transfer on Banking app;
+endif
+
+|Bank / SePay Hub|
+:Bank records successful transfer;
+:SePay Hub catches balance transaction;
+:Dispatch Webhook POST to Payment Gateway;
+
+|Payment Gateway (Cloudflare Worker)|
+:Validate Webhook authorization & API Key;
+:Store transaction record into D1 database;
+:Match order code and transfer amount;
+:Build signed payload with HMAC-SHA256 signature;
+:POST callback to CMS (/payment/callback);
+
+|System (CMS)|
+:Verify HMAC-SHA256 signature;
+if (Signature valid and amount matches?) then (yes)
+  :payments status = SUCCESS, record transaction_code;
+  :orders status = CONFIRMED;
+  :Award Aura loyalty points to customer;
+  :Push order to Barista queue;
+  :Return HTTP 200 {success: true};
+else (mismatch / invalid)
+  :Log discrepancy (OVERPAID / UNDERPAID / UNMATCHED);
+  :Record unverified payment attempt;
+  :Return HTTP 400 error;
+endif
+
+|Customer|
+:Client-side status polling checks order status;
+:Detect order updated to CONFIRMED;
+:Automatically redirect to e-Bill (/bill?orderId=...);
+stop
+@enduml

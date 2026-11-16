@@ -15,6 +15,7 @@ import java.sql.SQLException;
 /** Admin chỉ xem lịch sử bàn giao; thu ngân tự hoàn tất khi chốt ca. */
 @WebServlet(name = "AdminHandoverController", urlPatterns = {"/admin/handovers"})
 public class AdminHandoverController extends HttpServlet {
+    /* BF07.7: Admin chỉ xem/audit các biên bản đã tạo; không sửa số tiền do cashier đã xác nhận. */
     private final ShiftHandoverDAO shiftHandoverDAO = new ShiftHandoverDAO();
 
     @Override

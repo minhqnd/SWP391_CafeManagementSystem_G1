@@ -23,6 +23,7 @@ public class InventoryDAOTest {
 
     @Test
     @DisplayName("Test get inventory stock list with filter")
+    @org.junit.jupiter.api.Tag("database")
     void testGetInventoryStockList() {
         try {
             assertNotNull(inventoryDAO.getInventoryStockList("all"));
@@ -35,6 +36,7 @@ public class InventoryDAOTest {
 
     @Test
     @DisplayName("Test get recent transactions")
+    @org.junit.jupiter.api.Tag("database")
     void testGetRecentTransactions() {
         try {
             List<InventoryTransaction> list = inventoryDAO.getRecentTransactions(10, "all");

@@ -11,6 +11,7 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Opt-in: use only an isolated MySQL schema, never the application's configured DB. */
+@org.junit.jupiter.api.Tag("database")
 @EnabledIfSystemProperty(named="inventory.test.url",matches=".+")
 class InventoryWorkflowIntegrationTest {
     Connection connection()throws SQLException{return DriverManager.getConnection(System.getProperty("inventory.test.url"), System.getProperty("inventory.test.user",System.getenv().getOrDefault("DB_USER","root")), System.getProperty("inventory.test.password",System.getenv().getOrDefault("DB_PASSWORD","")));}
@@ -114,6 +115,28 @@ class InventoryWorkflowIntegrationTest {
         int po=po(),r=submit(po,"10","10");receipts.review(r,1,true,"Đủ");int item=scalar("SELECT id FROM purchase_receipt_items WHERE receipt_id="+r).intValue();
         try(Connection c=connection();Statement s=c.createStatement()){s.executeUpdate("UPDATE ingredients SET current_stock=1 WHERE id="+ingredient);}
         assertThrows(IllegalArgumentException.class,()->receipts.adjust(item,1,UUID.randomUUID().toString(),n("-2"),"Trả 2"));stock("1");assertEquals(0,scalar("SELECT COUNT(*) FROM purchase_receipt_adjustments WHERE receipt_item_id="+item).intValue());
+    }
+    @Test void purchaseTotalsSurviveDatabasePrecisionOnCreateAndEdit()throws Exception {
+        PurchaseOrder order=new PurchaseOrder();order.setSupplierId(1);order.setCreatorId(1);
+        int id=orders.create(order,List.of(new PurchaseOrderItem(ingredient,n("3000"),service.InventoryRules.purchaseUnitPrice(n("3000"),n("100000")))));
+        assertEquals(0,n("100000").compareTo(scalar("SELECT total_cost FROM purchase_orders WHERE id="+id)));
+        assertEquals(0,n("100000").compareTo(orders.findItems(id).get(0).getSubtotal()));
+        orders.editDraft(id,1,1,n("3000"),n("100000.01"),"","Đối chiếu tiền lô");
+        assertEquals(0,n("100000.01").compareTo(scalar("SELECT total_cost FROM purchase_orders WHERE id="+id)));
+        assertEquals(0,n("100000.01").compareTo(orders.findItems(id).get(0).getSubtotal()));
+    }
+    @Test void approvedMultiIngredientRequestCanCreateMatchingPurchase()throws Exception {
+        int second;try(Connection c=connection();Statement s=c.createStatement()){
+            s.executeUpdate("INSERT INTO ingredients(name,unit,current_stock,min_stock_level) VALUES('Second request item','kg',0,0)",Statement.RETURN_GENERATED_KEYS);
+            try(ResultSet r=s.getGeneratedKeys()){r.next();second=r.getInt(1);}
+        }
+        int request=requests.createRestockRequest(barista,"PENDING_APPROVAL","Mua hai nguyên liệu","",List.of(
+                new RestockRequest.RestockItem(ingredient,"","",n("10")),new RestockRequest.RestockItem(second,"","",n("2"))));
+        requests.transition(request,1,true,"approve","Đồng ý");
+        PurchaseOrder order=new PurchaseOrder();order.setSupplierId(1);order.setCreatorId(1);order.setRestockRequestId(request);
+        assertThrows(IllegalArgumentException.class,()->orders.create(order,List.of(new PurchaseOrderItem(ingredient,n("10"),n("100")))));
+        int id=orders.create(order,List.of(new PurchaseOrderItem(ingredient,n("10"),n("100")),new PurchaseOrderItem(second,n("2"),n("50"))));
+        assertEquals(2,orders.findItems(id).size());
     }
     @Test void concurrentApprovalOnlyCommitsOnce()throws Exception {
         int po=po(),id=submit(po,"4","4");ExecutorService pool=Executors.newFixedThreadPool(2);

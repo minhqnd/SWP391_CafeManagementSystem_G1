@@ -229,6 +229,9 @@ public class DeliveryDAO extends BaseDAO {
      */
     public int completeDelivery(int id, int shipperId, BigDecimal codCollected, String note)
             throws SQLException, ClassNotFoundException {
+        // CD03: . Ở đây em kiểm tra phiếu đang được giao và COD đã thu đúng số tiền.
+        // .. Em cập nhật đã thanh toán, đã giao và hoàn thành đơn cùng nhau; COD được cộng điểm lúc này.
+        // ... PaymentDAO.earnPointsOnce() [EA03]; sau đó trả kết quả về DeliveryController [CD02].
         String lockSql = "SELECT d.status, d.cod_amount, d.order_id, o.customer_id, o.total_amount, o.discount_amount " +
                          "FROM deliveries d JOIN orders o ON o.id = d.order_id " +
                          "WHERE d.id = ? AND d.shipper_id = ? FOR UPDATE";

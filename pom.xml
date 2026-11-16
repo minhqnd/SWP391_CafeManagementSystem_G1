@@ -14,6 +14,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <!-- Deploy Maven-built classes instead of partial NetBeans compile-on-save output. -->
+        <netbeans.compile.on.save>none</netbeans.compile.on.save>
+        <!-- Normal builds run unit tests without using application database records. -->
+        <test.excludedGroups>database</test.excludedGroups>
         <failOnMissingWebXml>false</failOnMissingWebXml>
     </properties>
 
@@ -92,6 +96,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+                <configuration>
+                    <excludedGroups>${test.excludedGroups}</excludedGroups>
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

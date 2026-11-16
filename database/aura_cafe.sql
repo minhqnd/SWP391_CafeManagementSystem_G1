@@ -4,8 +4,12 @@
 -- Generated from aura_cafe_erp on 2026-10-28
 -- =====================================================
 -- WARNING: Running this entire file resets tables and reloads sample data.
+-- This is the single MySQL schema, sample-data and upgrade file for Aura Cafe.
+-- Existing databases: back up first, select and execute ONLY the upgrade block below.
+-- Never execute the reset section on a database whose data must be preserved.
 -- For an existing database, run ONLY the following optional upgrade block
 -- (without the enclosing comment markers). It preserves existing rows.
+-- BEGIN EXISTING DATABASE UPGRADE (MySQL 8.x; DDL auto-commits)
 /*
 USE aura_cafe_erp;
 SET @ingredient_active_ddl = IF(
@@ -21,6 +25,22 @@ DEALLOCATE PREPARE ingredient_active_stmt;
 ALTER TABLE restock_requests MODIFY status ENUM('DRAFT','PENDING_APPROVAL','CHANGES_REQUESTED','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'DRAFT';
 ALTER TABLE purchase_orders MODIFY status ENUM('DRAFT','ORDERED','PARTIALLY_RECEIVED','RECEIVED','CLOSED','CANCELLED') NOT NULL DEFAULT 'DRAFT';
 ALTER TABLE inventory_transactions MODIFY reference_type ENUM('ORDER','PURCHASE_ORDER','RECEIPT_ADJUSTMENT','ADJUSTMENT') NOT NULL DEFAULT 'ADJUSTMENT';
+ALTER TABLE deliveries MODIFY status ENUM('ASSIGNED','ACCEPTED','DELIVERING','DELIVERED','FAILED') NOT NULL DEFAULT 'ASSIGNED';
+-- Preserve batch totals when quantity does not divide the total price exactly.
+ALTER TABLE purchase_order_items MODIFY unit_price DECIMAL(26,12) NOT NULL;
+
+SET @has_shift_check = (
+ SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+ WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'work_shifts'
+ AND CONSTRAINT_NAME = 'chk_shift_time' AND CONSTRAINT_TYPE = 'CHECK'
+);
+SET @shift_ddl = IF(@has_shift_check > 0,
+ 'ALTER TABLE work_shifts DROP CHECK chk_shift_time', 'SELECT 1');
+PREPARE shift_upgrade FROM @shift_ddl;
+EXECUTE shift_upgrade;
+DEALLOCATE PREPARE shift_upgrade;
+ALTER TABLE work_shifts ADD CONSTRAINT chk_shift_time CHECK (end_time <> start_time);
+
 CREATE TABLE IF NOT EXISTS inventory_workflow_history (
  id INT AUTO_INCREMENT PRIMARY KEY,
  entity_type VARCHAR(30) NOT NULL, entity_id INT NOT NULL,
@@ -53,7 +73,12 @@ CREATE TABLE IF NOT EXISTS purchase_receipt_adjustments (
  CHECK (quantity_delta <> 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+SELECT DATABASE() AS upgraded_database;
+SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'purchase_order_items' AND COLUMN_NAME = 'unit_price';
 */
+-- END EXISTING DATABASE UPGRADE
+-- BEGIN RESET / SAMPLE DATA (DELETES THE EXISTING aura_cafe_erp DATABASE)
 -- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
 --
 -- Host: localhost    Database: aura_cafe_erp
@@ -583,7 +608,7 @@ CREATE TABLE `purchase_order_items` (
   `po_id` int NOT NULL,
   `ingredient_id` int NOT NULL,
   `quantity` decimal(12,3) NOT NULL,
-  `unit_price` decimal(12,2) NOT NULL,
+  `unit_price` decimal(26,12) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_poi_ingredient` (`ingredient_id`),
   KEY `idx_poi_order` (`po_id`),
@@ -824,6 +849,7 @@ CREATE TABLE `users` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `phone` (`phone`),
+  UNIQUE KEY `uq_users_email` (`email`),
   CONSTRAINT `chk_user_points` CHECK ((`total_points` >= 0)),
   CONSTRAINT `chk_user_salary` CHECK ((`base_salary` >= 0))
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -835,7 +861,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Aura Admin','0900000001','admin@auracafe.vn','demo_hash',NULL,NULL,'ADMIN','ACTIVE','MANAGER',15000000.00,'2025-01-01',0,'2026-10-28 14:26:58'),(2,'Nguyen Van An','0900000002','an@auracafe.vn','demo_hash',NULL,NULL,'STAFF','ACTIVE','BARISTA',8000000.00,'2025-02-01',0,'2026-10-28 14:26:58'),(3,'Tran Thi Binh','0900000003','binh@auracafe.vn','demo_hash',NULL,NULL,'STAFF','ACTIVE','CASHIER',8500000.00,'2025-02-01',0,'2026-10-28 14:26:58'),(4,'Le Minh Anh','0900000004','anh@gmail.com','demo_hash',NULL,NULL,'CUSTOMER','ACTIVE',NULL,0.00,NULL,120,'2026-10-28 14:26:58'),(5,'Pham Quang Huy','0900000005','huy@gmail.com','demo_hash',NULL,NULL,'CUSTOMER','ACTIVE',NULL,0.00,NULL,50,'2026-10-28 14:26:58'),(6,'Hoang Van Nam','0900000006','nam@auracafe.vn','demo_hash',NULL,NULL,'STAFF','ACTIVE','SHIPPER',7500000.00,'2025-03-01',0,'2026-10-28 14:26:58');
+INSERT INTO `users` VALUES (1,'Aura Admin','0900000001','admin@auracafe.vn','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'ADMIN','ACTIVE','MANAGER',15000000.00,'2025-01-01',0,'2026-10-28 14:26:58'),(2,'Nguyen Van An','0900000002','an@auracafe.vn','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'STAFF','ACTIVE','BARISTA',8000000.00,'2025-02-01',0,'2026-10-28 14:26:58'),(3,'Tran Thi Binh','0900000003','binh@auracafe.vn','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'STAFF','ACTIVE','CASHIER',8500000.00,'2025-02-01',0,'2026-10-28 14:26:58'),(4,'Le Minh Anh','0900000004','anh@gmail.com','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'CUSTOMER','ACTIVE',NULL,0.00,NULL,120,'2026-10-28 14:26:58'),(5,'Pham Quang Huy','0900000005','huy@gmail.com','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'CUSTOMER','ACTIVE',NULL,0.00,NULL,50,'2026-10-28 14:26:58'),(6,'Hoang Van Nam','0900000006','nam@auracafe.vn','pbkdf2_sha256$210000$PgqIWBb67UpNF4kUYejeRg==$/ErxuXKzQRbPvGdSMI3b+7Sj2EkttMgF50GBOVX1HlM=',NULL,NULL,'STAFF','ACTIVE','SHIPPER',7500000.00,'2025-03-01',0,'2026-10-28 14:26:58');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 

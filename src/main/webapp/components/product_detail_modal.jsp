@@ -339,6 +339,9 @@
     }
 
     function openProductDetailModal(productId) {
+        // MN08: . Ở đây em gửi mã món lên máy chủ khi khách mở hộp chọn món.
+        // .. Thông tin trả về được dùng để hiện tên món, size và topping.
+        // ... GET /menu?action=detail&id=... → handleProductDetailApi() [MN09] → DAO [MN10].
         fetch('${pageContext.request.contextPath}/menu?action=detail&id=' + productId)
             .then(function (res) {
                 if (!res.ok) {
@@ -411,7 +414,7 @@
                     var toppingListHtml = '';
                     toppings.forEach(function (t, idx) {
                         var tName = typeof t === 'string' ? t : t.name;
-                        var tPrice = typeof t === 'object' && t.price ? t.price : 8000;
+                        var tPrice = typeof t === 'object' && t.price != null ? Number(t.price) : 8000;
                         toppingListHtml += '<div class="form-check d-flex align-items-center justify-content-between p-2 border rounded-3">'
                             + '  <div>'
                             + '    <input class="form-check-input ms-0 me-2" type="checkbox" id="top_' + idx + '" value="' + tPrice + '" onchange="calculateModalTotal()">'

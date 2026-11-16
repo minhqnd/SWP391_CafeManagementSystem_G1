@@ -108,6 +108,12 @@
                                         <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="${category.id}">
                                         <c:choose><c:when test="${category.status eq 'ACTIVE'}"><input type="hidden" name="status" value="INACTIVE"><button class="btn btn-sm btn-outline-secondary" title="Tạm ẩn"><span class="material-symbols-outlined fs-6 align-middle">visibility_off</span></button></c:when><c:otherwise><input type="hidden" name="status" value="ACTIVE"><button class="btn btn-sm btn-outline-success" title="Hiện lại"><span class="material-symbols-outlined fs-6 align-middle">visibility</span></button></c:otherwise></c:choose>
                                     </form>
+                                    <%-- BF11 - XÓA DANH MỤC: xác nhận xóa danh mục và sản phẩm liên quan; backend giữ ràng buộc lịch sử đơn hàng. --%>
+                                    <form method="post" action="${ctx}/admin/categories" class="d-inline"
+                                          onsubmit="return confirm('Xóa vĩnh viễn danh mục này và tất cả sản phẩm thuộc danh mục? Nếu có sản phẩm đã bán, hệ thống sẽ từ chối để giữ lịch sử đơn hàng.');">
+                                        <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="${category.id}">
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa danh mục"><span class="material-symbols-outlined fs-6 align-middle">delete_forever</span></button>
+                                    </form>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -125,12 +131,20 @@
                     <c:if test="${not empty selectedCategory}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedCategory.id}" /></span></c:if>
                 </div>
                 <%-- BF11 - THÊM/SỬA: POST action=save và ID; multipart gửi ảnh -> Controller kiểm tra -> CategoryDAO lưu. --%>
+                <%-- CA04: [SLBF11] Enter category information
+                     . hiển thị danh mục và điền sẵn thông tin nếu Admin chọn sửa.
+                     .. Bấm Lưu thì gửi tên, trạng thái và ảnh; bấm nút mắt thì gửi yêu cầu ẩn hoặc hiện.
+                     ... POST /admin/categories → doPost() [CA10]; danh sách lấy từ doGet() [CA02]. --%>
                 <form method="post" action="${ctx}/admin/categories" enctype="multipart/form-data">
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="save">
                     <input type="hidden" name="id" value="${empty selectedCategory ? 0 : selectedCategory.id}">
+                    <%-- CA05: . Ô tên gửi name=name; bắt buộc, tối đa 100 ký tự.
+                         ... AdminCategoriesController.save() [CA12] kiểm tra tên và trùng tên. --%>
                     <div class="category-form-field"><label for="name" class="form-label">Tên danh mục *</label><input id="name" name="name" class="form-control" required maxlength="100" value="${fn:escapeXml(selectedCategory.name)}"></div>
                     <div class="category-form-field">
                         <label for="imageFile" class="form-label">Ảnh đại diện</label>
+                        <%-- CA06: . Ô ảnh gửi imageFile; ảnh không bắt buộc, tối đa 5 MB.
+                             ... save() [CA13] kiểm tra MIME và chữ ký ảnh; lưu ảnh tại [CA16]. --%>
                         <input id="imageFile" name="imageFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="form-control">
                         <div class="form-text">JPG, PNG, GIF hoặc WebP; tối đa 5 MB. Ảnh được lưu trực tiếp trong database.</div>
                     </div>
@@ -140,11 +154,20 @@
                         <img id="categoryImagePreview" class="category-image-preview" src="${fn:escapeXml(selectedImageSrc)}" alt="Ảnh danh mục preview" <c:if test="${not selectedHasImage}">hidden</c:if>>
                         <div id="categoryImagePlaceholder" class="category-image-placeholder" style="width:100%;max-width:240px;height:120px" <c:if test="${selectedHasImage}">hidden</c:if>>Xem trước ảnh</div>
                     </div>
+                    <%-- CA07: . Tích removeImage=true để xóa ảnh hiện tại; chọn ảnh mới thì dùng ảnh mới.
+                         ... save() [CA13] chuyển dữ liệu ảnh cho CategoryDAO [CA16]. --%>
                     <c:if test="${selectedHasImage}"><div class="form-check mt-2 mb-3"><input id="removeImage" name="removeImage" value="true" type="checkbox" class="form-check-input"><label for="removeImage" class="form-check-label small">Xóa ảnh hiện tại</label></div></c:if>
+                    <%-- CA08: [SLBF11] Set status to Active
+                         . Ô status gửi ACTIVE hoặc INACTIVE; danh mục mới mặc định ACTIVE.
+                         ... save() [CA14] kiểm tra trạng thái trước khi lưu. --%>
                     <div class="category-form-field"><label for="status" class="form-label">Trạng thái</label><select id="status" name="status" class="form-select">
                         <option value="ACTIVE" <c:if test="${empty selectedCategory or selectedCategory.status eq 'ACTIVE'}">selected</c:if>>ACTIVE - Hoạt động</option>
                         <option value="INACTIVE" <c:if test="${selectedCategory.status eq 'INACTIVE'}">selected</c:if>>INACTIVE - Tạm ẩn</option>
                     </select></div>
+                    <%-- CA09: [SLBF11] Click "Create Category"
+                         . Nút Tạo danh mục/Lưu thay đổi submit form multipart với action=save và id.
+                         .. Trình duyệt kiểm tra required/maxlength; JavaScript ảnh chỉ xem trước.
+                         ... POST /admin/categories → doPost() [CA10] → save() [CA11]. --%>
                     <button type="submit" class="btn btn-aura fw-bold w-100"><span class="material-symbols-outlined fs-6 align-middle">check</span> <c:choose><c:when test="${not empty selectedCategory}">Lưu thay đổi</c:when><c:otherwise>Tạo danh mục</c:otherwise></c:choose></button>
                     <c:if test="${not empty selectedCategory}"><a href="${ctx}/admin/categories" class="btn btn-light w-100 mt-2">Hủy sửa</a></c:if>
                 </form>
