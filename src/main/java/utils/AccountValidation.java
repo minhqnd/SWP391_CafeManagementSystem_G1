@@ -27,12 +27,13 @@ public final class AccountValidation {
         }
         return null;
     }
-    // . Kiểm tra định dạng email và giới hạn tối đa 150 ký tự.
+    // . Chỉ nhận email có đuôi @gmail.com, đúng định dạng và tối đa 150 ký tự.
     // .. Hợp lệ trả null; sai trả thông báo lỗi trường email.
     // ... Đăng ký [RG06c], hồ sơ [PF12c], khôi phục [OT06].
     public static String emailError(String email) {
-        if (email == null || email.length() > 150 || !email.matches("[A-Za-z0-9_+%-]+(?:\\.[A-Za-z0-9_+%-]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+"))
-            return "Địa chỉ email không hợp lệ hoặc dài quá 150 ký tự.";
+        if (email != null && email.length() > 150) return "Email tối đa 150 ký tự.";
+        if (email == null || !email.matches("(?i)[A-Za-z0-9_+%-]+(?:\\.[A-Za-z0-9_+%-]+)*@gmail\\.com"))
+            return "Sai định dạng email.";
         return null;
     }
     // . Kiểm tra SĐT có đúng 10 chữ số và bắt đầu bằng 0.

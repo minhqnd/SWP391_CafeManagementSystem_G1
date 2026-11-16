@@ -35,7 +35,7 @@ async function fixture(run) {
             if (request.url().endsWith('/account-availability')) {
                 lookups++;
                 const values = new URLSearchParams(request.postData());
-                const exists = ['used@example.com', '0987111222'].includes(values.get('value'));
+                const exists = ['used@gmail.com', '0987111222'].includes(values.get('value'));
                 await route.fulfill({json: {exists}});
             } else if (request.method() === 'POST') {
                 registrations++;
@@ -56,7 +56,7 @@ test('waits until submit, reports every duplicate and password error, then clear
     await fixture(async ({page, register, counts}) => {
         await register.locator('[name=fullname]').fill('Demo User');
         await register.locator('[name=phone]').fill('0987111222');
-        await register.locator('[name=email]').fill('used@example.com');
+        await register.locator('[name=email]').fill('used@gmail.com');
         await register.locator('[name=password]').fill('12345678');
         await register.locator('[name=confirm_password]').fill('12345678');
         await register.locator('[name=email]').focus();
@@ -70,7 +70,7 @@ test('waits until submit, reports every duplicate and password error, then clear
         assert.match(await page.locator('#account-register-password-error').textContent(), /chữ cái/);
         assert.equal(await register.locator('.is-invalid').count(), 3);
         assert.equal(counts().registrations, 0);
-        await register.locator('[name=email]').fill('fresh@example.com');
+        await register.locator('[name=email]').fill('fresh@gmail.com');
         await register.locator('[name=phone]').fill('0987333444');
         await register.locator('[name=password]').fill('Abcd1234');
         await register.locator('[name=confirm_password]').fill('Abcd1234');
@@ -107,7 +107,7 @@ test('all new-password forms reject short, letters-only and numbers-only passwor
         const change = page.locator('#passwordForm');
         await register.locator('[name=fullname]').fill('Demo User');
         await register.locator('[name=phone]').fill('0987333444');
-        await register.locator('[name=email]').fill('fresh@example.com');
+        await register.locator('[name=email]').fill('fresh@gmail.com');
         await change.locator('[name=oldPassword]').fill('Current123');
         for (const password of ['Abc1234', 'abcdefgh', '12345678']) {
             for (const [form, main, confirmation, key] of [
@@ -125,23 +125,44 @@ test('all new-password forms reject short, letters-only and numbers-only passwor
         assert.equal(counts().registrations, 0);
     });
 });
-test('phone requires exactly ten digits, including requests bypassing the input length limit', async () => {
+test('phone allows typing extra digits and reports an invalid format', async () => {
     await fixture(async ({page, register, counts}) => {
         await register.locator('[name=fullname]').fill('Demo User');
-        await register.locator('[name=email]').fill('fresh@example.com');
+        await register.locator('[name=email]').fill('fresh@gmail.com');
         await register.locator('[name=password]').fill('Abcd1234');
         await register.locator('[name=confirm_password]').fill('Abcd1234');
         const phone = register.locator('[name=phone]');
-        assert.equal(await phone.getAttribute('maxlength'), '10');
+        assert.equal(await phone.getAttribute('maxlength'), null);
         for (const invalid of ['098711122', '09871112223', '09871112a2']) {
             await phone.evaluate((field, value) => {field.value = value; field.dispatchEvent(new Event('input', {bubbles:true}));}, invalid);
             await register.locator('button[type=submit]').click();
-            assert.match(await page.locator('#account-register-phone-error').textContent(), /đúng 10 chữ số/);
+            assert.match(await page.locator('#account-register-phone-error').textContent(), /sai định dạng/);
             assert.equal(counts().registrations, 0);
         }
         await phone.fill('0987333444');
         await register.locator('button[type=submit]').click();
         await page.waitForURL('**/register');
+        assert.equal(counts().registrations, 1);
+    });
+});
+test('register and recovery reject mistyped Gmail domains; uppercase Gmail remains valid', async () => {
+    await fixture(async ({page, register, counts}) => {
+        await register.locator('[name=fullname]').fill('Demo User');
+        await register.locator('[name=phone]').fill('0987333444');
+        await register.locator('[name=password]').fill('Abcd1234');
+        await register.locator('[name=confirm_password]').fill('Abcd1234');
+        const forgot = page.locator('form[action="/cafe/forgot-password"]');
+        for (const value of ['nguyen@gmaill.comm', 'nguyen@gmail.comm', 'nguyen@gmail.com.evil.com', 'nguyen@yahoo.com']) {
+            for (const [form, key] of [[register, 'register'], [forgot, 'forgot-password']]) {
+                await form.locator('[name=email]').fill(value);
+                await form.locator('button[type=submit]').click();
+                assert.match(await page.locator(`#account-${key}-email-error`).textContent(), /Sai định dạng email\./);
+                assert.equal(counts().registrations, 0);
+            }
+        }
+        await forgot.locator('[name=email]').fill('NGUYEN@GMAIL.COM');
+        await forgot.locator('button[type=submit]').click();
+        await page.waitForURL('**/forgot-password');
         assert.equal(counts().registrations, 1);
     });
 });

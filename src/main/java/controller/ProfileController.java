@@ -5,7 +5,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
-import java.util.Objects;
 import model.User;
 import utils.AccountCsrf;
 import utils.AccountValidation;
@@ -68,8 +67,8 @@ public class ProfileController extends HttpServlet {
         renderProfile(request,response,(User)request.getSession().getAttribute("user"));
     }
     // PF12: . Đọc, chuẩn hóa và kiểm tra dữ liệu hồ sơ khi action=update.
-    // .. Kiểm tra từng trường, ngày sinh và quyền đổi email; còn lỗi thì không lưu.
-    // ... Các trường chi tiết [PF12a]–[PF12f]; hết lỗi gọi UserDAO.updateUserProfile() [PF13].
+    // .. Kiểm tra từng trường và ngày sinh; còn lỗi thì không lưu.
+    // ... Các trường chi tiết [PF12a]–[PF12e]; hết lỗi gọi UserDAO.updateUserProfile() [PF13].
     private void update(HttpServletRequest request,User user){
         // PF12a: . Đọc fullName từ ô Họ và tên [PF06a], bỏ khoảng trắng đầu/cuối.
         // ... AccountValidation.nameError() kiểm tra giới hạn họ tên.
@@ -108,12 +107,6 @@ public class ProfileController extends HttpServlet {
         else if(AccountValidation.birthdayError(birthday)!=null)errors.put("birthDay",AccountValidation.birthdayError(birthday));
         if(AccountValidation.addressError(address)!=null)errors.put("address",AccountValidation.addressError(address));
         if(address.length()>500)errors.put("address","Địa chỉ tối đa 500 ký tự.");
-        // PF12f: . So sánh email vừa nhập với email hiện tại để quyết định có cần profilePassword không.
-        // .. Email đổi và đúng định dạng thì phải nhập đúng mật khẩu hiện tại; giữ email thì bỏ bước này.
-        // ... UserDAO.verifyPasswordById() [PF12g] kiểm tra dữ liệu từ ô [PF06f].
-        boolean changingEmail=!Objects.equals(email,AccountValidation.email(user.getEmail()));
-        if(changingEmail && !errors.containsKey("email") && !users.verifyPasswordById(user.getId(),request.getParameter("profilePassword")))
-            errors.put("profilePassword","Vui lòng nhập đúng mật khẩu hiện tại để thay đổi email.");
         if(errors.isEmpty()){
             // . Chỉ khi errors rỗng mới gọi DAO ở bước [PF13].
             // .. DAO trả lỗi trùng thì gắn vào email/phone; lỗi chung thì đặt errorMsg rồi dừng.

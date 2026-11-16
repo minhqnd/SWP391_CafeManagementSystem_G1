@@ -286,7 +286,7 @@
                                                                 <div class="mb-3">
                                                                     <label class="form-label fw-medium" style="font-size: 0.85rem;">Email đã liên kết</label>
                                                                     
-                                                                    <%-- OT02a: . Ô Email khôi phục nhận name=email, yêu cầu đúng định dạng và tối đa 150 ký tự.
+                                                                    <%-- OT02a: . Ô Email khôi phục nhận name=email, yêu cầu đuôi @gmail.com và tối đa 150 ký tự.
                                                                          ... validate() kiểm tra email trong validate() → ForgotPasswordController [OT05] → PasswordRecoveryService.start() [OT06]. --%>
                                                                     <input type="email" name="email" maxlength="150"
                                                                         class="form-control bg-light border-0 p-2"
@@ -355,7 +355,7 @@
                                                             </div>
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Email</label>
-                                                                <%-- RG02c: . Ô Email nhận name=email; yêu cầu đúng định dạng, tối đa 150 ký tự.
+                                                                <%-- RG02c: . Ô Email nhận name=email; yêu cầu đuôi @gmail.com, tối đa 150 ký tự.
                                                                      ... validate() kiểm tra email trong validate() → RegisterController [RG06c] → AccountValidation.emailError(); kiểm tra trùng [RG07b]. --%>
                                                                 <input type="email" class="form-control bg-light border-0 p-2" name="email" maxlength="150" placeholder="Email của bạn" required>
                                                             </div>

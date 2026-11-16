@@ -116,10 +116,9 @@
                     }
                     return '';
                 }
-                // . Trường required không được rỗng; đổi email hồ sơ thì yêu cầu profilePassword.
+                // . Trường required không được rỗng.
                 // .. Trường không bắt buộc và để trống được bỏ qua các bước kiểm tra tiếp theo.
                 if (field.required && !value) return 'Vui lòng nhập thông tin này.';
-                if (name === 'profilePassword' && find('email').value.trim().toLowerCase() !== form.dataset.originalEmail && !raw) return 'Vui lòng nhập mật khẩu hiện tại để thay đổi email.';
                 if (!raw && !field.required) return '';
                 if (name === 'username' && value.length > 150) return 'Email hoặc số điện thoại tối đa 150 ký tự.';
                 // . Họ tên đăng ký [RG02a]/hồ sơ [PF06a] có từ 1 đến 100 ký tự sau trim.
@@ -131,9 +130,12 @@
                 // . SĐT từ [RG02b]/[PF06b] sau khi bỏ dấu phân cách phải bắt đầu bằng 0 và đủ 10 số.
                 // ... AccountValidation.phoneError() kiểm tra lại tại server.
                 if (name === 'phone' && !/^0[0-9]{9}$/.test(value.replace(/[\s.()-]/g, ''))) return 'Số điện thoại sai định dạng.';
-                // . Email từ [RG02c]/[PF06c]/[OT02a] phải đúng định dạng và tối đa 150 ký tự.
+                // . Email từ [RG02c]/[PF06c]/[OT02a] phải có đuôi @gmail.com và tối đa 150 ký tự.
                 // ... AccountValidation.emailError() kiểm tra lại; kiểm tra trùng qua checkContact() trong account-validation.js.
-                if (name === 'email' && (value.length > 150 || !/^[A-Za-z0-9_+%-]+(?:\.[A-Za-z0-9_+%-]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(value))) return 'Địa chỉ email không hợp lệ hoặc dài quá 150 ký tự.';
+                if (name === 'email') {
+                    if (value.length > 150) return 'Email tối đa 150 ký tự.';
+                    if (!/^[A-Za-z0-9_+%-]+(?:\.[A-Za-z0-9_+%-]+)*@gmail\.com$/i.test(value)) return 'Sai định dạng email.';
+                }
                 if ((name === 'password' && key !== 'login') || name === 'newPassword') return passwordError(raw);
                 // . So xác nhận với mật khẩu mới trong cùng form; không so với mật khẩu cũ trong database.
                 // .. Khác nhau thì báo lỗi ngay dưới ô xác nhận.
@@ -151,7 +153,6 @@
                 if (field.maxLength > 0 && raw.length > field.maxLength) return `Thông tin này tối đa ${field.maxLength} ký tự.`;
                 return '';
             };
-            if (key === 'profile-update') form.dataset.originalEmail = find('email').value.trim().toLowerCase();
             const normalizeContact = field => field.name === 'email' ? field.value.trim().toLowerCase() : field.value.trim().replace(/[\s.()-]/g, '');
             const contactState = new Map();
             const contactTimers = new Map();
@@ -212,7 +213,6 @@
                         clearTimeout(contactTimers.get(field.name));
                         contactTimers.set(field.name, setTimeout(() => checkContact(field), 500));
                     }
-                    if (field.name === 'email' && key === 'profile-update') serverErrors.delete('profilePassword');
                     refresh();
                 };
                 field.addEventListener('input', changed);

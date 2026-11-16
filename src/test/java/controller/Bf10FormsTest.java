@@ -18,7 +18,7 @@ class Bf10FormsTest {
                 @Override public String updateUserProfile(int id,String n,String p,String e,String b,String a){fail("Invalid phone saved to profile");return null;}
             };
             ServletMocks signup=new ServletMocks();signup.csrf();
-            signup.parameters.putAll(java.util.Map.of("fullname","QA","phone",invalid,"email","qa@example.com","password","Secret123","confirm_password","Secret123"));
+            signup.parameters.putAll(java.util.Map.of("fullname","QA","phone",invalid,"email","qa@gmail.com","password","Secret123","confirm_password","Secret123"));
             new RegisterController(dao).doPost(signup.request,signup.response);
             java.util.Map<?,?> signupFeedback=(java.util.Map<?,?>)signup.sessionValues.get("accountFeedback");
             assertEquals("Số điện thoại sai định dạng.",((java.util.Map<?,?>)signupFeedback.get("errors")).get("phone"));
@@ -29,10 +29,10 @@ class Bf10FormsTest {
             assertEquals("Số điện thoại sai định dạng.",((java.util.Map<?,?>)profileFeedback.get("errors")).get("phone"));
         }
     }
-    private User user(){return new User(7,"QA","0987111222","qa@example.com","CUSTOMER",null,"ACTIVE");}
+    private User user(){return new User(7,"QA","0987111222","qa@gmail.com","CUSTOMER",null,"ACTIVE");}
     @Test void registrationRejectsMissingConfirmationBeforeCallingDao()throws Exception{
         ServletMocks mock=new ServletMocks();mock.csrf();
-        mock.parameters.put("fullname","QA");mock.parameters.put("email","qa@example.com");mock.parameters.put("phone","0987111222");mock.parameters.put("password","secret123");
+        mock.parameters.put("fullname","QA");mock.parameters.put("email","qa@gmail.com");mock.parameters.put("phone","0987111222");mock.parameters.put("password","secret123");
         UserDAO dao=new UserDAO(){
             @Override public boolean checkPhoneExists(String phone){return false;}
             @Override public boolean checkEmailExists(String email){return false;}
@@ -59,7 +59,7 @@ class Bf10FormsTest {
     }
     @Test void registrationReportsBothDuplicateContactsEvenWithInvalidPassword()throws Exception{
         ServletMocks mock=new ServletMocks();mock.csrf();
-        mock.parameters.put("fullname","QA");mock.parameters.put("phone","0987111222");mock.parameters.put("email","qa@example.com");
+        mock.parameters.put("fullname","QA");mock.parameters.put("phone","0987111222");mock.parameters.put("email","qa@gmail.com");
         mock.parameters.put("password","1234567");mock.parameters.put("confirm_password","different");
         new RegisterController(new UserDAO(){
             @Override public boolean checkPhoneExists(String phone){return true;}
@@ -72,10 +72,10 @@ class Bf10FormsTest {
     }
     @Test void registrationNormalizesAndCreatesCustomerOnly()throws Exception{
         ServletMocks mock=new ServletMocks();mock.csrf();
-        mock.parameters.put("fullname"," QA ");mock.parameters.put("email"," QA@EXAMPLE.COM ");mock.parameters.put("phone","0987.111-222");mock.parameters.put("password"," secret123 ");mock.parameters.put("confirm_password"," secret123 ");mock.parameters.put("role","ADMIN");
+        mock.parameters.put("fullname"," QA ");mock.parameters.put("email"," QA@GMAIL.COM ");mock.parameters.put("phone","0987.111-222");mock.parameters.put("password"," secret123 ");mock.parameters.put("confirm_password"," secret123 ");mock.parameters.put("role","ADMIN");
         UserDAO dao=new UserDAO(){
             @Override public boolean checkPhoneExists(String phone){assertEquals("0987111222",phone);return false;}
-            @Override public boolean checkEmailExists(String email){assertEquals("qa@example.com",email);return false;}
+            @Override public boolean checkEmailExists(String email){assertEquals("qa@gmail.com",email);return false;}
             @Override public boolean register(User user,String password){assertEquals("CUSTOMER",user.getRole());assertEquals("QA",user.getFullName());assertEquals(" secret123 ",password);return true;}
         };
         new RegisterController(dao).doPost(mock.request,mock.response);assertEquals("/cafe/?tab=login",mock.redirect);
@@ -100,12 +100,33 @@ class Bf10FormsTest {
             }).doPost(mock.request,mock.response);assertNotNull(mock.attributes.get("errorMsg"));
         }
     }
-    @Test void changingEmailRequiresCurrentPassword()throws Exception{
-        ServletMocks mock=new ServletMocks();mock.csrf();mock.sessionValues.put("user",user());mock.parameters.put("action","update");mock.parameters.put("fullName","QA");mock.parameters.put("email","new@example.com");
+    @Test void changingEmailSavesForSessionUserWithoutAnExtraPasswordField()throws Exception{
+        ServletMocks mock=new ServletMocks();mock.csrf();mock.sessionValues.put("user",user());mock.parameters.put("action","update");mock.parameters.put("fullName","QA");mock.parameters.put("email","new@gmail.com");
         profile(new UserDAO(){@Override public User getActiveUserById(int id){return user();}
-            @Override public boolean verifyPasswordById(int id,String pw){return false;}
-            @Override public String updateUserProfile(int id,String n,String p,String e,String b,String a){fail("Email changed without proof");return null;}
-        }).doPost(mock.request,mock.response);assertNotNull(mock.attributes.get("errorMsg"));
+            @Override public String updateUserProfile(int id,String n,String p,String e,String b,String a){assertEquals(7,id);assertEquals("new@gmail.com",e);return "success";}
+        }).doPost(mock.request,mock.response);assertNotNull(mock.attributes.get("successMsg"));
+        assertEquals("new@gmail.com",((User)mock.sessionValues.get("user")).getEmail());
+    }
+    @Test void registrationAndProfileRejectMistypedGmailBeforeSaving()throws Exception{
+        for(String email:new String[]{"nguyen@gmaill.comm","nguyen@gmail.comm","nguyen@gmail.com.evil.com"}){
+            UserDAO dao=new UserDAO(){
+                @Override public User getActiveUserById(int id){return user();}
+                @Override public boolean checkPhoneExists(String phone){return false;}
+                @Override public boolean checkEmailExists(String value){fail("Invalid email reached duplicate lookup");return false;}
+                @Override public boolean register(User u,String p){fail("Invalid email registered");return false;}
+                @Override public String updateUserProfile(int id,String n,String p,String e,String b,String a){fail("Invalid email saved");return null;}
+            };
+            ServletMocks signup=new ServletMocks();signup.csrf();
+            signup.parameters.putAll(java.util.Map.of("fullname","QA","phone","0987111222","email",email,"password","Secret123","confirm_password","Secret123"));
+            new RegisterController(dao).doPost(signup.request,signup.response);
+            java.util.Map<?,?> feedback=(java.util.Map<?,?>)signup.sessionValues.get("accountFeedback");
+            assertEquals("Sai định dạng email.",((java.util.Map<?,?>)feedback.get("errors")).get("email"));
+            ServletMocks update=new ServletMocks();update.csrf();update.sessionValues.put("user",user());
+            update.parameters.putAll(java.util.Map.of("action","update","fullName","QA","email",email));
+            profile(dao).doPost(update.request,update.response);
+            feedback=(java.util.Map<?,?>)update.attributes.get("accountFeedback");
+            assertEquals("Sai định dạng email.",((java.util.Map<?,?>)feedback.get("errors")).get("email"));
+        }
     }
     @Test void profileRejectsIncompleteAndImpossibleBirthdaySelections()throws Exception{
         for(String day:new String[]{"", "31"}){
