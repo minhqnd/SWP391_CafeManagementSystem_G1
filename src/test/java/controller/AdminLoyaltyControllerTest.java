@@ -68,7 +68,7 @@ class AdminLoyaltyControllerTest {
             @Override public User findCustomerByPhone(String phone) { phoneLookups++; return null; }
         };
         ShopSettingDAO settings = new ShopSettingDAO() {
-            @Override public ShopSettings getSettings() { return new ShopSettings(); }
+            @Override public ShopSettings getSettingsStrict() { return new ShopSettings(); }
             @Override public boolean saveSettings(ShopSettings s) { fail("Must not save unrelated settings"); return false; }
             @Override public boolean saveLoyaltyRules(long earn, int step, long value) {
                 saves.incrementAndGet(); savedRules = new long[]{earn,step,value}; return !failRules;
@@ -168,7 +168,7 @@ class AdminLoyaltyControllerTest {
     @Test void invalidPhoneNeverQueriesCustomerOrSelectsDefaultCustomer() throws Exception {
         for(String raw:List.of("", "01111111111", "1234567890", "09123", "abc", "0".repeat(100))) {
             params.put("phone",raw);controller.doGet(request(),response());
-            assertEquals("Số điện thoại sai định dạng.",attributes.get("lookupError"));
+            assertEquals(raw.isEmpty() ? "Vui lòng nhập số điện thoại." : "Số điện thoại sai định dạng.",attributes.get("lookupError"));
         }
         assertEquals(0,phoneLookups);assertEquals(0,defaultLookups);
         params.put("phone","(096) 591-6512");controller.doGet(request(),response());assertEquals(1,phoneLookups);

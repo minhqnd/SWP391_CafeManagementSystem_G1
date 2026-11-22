@@ -21,13 +21,13 @@
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Hồ sơ & Điểm tích luỹ - Aura Café</title>
-                <!-- Bootstrap 5 CSS -->
+
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-                <!-- Google Fonts -->
+
                 <link
                     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
                     rel="stylesheet">
-                <!-- Material Symbols -->
+
                 <link
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
                     rel="stylesheet">
@@ -55,7 +55,6 @@
                         background-color: var(--primary) !important;
                     }
 
-                    /* Points Dashboard Card */
                     .points-dashboard-card {
                         background: white;
                         border-radius: 1rem;
@@ -64,7 +63,6 @@
                         border: 1px solid #e9ecef;
                     }
 
-                    /* Barcode Card */
                     .barcode-card {
                         background: white;
                         border-radius: 1rem;
@@ -85,7 +83,6 @@
                         margin: 1rem 0;
                     }
 
-                    /* Profile Menu Bar */
                     .profile-nav-bar {
                         background: white;
                         border-radius: 0.75rem;
@@ -123,7 +120,6 @@
                         color: white;
                     }
 
-                    /* Info Cards */
                     .info-card {
                         background: white;
                         border-radius: 1rem;
@@ -133,7 +129,6 @@
                         height: 100%;
                     }
 
-                    /* Avatar Section */
                     .avatar-wrapper {
                         position: relative;
                         width: 120px;
@@ -177,7 +172,6 @@
                         font-weight: 700;
                     }
 
-                    /* Form styling */
                     .form-label-custom {
                         font-size: 0.85rem;
                         font-weight: 600;
@@ -242,14 +236,13 @@
 
             <body>
 
-                <!-- Header Component -->
                 <jsp:include page="/components/header.jsp">
                     <jsp:param name="activePage" value="profile" />
                 </jsp:include>
 
                 <main class="py-5">
                     <div class="container">
-                        <!-- Top Section: Points Dashboard -->
+
                         <div class="row g-4 mb-4">
                             <div class="col-lg-12">
                                 <div class="points-dashboard-card d-flex justify-content-between align-items-center">
@@ -264,6 +257,14 @@
                                             </div>
                                             <div class="d-flex align-items-baseline gap-2">
                                                 <h2 class="fs-1 fw-bold text-dark mb-0 lh-1">
+                                                    <%-- [HSSD01]
+                                                         . Số điểm trên profile.jsp lấy từ sessionScope.user.totalPoints.
+                                                           Trước khi dựng trang, authorize (đọc và kiểm tra người đang đăng
+                                                           nhập) trong ProfileController.java đã gọi
+                                                           UserDAO.getActiveUserById (đọc tài khoản còn hoạt động theo mã)
+                                                           và cập nhật session.user để phần này hiện điểm mới nhất của người
+                                                           đang đăng nhập.
+                                                    --%>
                                                     ${sessionScope.user.totalPoints != null ? sessionScope.user.totalPoints : 0}
                                                 </h2>
                                                 <span class="fs-5 fw-bold text-muted">pts</span>
@@ -279,7 +280,20 @@
                                             Chủ tài khoản: <span class="text-dark fw-bold">${fn:escapeXml(sessionScope.user.fullName)}</span>
                                         </div>
                                         <div class="d-flex align-items-center justify-content-end gap-2 text-muted">
+                                            <%-- [HSTV02]
+                                                 . Mã thành viên trên profile.jsp được ghép từ tiền tố #AURA- và
+                                                   sessionScope.user.id. Mã tài khoản này do ProfileController.authorize
+                                                   (đọc và kiểm tra người đang đăng nhập) đọc lại qua
+                                                   UserDAO.getActiveUserById (đọc tài khoản còn hoạt động theo mã), nên
+                                                   không cần lưu thêm một cột mã thành viên riêng.
+                                            --%>
                                             <span id="memberIdBadge" style="font-family: monospace; font-size: 1rem; background: #f8f9fa; padding: 0.4rem 0.8rem; border-radius: 0.5rem; border: 1px dashed #ced4da; font-weight: 600; color: var(--primary);">#AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}</span>
+                                            <%-- [HSSC01]
+                                                 . Khi bấm sao chép mã thành viên trong profile.jsp, em gọi copyMemberId
+                                                   (sao chép mã thành viên) ngay cùng file và truyền nội dung memberIdBadge
+                                                   đang hiện. Hàm chép mã vào bộ nhớ tạm để người dùng có thể dán sang nơi
+                                                   khác.
+                                            --%>
                                             <span class="material-symbols-outlined fs-5" style="cursor: pointer; padding: 0.3rem; border-radius: 0.3rem;"
                                                 title="Sao chép mã"
                                                 onclick="copyMemberId(document.getElementById('memberIdBadge').innerText.trim())"
@@ -291,34 +305,45 @@
                             </div>
                         </div>
 
-                        <%-- PF17: [SLBF10] Show update success message
-                             . Hiển thị successMsg sau khi lưu hồ sơ thành công.
-                             .. Đây là kết quả của bước cập nhật session [PF15] và trả trang [PF16].
-                             PW09: . Cùng vùng thông báo này hiển thị kết quả đổi mật khẩu thành công.
-                             .. Chỉ có successMsg khi nhánh đổi mật khẩu đã thành công tại [PW07]. --%>
-                        <c:if test="${not empty successMsg}">
-                            <div
+                        <%-- [MKL05]
+                             . Khi profile.jsp nhận dữ liệu trở lại, em hiện successMsg hoặc errorMsg để người dùng biết kết
+                               quả lưu hồ sơ hay đổi mật khẩu. Với lỗi từng ô, account_feedback.jsp và account-validation.js
+                               nhận dữ liệu từ AccountFormFeedback.show để hiện đúng vị trí cần sửa.
+                        --%>
+                        <c:if test="${not empty successMsg and empty errorMsg}">
+                            <div data-account-notice role="status"
                                 class="alert alert-success fw-bold border-0 py-3 mb-4 shadow-sm d-flex align-items-center gap-2">
                                 <span class="material-symbols-outlined">check_circle</span>
-                                ${successMsg}
+                                <c:out value="${successMsg}" />
                             </div>
                         </c:if>
                         <c:if test="${not empty errorMsg}">
-                            <div
+                            <div data-account-notice role="alert"
                                 class="alert alert-danger fw-bold border-0 py-3 mb-4 shadow-sm d-flex align-items-center gap-2">
                                 <span class="material-symbols-outlined">error</span>
-                                ${errorMsg}
+                                <c:out value="${errorMsg}" />
                             </div>
                         </c:if>
 
-                        <!-- Menu Bar -->
                         <ul class="nav profile-nav-bar mb-4" id="profileTab" role="tablist">
                             <li class="nav-item flex-fill text-center" role="presentation">
+                                <%-- [HSLS01]
+                                     . Khi chọn Lịch sử tích điểm trong profile.jsp, em hiện bảng loyaltyHistory đã được
+                                       renderProfile (chuẩn bị dữ liệu và mở trang hồ sơ) trong ProfileController.java chuẩn
+                                       bị. Controller gọi UserDAO.getLoyaltyHistoryByUserId (đọc lịch sử điểm của người đang
+                                       đăng nhập) bằng mã người đăng nhập nên bảng chỉ đọc lịch sử của chính người đó.
+                                     ... Đọc tiếp tại UserDAO.java, tìm [HSLS02].
+                                --%>
                                 <button class="nav-link profile-nav-item w-100 justify-content-center" id="history-tab"
                                     data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab"><span
                                         class="material-symbols-outlined fs-5">history</span> Lịch sử tích điểm</button>
                             </li>
                             <li class="nav-item flex-fill text-center" role="presentation">
+                                <%-- [HSTAB01]
+                                     . Khi bấm Thông tin tài khoản, Bootstrap hiện vùng account và ẩn tab lịch sử. Hồ sơ đã
+                                       được ProfileController.renderProfile (chuẩn bị dữ liệu và mở trang hồ sơ) chuẩn bị
+                                       cho trang này; đổi tab không gửi form hay ghi lại thông tin.
+                                --%>
                                 <button class="nav-link profile-nav-item active w-100 justify-content-center"
                                     id="account-tab" data-bs-toggle="tab" data-bs-target="#account" type="button"
                                     role="tab"><span class="material-symbols-outlined fs-5">manage_accounts</span> Thông
@@ -327,15 +352,21 @@
                         </ul>
 
                         <div class="tab-content" id="profileTabContent">
-                            <!-- Tab: Account Info -->
+
                             <div class="tab-pane fade show active" id="account" role="tabpanel" tabindex="0">
                                 <div class="row g-4">
-                                    <!-- Left: Avatar & Status -->
+
                                     <div class="col-lg-4">
                                         <div class="info-card text-center d-flex flex-column">
                                             <div class="avatar-wrapper mt-4">
                                                 <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200"
                                                     alt="Avatar" class="avatar-img">
+                                                <%-- [HSAN01]
+                                                     . Ảnh đại diện trong profile.jsp hiện lấy từ đường dẫn cố định của thẻ
+                                                       img. Nút máy ảnh mới hiển thị trên giao diện, chưa có xử lý chọn và
+                                                       gửi tệp để lưu ảnh tài khoản, nên không thể trình bày nút này là chức
+                                                       năng đổi ảnh đã hoàn thành.
+                                                --%>
                                                 <div class="avatar-edit-btn">
                                                     <span class="material-symbols-outlined"
                                                         style="font-size: 1.1rem;">photo_camera</span>
@@ -347,11 +378,9 @@
                                                 style="font-size: 0.85rem; font-family: monospace;">
                                                 #AURA-${sessionScope.user.id != null ? sessionScope.user.id : ''}</p>
 
-                                            <!-- Đã xóa các trường hardcode (Thành viên từ..., trạng thái tài khoản, 2FA) theo yêu cầu -->
                                         </div>
                                     </div>
 
-                                    <!-- Right: Form Info -->
                                     <div class="col-lg-8">
                                         <div class="info-card">
                                             <div
@@ -361,19 +390,26 @@
                                                     <p class="text-muted mb-0" style="font-size: 0.85rem;">Quản lý dữ
                                                         liệu để nhận quà sinh nhật và giao hàng nhanh</p>
                                                 </div>
-                                                <%-- PF07: [SLBF10] Edit profile information
-                                                     . Nút Chỉnh sửa kích hoạt sự kiện click để mở các trường hồ sơ.
-                                                     ... Script trong profile.jsp [PF08] mở khóa và hiện Lưu/Hủy. --%>
+
+                                                <%-- [HSS01]
+                                                     . Khi bấm Chỉnh sửa trong profile.jsp, sự kiện btnEdit.click mở khóa
+                                                       các ô và gọi checkFormChanged (kiểm tra hồ sơ có thông tin vừa sửa
+                                                       chưa) ngay cùng file để xem có thay đổi chưa. Nút Lưu chỉ được bật
+                                                       khi cần lưu; ở bước mở sửa này chưa gửi dữ liệu đến
+                                                       ProfileController.
+                                                --%>
                                                 <button type="button" id="btnEditProfile"
                                                     class="btn-outline-primary-custom d-flex align-items-center gap-2">
                                                     <span class="material-symbols-outlined fs-5">edit</span> Chỉnh sửa
                                                 </button>
                                             </div>
 
-                                            <%-- PF06: [SLBF10] View profile information
-                                                 . Hiển thị họ tên, SĐT, email, ngày sinh và địa chỉ từ session.user.
-                                                 .. Các trường bị khóa trước khi bấm Chỉnh sửa; chưa gửi dữ liệu khi chỉ xem.
-                                                 ... Chỉnh sửa [PF07] → Lưu thay đổi [PF09] → JavaScript [PF10] → ProfileController [PF11]. --%>
+                                            <%-- [HSL07]
+                                                 . Khi profile.jsp được mở, form đọc thông tin từ session.user mà controller
+                                                   đã cập nhật. Người dùng thấy hồ sơ vừa lưu; nếu lần xử lý có lỗi thì
+                                                   account-validation.js dùng các giá trị đã giữ để điền lại phần đang sửa
+                                                   và hiện lời báo.
+                                            --%>
                                             <form id="profileForm"
                                                 action="${pageContext.request.contextPath}/profile?action=update"
                                                 method="POST">
@@ -381,8 +417,15 @@
                                                 <div class="row g-4">
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Họ và tên</label>
-                                                        <%-- PF06a: . Ô Họ và tên gửi name=fullName, bắt buộc từ 1 đến 100 ký tự sau chuẩn hóa.
-                                                             ... validate() kiểm tra họ tên trong validate() → ProfileController.update() [PF12a] → AccountValidation.nameError(). --%>
+
+                                                        <%-- [HSHT01]
+                                                             . Ô Họ tên trong profile.jsp gửi giá trị qua fullName. validate
+                                                               (kiểm tra giá trị của một ô nhập) trong account-validation.js
+                                                               kiểm tra trước; khi bấm Lưu thay đổi,
+                                                               ProfileController.doPost gọi update (kiểm tra và cập nhật hồ
+                                                               sơ) rồi AccountValidation.nameError (kiểm tra họ tên và trả
+                                                               lời báo lỗi) để kiểm tra lại tên trước khi cập nhật hồ sơ.
+                                                        --%>
                                                         <input type="text" name="fullName"
                                                             class="form-control-custom w-100 profile-input"
                                                             value="${fn:escapeXml(sessionScope.user.fullName)}" minlength="1" readonly
@@ -390,8 +433,16 @@
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Số điện thoại</label>
-                                                        <%-- PF06b: . Ô SĐT gửi name=phone; đủ 10 số và bắt đầu bằng 0 sau chuẩn hóa.
-                                                             ... validate() kiểm tra SĐT trong validate() → ProfileController [PF12b] → AccountValidation.phoneError(). --%>
+
+                                                        <%-- [HSDT01]
+                                                             . Ô Số điện thoại trong profile.jsp gửi phone cùng form tới
+                                                               ProfileController.doPost. Controller gọi update (kiểm tra và
+                                                               cập nhật hồ sơ) để chuẩn hóa và dùng
+                                                               AccountValidation.phoneError (kiểm tra định dạng số điện
+                                                               thoại) kiểm tra định dạng, rồi chuyển số hợp lệ cho
+                                                               UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ
+                                                               mới) để tìm trùng và lưu.
+                                                        --%>
                                                         <input type="tel" name="phone"
                                                             class="form-control-custom w-100 profile-input"
                                                             value="${fn:escapeXml(sessionScope.user.phone)}"
@@ -401,9 +452,17 @@
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Địa chỉ Email</label>
-                                                        <%-- PF06c: . Ô Email gửi name=email; đúng định dạng, tối đa 150 ký tự và không trùng tài khoản khác.
-                                                             .. Email phải có đuôi @gmail.com và không trùng tài khoản khác.
-                                                             ... validate() và checkContact() trong account-validation.js → ProfileController [PF12c] → DAO [PF13]. --%>
+
+                                                        <%-- [HSEM01]
+                                                             . Ô Email trong profile.jsp được validate (kiểm tra giá trị của
+                                                               một ô nhập) và checkContact (kiểm tra liên hệ trùng ngay trên
+                                                               form) của account-validation.js kiểm tra trước khi lưu. Khi
+                                                               gửi, ProfileController.doPost gọi update (kiểm tra và cập
+                                                               nhật hồ sơ) rồi AccountValidation.emailError (kiểm tra định
+                                                               dạng và độ dài email) để kiểm tra lại; địa chỉ hợp lệ mới tới
+                                                               UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ
+                                                               mới) để tìm trùng và ghi.
+                                                        --%>
                                                         <input type="email" name="email" maxlength="150"
                                                             class="form-control-custom w-100 profile-input"
                                                             value="${fn:escapeXml(sessionScope.user.email)}" readonly required>
@@ -411,8 +470,18 @@
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Ngày sinh nhật</label>
                                                         <div class="d-flex gap-2">
-                                                            <%-- PF06d: . Ba ô ngày sinh gửi birthDay, birthMonth và birthYear; cùng trống hoặc đủ ba phần.
-                                                                 ... updateDays()/syncBirthday() [PF06g], [PF06h] → validate() kiểm tra ngày sinh trong validate() → Controller [PF12d]. --%>
+
+                                                            <%-- [HSNS01]
+                                                                 . Ba ô ngày, tháng, năm trong profile.jsp gọi updateDays
+                                                                   (tạo danh sách ngày hợp lệ theo tháng và năm) và
+                                                                   syncBirthday (ghép ngày, tháng, năm thành ngày sinh) khi
+                                                                   người dùng đổi lựa chọn để tạo ngày hợp lệ và ghép ngày
+                                                                   sinh. Khi lưu, ProfileController.update (kiểm tra và cập
+                                                                   nhật hồ sơ) nhận các giá trị rồi ghép và kiểm tra lại
+                                                                   ngày sinh trước khi ghi.
+                                                                 .. Người dùng được để trống cả ba ô; nếu chọn thì phải đủ
+                                                                    và là ngày có thật từ năm 1900 đến hôm nay.
+                                                            --%>
                                                             <select id="birthDay" name="birthDay"
                                                                 class="form-select form-control-custom w-100 profile-input"
                                                                 disabled></select>
@@ -423,15 +492,26 @@
                                                                 class="form-select form-control-custom w-100 profile-input"
                                                                 disabled></select>
                                                         </div>
-                                                        
+
                                                         <input type="hidden" name="birthday" id="birthdayHidden"
                                                             value="${fn:escapeXml(sessionScope.user.birthday)}">
                                                     </div>
                                                     <div class="col-12">
                                                         <label class="form-label-custom">Địa chỉ nhận hàng mặc
                                                             định</label>
-                                                        <%-- PF06e: . Ô Địa chỉ gửi name=address; không bắt buộc, tối đa 500 ký tự.
-                                                             ... validate() kiểm tra địa chỉ trong validate() → ProfileController [PF12e] → UserDAO.updateUserProfile() [PF13]. --%>
+
+                                                        <%-- [HSDC01]
+                                                             . Ô Địa chỉ trong profile.jsp gửi giá trị qua address và được
+                                                               validate (kiểm tra giá trị của một ô nhập) trong
+                                                               account-validation.js kiểm tra trước. Khi bấm Lưu thay đổi,
+                                                               ProfileController.doPost gọi update (kiểm tra và cập nhật hồ
+                                                               sơ) để nhận địa chỉ, kiểm tra lại rồi chuyển cho
+                                                               UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ
+                                                               mới) ghi cùng hồ sơ.
+                                                             .. Địa chỉ được phép bỏ trống; nếu nhập thì tối đa 500 ký tự và
+                                                                không có ký tự điều khiển.
+                                                             ... Đọc tiếp tại account-validation.js, tìm [HSDC02].
+                                                        --%>
                                                         <input type="text" name="address" maxlength="500"
                                                             class="form-control-custom w-100 profile-input"
                                                             value="${fn:escapeXml(sessionScope.user.address)}" readonly>
@@ -440,12 +520,22 @@
 
                                                 <div id="editActions"
                                                     class="mt-4 pt-3 border-top d-none justify-content-end gap-2">
+                                                    <%-- [HSH01]
+                                                         . Khi bấm Hủy trong profile.jsp, sự kiện btnCancel.click lấy
+                                                           originalValues để trả các ô về trước lúc sửa rồi khóa form. Thao
+                                                           tác này không gửi tới ProfileController.doPost, nên hồ sơ đang
+                                                           lưu không bị thay đổi theo các ô vừa nhập.
+                                                    --%>
                                                     <button type="button" id="btnCancelEdit"
                                                         class="btn btn-light fw-bold px-4">Hủy</button>
-                                                    <%-- PF09: [SLBF10] Click "Save Changes"
-                                                         . Bấm Lưu thay đổi để submit profileForm.
-                                                         .. Nút chỉ bật khi dữ liệu khác ban đầu; bấm nút chưa đồng nghĩa đã lưu database.
-                                                         ... account-validation.js, sự kiện submit [PF10] kiểm tra trước khi gửi backend. --%>
+
+                                                    <%-- [HSL01]
+                                                         . Em bắt đầu từ nút Lưu thay đổi trong profile.jsp. Khi bấm,
+                                                           account-validation.js kiểm tra form rồi gửi họ tên, số điện
+                                                           thoại, email, ngày sinh và địa chỉ đến ProfileController.doPost
+                                                           qua /profile?action=update để cập nhật hồ sơ.
+                                                         ... Đọc tiếp tại ProfileController.java, tìm [HSL02].
+                                                    --%>
                                                     <button type="submit" id="btnSaveProfile"
                                                         class="btn btn-secondary px-4 fw-bold" disabled>Lưu thay
                                                         đổi</button>
@@ -454,7 +544,11 @@
 
                                             <hr class="my-5 border-secondary-subtle">
 
-                                            <!-- Change Password Section -->
+                                            <%-- [HSMK01]
+                                                 . Khi bấm Bảo mật & Đổi mật khẩu, Bootstrap mở hoặc thu vùng
+                                                   passwordCollapse để hiện ba ô mật khẩu. Đây mới là mở form; chỉ bấm nút
+                                                   đổi mật khẩu mới gửi tới ProfileController.doPost.
+                                            --%>
                                             <div class="d-flex justify-content-between align-items-center mb-0 pb-3 border-bottom cursor-pointer"
                                                 data-bs-toggle="collapse" data-bs-target="#passwordCollapse"
                                                 aria-expanded="false" aria-controls="passwordCollapse"
@@ -474,9 +568,15 @@
                                             </div>
 
                                             <div class="collapse mt-4" id="passwordCollapse">
-                                                <%-- PW01: . Hiển thị form mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới.
-                                                     .. Nhập dữ liệu chưa thay đổi mật khẩu trong database.
-                                                     ... Nút Cập nhật mật khẩu [PW02] → JavaScript [PW03] → ProfileController.doPost() [PW05]. --%>
+
+
+                                                <%-- [HSMAT01]
+                                                     . Ba nút mắt của form đổi mật khẩu dùng xử lý chung trong
+                                                       account-validation.js. Khi trang mở, mã này bỏ nút gọi togglePassword
+                                                       cũ rồi tạo nút cho từng ô; bấm chỉ đổi che hoặc hiện mật khẩu, không
+                                                       gửi form hay lưu mật khẩu.
+                                                     ... Đọc tiếp tại account-validation.js, tìm [BMMAT01].
+                                                --%>
                                                 <form id="passwordForm"
                                                     action="${pageContext.request.contextPath}/profile?action=changePassword"
                                                     method="POST">
@@ -485,8 +585,15 @@
                                                         <div class="col-12">
                                                             <label class="form-label-custom">Mật khẩu hiện tại</label>
                                                             <div class="input-group">
-                                                                <%-- PW01a: . Ô mật khẩu hiện tại gửi name=oldPassword; bắt buộc nhập và phải khớp dữ liệu đã lưu.
-                                                                     ... ProfileController [PW05] → UserDAO.changePasswordById() [PW06] → PasswordHasher.verify(). --%>
+
+                                                                <%-- [MKCU01]
+                                                                     . Ô Mật khẩu hiện tại trong profile.jsp gửi giá trị qua
+                                                                       oldPassword khi bấm đổi mật khẩu.
+                                                                       ProfileController.doPost truyền mật khẩu này cùng mã
+                                                                       tài khoản cho UserDAO.changePasswordById (so mật khẩu
+                                                                       cũ rồi ghi mật khẩu mới) để đối chiếu; chỉ đúng mật
+                                                                       khẩu cũ mới được đổi sang mật khẩu mới.
+                                                                --%>
                                                                 <input type="password" name="oldPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
                                                                     placeholder="Nhập mật khẩu hiện tại" required>
@@ -502,8 +609,16 @@
                                                         <div class="col-md-6">
                                                             <label class="form-label-custom">Mật khẩu mới</label>
                                                             <div class="input-group">
-                                                                <%-- PW01b: . Ô mật khẩu mới gửi name=newPassword; yêu cầu 8–255 ký tự và có chữ lẫn số.
-                                                                     ... passwordError() trong account-validation.js → ProfileController [PW05] → AccountValidation.passwordErrors(). --%>
+
+                                                                <%-- [MKMOI01]
+                                                                     . Ô Mật khẩu mới trong profile.jsp được passwordError
+                                                                       (kiểm tra điều kiện mật khẩu) của
+                                                                       account-validation.js kiểm tra trước khi gửi.
+                                                                       ProfileController.doPost kiểm tra lại rồi truyền
+                                                                       newPassword cho UserDAO.changePasswordById (so mật
+                                                                       khẩu cũ rồi ghi mật khẩu mới) để băm và ghi sau khi
+                                                                       đã đối chiếu đúng mật khẩu hiện tại.
+                                                                --%>
                                                                 <input type="password" id="newPassword"
                                                                     name="newPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
@@ -524,8 +639,17 @@
                                                             <label class="form-label-custom">Xác nhận mật khẩu
                                                                 mới</label>
                                                             <div class="input-group">
-                                                                <%-- PW01c: . Ô xác nhận gửi name=confirmPassword và phải giống newPassword trong cùng form.
-                                                                     ... validate() kiểm tra xác nhận trong validate() → ProfileController [PW05] → AccountValidation.passwordErrors(). --%>
+
+                                                                <%-- [MKXN01]
+                                                                     . Ô Xác nhận mật khẩu trong profile.jsp gửi qua
+                                                                       confirmPassword và được validate (kiểm tra giá trị
+                                                                       của một ô nhập) trong account-validation.js so với
+                                                                       newPassword. Khi gửi đổi mật khẩu,
+                                                                       ProfileController.doPost còn gọi
+                                                                       AccountValidation.passwordErrors (kiểm tra mật khẩu
+                                                                       và xác nhận theo từng ô) để kiểm tra hai ô khớp trước
+                                                                       khi lưu.
+                                                                --%>
                                                                 <input type="password" id="confirmPassword"
                                                                     name="confirmPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
@@ -544,8 +668,14 @@
                                                     </div>
 
                                                     <div class="mt-4 pt-3 border-top d-flex justify-content-end">
-                                                        <%-- PW02: . Bấm Cập nhật mật khẩu để gửi form passwordForm.
-                                                             ... account-validation.js, sự kiện submit [PW03] → Controller [PW04]. --%>
+
+                                                        <%-- [MKL01]
+                                                             . Em bắt đầu từ nút đổi mật khẩu trong profile.jsp. Sau khi
+                                                               kiểm tra form, em gửi mật khẩu hiện tại, mật khẩu mới và xác
+                                                               nhận tới ProfileController.doPost qua
+                                                               /profile?action=changePassword để xử lý việc đổi mật khẩu.
+                                                             ... Đọc tiếp tại ProfileController.java, tìm [MKL02].
+                                                        --%>
                                                         <button type="submit"
                                                             class="btn btn-outline-primary-custom px-4 fw-bold">Cập nhật
                                                             mật khẩu</button>
@@ -558,7 +688,6 @@
                                 </div>
                             </div>
 
-                            <!-- Tab: History -->
                             <div class="tab-pane fade" id="history" role="tabpanel" tabindex="0">
                                 <div class="info-card">
                                     <div
@@ -572,6 +701,9 @@
 
                                     <div class="d-flex flex-column">
                                         <c:choose>
+                                            <c:when test="${not empty loyaltyHistoryError}">
+                                                <div class="alert alert-warning" role="alert"><c:out value="${loyaltyHistoryError}" /></div>
+                                            </c:when>
                                             <c:when test="${empty loyaltyHistory}">
                                                 <div class="text-center py-5 text-muted">
                                                     <span
@@ -580,10 +712,16 @@
                                                 </div>
                                             </c:when>
                                             <c:otherwise>
-                                                
-                                                <%-- PH03: . Hiển thị từng giao dịch điểm của người đang đăng nhập.
-                                                     .. Người dùng xem được điểm đã tích, đã đổi và đã hoàn.
-                                                     Nguồn/ghi chú: Danh sách lấy từ UserDAO [PH02] qua ProfileController [PF02]. --%>
+
+                                                <%-- [HSLS03]
+                                                     . Mỗi dòng dưới đây lấy một giao dịch trong loyaltyHistory do
+                                                       UserDAO.getLoyaltyHistoryByUserId (đọc lịch sử điểm của người đang
+                                                       đăng nhập) đọc cho người đang đăng nhập. Em dùng createdAt để hiện
+                                                       thời gian, pointsChange để hiện số điểm và màu cộng/trừ, id để hiện
+                                                       mã giao dịch. Nhãn hiện tại dựa vào transactionType và orderId: EARN
+                                                       là tích điểm; loại khác có mã đơn thì hiện dùng điểm cho đơn, không
+                                                       có mã đơn thì hiện đổi ưu đãi.
+                                                --%>
                                                 <c:forEach var="txn" items="${loyaltyHistory}" varStatus="loop">
                                                     <div
                                                         class="d-flex justify-content-between align-items-center py-3 ${not loop.last ? 'border-bottom' : ''}">
@@ -632,10 +770,8 @@
                     </div>
                 </main>
 
-                <!-- Auth Modal Component (For completeness) -->
                 <jsp:include page="/components/auth_modal.jsp" />
 
-                <!-- Bootstrap 5 JS -->
                 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
                 <script>
@@ -648,10 +784,10 @@
 
                         const originalValues = {};
 
-
-                        // PF08a: . So từng giá trị hồ sơ với originalValues để xác định có thay đổi hay chưa.
-                        // .. Có thay đổi thì bật Lưu thay đổi; giống ban đầu thì khóa nút.
-                        // ... Nút Lưu thay đổi [PF09] gửi form qua JavaScript [PF10].
+                        // [HSTD01]
+                        // . Ở checkFormChanged (kiểm tra hồ sơ có thông tin vừa sửa chưa) trong profile.jsp, em so các ô
+                        //   hiện tại với originalValues đã giữ lúc bắt đầu sửa. Sự kiện nhập hoặc đổi ô gọi hàm này để bật
+                        //   nút Lưu khi có thay đổi và tắt khi các giá trị vẫn như cũ.
                         function checkFormChanged() {
                             let isChanged = false;
                             profileInputs.forEach(input => {
@@ -692,9 +828,11 @@
                             birthMonth.innerHTML += '<option value="' + i + '">Tháng ' + i + '</option>';
                         }
 
-                        // PF06g: . Tạo danh sách ngày theo tháng/năm, tính cả năm nhuận.
-                        // .. Giữ ngày cũ nếu vẫn hợp lệ với tháng/năm đang chọn.
-                        // ... syncBirthday() [PF06h] ghép ba ô thành birthdayHidden.
+                        // [HSNS02]
+                        // . Ở updateDays (tạo danh sách ngày hợp lệ theo tháng và năm) trong profile.jsp, em nhận tháng và
+                        //   năm đang chọn để tạo lại danh sách ngày hợp lệ, kể cả năm nhuận. Nếu ngày cũ không còn trong
+                        //   tháng mới thì bỏ lựa chọn đó, sau đó syncBirthday (ghép ngày, tháng, năm thành ngày sinh) cập
+                        //   nhật ngày sẽ gửi khi lưu.
                         function updateDays() {
                             const d = birthDay.value;
                             const m = parseInt(birthMonth.value) || 1;
@@ -714,10 +852,11 @@
                         birthMonth.addEventListener('change', updateDays);
                         birthYear.addEventListener('change', updateDays);
 
-
-                        // PF06h: . Ghép đủ ba phần ngày sinh thành yyyy-MM-dd trong birthdayHidden.
-                        // .. Thiếu phần thì đặt thông báo; chưa đủ ba phần thì hidden trống.
-                        // ... Khi gửi, ProfileController.update() [PF12d] kiểm tra lại ba tham số gốc.
+                        // [HSNS03]
+                        // . Ở syncBirthday (ghép ngày, tháng, năm thành ngày sinh) trong profile.jsp, em đọc ba ô ngày,
+                        //   tháng và năm để điền birthdayHidden. Khi bấm lưu, các ô ngày sinh được gửi tới update (kiểm tra
+                        //   và cập nhật hồ sơ) trong ProfileController.java để ghép và kiểm tra lại trước khi ghi hồ sơ.
+                        // ... Đọc tiếp tại ProfileController.java, tìm [HSNS04].
                         function syncBirthday() {
                             const selected = [birthYear.value, birthMonth.value, birthDay.value].filter(Boolean).length;
                             birthDay.setCustomValidity(selected === 0 || selected === 3 ? '' : 'Vui lòng chọn đủ ngày, tháng và năm sinh.');
@@ -752,10 +891,11 @@
                         originalValues['birthYear'] = birthYear.value;
                         profileInputs.forEach(input => { originalValues[input.name || input.id] = input.value; });
 
-
-                        // PF08: . Nhận click Chỉnh sửa [PF07], bỏ readonly/disabled và hiện các nút Lưu/Hủy.
-                        // .. Chỉ mở các trường để sửa; chưa gửi dữ liệu và chưa cập nhật database.
-                        // ... checkFormChanged() [PF08a] quản lý nút Lưu thay đổi [PF09].
+                        // [HSS02]
+                        // . Ở sự kiện btnEdit.click trong profile.jsp, em giữ originalValues, mở khóa các ô rồi gọi
+                        //   checkFormChanged (kiểm tra hồ sơ có thông tin vừa sửa chưa) để kiểm tra có cần bật Lưu không.
+                        //   Người dùng sửa xong vẫn phải bấm Lưu thay đổi thì form mới đến ProfileController.doPost để cập
+                        //   nhật.
                         btnEdit.addEventListener('click', function () {
                             profileInputs.forEach(input => {
                                 if (input.id !== 'birthdayHidden') { // Bỏ qua input ảo
@@ -780,8 +920,10 @@
                             checkFormChanged(); // Reset button state
                         });
 
-                        // PF08b: . Bấm Hủy thì phục hồi originalValues, khóa lại các trường và ẩn nút Lưu/Hủy.
-                        // .. Dữ liệu đã gõ chưa được gửi xuống Controller hoặc database.
+                        // [HSH02]
+                        // . Ở sự kiện btnCancel.click trong profile.jsp, em lấy originalValues để phục hồi các ô và ngày
+                        //   sinh, bỏ lỗi rồi khóa lại form. Em không gửi dữ liệu tới ProfileController.doPost nên thao tác
+                        //   Hủy giữ nguyên hồ sơ đã lưu.
                         btnCancel.addEventListener('click', function () {
                             profileInputs.forEach(input => {
                                 if (input.name && originalValues[input.name] !== undefined) {
@@ -819,7 +961,11 @@
                         }
                     }
 
-                    // Copy Member ID / Barcode to clipboard
+                    // [HSSC02]
+                    // . Ở copyMemberId (sao chép mã thành viên) trong profile.jsp, em nhận mã thành viên và gọi
+                    //   navigator.clipboard.writeText để chép. Nếu trình duyệt không dùng được cách này thì em gọi
+                    //   fallbackCopy (sao chép bằng cách dự phòng) cùng file. Sau đó showToast (hiện thông báo ngắn trên
+                    //   màn hình) báo kết quả để người dùng biết đã sao chép được chưa.
                     function copyMemberId(text) {
                         if (navigator.clipboard && window.isSecureContext) {
                             navigator.clipboard.writeText(text).then(() => {
@@ -849,7 +995,6 @@
                         document.body.removeChild(textArea);
                     }
 
-                    // Toggle password visibility
                     function togglePassword(element) {
                         const input = element.previousElementSibling;
                         const icon = element.querySelector('.material-symbols-outlined');
@@ -866,18 +1011,15 @@
                         }
                     }
 
-                    // Handle direct navigation to tabs via URL hash
                     window.addEventListener('DOMContentLoaded', (event) => {
                         const hash = window.location.hash;
                         if (hash) {
-                            // Determine the correct tab button id based on hash
-                            // Example: hash #privileges -> id privileges-tab
+
                             const tabId = hash.substring(1) + '-tab';
                             const tabElement = document.getElementById(tabId);
                             if (tabElement) {
                                 tabElement.click();
 
-                                // Scroll into view slightly to show the tab content
                                 setTimeout(() => {
                                     document.querySelector('.profile-nav-bar').scrollIntoView({ behavior: 'smooth', block: 'start' });
                                 }, 300);
@@ -886,7 +1028,6 @@
                     });
                 </script>
 
-                <!-- Toast Notification Container -->
                 <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
                     <div id="profileToast" class="toast align-items-center text-bg-dark border-0 shadow" role="alert"
                         aria-live="assertive" aria-atomic="true">

@@ -18,11 +18,12 @@ import java.util.List;
 public class ProductDAO extends BaseDAO {
 
     /** All products for the admin catalog, including temporarily unavailable items. */
+    // [SPM03]
+    // . Ở getProductsForAdmin (đọc danh sách sản phẩm để quản lý) trong ProductDAO.java, em nhận mã danh mục
+    //   và từ khóa từ AdminProductsController.doGet. Em đọc các món khớp bộ lọc, gồm cả món tạm ngừng, rồi
+    //   trả danh sách về controller để dựng bảng quản lý.
     public List<Product> getProductsForAdmin(Integer categoryId, String keyword) throws SQLException, ClassNotFoundException {
-        // PR03: . lấy danh sách món theo danh mục và từ khóa tìm kiếm.
-        // .. lấy cả món đang bán và ngừng bán để Admin sửa hoặc bật lại.
-        // ... List<Product> về AdminProductsController [PR02]; trang công thức cũng dùng tại [RC02].
-        // BF11: quản trị cần thấy cả món đang bán/ngừng bán để sửa hoặc bật lại; không giống bộ lọc công khai.
+
         List<Product> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE 1 = 1");
         List<Object> params = new ArrayList<>();
@@ -48,6 +49,11 @@ public class ProductDAO extends BaseDAO {
         return list;
     }
 
+    // [SPTS01]
+    // . Trong getProductAdminStats (đọc tổng món và số đang bán) của ProductDAO.java, em đọc tổng sản phẩm
+    //   và số đang bán từ bảng products. Em trả hai số về AdminProductsController.doGet để tính thêm số tạm
+    //   ngừng rồi đưa lên ba thẻ thống kê.
+    // ... Đọc tiếp tại AdminProductsController.java, tìm [SPTS02].
     public int[] getProductAdminStats() throws SQLException, ClassNotFoundException {
         String sql = "SELECT COUNT(*) AS total, COALESCE(SUM(is_available = 1), 0) AS available FROM products";
         try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
@@ -56,10 +62,12 @@ public class ProductDAO extends BaseDAO {
         return new int[]{0, 0};
     }
 
+    // [CTCH03]
+    // . Hàm getProductForAdmin (đọc một sản phẩm để quản lý) trong ProductDAO.java nhận mã sản phẩm để đọc
+    //   món kèm danh mục và thông tin ảnh. Em trả kết quả về AdminProductsController.doGet để điền form Sửa,
+    //   hoặc AdminRecipeController.doPost để kiểm tra món vẫn tồn tại trước khi lưu công thức.
     public Product getProductForAdmin(int id) throws SQLException, ClassNotFoundException {
-        // PR02c: . SELECT sản phẩm theo id cho Admin, gồm danh mục và thông tin có ảnh lưu.
-        // .. Trả Product nếu tìm thấy, null nếu không có; lỗi SQL đưa về nơi gọi.
-        // ... AdminProductsController.doGet() [PR02b] điền selectedProduct vào form [PR04]; hàm cũng dùng khi kiểm tra sản phẩm.
+
         String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?";
         try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -70,6 +78,10 @@ public class ProductDAO extends BaseDAO {
     }
 
     /** Checks product-name uniqueness while allowing the current product during an edit. */
+    // [SPTR02]
+    // . Ở productNameExists (tìm sản phẩm khác trùng tên) trong ProductDAO.java, em nhận tên món và mã đang
+    //   sửa từ AdminProductsController.save (kiểm tra và lưu sản phẩm). Em tìm sản phẩm khác cùng tên trong
+    //   products rồi trả đúng hoặc sai, để controller chặn tên trùng trước khi lưu.
     public boolean productNameExists(String name, int excludedId) throws SQLException, ClassNotFoundException {
         String sql = "SELECT 1 FROM products WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND id <> ? LIMIT 1";
         try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -85,26 +97,35 @@ public class ProductDAO extends BaseDAO {
         return saveProduct(product, null, null, null, false);
     }
 
+    // [SPL06]
+    // . Trong saveProduct của ProductDAO.java, em thêm hoặc sửa dòng products rồi xử lý product_images trên
+    //   cùng kết nối. Ghi xong thì xác nhận và trả true về controller. Nếu không ghi được sản phẩm thì trả
+    //   false; nếu có lỗi thì hủy thay đổi rồi báo lỗi về controller.
+    // ... Đọc tiếp tại AdminProductsController.java, tìm [SPL07].
     public boolean saveProduct(Product product, byte[] imageData, String contentType,
                                String fileName, boolean removeImage)
             throws SQLException, ClassNotFoundException {
-        // PR25: [SLBF11] Save product as Available
-        // . Lưu món và ảnh cùng nhau; món mới nhận available=true từ [PR23], món sửa giữ trạng thái cũ.
-        // .. Có mã thì cập nhật, chưa có thì thêm mới; lỗi thì hoàn tác.
-        // ... Trả boolean về AdminProductsController.save() [PR16] → tải lại danh sách [PR02].
-        // BF11: lưu products (gồm variants_config) và product_images cùng transaction, lỗi thì rollback.
+
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
+                // . Trong ProductDAO.java, em gọi saveProduct (ghi sản phẩm) bằng kết nối đang dùng và đối tượng sản
+                //   phẩm để ghi thông tin món. Em xử lý ảnh trên cùng kết nối để toàn bộ thay đổi của sản phẩm được lưu
+                //   cùng nhau.
                 boolean saved = saveProduct(conn, product);
                 if (!saved) {
                     conn.rollback();
                     return false;
                 }
                 if (imageData != null) {
+                    // . Nếu có ảnh mới, trong ProductDAO.saveProduct (ghi sản phẩm) em gọi saveImage (thêm hoặc thay ảnh
+                    //   đang lưu) cùng file bằng mã sản phẩm và dữ liệu ảnh. Hàm thêm hoặc thay product_images để ảnh gắn
+                    //   đúng món vừa lưu.
                     saveImage(conn, product.getId(), imageData, contentType, fileName);
                     clearLegacyImageUrl(conn, product.getId());
                 } else if (removeImage) {
+                    // . Nếu không có ảnh mới và người dùng chọn xóa ảnh, trong ProductDAO.saveProduct (ghi sản phẩm) em gọi
+                    //   deleteImage (xóa ảnh đang lưu) cùng file bằng mã sản phẩm. Hàm xóa ảnh cũ của đúng món đó.
                     deleteImage(conn, product.getId());
                     clearLegacyImageUrl(conn, product.getId());
                 }
@@ -120,7 +141,9 @@ public class ProductDAO extends BaseDAO {
     }
 
     private boolean saveProduct(Connection conn, Product product) throws SQLException {
-        // BF11: id>0 UPDATE, tạo mới thì INSERT rồi nhận ID để lưu ảnh vào đúng món.
+
+        // . Khi sản phẩm đã có mã, em dùng UPDATE trong ProductDAO.saveProduct (ghi sản phẩm) để sửa đúng dòng
+        //   products. Em giữ mã trên product để bước xử lý ảnh tiếp tục dùng mà không tạo sản phẩm mới.
         if (product.getId() > 0) {
             String sql = "UPDATE products SET category_id = ?, name = ?, base_price = ?, variants_config = ?, description = ?, is_available = ? WHERE id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -133,6 +156,9 @@ public class ProductDAO extends BaseDAO {
                 }
             }
         }
+        // . Khi tạo món mới, em dùng INSERT trong ProductDAO.saveProduct (ghi sản phẩm) rồi lấy mã bằng
+        //   getGeneratedKeys (lấy mã của dòng vừa thêm). Em đặt mã vào product.id để phần lưu ảnh gắn ảnh với
+        //   đúng sản phẩm vừa tạo.
         String sql = "INSERT INTO products (category_id, name, base_price, variants_config, description, is_available) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bindProduct(ps, product);
@@ -181,11 +207,13 @@ public class ProductDAO extends BaseDAO {
         }
     }
 
+    // [SPAH03]
+    // . Ở updateProductAvailability (lưu trạng thái đang bán/tạm ngừng) trong ProductDAO.java, em nhận mã
+    //   món và trạng thái từ AdminProductsController.toggle (đổi trạng thái bán của sản phẩm). Em sửa
+    //   products.is_available theo mã đó rồi trả kết quả về toggle để controller thông báo và tải lại danh
+    //   sách.
     public boolean updateProductAvailability(int id, boolean available) throws SQLException, ClassNotFoundException {
-        // PR28: . cập nhật trạng thái bán của món được chọn.
-        // .. trả kết quả để báo thao tác có thành công không.
-        // ... Kết quả về AdminProductsController.toggle() [PR27].
-        // BF11: nút mắt chỉ đổi is_available; nút xóa riêng chỉ xóa món đã ngừng bán và chưa có order_items.
+
         try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE products SET is_available = ? WHERE id = ?")) {
             ps.setBoolean(1, available);
             ps.setInt(2, id);
@@ -193,9 +221,10 @@ public class ProductDAO extends BaseDAO {
         }
     }
 
-    /** Permanently delete only a paused product that has never been used in an order. */
-    // PR30: . DELETE đúng id với is_available=0 và không có order_items.
-    // .. Có dòng xóa trả true; không đủ điều kiện trả false; lỗi SQL được đưa về controller [PR29].
+    // [SPX03]
+    // . Ở deleteProduct (kiểm tra điều kiện rồi xóa sản phẩm) trong ProductDAO.java, em nhận mã món từ
+    //   AdminProductsController.delete (kiểm tra điều kiện rồi xóa). Em chỉ xóa khi món đã ngừng bán và chưa
+    //   có trong order_items. Kết quả trả về cho controller biết đã xóa được hay phải báo chưa đủ điều kiện.
     public boolean deleteProduct(int id) throws SQLException, ClassNotFoundException {
         String sql = "DELETE FROM products "
                 + "WHERE id = ? AND is_available = 0 "
@@ -211,7 +240,7 @@ public class ProductDAO extends BaseDAO {
         java.sql.ResultSetMetaData rsmd = rs.getMetaData();
         int columns = rsmd.getColumnCount();
         for (int x = 1; x <= columns; x++) {
-            if (columnName.equalsIgnoreCase(rsmd.getColumnName(x)) || 
+            if (columnName.equalsIgnoreCase(rsmd.getColumnName(x)) ||
                 columnName.equalsIgnoreCase(rsmd.getColumnLabel(x))) {
                 return true;
             }
@@ -221,7 +250,7 @@ public class ProductDAO extends BaseDAO {
 
     private Product mapResultSetToProduct(ResultSet rs) throws SQLException {
         String desc = hasColumn(rs, "description") ? rs.getString("description") : null;
-        
+
         Product product = new Product(
                 rs.getInt("id"),
                 rs.getInt("category_id"),
@@ -238,9 +267,7 @@ public class ProductDAO extends BaseDAO {
     }
 
     public ProductImage getProductImage(int productId) {
-        // IM04: . đọc nội dung và loại ảnh của món trong cơ sở dữ liệu.
-        // .. trả ảnh nếu có, hoặc kết quả rỗng nếu chưa lưu ảnh.
-        // ... ProductImage về ProductImageController [IM03].
+
         String sql = "SELECT image_data, content_type FROM product_images WHERE product_id = ?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, productId);
@@ -352,10 +379,12 @@ public class ProductDAO extends BaseDAO {
         return list;
     }
 
+    // [MNDS02]
+    // . Ở filterProducts (lọc món còn bán theo danh mục và từ khóa) trong ProductDAO.java, em nhận danh mục
+    //   và từ khóa từ MenuController.doGet. Em chỉ đọc món đang bán thuộc danh mục ACTIVE và khớp bộ lọc,
+    //   rồi trả danh sách về controller để đưa lên menu.jsp.
     public List<Product> filterProducts(Integer categoryId, String keyword) {
-        // MN04: . Truy vấn món theo danh mục/từ khóa, bắt buộc p.is_available=1 và c.status=ACTIVE.
-        // .. Trả danh sách công khai; có công thức không phải điều kiện của truy vấn này.
-        // ... List<Product> về MenuController [MN02] → menu.jsp [MN06].
+
         List<Product> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
                 "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
@@ -399,10 +428,7 @@ public class ProductDAO extends BaseDAO {
     }
 
     public Product getProductById(int id) {
-        // MN10: . lấy thông tin một món theo mã được truyền vào.
-        // .. Có món thì trả thông tin và cấu hình size, topping; không có thì trả kết quả rỗng.
-        // ... Trả Product về hộp chọn món [MN09] hoặc trang chi tiết riêng [MN11].
-        // BF11: lấy thông tin/JSON cấu hình của một món; hàm này chỉ lọc ID, không tự lọc is_available.
+
         String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image " +
                      "FROM products p " +
                      "JOIN categories c ON p.category_id = c.id " +
@@ -424,6 +450,12 @@ public class ProductDAO extends BaseDAO {
     }
 
     /** Public product lookup: only an available product in an active category is exposed. */
+    // [MNTHE03]
+    // . Ở getAvailableProductById (đọc món còn bán theo mã) trong ProductDAO.java, em nhận mã món từ
+    //   ProductDetailController.doGet. Em chỉ trả sản phẩm còn được bán để controller mở product-detail.jsp;
+    //   nếu không tìm được thì controller đưa người dùng về Menu.
+    // ... Đọc tiếp tại product-detail.jsp, tìm [MNTHE04].
+
     public Product getAvailableProductById(int id) {
         String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image "
                 + "FROM products p JOIN categories c ON p.category_id = c.id "
@@ -482,9 +514,12 @@ public class ProductDAO extends BaseDAO {
         return list;
     }
 
+    // [MNBC01]
+    // . Ở getBestSellingProducts (đọc các món nổi bật theo lượng bán) trong ProductDAO.java, em nhận giới
+    //   hạn 4 từ index.jsp. Em chọn các món còn bán theo lượng bán rồi trả danh sách về Trang chủ để hiện
+    //   banner và phần sản phẩm yêu thích.
     public List<Product> getBestSellingProducts(int limit) {
-        // BF10/BF11: index.jsp lấy món đang bán, xếp theo lượng bán ở các trạng thái đơn trong SQL.
-        // Đọc điều kiện WHERE thực tế: hàm này lọc is_available, không có điều kiện category.status.
+
         List<Product> list = new ArrayList<>();
         String sql = "SELECT p.*, c.name AS category_name, EXISTS(SELECT 1 FROM product_images pi WHERE pi.product_id=p.id) AS has_stored_image, COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity ELSE 0 END), 0) as total_sold " +
                      "FROM products p " +

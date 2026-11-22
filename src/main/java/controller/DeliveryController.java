@@ -190,9 +190,7 @@ public class DeliveryController extends HttpServlet {
             }
             collected = delivery.getCodAmount();
         }
-        // CD02: . Ở đây em kiểm tra shipper đã xác nhận thu đủ tiền trước khi kết thúc đơn COD.
-        // .. Em gửi mã phiếu, mã shipper và số tiền đã thu xuống phần cập nhật.
-        // ... DeliveryDAO.completeDelivery(mã phiếu, mã shipper, tiền thu, ghi chú) [CD03].
+
         int result = deliveryDAO.completeDelivery(delivery.getId(), shipperId, collected, null);
         if (result != DeliveryDAO.OK) {
             throw new IllegalStateException("Chỉ xác nhận giao xong khi đơn đang được giao.");

@@ -11,8 +11,9 @@ import java.util.UUID;
 public final class AccountCsrf {
     private static final String KEY = "accountCsrfToken";
     private AccountCsrf() {}
-    // . Tạo hoặc lấy accountCsrfToken trong session để đưa vào input ẩn csrfToken.
-    // ... Controller đọc token gửi lại và đối chiếu tại AccountCsrf.require().
+    // . Các form tài khoản gọi token (lấy mã bảo vệ dùng cho form) trong AccountCsrf.java bằng session để
+    //   nhận mã dùng cho form. Em đặt mã vào ô ẩn csrfToken để khi form gửi tới controller, require (đối
+    //   chiếu mã bảo vệ của form) có thể đối chiếu với mã đã cấp.
     public static String token(HttpSession session) {
         synchronized (session) {
             Object token = session.getAttribute(KEY);
@@ -20,8 +21,10 @@ public final class AccountCsrf {
             return token.toString();
         }
     }
-    // . Đối chiếu csrfToken của request với accountCsrfToken trong session.
-    // .. Thiếu hoặc sai thì trả HTTP 403; đúng thì Controller tiếp tục xử lý form.
+    // [BMVE01]
+    // . Khi controller tài khoản gọi require (đối chiếu mã bảo vệ của form) trong AccountCsrf.java, em lấy
+    //   csrfToken của form để so với mã đã cấp cho lần dùng trang này. Hàm trả đúng hoặc sai để controller
+    //   tiếp tục xử lý hoặc dừng yêu cầu không hợp lệ.
     public static boolean require(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         Object expected = session == null ? null : session.getAttribute(KEY);
@@ -31,7 +34,7 @@ public final class AccountCsrf {
         }
         return true;
     }
-    // . Thay token của form sau khi đặt lại mật khẩu thành công.
-    // .. Form dùng token cũ sẽ phải tải lại trước khi gửi tiếp.
+    // . Sau khi đặt lại mật khẩu, ResetPasswordController.doPost gọi rotate (tạo mã bảo vệ mới cho form)
+    //   trong AccountCsrf.java bằng session. Em tạo mã form mới để các lần gửi tiếp theo dùng mã mới này.
     public static void rotate(HttpSession session) { synchronized(session) { session.setAttribute(KEY, UUID.randomUUID().toString()); } }
 }

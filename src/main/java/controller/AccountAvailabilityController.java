@@ -11,17 +11,18 @@ import model.User;
 import utils.AccountCsrf;
 import utils.AccountValidation;
 
-/** Inline duplicate feedback; saving still relies on server checks and unique DB keys. */
 @WebServlet(name = "AccountAvailabilityController", urlPatterns = {"/account-availability"})
 public class AccountAvailabilityController extends HttpServlet {
     private final UserDAO users;
     public AccountAvailabilityController() { this(new UserDAO()); }
     AccountAvailabilityController(UserDAO users) { this.users = users; }
 
-    // RG04c: . Nhận kiểm tra trùng đăng ký, xác minh CSRF, field và định dạng.
-    // ... UserDAO.contactExists() [RG04d] → trả JSON exists cho checkContact().
-    // PF10c: . Với scope=profile, kiểm tra session ACTIVE và lấy ID cần loại trừ.
-    // ... UserDAO.contactExists() [PF10d] → trả JSON exists cho checkContact().
+    // [BMLH02]
+    // . Ở doPost trong AccountAvailabilityController.java, em nhận thông tin ô email hoặc số điện thoại mà
+    //   checkContact (kiểm tra liên hệ trùng ngay trên form) gửi từ account-validation.js. Em gọi
+    //   UserDAO.contactExists (tìm email hoặc số điện thoại trùng), truyền loại ô, giá trị và mã tài khoản
+    //   cần bỏ qua, để tìm xem liên hệ này đã được người khác dùng chưa.
+    // ... Đọc tiếp tại UserDAO.java, tìm [BMLH03].
     @Override protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("application/json;charset=UTF-8");
@@ -37,7 +38,9 @@ public class AccountAvailabilityController extends HttpServlet {
         if ("profile".equals(request.getParameter("scope"))) {
             HttpSession session = request.getSession(false);
             User user = session == null ? null : (User)session.getAttribute("user");
-            if (user == null || users.getActiveUserById(user.getId()) == null) { response.sendError(401); return; }
+            try {
+                if (user == null || users.getActiveUserById(user.getId()) == null) { response.sendError(401); return; }
+            } catch (utils.AccountDataException e) { response.sendError(503); return; }
             excludedId = user.getId();
         }
         try {

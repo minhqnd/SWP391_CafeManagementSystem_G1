@@ -58,10 +58,17 @@
 </head>
 <body class="admin-body">
 <div class="mobile-admin-bar">
+    <%-- [DMHD01]
+         . Liên kết AURA CAFÉ mở admin-dashboard.jsp để quay về trang quản trị. Nút Đăng xuất bên cạnh mở
+           /login?action=logout, do LoginController.doGet gọi session.invalidate (kết thúc lần đăng nhập hiện
+           tại) rồi chuyển về Trang chủ. Hai nút này chuyển trang hoặc kết thúc phiên, không lưu hay xóa danh
+           mục đang chỉnh dở.
+    --%>
     <a href="${ctx}/admin-dashboard.jsp" class="text-decoration-none fw-bold text-danger"><span class="material-symbols-outlined align-middle">local_cafe</span> AURA CAFÉ · ADMIN</a>
     <a href="${ctx}/login?action=logout" class="btn btn-sm btn-light">Đăng xuất</a>
 </div>
 <jsp:include page="/components/admin-sidebar.jsp"><jsp:param name="activeMenu" value="categories" /></jsp:include>
+
 
 <main class="admin-main-wrapper categories-page">
     <header class="categories-overview">
@@ -72,6 +79,11 @@
                 <p class="page-subtitle">Danh mục hiển thị trên menu khách hàng, POS và KDS.</p>
             </div>
         </div>
+        <%-- [DMM04]
+             . Bốn thẻ trên admin-categories.jsp lấy số từ categoryTotal, categoryActive, categoryInactive và
+               productTotal. Trước đó doGet trong AdminCategoriesController.java đã đếm và đưa sang để người dùng
+               nhìn tổng danh mục, số hoạt động, tạm ẩn và tổng sản phẩm.
+        --%>
         <div class="category-stats" aria-label="Thống kê danh mục">
             <div class="category-stat"><span>Tổng danh mục</span><strong><c:out value="${categoryTotal}" /></strong></div>
             <div class="category-stat active"><span>Đang hoạt động</span><strong><c:out value="${categoryActive}" /></strong></div>
@@ -80,8 +92,14 @@
         </div>
     </header>
 
-    <c:if test="${not empty categoryMessage}"><div class="alert alert-success py-2 mb-0"><c:out value="${categoryMessage}" /></div></c:if>
-    <c:if test="${not empty categoryError}"><div class="alert alert-danger py-2 mb-0"><c:out value="${categoryError}" /></div></c:if>
+    <%-- [DML07]
+         . Khi trang mở lại, admin-categories.jsp nhận categoryMessage hoặc categoryError từ controller để báo
+           kết quả. Với lỗi xảy ra sau khi đọc được form, các ô được giữ để người dùng sửa tiếp; tệp ảnh mới
+           cần chọn lại nếu muốn gửi lại.
+         ... Xem phần giữ form sau lỗi tại AdminCategoriesController.java, tìm [DML08].
+    --%>
+    <c:if test="${not empty categoryMessage and empty categoryError}"><div data-form-notice class="alert alert-success py-2 mb-0" role="status"><c:out value="${categoryMessage}" /></div></c:if>
+    <c:if test="${not empty categoryError}"><div data-form-notice class="alert alert-danger py-2 mb-0" role="alert"><c:out value="${categoryError}" /></div></c:if>
 
     <div class="row g-4 align-items-start">
         <section class="col-12 col-xl-8">
@@ -93,32 +111,56 @@
                             <tr><th>ID</th><th>Ảnh</th><th>Tên danh mục</th><th class="text-end">Số món</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr>
                         </thead>
                         <tbody>
+                        <%-- [DMD01]
+                             . Để dựng bảng trong admin-categories.jsp, em lặp danh sách categories mà
+                               AdminCategoriesController.doGet đưa sang. Mỗi hàng dùng thông tin và mã của cùng danh mục,
+                               nên nút Sửa, Ẩn hoặc Xóa sẽ gửi đúng mã của hàng vừa bấm.
+                        --%>
                         <c:forEach var="category" items="${categories}">
                             <tr>
                                 <td class="font-monospace text-muted">#<c:out value="${category.id}" /></td>
                                 <td><c:choose><c:when test="${category.storedImage}"><img class="category-image" src="${ctx}/category-image?id=${category.id}" alt="Ảnh danh mục"></c:when><c:when test="${not empty category.imageUrl}"><img class="category-image" src="${fn:escapeXml(category.imageUrl)}" alt="Ảnh danh mục"></c:when><c:otherwise><div class="category-image-placeholder">Chưa có ảnh</div></c:otherwise></c:choose></td>
                                 <td class="fw-bold text-dark"><c:out value="${category.name}" /></td>
 
+                                <%-- [DMDEM01]
+                                     . Số món ở đây là productCount do CategoryDAO.getAllCategoriesWithCount (đọc danh mục
+                                       kèm số sản phẩm) đếm bằng COUNT(p.id) theo từng danh mục rồi controller đưa về. Số
+                                       này gồm cả món đang bán và tạm ngừng thuộc nhóm; danh sách Menu cho khách dùng hàm
+                                       đọc riêng và chỉ đếm món đang bán trong danh mục hoạt động.
+                                --%>
                                 <td class="text-end fw-bold font-monospace"><c:out value="${category.productCount}" /></td>
                                 <td><c:choose><c:when test="${category.status eq 'ACTIVE'}"><span class="badge rounded-pill text-bg-success">Hoạt động</span></c:when><c:otherwise><span class="badge rounded-pill text-bg-secondary">Tạm ẩn</span></c:otherwise></c:choose></td>
                                 <td class="text-end text-nowrap">
-                                    <%-- CA02a: . Nút Sửa gửi editId của danh mục bằng GET; chưa cập nhật database.
-                                         ... AdminCategoriesController.doGet() [CA02b] đọc danh mục và điền form [CA04]. --%>
+
+                                    <%-- [DMS01]
+                                         . Khi bấm nút Sửa trong admin-categories.jsp, em mở /admin/categories kèm editId
+                                           của hàng đó. Yêu cầu đến doGet trong AdminCategoriesController.java để đọc danh
+                                           mục theo mã và đưa thông tin vào form Sửa.
+                                         ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMS02].
+                                    --%>
                                     <a class="btn btn-sm btn-outline-primary" href="${ctx}/admin/categories?editId=${category.id}" title="Sửa"><span class="material-symbols-outlined fs-6 align-middle">edit</span></a>
-                                    <%-- BF11 - ẨN/HIỆN: POST action=toggle -> AdminCategoriesController.toggle() -> UPDATE status. --%>
-                                    <%-- CA18a: . Nút mắt gửi id và trạng thái đích: ACTIVE thành INACTIVE hoặc ngược lại.
-                                         .. Chỉ đổi trạng thái, không xóa danh mục và sản phẩm.
-                                         ... POST /admin/categories → doPost() [CA10] → toggle() [CA18] → DAO [CA19] → danh sách [CA02]. --%>
+
                                     <form method="post" action="${ctx}/admin/categories" class="d-inline">
+                                        <%-- [DMAH01]
+                                             . Khi bấm nút Ẩn hoặc Hiện trong admin-categories.jsp, form gửi mã danh mục,
+                                               trạng thái mới và action=toggle đến doPost của
+                                               AdminCategoriesController.java. Controller gọi toggle (ẩn hoặc hiện danh mục)
+                                               để kiểm tra rồi đổi trạng thái của đúng danh mục vừa chọn.
+                                             ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMAH02].
+                                        --%>
                                         <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="${category.id}">
                                         <c:choose><c:when test="${category.status eq 'ACTIVE'}"><input type="hidden" name="status" value="INACTIVE"><button class="btn btn-sm btn-outline-secondary" title="Tạm ẩn"><span class="material-symbols-outlined fs-6 align-middle">visibility_off</span></button></c:when><c:otherwise><input type="hidden" name="status" value="ACTIVE"><button class="btn btn-sm btn-outline-success" title="Hiện lại"><span class="material-symbols-outlined fs-6 align-middle">visibility</span></button></c:otherwise></c:choose>
                                     </form>
-                                    <%-- BF11 - XÓA DANH MỤC: xác nhận xóa danh mục và sản phẩm liên quan; backend giữ ràng buộc lịch sử đơn hàng. --%>
-                                    <%-- CA20a: . Nút Xóa danh mục mở xác nhận trước khi gửi action=delete và id.
-                                         .. Cancel giữ nguyên; OK gửi yêu cầu, server kiểm tra lịch sử đơn hàng trước khi xóa.
-                                         ... POST /admin/categories → doPost() [CA10] → delete() [CA20] → DAO [CA21] → danh sách [CA02]. --%>
+
                                     <form method="post" action="${ctx}/admin/categories" class="d-inline"
                                           onsubmit="return confirm('Xóa vĩnh viễn danh mục này và tất cả sản phẩm thuộc danh mục? Nếu có sản phẩm đã bán, hệ thống sẽ từ chối để giữ lịch sử đơn hàng.');">
+                                        <%-- [DMX01]
+                                             . Khi bấm Xóa trong admin-categories.jsp và xác nhận, form gửi mã danh mục cùng
+                                               action=delete đến doPost của AdminCategoriesController.java. Controller gọi
+                                               delete (kiểm tra điều kiện rồi xóa) để kiểm tra lịch sử đơn hàng trước khi
+                                               quyết định xóa danh mục và các món bên trong.
+                                             ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMX02].
+                                        --%>
                                         <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="${category.id}">
                                         <button class="btn btn-sm btn-outline-danger" title="Xóa danh mục"><span class="material-symbols-outlined fs-6 align-middle">delete_forever</span></button>
                                     </form>
@@ -135,24 +177,37 @@
         <section class="col-12 col-xl-4">
             <div class="category-card category-editor">
                 <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-                    <h2 class="h6 fw-bold mb-0"><c:choose><c:when test="${not empty selectedCategory}">Sửa danh mục</c:when><c:otherwise>Thêm danh mục mới</c:otherwise></c:choose></h2>
-                    <c:if test="${not empty selectedCategory}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedCategory.id}" /></span></c:if>
+                    <h2 class="h6 fw-bold mb-0"><c:choose><c:when test="${selectedCategory.id gt 0}">Sửa danh mục</c:when><c:otherwise>Thêm danh mục mới</c:otherwise></c:choose></h2>
+                    <c:if test="${selectedCategory.id gt 0}"><span class="badge text-bg-light font-monospace">#<c:out value="${selectedCategory.id}" /></span></c:if>
                 </div>
-                <%-- BF11 - THÊM/SỬA: POST action=save và ID; multipart gửi ảnh -> Controller kiểm tra -> CategoryDAO lưu. --%>
-                <%-- CA04: [SLBF11] Enter category information
-                     . hiển thị danh mục và điền sẵn thông tin nếu Admin chọn sửa.
-                     .. Bấm Lưu thì gửi tên, trạng thái và ảnh; bấm nút mắt thì gửi yêu cầu ẩn hoặc hiện.
-                     ... POST /admin/categories → doPost() [CA10]; danh sách lấy từ doGet() [CA02]. --%>
-                <form method="post" action="${ctx}/admin/categories" enctype="multipart/form-data">
+
+
+                <%-- [DMS03]
+                     . Form trong admin-categories.jsp dùng selectedCategory từ AdminCategoriesController.doGet để biết
+                       đang thêm hay sửa. Nếu đang sửa thì hiện thông tin danh mục đã chọn; nếu lần lưu trước bị lỗi thì
+                       dùng bản nhập dở để người dùng tiếp tục sửa.
+                --%>
+                <form data-admin-form="category" method="post" action="${ctx}/admin/categories" enctype="multipart/form-data" novalidate>
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="save">
                     <input type="hidden" name="id" value="${empty selectedCategory ? 0 : selectedCategory.id}">
-                    <%-- CA05: . Ô tên gửi name=name; bắt buộc, tối đa 100 ký tự.
-                         ... AdminCategoriesController.save() [CA12] kiểm tra tên và trùng tên. --%>
+
+                    <%-- [DMT01]
+                         . Ô Tên danh mục trong admin-categories.jsp có tên gửi là name. Khi bấm lưu, giá trị tới doPost rồi
+                           hàm save (kiểm tra và lưu danh mục) trong AdminCategoriesController.java để kiểm tra tên bắt
+                           buộc, độ dài và tên trùng trước khi ghi danh mục.
+                         ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMT02].
+                    --%>
                     <div class="category-form-field"><label for="name" class="form-label">Tên danh mục *</label><input id="name" name="name" class="form-control" required maxlength="100" value="${fn:escapeXml(selectedCategory.name)}"></div>
                     <div class="category-form-field">
                         <label for="imageFile" class="form-label">Ảnh đại diện</label>
-                        <%-- CA06: . Ô ảnh gửi imageFile; ảnh không bắt buộc, tối đa 5 MB.
-                             ... save() [CA13] kiểm tra MIME và chữ ký ảnh; lưu ảnh tại [CA16]. --%>
+
+                        <%-- [DMAN01]
+                             . Ở admin-categories.jsp, ảnh mới được gửi qua imageFile, còn ô Xóa ảnh hiện tại gửi lựa chọn
+                               removeImage. Khi lưu, hàm save (kiểm tra và lưu danh mục) trong
+                               AdminCategoriesController.java kiểm tra tệp rồi gọi CategoryDAO.saveCategory (ghi danh mục)
+                               để thay ảnh, giữ ảnh cũ hoặc xóa theo lựa chọn.
+                             ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMAN02].
+                        --%>
                         <input id="imageFile" name="imageFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="form-control">
                         <div class="form-text">JPG, PNG, GIF hoặc WebP; tối đa 5 MB. Ảnh được lưu trực tiếp trong database.</div>
                     </div>
@@ -162,27 +217,48 @@
                         <img id="categoryImagePreview" class="category-image-preview" src="${fn:escapeXml(selectedImageSrc)}" alt="Ảnh danh mục preview" <c:if test="${not selectedHasImage}">hidden</c:if>>
                         <div id="categoryImagePlaceholder" class="category-image-placeholder" style="width:100%;max-width:240px;height:120px" <c:if test="${selectedHasImage}">hidden</c:if>>Xem trước ảnh</div>
                     </div>
-                    <%-- CA07: . Tích removeImage=true để xóa ảnh hiện tại; chọn ảnh mới thì dùng ảnh mới.
-                         ... save() [CA13] chuyển dữ liệu ảnh cho CategoryDAO [CA16]. --%>
+
+                    <%-- [DMXA01]
+                         . Chọn Xóa ảnh hiện tại mới bỏ ảnh ở vùng xem trước. Khi bấm lưu, removeImage tới
+                           AdminCategoriesController.save (kiểm tra và lưu danh mục) rồi CategoryDAO.saveCategory (ghi danh
+                           mục) để xóa ảnh của danh mục. Nếu có ảnh mới thì ưu tiên lưu ảnh mới và bỏ lựa chọn xóa; chưa bấm
+                           lưu thì ảnh cũ vẫn còn.
+                    --%>
                     <c:if test="${selectedHasImage}"><div class="form-check mt-2 mb-3"><input id="removeImage" name="removeImage" value="true" type="checkbox" class="form-check-input"><label for="removeImage" class="form-check-label small">Xóa ảnh hiện tại</label></div></c:if>
-                    <%-- CA08: [SLBF11] Set status to Active
-                         . Ô status gửi ACTIVE hoặc INACTIVE; danh mục mới mặc định ACTIVE.
-                         ... save() [CA14] kiểm tra trạng thái trước khi lưu. --%>
+
+                    <%-- [DMTT01]
+                         . Ô Trạng thái trong admin-categories.jsp gửi status là ACTIVE hoặc INACTIVE khi lưu. Hàm save
+                           (kiểm tra và lưu danh mục) trong AdminCategoriesController.java kiểm tra rồi ghi giá trị này, để
+                           khi mở Menu chỉ các danh mục đang hoạt động mới được lấy ra cho khách xem.
+                         ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMTT02].
+                    --%>
                     <div class="category-form-field"><label for="status" class="form-label">Trạng thái</label><select id="status" name="status" class="form-select">
                         <option value="ACTIVE" <c:if test="${empty selectedCategory or selectedCategory.status eq 'ACTIVE'}">selected</c:if>>ACTIVE - Hoạt động</option>
                         <option value="INACTIVE" <c:if test="${selectedCategory.status eq 'INACTIVE'}">selected</c:if>>INACTIVE - Tạm ẩn</option>
                     </select></div>
-                    <%-- CA09: [SLBF11] Click "Create Category"
-                         . Nút Tạo danh mục/Lưu thay đổi submit form multipart với action=save và id.
-                         .. Trình duyệt kiểm tra required/maxlength; JavaScript ảnh chỉ xem trước.
-                         ... POST /admin/categories → doPost() [CA10] → save() [CA11]. --%>
-                    <button type="submit" class="btn btn-aura fw-bold w-100"><span class="material-symbols-outlined fs-6 align-middle">check</span> <c:choose><c:when test="${not empty selectedCategory}">Lưu thay đổi</c:when><c:otherwise>Tạo danh mục</c:otherwise></c:choose></button>
+
+                    <%-- [DML01]
+                         . Em bắt đầu từ nút Tạo danh mục hoặc Lưu thay đổi trong admin-categories.jsp. Khi bấm,
+                           admin-form-validation.js kiểm tra tên, trạng thái và ảnh ngay trên trang. Hợp lệ thì form gửi
+                           mã, tên, trạng thái và ảnh tới AdminCategoriesController.doPost qua /admin/categories để lưu.
+                         ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML02].
+                    --%>
+                    <button type="submit" class="btn btn-aura fw-bold w-100"><span class="material-symbols-outlined fs-6 align-middle">check</span> <c:choose><c:when test="${selectedCategory.id gt 0}">Lưu thay đổi</c:when><c:otherwise>Tạo danh mục</c:otherwise></c:choose></button>
+                    <%-- [DMH01]
+                         . Khi bấm Hủy sửa trong admin-categories.jsp, em mở lại /admin/categories mà không kèm editId.
+                           doGet trong AdminCategoriesController.java dựng lại form thêm mới, nên phần đang sửa được đóng mà
+                           không lưu thay đổi.
+                    --%>
                     <c:if test="${not empty selectedCategory}"><a href="${ctx}/admin/categories" class="btn btn-light w-100 mt-2">Hủy sửa</a></c:if>
                 </form>
             </div>
         </section>
     </div>
 </main>
+<%-- . Form dùng phần kiểm tra ngay trên màn hình trong tệp bên dưới trước khi gửi dữ liệu để lưu.
+     ... Xem phần kiểm tra danh mục tại assets/js/admin-form-validation.js, tìm [DMKT01].
+--%>
+<script src="${ctx}/assets/js/admin-form-validation.js"></script>
 <script>
 (() => {
     const input = document.getElementById('imageFile');
@@ -190,6 +266,10 @@
     const placeholder = document.getElementById('categoryImagePlaceholder');
     const remove = document.getElementById('removeImage');
     if (!input || !preview || !placeholder) return;
+    // [DMXTR01]
+    // . Khi chọn ảnh trong admin-categories.jsp, sự kiện change gọi URL.createObjectURL để hiện tệp vừa chọn
+    //   ở vùng xem trước. Khi chọn xóa ảnh thì vùng này bỏ ảnh. Đây mới là xem trước; ảnh chỉ được gửi đến
+    //   AdminCategoriesController.save (kiểm tra và lưu danh mục) khi bấm lưu.
     const showPlaceholder = () => { preview.hidden = true; placeholder.hidden = false; };
     preview.addEventListener('error', showPlaceholder);
     input.addEventListener('change', () => {

@@ -581,6 +581,7 @@ CREATE TABLE `products` (
   `is_available` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `idx_products_category` (`category_id`),
+  UNIQUE KEY `uq_products_name` (`name`),
   CONSTRAINT `fk_product_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`),
   CONSTRAINT `chk_product_price` CHECK ((`base_price` >= 0))
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

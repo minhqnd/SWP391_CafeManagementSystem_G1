@@ -23,16 +23,16 @@ public class RegisterController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-        // RG05: . Nhận POST /register từ JavaScript [RG04], kiểm tra CSRF rồi đọc dữ liệu.
-        // .. Sai token thì dừng; đúng token mới chuẩn hóa các giá trị từ form.
-        // ... Kiểm tra họ tên, SĐT, email, mật khẩu và xác nhận tại [RG06].
+
         request.setCharacterEncoding("UTF-8");
         if (!AccountCsrf.require(request, response)) return;
-        
-        // . Đọc fullname, email, phone, password và confirm_password từ request trong bước [RG05].
-        // .. Chuẩn hóa tên/email/SĐT; mật khẩu giữ nguyên. Email trống thì thử tham số username cũ.
-        // ... Kiểm tra từng trường [RG06] rồi kiểm tra trùng [RG07].
+        utils.AccountFormFeedback.clear(request);
+
+        // [DKL03]
+        // . Sau khi form được gửi, doPost trong RegisterController.java nhận thông tin đăng ký. Em bỏ khoảng
+        //   trắng thừa, chuẩn hóa liên hệ rồi gọi các hàm trong AccountValidation để kiểm tra lại từng ô trước
+        //   khi tìm liên hệ trùng và tạo tài khoản.
+        // ... Đọc tiếp tại RegisterController.java, tìm [DKL04].
         String fullName = AccountValidation.text(request.getParameter("fullname"));
         String email = request.getParameter("email");
         if (email == null || email.trim().isEmpty()) {
@@ -42,50 +42,77 @@ public class RegisterController extends HttpServlet {
         String phone = AccountValidation.phone(request.getParameter("phone"));
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirm_password");
-        
+
         String redirect = request.getParameter("redirect");
         String backPath = RedirectUtil.isSafeLocalPath(redirect) ? redirect : "/";
+        // [DKL04]
+        // . Ở bước kiểm tra, em gom lời báo của từng ô vào errors, gồm lỗi định dạng và lỗi email, số điện thoại
+        //   đã được dùng. Nếu còn lỗi thì trả form để sửa; chỉ khi errors rỗng em mới chuẩn bị tài khoản mới.
         java.util.Map<String,String> errors = new java.util.LinkedHashMap<>();
-        // RG06: . Kiểm tra dữ liệu đăng ký trên server, bắt đầu từ họ tên.
-        // .. Mỗi lỗi được gắn theo tên ô; server kiểm tra lại dù đã qua JavaScript.
-        // RG06a: . fullname từ ô [RG02a] được kiểm tra bằng AccountValidation.nameError().
-        // ... Các trường tiếp theo ở [RG06b], [RG06c], [RG06d]; sau đó kiểm tra trùng [RG07].
+
+        // [DKHT03]
+        // . Để kiểm tra họ tên, ở doPost trong RegisterController.java em truyền fullName vào nameError (kiểm
+        //   tra họ tên và trả lời báo lỗi) trong AccountValidation.java. Hàm trả về lời báo nếu tên sai hoặc
+        //   null nếu hợp lệ để em quyết định có tiếp tục tạo tài khoản không.
+        // ... Đọc tiếp tại AccountValidation.java, tìm [KTHT01].
         String nameError = AccountValidation.nameError(fullName);
-        // RG06b: . Kiểm tra phone từ ô Số điện thoại [RG02b].
-        // ... AccountValidation.phoneError(); đúng định dạng mới kiểm tra trùng [RG07a].
+
+        // [DKDT03]
+        // . Để kiểm tra số điện thoại, ở doPost trong RegisterController.java em truyền phone đã chuẩn hóa vào
+        //   AccountValidation.phoneError (kiểm tra định dạng số điện thoại). Số phải đủ 10 chữ số và bắt đầu
+        //   bằng 0; đúng định dạng rồi em mới tìm xem số đã có tài khoản chưa.
+        // ... Đọc tiếp tại AccountValidation.java, tìm [KTDT01].
         String phoneError = AccountValidation.phoneError(phone);
-        // RG06c: . Kiểm tra email từ ô Email [RG02c].
-        // ... AccountValidation.emailError(); đúng định dạng mới kiểm tra trùng [RG07b].
+
+        // [DKEM03]
+        // . Để kiểm tra email, ở doPost trong RegisterController.java em truyền địa chỉ đã chuyển về chữ thường
+        //   vào AccountValidation.emailError (kiểm tra định dạng và độ dài email). Hàm kiểm tra định dạng và độ
+        //   dài; email đúng rồi em mới tìm xem đã có người dùng chưa.
+        // ... Đọc tiếp tại AccountValidation.java, tìm [KTEM01].
         String emailError = AccountValidation.emailError(email);
         if (nameError != null) errors.put("fullname", nameError);
         if (phoneError != null) errors.put("phone", phoneError);
         if (emailError != null) errors.put("email", emailError);
-        // RG06d: . Kiểm tra password và confirm_password từ [RG02d], [RG02e].
-        // .. Lỗi mật khẩu và xác nhận được gắn riêng cho từng ô.
-        // ... AccountValidation.passwordErrors() gọi quy tắc mật khẩu AccountValidation.passwordError().
+
+        // [DKMK03]
+        // . Để kiểm tra mật khẩu, ở doPost trong RegisterController.java em gọi passwordErrors (kiểm tra mật
+        //   khẩu và xác nhận theo từng ô) trong AccountValidation.java. Em truyền mật khẩu, xác nhận và tên hai
+        //   ô để kiểm tra điều kiện mật khẩu, độ khớp, rồi đưa lỗi về đúng ô cần sửa.
+        // ... Đọc tiếp tại AccountValidation.java, tìm [KTMK01].
         errors.putAll(AccountValidation.passwordErrors(password, confirmPassword, "password", "confirm_password"));
-        // RG07: . Chỉ kiểm tra trùng khi SĐT/email đúng định dạng.
-        // .. Có bản ghi trùng thì thêm lỗi vào phone hoặc email.
-        // ... UserDAO.checkPhoneExists() [RG07a] và checkEmailExists() [RG07b] trong UserDAO.java.
-        if (phoneError == null && userDAO.checkPhoneExists(phone)) errors.put("phone", "Số điện thoại đã tồn tại trong hệ thống.");
-        if (emailError == null && userDAO.checkEmailExists(email)) errors.put("email", "Email đã tồn tại trong hệ thống.");
-        // RG08: [SLBF10] Information is valid?
-        // . Nhánh "Information is valid?" xét errors sau khi kiểm tra từng trường và kiểm tra trùng.
-        // .. No: trả lỗi và giữ dữ liệu an toàn, cho sửa rồi bấm lại [RG03]. Yes: đi tiếp tạo tài khoản [RG09].
-        // ... AccountFormFeedback.flash() → account_feedback.jsp → feedback() hiển thị lỗi dưới ô.
-        if (!errors.isEmpty()) {
-            // [SLBF10] Show error for invalid field
-            // . Nhánh No trả lỗi về từng ô; người dùng sửa dữ liệu rồi bấm lại [RG03].
+
+        // [DKTR01]
+        // . Sau khi số điện thoại và email đúng định dạng, ở doPost trong RegisterController.java em gọi
+        //   checkPhoneExists (tìm số điện thoại đã được dùng) và checkEmailExists (tìm email đã được dùng) trong
+        //   UserDAO.java. Em truyền từng liên hệ để tìm tài khoản đã dùng; nếu trùng thì báo tại ô tương ứng và
+        //   chưa tạo tài khoản.
+        boolean lookupFailed = false;
+        try {
+            if (phoneError == null && userDAO.checkPhoneExists(phone)) errors.put("phone", "Số điện thoại đã tồn tại trong hệ thống.");
+            if (emailError == null && userDAO.checkEmailExists(email)) errors.put("email", "Email đã tồn tại trong hệ thống.");
+        } catch (utils.AccountDataException e) {
+            lookupFailed = true;
+        }
+
+        // [DKLOI01]
+        // . Khi đăng ký có lỗi, ở doPost trong RegisterController.java em gọi flash (giữ lỗi và các ô qua lần
+        //   chuyển trang) trong AccountFormFeedback.java, truyền lỗi cùng họ tên, số điện thoại và email. Dữ
+        //   liệu được giữ qua lần mở lại trang để account_feedback.jsp và account-validation.js điền lại ô, hiện
+        //   lỗi cho người dùng sửa.
+        if (!errors.isEmpty() || lookupFailed) {
+
             utils.AccountFormFeedback.flash(request, "register", errors,
                     java.util.Map.of("fullname", fullName, "phone", phone, "email", email));
-            request.getSession().setAttribute("errorMsg", "Vui lòng kiểm tra các trường được đánh dấu bên dưới.");
+            request.getSession().setAttribute("errorMsg", lookupFailed
+                    ? "Không kiểm tra được thông tin tài khoản lúc này. Chưa tạo tài khoản. Vui lòng thử lại sau."
+                    : "Vui lòng kiểm tra các trường được đánh dấu bên dưới.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
             return;
         }
 
-        // RG09: [SLBF10] Create account
-        // . Đóng gói dữ liệu hợp lệ vào User và gán role=CUSTOMER tại server.
-        // ... UserDAO.register() trong UserDAO.java [RG09a] băm và INSERT users; kết quả về [RG10].
+        // . Khi đăng ký không còn lỗi, em tạo User với vai trò CUSTOMER rồi truyền tài khoản và mật khẩu vào
+        //   UserDAO.register (tạo tài khoản khách hàng) để ghi. Em không tạo tài khoản trước bước kiểm tra vì
+        //   thông tin sai phải được sửa rồi mới lưu.
         String dbRole = "CUSTOMER";
         String dbPosition = null;
 
@@ -96,16 +123,36 @@ public class RegisterController extends HttpServlet {
         newUser.setRole(dbRole);
         newUser.setPosition(dbPosition);
 
-        boolean isSuccess = userDAO.register(newUser, password);
+        // [DKL05]
+        // . Khi thông tin đều hợp lệ, em tạo User khách hàng rồi gọi register trong UserDAO.java để ghi tài
+        //   khoản. Em truyền User và mật khẩu vừa nhập, nhận isSuccess để biết có tạo được tài khoản hay cần báo
+        //   lỗi.
+        // ... Đọc tiếp tại UserDAO.java, tìm [DKL06].
+        boolean isSuccess;
+        try {
+            isSuccess = userDAO.register(newUser, password);
+        } catch (utils.AccountDataException e) {
+            isSuccess = false;
+        }
 
-        // RG10: . Nhận kết quả tạo tài khoản từ DAO [RG09a].
-        // .. True: đặt successMsg và mở tab Login; false: báo lỗi và quay lại đăng ký.
-        // ... auth_modal.jsp hiển thị thông báo thành công [RG11].
+        // [DKL07]
+        // . Khi nhận kết quả từ UserDAO.register, em quay lại doPost trong RegisterController.java để đặt thông
+        //   báo. Tạo được thì chuyển về tab Đăng nhập; chưa tạo được thì mở lại Đăng ký và báo lỗi cho người
+        //   dùng.
+        // ... Đọc tiếp tại auth_modal.jsp, tìm [DKL08].
         if (isSuccess) {
             request.getSession().setAttribute("successMsg", "Đăng ký thành công! Vui lòng đăng nhập.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=login");
         } else {
-            request.getSession().setAttribute("errorMsg", "Lỗi hệ thống khi đăng ký. Vui lòng thử lại sau.");
+            try {
+                if (userDAO.checkPhoneExists(phone)) errors.put("phone", "Số điện thoại đã tồn tại trong hệ thống.");
+                if (userDAO.checkEmailExists(email)) errors.put("email", "Email đã tồn tại trong hệ thống.");
+            } catch (utils.AccountDataException ignored) { }
+            utils.AccountFormFeedback.flash(request, "register", errors,
+                    java.util.Map.of("fullname", fullName, "phone", phone, "email", email));
+            request.getSession().setAttribute("errorMsg", errors.isEmpty()
+                    ? "Không tạo được tài khoản lúc này. Vui lòng thử lại sau."
+                    : "Thông tin vừa được tài khoản khác sử dụng. Vui lòng kiểm tra các ô được đánh dấu.");
             response.sendRedirect(request.getContextPath() + backPath + "?tab=register");
         }
     }

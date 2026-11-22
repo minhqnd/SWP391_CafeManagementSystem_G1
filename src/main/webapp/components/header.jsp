@@ -192,18 +192,23 @@
                     </c:when>
                     <c:otherwise>
 
-
                 <li class="nav-item">
-                    <a class="nav-link aura-nav-link ${param.activePage == 'home' ? 'active-nav' : ''}" 
+                    <a class="nav-link aura-nav-link ${param.activePage == 'home' ? 'active-nav' : ''}"
                        href="${pageContext.request.contextPath}/">Trang chủ</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link aura-nav-link ${param.activePage == 'menu' ? 'active-nav' : ''}" 
+                    <%-- [MNM01]
+                         . Khi bấm Menu và Đồ uống trong header.jsp, em mở /menu. doGet trong MenuController.java gọi
+                           CategoryDAO và ProductDAO để đọc danh mục hoạt động, món đang bán rồi chuyển dữ liệu về menu.jsp
+                           cho khách xem.
+                         ... Đọc tiếp tại MenuController.java, tìm [MNM02].
+                    --%>
+                    <a class="nav-link aura-nav-link ${param.activePage == 'menu' ? 'active-nav' : ''}"
                        href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link aura-nav-link ${param.activePage == 'feedback' ? 'active-nav' : ''}" 
+                    <a class="nav-link aura-nav-link ${param.activePage == 'feedback' ? 'active-nav' : ''}"
                        href="${pageContext.request.contextPath}/feedback">Phản ánh & Khiếu nại</a>
                 </li>
 
@@ -216,7 +221,7 @@
             <div class="d-flex align-items-center gap-3 ms-lg-auto header-actions">
                 <!-- Cart Button -->
                 <c:if test="${param.showCart != 'false' && param.navbarMode != 'barista'}">
-                <a href="${pageContext.request.contextPath}/cart" 
+                <a href="${pageContext.request.contextPath}/cart"
                    class="text-decoration-none text-dark d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-light border"
                    style="transition: background-color 0.2s;" title="Giỏ hàng">
                     <span class="material-symbols-outlined fs-5 text-secondary">shopping_bag</span>
@@ -240,6 +245,11 @@
                             </div>
                         </c:when>
                         <c:otherwise>
+                        <%-- [HSTK01]
+                             . Khi đã đăng nhập, nút tài khoản dùng sessionScope.user để hiện tên, vai trò, số điện thoại
+                               hoặc email và số điểm nếu có. Bấm nút thì Bootstrap mở danh sách Hồ sơ, Đăng xuất và các
+                               đường dẫn phù hợp; thao tác mở không đọc lại tài khoản.
+                        --%>
                         <div class="dropdown">
                             <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark header-user" data-bs-toggle="dropdown">
                                 <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
@@ -278,10 +288,14 @@
 
                                 <!-- Hồ sơ & Điểm tích luỹ -->
                                 <li>
-                                    
-                                    <%-- PF01: [SLBF10] Select "Personal Profile"
-                                         . Chọn Hồ sơ & Điểm tích luỹ trong menu tài khoản đã đăng nhập.
-                                         ... GET /profile → ProfileController.doGet() [PF02] → profile.jsp [PF06]. --%>
+
+                                    <%-- [HSM01]
+                                         . Khi bấm Hồ sơ trong header.jsp, em mở /profile để doGet trong
+                                           ProfileController.java xử lý. Controller gọi authorize (đọc và kiểm tra người
+                                           đang đăng nhập) để đọc lại người đang đăng nhập, rồi renderProfile (chuẩn bị dữ
+                                           liệu và mở trang hồ sơ) để đưa thông tin, điểm và lịch sử về profile.jsp.
+                                         ... Đọc tiếp tại ProfileController.java, tìm [HSM02].
+                                    --%>
                                     <a class="user-item-btn" href="${pageContext.request.contextPath}/profile">
                                         <span class="material-symbols-outlined item-icon">account_circle</span>
                                         <span class="flex-grow-1">Hồ sơ & Điểm tích luỹ</span>
@@ -314,10 +328,14 @@
 
                                 <!-- Đăng xuất -->
                                 <li>
-                                    
-                                    <%-- LG09: [SLBF10] Click "Logout"
-                                         . Bấm Đăng xuất trong menu tài khoản để kết thúc phiên.
-                                         ... GET /login?action=logout → LoginController.doGet() [LG10] → Homepage. --%>
+
+                                    <%-- [DNX01]
+                                         . Khi bấm Đăng xuất trong header.jsp, em mở /login?action=logout. doGet trong
+                                           LoginController.java gọi session.invalidate (kết thúc lần đăng nhập hiện tại) để
+                                           hủy phiên đăng nhập rồi sendRedirect (chuyển sang đường dẫn khác) về Trang chủ,
+                                           kết thúc việc dùng tài khoản hiện tại.
+                                         ... Đọc tiếp tại LoginController.java, tìm [DNX02].
+                                    --%>
                                     <a class="user-item-btn logout-btn" href="${pageContext.request.contextPath}/login?action=logout">
                                         <span class="material-symbols-outlined item-icon" style="color: #dc2626;">logout</span>
                                         <span class="text-danger fw-semibold">Đăng xuất</span>
@@ -329,10 +347,14 @@
                         </c:choose>
                     </c:when>
                     <c:otherwise>
-                        <%-- . Bấm biểu tượng tài khoản ở header khi chưa đăng nhập để mở authModal.
-                             .. Bootstrap chỉ mở hộp thoại; chưa gửi dữ liệu tài khoản.
-                             ... auth_modal.jsp: chọn Đăng ký [RG01] hoặc Đăng nhập [LG01]. --%>
-                        <button type="button" class="btn btn-outline-danger rounded-circle p-2 d-flex align-items-center justify-content-center" 
+
+                        <%-- [ATM01]
+                             . Khi bấm biểu tượng tài khoản trong header.jsp, Bootstrap mở hộp authModal nằm trong
+                               auth_modal.jsp. Người dùng chọn Đăng nhập hoặc Đăng ký để điền thông tin; dữ liệu chỉ gửi đến
+                               controller tương ứng khi bấm nút gửi của form.
+                             ... Đọc tiếp tại auth_modal.jsp, tìm [ATD02].
+                        --%>
+                        <button type="button" class="btn btn-outline-danger rounded-circle p-2 d-flex align-items-center justify-content-center"
                                 style="width: 42px; height: 42px;" data-bs-toggle="modal" data-bs-target="#authModal" title="Đăng nhập / Đăng ký">
                             <span class="material-symbols-outlined fs-5">person</span>
                         </button>
@@ -350,19 +372,32 @@
 <c:if test="${param.navbarMode != 'barista'}">
     <nav class="aura-home-secondary" aria-label="Điều hướng cửa hàng">
         <div class="container">
+            <%-- [MNBM01]
+                 . Nút Danh mục sản phẩm ở Trang chủ chuyển tới danh sách homeCategoryList trên cùng trang. Ở Menu, nút
+                   mở bộ chọn menuCategoryDropdown; từ trang khác thì mở Menu và bộ chọn đó.
+                 ... Đọc tiếp tại menu.jsp, tìm [MNBM02].
+            --%>
                         <c:choose>
                 <c:when test="${param.activePage == 'home'}"><a class="home-category-static" href="#homeCategoryList"><span class="material-symbols-outlined">grid_view</span> Danh mục sản phẩm</a></c:when>
                 <c:when test="${param.activePage == 'menu'}"><a class="menu-category-toggle" href="#menuCategoryDropdown" aria-controls="menuCategoryDropdown"><span class="material-symbols-outlined">menu</span> Danh mục sản phẩm</a></c:when>
                 <c:otherwise><a href="${pageContext.request.contextPath}/menu#menuCategoryDropdown"><span class="material-symbols-outlined">menu</span> Danh mục sản phẩm</a></c:otherwise>
             </c:choose>
-            <%-- MN01: [SLBF11] Open Menu
-                 . Bấm Menu & Đồ uống gửi GET /menu; không yêu cầu đăng nhập.
-                 ... MenuController.doGet() [MN02] tải danh mục và sản phẩm. --%>
+
+            <%-- [MNCH01]
+                 . Liên kết Menu mở /menu để MenuController.doGet đọc món còn bán; Thành viên Aura mở /profile để
+                   ProfileController.doGet đọc hồ sơ của người đang đăng nhập. Đây là các đường dẫn phụ tới cùng màn
+                   hình với nút Menu và Hồ sơ đã giải thích ở phía trên.
+            --%>
             <a class="${param.activePage == 'menu' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/menu">Menu &amp; Đồ uống</a>
             <a class="${param.activePage == 'feedback' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/feedback">Liên hệ &amp; Góp ý</a>
             <a href="${pageContext.request.contextPath}/profile"><span class="material-symbols-outlined">stars</span> Thành viên Aura</a>
             <c:if test="${param.activePage == 'menu'}">
                 <div class="menu-category-dropdown" id="menuCategoryDropdown">
+                    <%-- [MNCH02]
+                         . Mỗi danh mục dùng dữ liệu categories do MenuController.doGet đọc từ CategoryDAO. Khi bấm tên, em
+                           gửi category là mã nhóm và giữ currentKeyword nếu có, để ProductDAO.filterProducts (lọc món còn
+                           bán theo danh mục và từ khóa) tìm đúng món. Số cạnh tên là số món còn bán của nhóm.
+                    --%>
                     <c:forEach var="cat" items="${categories}">
                         <c:url var="menuCategoryUrl" value="/menu">
                             <c:param name="category" value="${cat.id}" />

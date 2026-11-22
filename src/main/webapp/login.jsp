@@ -1,6 +1,10 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%-- Legacy standalone login URL uses the maintained BF10 dialog. --%>
+
 <%
+    // [ATCU01]
+    // . login.jsp chuyển người dùng về Trang chủ kèm tab tài khoản để auth_modal.jsp mở đúng form. Đây là
+    //   đường dẫn chuyển tiếp; việc đăng nhập chỉ được xử lý ở LoginController.doPost khi người dùng gửi
+    //   form thực tế.
     String legacyTab = request.getParameter("tab");
     if (!java.util.Set.of("login", "register", "forgot", "otp", "reset_password").contains(legacyTab == null ? "" : legacyTab)) legacyTab = "login";
     response.sendRedirect(request.getContextPath() + "/?tab=" + legacyTab);
@@ -392,10 +396,10 @@
                             activeTab = (String) request.getAttribute("activeTab");
                         }
                         if (activeTab == null) activeTab = "login";
-                
+
                         boolean isOtpTab = "otp".equals(activeTab);
                         boolean isResetTab = "reset_password".equals(activeTab);
-                
+
                         /* Tính thời gian đếm ngược gửi lại OTP */
                         Long lastOtpSentTime = (Long) session.getAttribute("lastOtpSentTime");
                         long otpRemainingTime = 0;

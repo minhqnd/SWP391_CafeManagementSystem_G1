@@ -9,12 +9,15 @@ import model.ProductImage;
 
 import java.io.IOException;
 
-// BF11 - ĐỌC ẢNH: thẻ img gọi GET /product-image?id=... -> DAO đọc BLOB -> response ghi byte ảnh, không forward JSP.
 @WebServlet(name = "ProductImageController", urlPatterns = {"/product-image"})
 public class ProductImageController extends HttpServlet {
     private final ProductDAO productDAO = new ProductDAO();
 
     @Override
+    // [SPAN03]
+    // . Khi thẻ img cần ảnh sản phẩm, doGet trong ProductImageController.java nhận mã món. Em gọi
+    //   getProductImage (đọc ảnh đang lưu của sản phẩm) trong ProductDAO.java bằng mã đó để đọc ảnh rồi gửi
+    //   nội dung về trình duyệt, giúp ảnh hiển thị đúng sản phẩm.
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         int productId;
         try {
@@ -27,9 +30,7 @@ public class ProductImageController extends HttpServlet {
 
         ProductImage image;
         try {
-            // IM03: . Ở đây em nhận yêu cầu tải ảnh món và kiểm tra mã món.
-            // .. Có ảnh thì trả nội dung ảnh cho trình duyệt; không có thì báo không tìm thấy.
-            // ... productDAO.getProductImage(mã món) [IM04] → ghi byte ảnh vào response.
+
             image = productDAO.getProductImage(productId);
         } catch (RuntimeException e) {
             getServletContext().log("Failed to load product image " + productId, e);

@@ -1,9 +1,10 @@
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%
-    // . Lấy token bảo vệ form và đọc tab do URL/Controller yêu cầu.
-    // .. Tab quyết định hiển thị đăng ký, đăng nhập, OTP hoặc đặt mật khẩu mới.
-    // ... AccountCsrf.token(); lỗi trả về qua payload payload trong account_feedback.jsp.
+    // . Trong auth_modal.jsp, em đọc tab do đường dẫn hoặc controller đưa về để mở đúng phần Đăng nhập, Đăng
+    //   ký, OTP hoặc Đặt lại mật khẩu. Nhờ vậy sau mỗi bước xử lý, người dùng được đưa tới form cần thao tác
+    //   tiếp.
     String accountCsrf = utils.AccountCsrf.token(session);
     /* Xử lý activeTab từ session hoặc request */
     String activeTab = request.getParameter("tab");
@@ -18,7 +19,7 @@
     boolean isOtpTab = "otp".equals(activeTab);
     boolean isResetTab = "reset_password".equals(activeTab);
     boolean isLoginTab = !isRegisterTab && !isOtpTab && !isResetTab; // Quên mật khẩu cũng hiển thị dưới tab Đăng nhập
-    
+
     /* Tính thời gian đếm ngược gửi lại OTP */
     Long lastOtpSentTime = (Long) session.getAttribute("lastOtpSentTime");
     long otpRemainingTime = 0;
@@ -108,12 +109,20 @@
 
         </style>
 
-        <!-- Auth Modal -->
+        <%-- [ATD02]
+             . Hộp tài khoản trong auth_modal.jsp được nút tài khoản ở header.jsp mở bằng Bootstrap. Người dùng
+               chọn tab Đăng nhập, Đăng ký hoặc Quên mật khẩu để hiện form cần dùng; chỉ khi bấm nút gửi thì dữ
+               liệu mới đến controller của chức năng đó.
+        --%>
         <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" style="max-width: 900px;">
                 <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden"
                     style="background-color: var(--surface-container-lowest);">
 
+                    <%-- [ATD01]
+                         . Khi bấm X trong auth_modal.jsp, thuộc tính data-bs-dismiss của Bootstrap đóng hộp authModal để
+                           quay lại trang đang xem. Thao tác này không gửi form và không gọi xử lý đăng ký hay đăng nhập.
+                    --%>
                     <button type="button" class="btn-close position-absolute top-0 end-0 m-3 z-3"
                         data-bs-dismiss="modal"
                         style="background-color: white; padding: 0.5rem; opacity: 0.8;"></button>
@@ -159,29 +168,35 @@
                                  boolean authModalAutoOpen = displayError != null || displaySuccess != null || request.getParameter("tab") != null;
                                 %>
 
+                                <%-- [DKL08]
+                                     . Khi trang mở lại, auth_modal.jsp nhận successMsg hoặc errorMsg mà controller đã giữ
+                                       để hiện kết quả đăng ký, đăng nhập hoặc khôi phục mật khẩu. Hiện xong em xóa bản
+                                       thông báo đã dùng để lần mở sau không lặp lại kết quả cũ.
+                                --%>
                                 <% if (displayError !=null) { %>
-                                    <div class="alert alert-danger p-2 mb-3 text-center" style="font-size: 0.875rem;">
-                                        <%= displayError %>
+                                    <div data-account-notice role="alert" class="alert alert-danger p-2 mb-3 text-center" style="font-size: 0.875rem;">
+                                        <c:out value="<%= displayError %>" />
                                     </div>
                                     <% } %>
-                                        <%-- RG11: [SLBF10] Show registration success message
-                                             . Hiển thị thông báo đăng ký thành công từ successMsg.
-                                             .. Vùng này cũng dùng chung cho các thông báo xác thực do Controller đặt.
-                                             ... Người dùng tiếp tục chọn Đăng nhập [LG01]. --%>
-                                        <% if (displaySuccess !=null) { %>
-                                            <div class="alert alert-success p-2 mb-3 text-center"
+
+                                        <% if (displaySuccess !=null && displayError == null) { %>
+                                            <div data-account-notice role="status" class="alert alert-success p-2 mb-3 text-center"
                                                 style="font-size: 0.875rem;">
-                                                <%= displaySuccess %>
+                                                <c:out value="<%= displaySuccess %>" />
                                             </div>
                                             <% } %>
 
                                                 <% if (!isOtpTab && !isResetTab) { %>
                                                 <ul class="nav nav-pills-custom nav-justified" id="modalAuthTab">
                                                     <li class="nav-item">
-                                                        <%-- LG01: [SLBF10] Select "Login"
-                                                             . Nút Đăng nhập chọn modal-login-pane; showLoginSubView() mở đúng phần đăng nhập.
-                                                             .. Chỉ đổi phần hiển thị, chưa xác thực tài khoản.
-                                                             ... Form [LG02], nút gửi [LG03]. --%>
+
+                                                        <%-- [DNM01]
+                                                             . Khi chọn tab Đăng nhập trong auth_modal.jsp, thao tác đổi tab
+                                                               và showLoginSubView (hiện lại form Đăng nhập) hiện form đăng
+                                                               nhập. Người dùng nhập email hoặc số điện thoại, mật khẩu; các
+                                                               giá trị chỉ được gửi tới LoginController.doPost khi bấm Đăng
+                                                               nhập.
+                                                        --%>
                                                         <button class="nav-link <%= isLoginTab ? " active" : "" %>"
                                                             data-bs-toggle="pill"
                                                             data-bs-target="#modal-login-pane"
@@ -189,10 +204,13 @@
                                                             onclick="showLoginSubView()">Đăng nhập</button>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <%-- RG01: [SLBF10] Select "Register"
-                                                             . Nút Đăng ký chọn modal-register-pane bằng Bootstrap.
-                                                             .. Chỉ đổi tab, chưa gửi dữ liệu hoặc tạo tài khoản.
-                                                             ... Form đăng ký [RG02]; nút Tạo tài khoản mới [RG03]. --%>
+
+                                                        <%-- [DKM01]
+                                                             . Khi chọn tab Đăng ký trong auth_modal.jsp, thao tác đổi tab
+                                                               hiện vùng modal-register-pane để nhập thông tin. Khi bấm Tạo
+                                                               tài khoản, form gửi đến RegisterController.doPost qua
+                                                               /register để kiểm tra và ghi tài khoản khách hàng mới.
+                                                        --%>
                                                         <button class="nav-link <%= isRegisterTab ? " active" : "" %>"
                                                             data-bs-toggle="pill"
                                                             data-bs-target="#modal-register-pane"
@@ -202,24 +220,25 @@
                                                 <% } %>
 
                                                 <div class="tab-content">
-                                                    <!-- LOGIN & FORGOT PANE -->
+
+                                                    <%-- [DNM02]
+                                                         . Form Đăng nhập trong auth_modal.jsp được tab Đăng nhập hoặc
+                                                           showLoginSubView (hiện lại form Đăng nhập) mở ra. Form gom
+                                                           username và password; khi người dùng bấm Đăng nhập, hai giá trị
+                                                           được gửi qua /login tới doPost trong LoginController.java để đối
+                                                           chiếu.
+                                                    --%>
                                                     <div class="tab-pane fade <%= isLoginTab ? " show active" : "" %>"
+
                                                         id="modal-login-pane">
 
-                                                        <!-- SUBVIEW 1: ĐĂNG NHẬP -->
                                                         <div id="subview-login" class="<%= isForgotTab ? "d-none" : "" %>">
                                                             <div class="mb-3">
                                                                 <h2 class="fs-4 fw-semibold mb-1">Chào mừng trở lại</h2>
                                                                 <p class="text-muted" style="font-size: 0.85rem;">Vui lòng nhập định danh tài khoản</p>
                                                             </div>
-                                                            
-                                                            
-                                                            <%-- LG02: [SLBF10] Enter email and password
-                                                                 . Hiển thị form đăng nhập, gồm username là email/SĐT và password.
-                                                                 .. Nhập dữ liệu chưa tạo phiên đăng nhập.
-                                                                 ... Nút Đăng nhập [LG03] bắt đầu gửi thông tin.
-                                                                 OT19: . Sau khi đặt lại mật khẩu thành công, cùng form này được mở để đăng nhập lại.
-                                                                 ... Nhập thông tin mới rồi bấm nút đăng nhập [LG03]. --%>
+
+
                                                             <form action="${pageContext.request.contextPath}/login" method="POST">
                                                             <input type="hidden" name="csrfToken" value="<%= accountCsrf %>">
                                                                 <% if (authRedirect !=null) { %>
@@ -227,10 +246,16 @@
                                                                 <% } %>
                                                                 <div class="mb-3">
                                                                     <label for="modal-login-username" class="form-label fw-medium" style="font-size: 0.85rem;">Email hoặc số điện thoại</label>
-                                                                    
-                                                                    <%-- LG02a: . Ô định danh nhận name=username là email hoặc số điện thoại.
-                                                                         .. Bắt buộc nhập; Controller bỏ khoảng trắng đầu/cuối.
-                                                                         ... validate() trong account-validation.js → LoginController [LG05a] → UserDAO.login() [LG06]. --%>
+
+                                                                    <%-- [DNTK01]
+                                                                         . Ô Email hoặc số điện thoại trong auth_modal.jsp
+                                                                           gửi giá trị qua username. account-validation.js
+                                                                           kiểm tra trước trên màn hình; khi bấm Đăng nhập,
+                                                                           giá trị đi cùng mật khẩu tới
+                                                                           LoginController.doPost để kiểm tra lại và tìm tài
+                                                                           khoản.
+                                                                         ... Đọc tiếp tại account-validation.js, tìm [DNTK02].
+                                                                    --%>
                                                                     <input type="text"
                                                                         id="modal-login-username"
                                                                         class="form-control bg-light border-0 p-2"
@@ -241,27 +266,45 @@
                                                                 </div>
                                                                 <div class="mb-2">
                                                                     <label class="form-label fw-medium" style="font-size: 0.85rem;">Mật khẩu</label>
-                                                                    
-                                                                    <%-- LG02b: . Ô mật khẩu nhận name=password; giữ nguyên ký tự để đối chiếu dữ liệu đã lưu.
-                                                                         .. JavaScript kiểm tra bắt buộc và giới hạn trường; quy tắc tạo mật khẩu mới không áp ở form login.
-                                                                         ... LoginController [LG05b] → UserDAO.login() [LG06] → PasswordHasher.verify(). --%>
+
+                                                                    <%-- [DNMK01]
+                                                                         . Ô Mật khẩu trong auth_modal.jsp gửi password cùng
+                                                                           username khi bấm Đăng nhập. Sau bước kiểm tra
+                                                                           trong account-validation.js,
+                                                                           LoginController.doPost gọi UserDAO.login (đối
+                                                                           chiếu tài khoản để đăng nhập) rồi
+                                                                           PasswordHasher.verify (so mật khẩu nhập với giá
+                                                                           trị đã lưu) để so với mật khẩu đang lưu và quyết
+                                                                           định cho đăng nhập.
+                                                                    --%>
                                                                     <input type="password"
                                                                         class="form-control bg-light border-0 p-2"
                                                                         name="password" maxlength="255" placeholder="••••••••••••"
                                                                         minlength="8" required>
                                                                 </div>
                                                                 <div class="d-flex justify-content-end mb-3">
+                                                                    <%-- [OTM01]
+                                                                         . Khi bấm Quên mật khẩu trong auth_modal.jsp, em gọi
+                                                                           showForgotSubView (hiện ô email khôi phục mật
+                                                                           khẩu) ngay trong file để ẩn phần đăng nhập và hiện
+                                                                           ô nhập email khôi phục. Thao tác này mới mở form;
+                                                                           chưa gọi ForgotPasswordController để gửi mã.
+                                                                    --%>
                                                                     <a href="javascript:void(0)" onclick="showForgotSubView()"
                                                                         class="text-decoration-none text-muted"
                                                                         style="font-size: 0.825rem;">
                                                                         Quên mật khẩu?
                                                                     </a>
                                                                 </div>
-                                                                
-                                                                <%-- LG03: [SLBF10] Click "Login"
-                                                                     . Bấm Đăng nhập để gửi thông tin từ form [LG02].
-                                                                     .. Trình duyệt kiểm tra trước, server đối chiếu tài khoản sau khi nhận POST.
-                                                                     ... account-validation.js [LG04] → LoginController.doPost() [LG05]. --%>
+
+                                                                <%-- [DNL01]
+                                                                     . Em bắt đầu từ nút Đăng nhập trong auth_modal.jsp. Khi
+                                                                       bấm, account-validation.js kiểm tra form rồi gửi
+                                                                       username là email hoặc số điện thoại, cùng password
+                                                                       tới LoginController.doPost qua /login để đối chiếu
+                                                                       tài khoản.
+                                                                     ... Đọc tiếp tại LoginController.java, tìm [DNL02].
+                                                                --%>
                                                                 <button type="submit"
                                                                     class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-2"
                                                                     style="background-color: var(--primary-container); height: 48px;">
@@ -270,24 +313,26 @@
                                                             </form>
                                                         </div>
 
-                                                        <!-- SUBVIEW 2: QUÊN MẬT KHẨU -->
                                                         <div id="subview-forgot" class="<%= isForgotTab ? "" : "d-none" %>">
                                                             <div class="mb-3">
                                                                 <h2 class="fs-4 fw-semibold mb-1">Khôi phục quyền truy cập</h2>
                                                                 <p class="text-muted" style="font-size: 0.85rem;">Hệ thống gửi mã OTP qua email để bạn đặt mật khẩu mới</p>
                                                             </div>
-                                                            
-                                                            
-                                                            <%-- OT02: . Hiển thị form email sau khi bấm Quên mật khẩu [OT01].
-                                                                 .. Nhập email chưa gửi OTP.
-                                                                 ... Bấm Gửi mã OTP [OT03] để tiếp tục. --%>
+
+
                                                             <form action="${pageContext.request.contextPath}/forgot-password" method="POST">
                                                             <input type="hidden" name="csrfToken" value="<%= accountCsrf %>">
                                                                 <div class="mb-3">
                                                                     <label class="form-label fw-medium" style="font-size: 0.85rem;">Email đã liên kết</label>
-                                                                    
-                                                                    <%-- OT02a: . Ô Email khôi phục nhận name=email, yêu cầu đuôi @gmail.com và tối đa 150 ký tự.
-                                                                         ... validate() kiểm tra email trong validate() → ForgotPasswordController [OT05] → PasswordRecoveryService.start() [OT06]. --%>
+
+                                                                    <%-- [OTEM01]
+                                                                         . Ô Email khôi phục trong auth_modal.jsp gửi địa chỉ
+                                                                           đến ForgotPasswordController.doPost qua
+                                                                           /forgot-password khi bấm Gửi mã. Controller gọi
+                                                                           start (tạo và gửi mã OTP) trong
+                                                                           PasswordRecoveryService.java để kiểm tra tài khoản
+                                                                           gắn với email và gửi mã xác minh.
+                                                                    --%>
                                                                     <input type="email" name="email" maxlength="150"
                                                                         class="form-control bg-light border-0 p-2"
                                                                         placeholder="name@auracafe.vn" required>
@@ -300,9 +345,13 @@
                                                                     </div>
                                                                 </div>
 
-                                                                
-                                                                <%-- OT03: . Bấm Gửi mã OTP để submit email từ form [OT02].
-                                                                     ... account-validation.js, sự kiện submit [OT04] kiểm tra trước khi gửi. --%>
+                                                                <%-- [OTG01]
+                                                                     . Em bắt đầu từ nút Gửi mã trong auth_modal.jsp. Sau
+                                                                       khi account-validation.js kiểm tra email, form gửi
+                                                                       địa chỉ tới ForgotPasswordController.doPost qua
+                                                                       /forgot-password để yêu cầu mã khôi phục mật khẩu.
+                                                                     ... Đọc tiếp tại ForgotPasswordController.java, tìm [OTG02].
+                                                                --%>
                                                                 <button type="submit"
                                                                     class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
                                                                     style="background-color: var(--primary-container); height: 48px;">
@@ -310,6 +359,14 @@
                                                                 </button>
 
                                                                 <div class="text-center mt-3">
+                                                                    <%-- [OTQL01]
+                                                                         . Khi bấm Quay lại đăng nhập, em gọi
+                                                                           showLoginSubView (hiện lại form Đăng nhập) ngay
+                                                                           trong auth_modal.jsp để ẩn ô email khôi phục và
+                                                                           hiện lại form Đăng nhập. Nút này chỉ đổi phần đang
+                                                                           xem, không gửi mã hay đổi mật khẩu.
+                                                                         ... Đọc tiếp tại auth_modal.jsp, tìm [OTQL02].
+                                                                    --%>
                                                                     <a href="javascript:void(0)" onclick="showLoginSubView()"
                                                                         class="text-decoration-none fw-semibold d-inline-flex align-items-center gap-1"
                                                                         style="font-size: 0.85rem; color: var(--primary-container);">
@@ -322,17 +379,20 @@
 
                                                     </div>
 
-                                                    <!-- REGISTER -->
+                                                    <%-- [DKM02]
+                                                         . Form Đăng ký trong auth_modal.jsp gom họ tên, số điện thoại,
+                                                           email, mật khẩu và xác nhận qua các ô fullname, phone, email,
+                                                           password, confirm_password. Khi bấm Tạo tài khoản, các giá trị
+                                                           đến RegisterController.doPost qua /register để kiểm tra rồi tạo
+                                                           tài khoản.
+                                                    --%>
                                                     <div class="tab-pane fade <%= isRegisterTab ? " show active" : "" %>" id="modal-register-pane">
                                                         <div class="mb-3">
                                                             <h2 class="fs-4 fw-semibold mb-1">Tạo tài khoản Aura</h2>
                                                             <p class="text-muted" style="font-size: 0.85rem;">Đăng ký thành viên để nhận ưu đãi và tích điểm</p>
                                                         </div>
 
-                                                        <%-- RG02: [SLBF10] Enter registration information
-                                                             . Hiển thị form đăng ký với fullname, phone, email, password và confirm_password.
-                                                             .. Dữ liệu mới nhập chưa được lưu vào database.
-                                                             ... Nút Tạo tài khoản mới [RG03] → account-validation.js [RG04] → RegisterController.doPost() [RG05]. --%>
+
                                                         <form action="${pageContext.request.contextPath}/register" method="POST">
                                                             <input type="hidden" name="csrfToken" value="<%= accountCsrf %>">
                                                             <% if (authRedirect != null) { %>
@@ -341,65 +401,121 @@
                                                             <div class="row g-2 mb-3">
                                                                 <div class="col-12">
                                                                     <label class="form-label fw-medium" style="font-size: 0.85rem;">Họ và tên</label>
-                                                                    <%-- RG02a: . Ô Họ và tên nhận name=fullname.
-                                                                         .. Bắt buộc từ 1 đến 100 ký tự sau chuẩn hóa.
-                                                                         ... validate() kiểm tra họ tên trong validate() → RegisterController [RG06a] → AccountValidation.nameError(). --%>
+
+                                                                    <%-- [DKHT01]
+                                                                         . Ô Họ và tên trong auth_modal.jsp gửi giá trị qua
+                                                                           fullname. account-validation.js gọi validate (kiểm
+                                                                           tra giá trị của một ô nhập) để kiểm tra trước; khi
+                                                                           bấm Tạo tài khoản, RegisterController.doPost nhận
+                                                                           tên rồi gọi AccountValidation.nameError (kiểm tra
+                                                                           họ tên và trả lời báo lỗi) kiểm tra lại trước khi
+                                                                           lưu.
+                                                                         ... Đọc tiếp tại account-validation.js, tìm [DKHT02].
+                                                                    --%>
                                                                     <input type="text" class="form-control bg-light border-0 p-2" name="fullname" placeholder="Nguyễn Văn A" required>
                                                                 </div>
                                                             </div>
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Số điện thoại</label>
-                                                                <%-- RG02b: . Ô SĐT nhận name=phone; sau chuẩn hóa phải có 10 số và bắt đầu bằng 0.
-                                                                     ... validate() kiểm tra SĐT trong validate() → RegisterController [RG06b] → AccountValidation.phoneError(); kiểm tra trùng [RG07a]. --%>
+
+                                                                <%-- [DKDT01]
+                                                                     . Ô Số điện thoại trong auth_modal.jsp gửi giá trị qua
+                                                                       phone. account-validation.js dùng validate (kiểm tra
+                                                                       giá trị của một ô nhập) và checkContact (kiểm tra
+                                                                       liên hệ trùng ngay trên form) để kiểm tra định dạng,
+                                                                       tìm trùng; khi tạo tài khoản,
+                                                                       RegisterController.doPost kiểm tra lại số rồi mới ghi
+                                                                       cùng khách hàng.
+                                                                     ... Đọc tiếp tại account-validation.js, tìm [DKDT02].
+                                                                --%>
                                                                 <input type="tel" class="form-control bg-light border-0 p-2" name="phone" placeholder="VD: 0912345678" pattern="0[0-9]{9}" inputmode="numeric" title="Nhập 10 chữ số và bắt đầu bằng số 0" required>
                                                             </div>
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Email</label>
-                                                                <%-- RG02c: . Ô Email nhận name=email; yêu cầu đuôi @gmail.com, tối đa 150 ký tự.
-                                                                     ... validate() kiểm tra email trong validate() → RegisterController [RG06c] → AccountValidation.emailError(); kiểm tra trùng [RG07b]. --%>
+
+                                                                <%-- [DKEM01]
+                                                                     . Ô Email trong auth_modal.jsp gửi giá trị qua email.
+                                                                       account-validation.js dùng validate (kiểm tra giá trị
+                                                                       của một ô nhập) và checkContact (kiểm tra liên hệ
+                                                                       trùng ngay trên form) để kiểm tra định dạng, tìm
+                                                                       trùng trước. Khi tạo tài khoản,
+                                                                       RegisterController.doPost nhận địa chỉ và kiểm tra
+                                                                       lại để dùng cho tài khoản cũng như khôi phục mật
+                                                                       khẩu.
+                                                                     ... Đọc tiếp tại account-validation.js, tìm [DKEM02].
+                                                                --%>
                                                                 <input type="email" class="form-control bg-light border-0 p-2" name="email" maxlength="150" placeholder="Email của bạn" required>
                                                             </div>
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Mật khẩu</label>
-                                                                <%-- RG02d: . Ô Mật khẩu nhận name=password; mật khẩu mới cần 8–255 ký tự, có chữ và số.
-                                                                     ... passwordError() trong account-validation.js → RegisterController [RG06d] → AccountValidation.passwordErrors(). --%>
+
+                                                                <%-- [DKMK01]
+                                                                     . Ô Mật khẩu trong auth_modal.jsp được validate (kiểm
+                                                                       tra giá trị của một ô nhập) và passwordError (kiểm
+                                                                       tra điều kiện mật khẩu) của account-validation.js
+                                                                       kiểm tra trước khi gửi. Sau đó
+                                                                       RegisterController.doPost kiểm tra lại rồi truyền mật
+                                                                       khẩu cho UserDAO.register (tạo tài khoản khách hàng)
+                                                                       để băm và lưu cùng tài khoản mới.
+                                                                     ... Đọc tiếp tại account-validation.js, tìm [DKMK02].
+                                                                --%>
                                                                 <input type="password" id="reg-password" class="form-control bg-light border-0 p-2" name="password" maxlength="255" placeholder="Ít nhất 8 ký tự, gồm chữ và số" minlength="8" required>
                                                             </div>
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Xác nhận mật khẩu</label>
-                                                                <%-- RG02e: . Ô Xác nhận nhận name=confirm_password và phải khớp password.
-                                                                     ... validate() kiểm tra xác nhận trong validate() → RegisterController [RG06d] → AccountValidation.passwordErrors(). --%>
+
+                                                                <%-- [DKXN01]
+                                                                     . Ô Xác nhận mật khẩu trong auth_modal.jsp gửi giá trị
+                                                                       qua confirm_password. validate (kiểm tra giá trị của
+                                                                       một ô nhập) trong account-validation.js so với
+                                                                       password của cùng form; khi gửi đăng ký,
+                                                                       RegisterController.doPost nhận cả hai để kiểm tra
+                                                                       khớp trước khi tạo tài khoản.
+                                                                     ... Đọc tiếp tại account-validation.js, tìm [DKXN02].
+                                                                --%>
                                                                 <input type="password" id="reg-confirm-password" class="form-control bg-light border-0 p-2" name="confirm_password" maxlength="255" placeholder="Nhập lại mật khẩu" minlength="8" required>
                                                             </div>
-                                                            <%-- RG03: [SLBF10] Click "Create Account"
-                                                                 . Bấm Tạo tài khoản mới để submit form đăng ký [RG02].
-                                                                 .. Có lỗi thì giữ form và cho sửa; hợp lệ mới gửi POST /register.
-                                                                 ... account-validation.js [RG04] → RegisterController.doPost() [RG05]. --%>
+
+                                                            <%-- [DKL01]
+                                                                 . Em bắt đầu từ nút Tạo tài khoản trong auth_modal.jsp. Khi
+                                                                   bấm, account-validation.js kiểm tra các ô và tìm liên hệ
+                                                                   trùng; đúng hết thì form gửi họ tên, số điện thoại, email
+                                                                   và hai ô mật khẩu đến RegisterController.doPost để đăng
+                                                                   ký.
+                                                                 ... Đọc tiếp tại account-validation.js, tìm [DKL02].
+                                                            --%>
                                                             <button type="submit" class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4" style="background-color: var(--primary-container); height: 48px;">
                                                                 Tạo tài khoản mới <span class="material-symbols-outlined fs-5">how_to_reg</span>
                                                             </button>
                                                         </form>
                                                     </div>
 
-                                                    <!-- OTP VERIFICATION -->
                                                     <div class="tab-pane fade <%= isOtpTab ? " show active" : "" %>" id="modal-otp-pane">
                                                         <div class="mb-3">
                                                             <h2 class="fs-4 fw-semibold mb-1">Xác thực Email</h2>
                                                             <p class="text-muted" style="font-size: 0.85rem;">Nhập mã OTP đã được gửi đến email của bạn</p>
                                                         </div>
-                                                        
-                                                        
-                                                        <%-- OT07: . Hiển thị form nhập OTP sau khi gửi mã thành công.
-                                                             .. Chưa đổi mật khẩu khi mới nhập mã; có thể gửi lại theo nhánh [OT07b].
-                                                             ... Bấm Xác nhận OTP [OT08] để tiếp tục luồng chính. --%>
+
+                                                        <%-- [OTG07]
+                                                             . Khi auth_modal.jsp nhận tab=otp, em hiện ô Mã xác thực và
+                                                               form /verify-otp. Người dùng lấy sáu chữ số trong email rồi
+                                                               bấm xác nhận để gửi tới VerifyOtpController.doPost, kiểm tra
+                                                               trước khi được nhập mật khẩu mới.
+                                                        --%>
                                                         <form action="${pageContext.request.contextPath}/verify-otp" method="POST">
                                                             <input type="hidden" name="csrfToken" value="<%= accountCsrf %>">
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Mã xác thực (OTP)</label>
-                                                                
-                                                                <%-- OT07a: . Ô mã nhận name=otp và yêu cầu đúng 6 chữ số.
-                                                                     .. Định dạng được kiểm tra ở trình duyệt; đúng mã/thời hạn/số lần sai do server kiểm tra.
-                                                                     ... validate() kiểm tra OTP trong validate() → VerifyOtpController [OT10] → PasswordRecoveryService.verify() [OT11]. --%>
+
+                                                                <%-- [OTN01]
+                                                                     . Ô này nhận mã sáu chữ số người dùng lấy từ email. Khi
+                                                                       bấm Xác nhận OTP, account-validation.js kiểm tra định
+                                                                       dạng rồi form gửi otp đến VerifyOtpController.doPost
+                                                                       để gọi PasswordRecoveryService.verify (xác minh mã
+                                                                       OTP), đối chiếu với mã đã gửi, hạn dùng và số lần
+                                                                       nhập sai.
+                                                                     ... Đọc tiếp tại account-validation.js, tìm [OTN02].
+                                                                --%>
                                                                 <input type="text"
                                                                     class="form-control bg-light border-0 p-2 text-center fw-bold fs-4"
                                                                     name="otp"
@@ -414,8 +530,15 @@
                                                                     Vui lòng kiểm tra hòm thư đến (hoặc thư rác) để lấy mã xác thực gồm 6 chữ số.
                                                                 </div>
                                                             </div>
-                                                            <%-- OT08: . Bấm Xác nhận OTP để gửi mã vừa nhập.
-                                                                 ... account-validation.js, sự kiện submit [OT09] → Controller [OT10]. --%>
+
+                                                            <%-- [OTXM01]
+                                                                 . Khi bấm Xác nhận OTP trong auth_modal.jsp, form gửi otp
+                                                                   tới VerifyOtpController.doPost qua /verify-otp.
+                                                                   Controller gọi verify trong PasswordRecoveryService.java
+                                                                   để đối chiếu mã; xác minh đúng mới mở phần nhập mật khẩu
+                                                                   mới.
+                                                                 ... Đọc tiếp tại VerifyOtpController.java, tìm [OTXM02].
+                                                            --%>
                                                             <button type="submit"
                                                                 class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
                                                                 style="background-color: var(--primary-container)
@@ -423,6 +546,12 @@
                                                                 Xác nhận OTP <span class="material-symbols-outlined fs-5">check_circle</span>
                                                             </button>
                                                             <div class="d-flex justify-content-between align-items-center mt-3">
+                                                                <%-- [OTQEM01]
+                                                                     . Khi bấm Quay lại ở bước OTP, em mở Trang chủ với
+                                                                       tab=forgot để auth_modal.jsp hiện lại ô email khôi
+                                                                       phục. Đây là quay về bước nhập email; chỉ bấm Gửi mã
+                                                                       mới tạo yêu cầu xác minh tiếp theo.
+                                                                --%>
                                                                 <a href="${pageContext.request.contextPath}/?tab=forgot"
                                                                     class="text-decoration-none text-muted d-inline-flex align-items-center gap-1"
                                                                     style="font-size: 0.85rem;">
@@ -431,6 +560,18 @@
                                                                 </a>
                                                                 <div>
                                                                     <span id="modal-resend-timer" class="<%= otpRemainingTime > 0 ? "" : "d-none" %>" style="font-size: 0.85rem; color: var(--secondary);">
+                                                                        <%-- [OTTG02]
+                                                                             . Số giây ở modal-countdown-sec trong auth_modal.jsp
+                                                                               được tính từ lần gửi mã. Bộ đếm setInterval cập
+                                                                               nhật số đang hiện và mở nút Gửi lại khi hết chờ.
+                                                                               Khi bấm gửi lại, PasswordRecoveryService.resend
+                                                                               (kiểm tra thời gian chờ rồi gửi lại OTP) vẫn kiểm
+                                                                               tra thời gian thực tế để quyết định có gửi mã mới
+                                                                               không.
+                                                                             .. Phía xử lý vẫn yêu cầu đủ 60 giây giữa hai lần
+                                                                                gửi, kể cả khi con số chờ trên màn hình bị thay
+                                                                                đổi.
+                                                                        --%>
                                                                         Gửi lại sau <strong id="modal-countdown-sec"><%= otpRemainingTime %></strong>s
                                                                     </span>
                                                                     <button type="submit" form="resendOtpForm"
@@ -444,32 +585,46 @@
                                                         </form>
                                                     </div>
 
-                                                    
-                                                    <%-- OT07b: . Nút Gửi lại mã dùng form=resendOtpForm để gửi POST /resend-otp.
-                                                         .. Server quyết định đã đủ thời gian gửi lại; đồng hồ giao diện chỉ hỗ trợ hiển thị.
-                                                         ... ResendOtpController.doPost() [OT07c] → PasswordRecoveryService.resend() [OT07d]. --%>
+                                                    <%-- [OTGL01]
+                                                         . Khi bấm Gửi lại mã trong auth_modal.jsp, resendOtpForm gửi tới
+                                                           ResendOtpController.doPost qua /resend-otp. Controller gọi resend
+                                                           trong PasswordRecoveryService.java để kiểm tra thời gian chờ rồi
+                                                           gửi mã mới cho email đã giữ.
+                                                         ... Đọc tiếp tại ResendOtpController.java, tìm [OTGL02].
+                                                    --%>
                                                     <form id="resendOtpForm" action="${pageContext.request.contextPath}/resend-otp" method="POST">
                                                         <input type="hidden" name="csrfToken" value="<%= accountCsrf %>">
                                                     </form>
 
-                                                    <!-- RESET PASSWORD -->
                                                     <div class="tab-pane fade <%= isResetTab ? " show active" : "" %>" id="modal-reset-pane">
                                                         <div class="mb-3">
                                                             <h2 class="fs-4 fw-semibold mb-1">Thiết lập mật khẩu mới</h2>
                                                             <p class="text-muted" style="font-size: 0.85rem;">Vui lòng tạo mật khẩu mới cho tài khoản của bạn</p>
                                                         </div>
-                                                        
-                                                        
-                                                        <%-- OT12: . Hiển thị form mật khẩu mới và xác nhận sau khi OTP được xác minh.
-                                                             .. Server vẫn phải kiểm tra quyền khôi phục còn hạn khi nhận yêu cầu lưu.
-                                                             ... Bấm Cập nhật mật khẩu [OT13] để tiếp tục. --%>
+
+                                                        <%-- [OTXM05]
+                                                             . Khi nhận tab=reset_password, auth_modal.jsp hiện hai ô mật
+                                                               khẩu mới và xác nhận. Khi bấm Cập nhật mật khẩu, form gửi hai
+                                                               giá trị tới ResetPasswordController.doPost qua
+                                                               /reset-password để đổi cho tài khoản đã xác minh.
+                                                        --%>
+
                                                         <form action="${pageContext.request.contextPath}/reset-password" method="POST">
                                                             <input type="hidden" name="csrfToken" value="<%= accountCsrf %>">
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Mật khẩu mới</label>
-                                                                
-                                                                <%-- OT12a: . Ô mật khẩu mới nhận name=password, cần 8–255 ký tự và có chữ lẫn số.
-                                                                     ... passwordError() trong account-validation.js → PasswordRecoveryService.reset() [OT16] → AccountValidation AccountValidation.passwordError(). --%>
+
+                                                                <%-- [OTMK01]
+                                                                     . Ô này gửi password khi bấm Cập nhật mật khẩu.
+                                                                       account-validation.js kiểm tra trước rồi
+                                                                       ResetPasswordController.doPost gọi reset (đặt lại mật
+                                                                       khẩu sau khi xác minh OTP) trong
+                                                                       PasswordRecoveryService.java để kiểm tra lại và đổi
+                                                                       mật khẩu cho tài khoản đã xác minh. Nút mắt do
+                                                                       account-validation.js tạo để che hoặc hiện nội dung,
+                                                                       không thay đổi mật khẩu đang nhập.
+                                                                     ... Đọc tiếp tại PasswordRecoveryService.java, tìm [OTMK02].
+                                                                --%>
                                                                 <input type="password" id="reset-password-input"
                                                                     class="form-control bg-light border-0 p-2"
                                                                     name="password" maxlength="255"
@@ -478,18 +633,32 @@
                                                             </div>
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-medium" style="font-size: 0.85rem;">Xác nhận mật khẩu</label>
-                                                                
-                                                                <%-- OT12b: . Ô xác nhận nhận name=confirm_password và phải khớp mật khẩu mới.
-                                                                     ... validate() kiểm tra xác nhận trong validate() → ResetPasswordController [OT15]; lỗi tách theo ô bằng AccountValidation.passwordErrors(). --%>
+
+                                                                <%-- [OTXN01]
+                                                                     . Ô này gửi confirm_password để đối chiếu với mật khẩu
+                                                                       mới. Sau bước kiểm tra trên form,
+                                                                       PasswordRecoveryService.reset (đặt lại mật khẩu sau
+                                                                       khi xác minh OTP) gọi passwordError (kiểm tra điều
+                                                                       kiện mật khẩu) trong AccountValidation.java để so
+                                                                       lại; không khớp thì báo lỗi và chưa ghi mật khẩu. Nút
+                                                                       mắt chỉ che hoặc hiện nội dung ô này.
+                                                                     ... Đọc tiếp tại AccountValidation.java, tìm [OTXN02].
+                                                                --%>
                                                                 <input type="password" id="reset-confirm-password-input"
                                                                     class="form-control bg-light border-0 p-2"
                                                                     name="confirm_password" maxlength="255"
                                                                     placeholder="Nhập lại mật khẩu mới"
                                                                     minlength="8" required>
                                                             </div>
-                                                            
-                                                            <%-- OT13: . Bấm Cập nhật mật khẩu để gửi mật khẩu mới và xác nhận.
-                                                                 ... account-validation.js, sự kiện submit [OT14] → Controller [OT15]. --%>
+
+                                                            <%-- [OTDM01]
+                                                                 . Khi bấm Cập nhật mật khẩu trong auth_modal.jsp, form được
+                                                                   kiểm tra rồi gửi password và confirm_password tới
+                                                                   ResetPasswordController.doPost qua /reset-password.
+                                                                   Controller gọi reset trong PasswordRecoveryService.java
+                                                                   để kiểm tra lần xác minh và thực hiện đổi mật khẩu.
+                                                                 ... Đọc tiếp tại ResetPasswordController.java, tìm [OTDM02].
+                                                            --%>
                                                             <button type="submit"
                                                                 class="btn w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 mt-4"
                                                                 style="background-color: var(--primary-container); height: 48px;">
@@ -511,27 +680,40 @@
             data-auto-open="<%= authModalAutoOpen %>"
             data-otp-remaining="<%= otpRemainingTime %>">
 
-            // . Mở phần đăng nhập và ẩn phần Quên mật khẩu trong popup.
-            // .. Chỉ đổi giao diện, không gửi dữ liệu; nút Login thực hiện tại [LG03].
+            // [OTQL02]
+            // . Ở showLoginSubView (hiện lại form Đăng nhập) trong auth_modal.jsp, em bỏ d-none ở subview-login và
+            //   thêm d-none vào subview-forgot. Vì vậy nút Quay lại đăng nhập và tab Đăng nhập cùng hiện lại đúng
+            //   form, không gọi controller hay lưu thông tin ở bước này.
             function showLoginSubView() {
+                document.querySelectorAll('#authModal [data-account-notice]').forEach(notice => notice.classList.add('d-none'));
                 var loginView = document.getElementById('subview-login');
                 var forgotView = document.getElementById('subview-forgot');
                 if (loginView) loginView.classList.remove('d-none');
                 if (forgotView) forgotView.classList.add('d-none');
             }
 
-            // OT01: . Bấm Quên mật khẩu thì ẩn đăng nhập và mở form email khôi phục.
-            // ... Form Quên mật khẩu [OT02]; bấm Gửi mã OTP mới gửi dữ liệu [OT03].
+            // [OTM02]
+            // . Ở showForgotSubView (hiện ô email khôi phục mật khẩu) trong auth_modal.jsp, em xử lý nút Quên mật
+            //   khẩu bằng cách ẩn subview-login và hiện subview-forgot. Người dùng nhập email ở form này; chỉ khi
+            //   bấm Gửi mã thì dữ liệu mới đến ForgotPasswordController.doPost để xử lý.
             function showForgotSubView() {
+                document.querySelectorAll('#authModal [data-account-notice]').forEach(notice => notice.classList.add('d-none'));
                 var loginView = document.getElementById('subview-login');
                 var forgotView = document.getElementById('subview-forgot');
                 if (loginView) loginView.classList.add('d-none');
                 if (forgotView) forgotView.classList.remove('d-none');
             }
 
+            // [ATMO01]
+            // . Khi trang tải xong, em đọc data-auto-open của auth-modal-script. Nếu bằng true thì tạo Bootstrap
+            //   Modal và mở authModal để người dùng thấy form cùng kết quả controller vừa trả. Bước này chỉ mở hộp
+            //   đã có trên trang, không tự đăng nhập hay gửi lại form.
             document.addEventListener("DOMContentLoaded", function () {
-                // . Tự mở popup khi Controller trả thông báo hoặc URL có tham số tab.
-                // .. Người dùng thấy lại đúng bước sau redirect, gồm form đăng ký lỗi hoặc form OTP.
+                const authModal = document.getElementById('authModal');
+                const clearNotices = () => authModal?.querySelectorAll('[data-account-notice]').forEach(notice => notice.classList.add('d-none'));
+                authModal?.addEventListener('hidden.bs.modal', clearNotices);
+                document.getElementById('modalAuthTab')?.addEventListener('shown.bs.tab', clearNotices);
+
                 var hasErrorOrSuccess = document.getElementById('auth-modal-script').dataset.autoOpen === 'true';
                 if (hasErrorOrSuccess) {
                     var myModal = new bootstrap.Modal(document.getElementById('authModal'), {
@@ -541,14 +723,16 @@
                 }
             });
 
-            // . Đếm ngược thời gian hiển thị nút Gửi lại mã theo dữ liệu server.
-            // .. Hết đếm thì hiện nút; server vẫn kiểm tra giới hạn tại [OT07d], [OT06a].
             let modalRemaining = Number(document.getElementById('auth-modal-script').dataset.otpRemaining);
             if (modalRemaining > 0) {
                 const countdownSpan = document.getElementById("modal-countdown-sec");
                 const timerWrapper = document.getElementById("modal-resend-timer");
                 const resendBtn = document.getElementById("modal-resend-btn");
-                
+
+                // [OTTG01]
+                // . Bộ đếm setInterval trong auth_modal.jsp đọc số giây còn phải chờ, cập nhật countdown rồi hiện nút
+                //   Gửi lại khi hết thời gian. Nếu người dùng bấm nút, form tới ResendOtpController.doPost để gọi
+                //   PasswordRecoveryService.resend (kiểm tra thời gian chờ rồi gửi lại OTP) kiểm tra lại và gửi mã.
                 const interval = setInterval(() => {
                     modalRemaining--;
                     if (modalRemaining <= 0) {

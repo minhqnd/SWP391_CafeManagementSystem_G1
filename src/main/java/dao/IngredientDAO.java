@@ -16,18 +16,18 @@ import model.Ingredient;
 public class IngredientDAO extends BaseDAO {
 
     public List<Ingredient> getAllIngredients() {
-        // BF11: lấy tên, đơn vị và trạng thái cho form BOM; JSP quyết định lựa chọn thêm mới/giữ dòng cũ.
+
         List<Ingredient> list = new ArrayList<>();
         String sql = "SELECT id, name, unit, is_active FROM ingredients ORDER BY name ASC";
-        
+
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            
+
             while (rs.next()) {
                 Ingredient item = new Ingredient(
-                    rs.getInt("id"), 
-                    rs.getString("name"), 
+                    rs.getInt("id"),
+                    rs.getString("name"),
                     rs.getString("unit")
                 );
                 item.setActive(rs.getBoolean("is_active"));
@@ -40,12 +40,12 @@ public class IngredientDAO extends BaseDAO {
     }
 
     /** Latest received purchase unit price per ingredient. Draft and ordered POs are not inventory costs. */
+    // [CTTONG05]
+    // . Trong getLatestPurchasePrices (đọc giá nhập đã nhận gần nhất) của IngredientDAO.java, em đọc đơn giá
+    //   của lần nhập đã nhận gần nhất theo từng nguyên liệu. Em trả bảng mã nguyên liệu và giá về
+    //   AdminRecipeController.doGet để nhân với định lượng, tính giá vốn công thức.
     public Map<Integer, BigDecimal> getLatestPurchasePrices() {
-        // RC04: . lấy giá nhập gần nhất của từng nguyên liệu theo điều kiện trong câu truy vấn.
-        // .. Kết quả là bảng tra đơn giá theo mã nguyên liệu; Controller xử lý trường hợp thiếu giá.
-        // ... Map giá nhập về AdminRecipeController [RC02] để tính định lượng nhân đơn giá.
-        // BF11 - NGUỒN GIÁ VỐN: phiếu PARTIALLY_RECEIVED/RECEIVED/CLOSED; cần giao dịch nhập, riêng RECEIVED giữ tương thích dữ liệu cũ.
-        // Map trả ingredientId -> unit_price; thiếu giá thì Controller/JSP đánh dấu chưa đủ giá vốn.
+
         Map<Integer, BigDecimal> prices = new HashMap<>();
         String sql = "SELECT ingredient_id, unit_price FROM (" +
                      "  SELECT poi.ingredient_id, poi.unit_price, " +
@@ -270,7 +270,7 @@ public class IngredientDAO extends BaseDAO {
     }
 
     public int[] getIngredientStats() {
-        int[] stats = new int[4]; 
+        int[] stats = new int[4];
         // [0]: Total ingredients
         // [1]: Total active suppliers
         // [2]: Ingredients under min stock

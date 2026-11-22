@@ -7,7 +7,7 @@
     .account-password-group { display: flex; flex-wrap: nowrap; }
     .account-password-group > input { flex: 1 1 0%; width: 1%; min-width: 0; }
     .account-password-group > .account-password-toggle { flex: 0 0 auto; }
-    /* Edge also adds a reveal button; keep the application's single toggle. */
+
     input[data-password-field]::-ms-reveal { display: none; }
 </style>
 
@@ -17,9 +17,13 @@
     }
     session.removeAttribute("accountFeedback");
 %>
-<%-- . Đọc accountFeedback từ request/session, xóa bản session sau khi đọc và xuất payload ẩn.
-     .. c:out bảo vệ nội dung; payload chứa form, lỗi và các giá trị an toàn.
-     ... account-validation.js phần đọc payload trong account-validation.js đọc payload → feedback() trong account-validation.js tô đỏ đúng ô. --%>
+
+<%-- [BMTV02]
+     . Ở account_feedback.jsp, em nhận accountFeedback mà controller chuẩn bị qua AccountFormFeedback.flash
+       (giữ lỗi và các ô qua lần chuyển trang) hoặc show (hiện lỗi trên trang đang mở). Em đưa tên form,
+       lỗi và giá trị vào data-account-feedback để account-validation.js tìm đúng các ô, điền lại và hiển
+       thị lỗi khi trang mở ra.
+--%>
 <c:if test="${not empty accountFeedback}">
     <div hidden data-account-feedback data-form="<c:out value='${accountFeedback.form}'/>">
         <c:forEach var="entry" items="${accountFeedback.errors}">

@@ -14,12 +14,12 @@ import java.util.List;
 
 public class CategoryDAO extends BaseDAO {
 
-    /** Returns every category, including inactive ones, with the number of linked products. */
+    // [DMM03]
+    // . Hàm getAllCategoriesWithCount (đọc danh mục kèm số sản phẩm) trong CategoryDAO.java được doGet của
+    //   AdminCategoriesController.java gọi để lấy danh sách danh mục. Em đọc categories kèm số sản phẩm từng
+    //   nhóm rồi trả danh sách về doGet để đưa lên bảng trong admin-categories.jsp.
     public List<Category> getAllCategoriesWithCount() {
-        // CA03: . lấy các danh mục cùng số món thuộc từng danh mục.
-        // .. Danh sách gồm cả danh mục đang hiện và đang ẩn để Admin quản lý.
-        // ... List<Category> về Controller [CA02]; trang sản phẩm cũng dùng để chọn danh mục.
-        // BF11: danh sách quản trị gồm mọi trạng thái và số món; khác danh sách công khai chỉ ACTIVE.
+
         List<Category> list = new ArrayList<>();
         String sql = "SELECT c.id, c.name, c.status, c.image_url, "
                 + "(ci.category_id IS NOT NULL) AS has_stored_image, COUNT(p.id) AS product_count "
@@ -37,6 +37,12 @@ public class CategoryDAO extends BaseDAO {
         }
         return list;
     }
+
+    // [DMTS01]
+    // . Trong getProductCount (đếm toàn bộ sản phẩm) của CategoryDAO.java, em đếm toàn bộ sản phẩm để trả về
+    //   doGet của AdminCategoriesController.java. Controller đặt số này vào productTotal rồi đưa sang thẻ
+    //   Tổng sản phẩm trên trang quản lý danh mục.
+    // ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMTS02].
 
     public int getProductCount() {
         String sql = "SELECT COUNT(*) FROM products";
@@ -61,7 +67,11 @@ public class CategoryDAO extends BaseDAO {
         }
     }
 
-    /** Returns the number of products in a category that are referenced by order history. */
+    // [DMDH01]
+    // . Trong getOrderedProductCountByCategory (đếm món trong danh mục đã có ở đơn hàng) của
+    //   CategoryDAO.java, em nhận mã danh mục từ hàm delete (kiểm tra điều kiện rồi xóa) của
+    //   AdminCategoriesController.java. Em đếm sản phẩm thuộc danh mục đã xuất hiện trong order_items rồi
+    //   trả số về delete, để chặn xóa nếu có lịch sử đơn hàng.
     public int getOrderedProductCountByCategory(int categoryId) {
         String sql = "SELECT COUNT(DISTINCT p.id) "
                 + "FROM products p JOIN order_items oi ON oi.product_id = p.id "
@@ -77,8 +87,13 @@ public class CategoryDAO extends BaseDAO {
         }
     }
 
+    // [DMTR02]
+    // . Ở categoryNameExists (tìm danh mục khác trùng tên) trong CategoryDAO.java, em nhận tên và mã danh
+    //   mục đang sửa từ AdminCategoriesController.save (kiểm tra và lưu danh mục). Em tìm tên trong
+    //   categories và bỏ qua mã hiện tại, rồi trả đúng hoặc sai để hàm save biết có bị trùng với danh mục
+    //   khác không.
     public boolean categoryNameExists(String name, int exceptId) {
-        String sql = "SELECT 1 FROM categories WHERE LOWER(name) = LOWER(?) AND id <> ? LIMIT 1";
+        String sql = "SELECT 1 FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND id <> ? LIMIT 1";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, name);
             ps.setInt(2, exceptId);
@@ -94,26 +109,36 @@ public class CategoryDAO extends BaseDAO {
         return saveCategory(category, null, null, null, false);
     }
 
+    // [DML05]
+    // . Trong saveCategory của CategoryDAO.java, em thêm hoặc sửa categories rồi xử lý ảnh trong
+    //   category_images trên cùng kết nối. Hoàn tất thì xác nhận lưu và trả true về controller. Nếu không
+    //   ghi được danh mục thì trả false; nếu phát sinh lỗi thì hủy thay đổi và báo lỗi về controller.
+    // ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML06].
     public boolean saveCategory(Category category, byte[] imageData, String contentType,
                                 String fileName, boolean removeImage)
             throws SQLException, ClassNotFoundException {
-        // CA16: [SLBF11] Save category
-        // . lưu thông tin danh mục và ảnh của danh mục cùng nhau.
-        // .. Lưu đủ thì xác nhận; có lỗi thì hoàn tác để tránh chỉ lưu được một phần.
-        // ... Trả boolean về AdminCategoriesController.save() [CA11].
-        // BF11: lưu categories và category_images cùng transaction; lỗi ảnh thì hoàn tác cả danh mục.
+
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
+                // . Trong CategoryDAO.java, em gọi saveCategory (ghi danh mục) bằng kết nối đang dùng và đối tượng danh
+                //   mục để ghi tên, trạng thái. Em tiếp tục xử lý ảnh trên cùng kết nối để thông tin và ảnh được lưu
+                //   cùng nhau.
                 boolean saved = saveCategory(conn, category);
                 if (!saved) {
                     conn.rollback();
                     return false;
                 }
                 if (imageData != null) {
+                    // . Nếu có ảnh mới, trong CategoryDAO.saveCategory (ghi danh mục) em gọi saveImage (thêm hoặc thay ảnh
+                    //   đang lưu) cùng file, truyền mã danh mục và dữ liệu ảnh. Hàm thêm hoặc thay ảnh trong
+                    //   category_images để ảnh gắn đúng danh mục vừa lưu.
                     saveImage(conn, category.getId(), imageData, contentType, fileName);
                     clearLegacyImageUrl(conn, category.getId());
                 } else if (removeImage) {
+                    // . Nếu không có ảnh mới nhưng người dùng chọn xóa ảnh, trong CategoryDAO.saveCategory (ghi danh mục)
+                    //   em gọi deleteImage (xóa ảnh đang lưu) cùng file bằng mã danh mục. Hàm xóa ảnh đang lưu của đúng
+                    //   danh mục đó.
                     deleteImage(conn, category.getId());
                     clearLegacyImageUrl(conn, category.getId());
                 }
@@ -129,7 +154,10 @@ public class CategoryDAO extends BaseDAO {
     }
 
     private boolean saveCategory(Connection conn, Category category) throws SQLException {
-        // id>0 UPDATE; id=0 INSERT và lấy generated key để liên kết ảnh theo category_id.
+
+        // . Khi danh mục đã có mã, em dùng UPDATE trong CategoryDAO.saveCategory (ghi danh mục) để sửa đúng dòng
+        //   categories. Mã vẫn giữ trên category để phần ảnh dùng tiếp, nên thao tác này không tạo thêm danh
+        //   mục.
         if (category.getId() > 0) {
             String sql = "UPDATE categories SET name = ?, status = ? WHERE id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -145,6 +173,9 @@ public class CategoryDAO extends BaseDAO {
                 }
             }
         }
+        // . Khi tạo danh mục mới, em dùng INSERT trong CategoryDAO.saveCategory (ghi danh mục) rồi lấy mã được
+        //   tạo bằng getGeneratedKeys (lấy mã của dòng vừa thêm). Em đặt mã vào category.id để phần lưu ảnh biết
+        //   ảnh thuộc danh mục nào.
         String sql = "INSERT INTO categories (name, status) VALUES (?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bindCategory(ps, category);
@@ -189,11 +220,12 @@ public class CategoryDAO extends BaseDAO {
         }
     }
 
+    // [DMAH03]
+    // . Ở updateCategoryStatus (lưu trạng thái ẩn/hiện danh mục) trong CategoryDAO.java, em nhận mã và trạng
+    //   thái từ AdminCategoriesController.toggle (ẩn hoặc hiện danh mục). Em sửa categories.status theo đúng
+    //   mã rồi trả kết quả về toggle để controller thông báo và mở lại danh sách đã cập nhật.
     public boolean updateCategoryStatus(int id, String status) throws SQLException, ClassNotFoundException {
-        // CA19: . cập nhật trạng thái của danh mục được chọn.
-        // .. trả kết quả cập nhật được hay không.
-        // ... Kết quả về AdminCategoriesController.toggle() [CA18].
-        // BF11: chỉ UPDATE status, không xóa danh mục/sản phẩm.
+
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement("UPDATE categories SET status = ? WHERE id = ?")) {
             ps.setString(1, status);
@@ -202,14 +234,11 @@ public class CategoryDAO extends BaseDAO {
         }
     }
 
-    /**
-     * Deletes a category together with its products in one transaction.
-     * Product rows that are referenced by order_items are protected by the
-     * foreign key so the transaction fails instead of destroying order history.
-     */
-    // CA21: . Xóa sản phẩm rồi danh mục trong một transaction.
-    // .. Thành công commit; lỗi SQL rollback; khóa ngoại bảo vệ sản phẩm có order_items.
-    // ... Trả kết quả về AdminCategoriesController.delete() [CA20].
+    // [DMX03]
+    // . Ở deleteCategoryAndProducts (xóa danh mục cùng sản phẩm đủ điều kiện) trong CategoryDAO.java, em
+    //   nhận mã danh mục từ AdminCategoriesController.delete (kiểm tra điều kiện rồi xóa). Em xóa các sản
+    //   phẩm thuộc nhóm rồi xóa danh mục, hoàn tất cả hai mới xác nhận. Nếu gặp lỗi thì hủy thay đổi và báo
+    //   kết quả về hàm delete.
     public boolean deleteCategoryAndProducts(int id) throws SQLException, ClassNotFoundException {
         if (id <= 0) throw new IllegalArgumentException("Category id must be positive.");
         try (Connection conn = getConnection()) {
@@ -234,11 +263,12 @@ public class CategoryDAO extends BaseDAO {
         }
     }
 
+    // [MNDM01]
+    // . Hàm getAllActiveCategoriesWithCount (đọc danh mục hoạt động kèm số món đang bán) trong
+    //   CategoryDAO.java được MenuController.doGet và index.jsp gọi để đọc danh mục cho khách xem. Em chỉ
+    //   lấy nhóm ACTIVE kèm số món đang bán, rồi trả danh sách về nơi gọi để dựng Menu hoặc Trang chủ.
     public List<Category> getAllActiveCategoriesWithCount() {
-        // MN03: . lấy những danh mục đang được phép hiển thị cho khách.
-        // .. Mỗi danh mục đi kèm số món để giao diện hiển thị.
-        // ... Danh sách về MenuController [MN02]; trang chủ cũng gọi hàm này.
-        // BF10/BF11: danh mục công khai lấy ACTIVE; dùng ở trang chủ và menu.
+
         List<Category> list = new ArrayList<>();
         String sql = "SELECT c.id, c.name, c.status, c.image_url, " +
                      "(ci.category_id IS NOT NULL) AS has_stored_image, COUNT(p.id) AS product_count " +
@@ -262,10 +292,12 @@ public class CategoryDAO extends BaseDAO {
         return list;
     }
 
+    // [DMDOC01]
+    // . Hàm getCategoryById (đọc danh mục theo mã) trong CategoryDAO.java nhận mã từ phần sửa, xóa danh mục
+    //   hoặc lưu sản phẩm. Em đọc danh mục cùng ảnh rồi trả Category về controller đang gọi để điền form,
+    //   kiểm tra trước khi xóa hoặc gán sản phẩm vào nhóm.
     public Category getCategoryById(int id) {
-        // CA02c: . SELECT danh mục theo id, kèm thông tin có ảnh lưu trong category_images.
-        // .. Có dữ liệu trả Category; không có hoặc lỗi đọc trả null.
-        // ... AdminCategoriesController.doGet() [CA02b] điền selectedCategory vào form [CA04]; hàm cũng dùng khi kiểm tra/lưu danh mục.
+
         String sql = "SELECT c.id, c.name, c.status, c.image_url, "
                 + "(ci.category_id IS NOT NULL) AS has_stored_image "
                 + "FROM categories c LEFT JOIN category_images ci ON ci.category_id = c.id WHERE c.id = ?";
@@ -279,15 +311,13 @@ public class CategoryDAO extends BaseDAO {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Could not load category", e);
         }
         return null;
     }
 
     public CategoryImage getCategoryImage(int categoryId) {
-        // IM02: . đọc nội dung và loại ảnh của danh mục trong cơ sở dữ liệu.
-        // .. trả ảnh nếu có, hoặc kết quả rỗng nếu chưa lưu ảnh.
-        // ... CategoryImage về CategoryImageController [IM01].
+
         String sql = "SELECT image_data, content_type FROM category_images WHERE category_id = ?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, categoryId);

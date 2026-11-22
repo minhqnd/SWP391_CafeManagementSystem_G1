@@ -237,7 +237,7 @@ public class CounterOrderController extends HttpServlet {
 
         // Đọc JSON payload từ request body nếu có, hoặc đọc parameter
         String rawBody = readRequestBody(request);
-        
+
         String orderType = "DINE_IN";
         String tableNumber = "";
         Integer customerId = null;
@@ -337,9 +337,6 @@ public class CounterOrderController extends HttpServlet {
 
         String paymentNote = "Thanh toán tại quầy qua " + ("BANK_TRANSFER".equals(paymentMethod) ? "VietQR" : "Tiền mặt");
 
-        // CT01: . Ở đây em tính lại tiền hàng và điểm dùng khi thu ngân tạo đơn tại quầy.
-        // .. Em gửi thông tin đã kiểm tra sang phần lưu đơn và thanh toán.
-        // ... OrderDAO.createCounterOrder(đơn, món, cách trả, điểm dùng, ghi chú, quy tắc) [CT02].
         int orderId = orderDAO.createCounterOrder(order, items, paymentMethod, pointsUsed, paymentNote, settings);
 
         String qrUrl = "";

@@ -7,6 +7,7 @@
 <fmt:formatNumber value="${settings.pointsEarnUnit}" pattern="0" var="pointsEarnUnitValue" />
 <fmt:formatNumber value="${settings.pointsStepValue}" pattern="0" var="pointsStepValue" />
 <c:set var="pointsStepInputValue" value="${settings.pointsStep}" />
+<%-- . Nếu lần lưu trước có lỗi, điền lại những gì người dùng đã nhập để họ sửa tiếp. --%>
 <c:if test="${not empty loyaltyRulesDraft}">
     <c:set var="pointsEarnUnitValue" value="${loyaltyRulesDraft.pointsEarnUnit}" />
     <c:set var="pointsStepInputValue" value="${loyaltyRulesDraft.pointsStep}" />
@@ -85,50 +86,44 @@
     <jsp:param name="activeMenu" value="loyalty" />
 </jsp:include>
 
+
 <main class="admin-main-wrapper loyalty-page">
-    <%-- MS02: . Vùng thông báo dùng chung cho lưu quy tắc và điều chỉnh điểm.
-         .. Giá trị thông báo được c:out escape trước khi hiển thị.
-         ... Thành công tại [MS03]; lỗi tại [MS04]. --%>
-    <%-- MS03: [SLBF12] Show success message
-         . Chỉ hiển thị thông báo đã lưu sau khi controller nhận kết quả thành công.
-         .. Đây là kết quả trả về, không tự lưu thêm dữ liệu. --%>
-    <c:if test="${not empty loyaltyMessage}"><div class="alert alert-success py-2 small"><c:out value="${loyaltyMessage}" /></div></c:if>
-    <%-- MS04: [SLBF12] Show error message
-         . Hiển thị lỗi kiểm tra, gửi lặp hoặc lưu thất bại.
-         .. Sai ở controller thì chưa gọi DAO; sai trong transaction thì DAO rollback [LP15].
-         ... Quy tắc sai giữ bản nháp [RU24]; cộng/trừ lại bắt đầu tại [LP01]. --%>
-    <c:if test="${not empty loyaltyError}"><div class="alert alert-danger py-2 small"><c:out value="${loyaltyError}" /></div></c:if>
+
+    <%-- [TDQT09]
+         . Khi admin-loyalty.jsp nhận dữ liệu trở lại, em hiện thông báo và điền ba ô bằng bộ quy tắc đã đọc.
+           Nếu lần lưu bị lỗi thì dùng bản nhập dở đã giữ cho các ô, để người dùng sửa rồi bấm Lưu quy tắc lần
+           nữa.
+    --%>
+    <c:if test="${not empty loyaltyMessage and empty loyaltyError}"><div data-form-notice class="alert alert-success py-2 small" role="status"><c:out value="${loyaltyMessage}" /></div></c:if>
+
+    <c:if test="${not empty loyaltyError}"><div data-form-notice class="alert alert-danger py-2 small" role="alert"><c:out value="${loyaltyError}" /></div></c:if>
     <section class="loyalty-panel loyalty-header">
         <span class="db-ref">Bảng: loyalty_transactions, users.total_points, shop_settings</span>
         <h1>Tích điểm theo số điện thoại</h1>
         <p>Khách hàng được nhận diện bằng số điện thoại; điểm tích khi đơn hoàn thành và đổi điểm để giảm giá.</p>
 
+
         <div class="stats-grid">
-            <%-- ST05: . hiển thị số khách đang có điểm.
-                 .. Chỉ khách có số dư lớn hơn không được tính.
-                 Nguồn: Nguồn số đếm: countCustomersWithPoints() [ST01]. --%>
+
+            <%-- [TDM04]
+                 . Bốn thẻ trên admin-loyalty.jsp nhận số khách có điểm, tổng điểm, tiền quy đổi và số giao dịch từ
+                   AdminLoyaltyController.doGet. Các giá trị customerCountWithPoints, totalPoints, totalPointValue và
+                   transactionCount đã được đọc hoặc tính trước khi đưa sang trang.
+            --%>
             <div class="stat-card"><span>Khách hàng có điểm</span><strong><fmt:formatNumber value="${customerCountWithPoints}" pattern="#,##0" /></strong></div>
-            <%-- ST06: . hiển thị tổng số điểm các khách đang giữ.
-                 .. Đây là cộng số dư để thống kê, không thưởng thêm điểm.
-                 Nguồn: Nguồn tổng điểm: LoyaltyTransactionDAO.getTotalPoints() [ST02]. --%>
+
             <div class="stat-card primary"><span>Tổng điểm lưu hành</span><strong><fmt:formatNumber value="${totalPoints}" pattern="#,##0" /></strong></div>
-            <%-- ST07: . hiển thị tiền giảm ước tính của tổng điểm lưu hành.
-                 .. Giá trị này phụ thuộc quy tắc đổi điểm hiện tại.
-                 Nguồn: Controller tính tại [ST03] → totalPointValue. --%>
+
             <div class="stat-card"><span>Giá trị quy đổi</span><strong><fmt:formatNumber value="${totalPointValue}" pattern="#,##0" />đ</strong></div>
-            <%-- ST08: . hiển thị số giao dịch điểm đã ghi nhận.
-                 .. Mỗi dòng lịch sử được tính là một giao dịch.
-                 Nguồn: Nguồn số đếm: countTransactions() [ST04]. --%>
+
             <div class="stat-card"><span>Giao dịch điểm</span><strong><fmt:formatNumber value="${transactionCount}" pattern="#,##0" /></strong></div>
         </div>
     </section>
 
     <div class="content-grid">
-        <%-- RU04: [SLBF12] Enter earn and redeem rules
-             . Form chỉnh ba quy tắc; action=updateRules, phone chỉ giữ khách đang xem.
-             .. Chưa ghi dữ liệu khi nhập; dữ liệu sai được giữ trong bản nháp.
-             ... Điền lần lượt mức tích [RU05], mốc đổi [RU06], tiền giảm [RU07], rồi bấm Lưu [RU08]. --%>
-        <form class="loyalty-panel content-card" method="post" action="${ctx}/admin/loyalty" novalidate>
+
+
+        <form data-admin-form="loyalty" class="loyalty-panel content-card" method="post" action="${ctx}/admin/loyalty" novalidate>
             <input type="hidden" name="action" value="updateRules">
             <input type="hidden" name="csrfToken" value="${sessionScope.loyaltyCsrfToken}">
             <input type="hidden" name="operationToken" value="${sessionScope.loyaltyOperationToken}">
@@ -136,85 +131,131 @@
             <h2 class="section-title">Quy tắc tích &amp; đổi điểm</h2>
             <div class="rules-grid">
                 <label class="field-label">Số tiền chi tiêu để nhận 1 điểm (VNĐ)<span class="field-column">points_earn_unit</span>
-                    <%-- RU05: . Ô pointsEarnUnit nhận mức chi tiêu để được 1 điểm, từ 1 đến 100.000.000.
-                         .. Được nhập quá giới hạn để server báo đỏ; chưa lưu khi nhập.
-                         ... Nhập tiếp mốc đổi [RU06]; bấm Lưu tại [RU08], server đọc trường này tại [RU15]. --%>
+
+                    <%-- [TDTICH01]
+                         . Ô Tiền chi tiêu nhận một điểm trong admin-loyalty.jsp gửi giá trị bằng tên pointsEarnUnit. Khi
+                           bấm Lưu quy tắc, doPost trong AdminLoyaltyController.java gọi updateRules (kiểm tra và lưu quy
+                           tắc tích/đổi điểm) rồi ruleValue (đọc và kiểm tra một ô quy tắc) để kiểm tra số này trước khi lưu
+                           cùng hai ô còn lại.
+                         ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDTICH02].
+                    --%>
                     <input class="loyalty-input ${not empty loyaltyFieldErrors.pointsEarnUnit ? 'is-invalid' : ''}" name="pointsEarnUnit" type="text" inputmode="numeric" value="${fn:escapeXml(pointsEarnUnitValue)}" aria-invalid="${not empty loyaltyFieldErrors.pointsEarnUnit}" aria-describedby="earnUnitError" required>
                     <div id="earnUnitError" class="text-danger small"><c:out value="${loyaltyFieldErrors.pointsEarnUnit}" /></div>
                 </label>
                 <label class="field-label">Số điểm cho mỗi lần đổi<span class="field-column">points_step</span>
-                    <%-- RU06: . Ô pointsStep nhận số điểm mỗi mốc, từ 1 đến 1.000.000.
-                         .. Đây là số nguyên theo mốc đổi, không phải số điểm cộng/trừ thủ công.
-                         ... Nhập tiền giảm [RU07]; gửi bằng nút [RU08], server đọc tại [RU16]. --%>
+
+                    <%-- [TDMOC01]
+                         . Ô Số điểm mỗi lần đổi trong admin-loyalty.jsp gửi bằng tên pointsStep. Khi bấm Lưu quy tắc,
+                           doPost trong AdminLoyaltyController.java gọi updateRules (kiểm tra và lưu quy tắc tích/đổi điểm)
+                           rồi ruleValue (đọc và kiểm tra một ô quy tắc) để kiểm tra mốc đổi hợp lệ trước khi thay bộ quy
+                           tắc.
+                         ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDMOC02].
+                    --%>
                     <input class="loyalty-input ${not empty loyaltyFieldErrors.pointsStep ? 'is-invalid' : ''}" name="pointsStep" type="text" inputmode="numeric" value="${fn:escapeXml(pointsStepInputValue)}" aria-invalid="${not empty loyaltyFieldErrors.pointsStep}" aria-describedby="pointsStepError" required>
                     <div id="pointsStepError" class="text-danger small"><c:out value="${loyaltyFieldErrors.pointsStep}" /></div>
                 </label>
                 <label class="field-label">Số tiền giảm cho mỗi lần đổi (VNĐ)<span class="field-column">points_step_value</span>
-                    <%-- RU07: . Ô pointsStepValue nhận tiền giảm cho mỗi mốc, từ 0 đến 100.000.000.
-                         .. Cho phép 0; không nhận số âm, số lẻ, chữ hoặc dạng 1e3.
-                         ... Bấm Lưu quy tắc [RU08]; server đọc trường tại [RU17]. --%>
+
+                    <%-- [TDGT01]
+                         . Ô Tiền giảm mỗi lần đổi trong admin-loyalty.jsp gửi bằng tên pointsStepValue. Khi bấm Lưu quy
+                           tắc, doPost trong AdminLoyaltyController.java gọi updateRules (kiểm tra và lưu quy tắc tích/đổi
+                           điểm) rồi ruleValue (đọc và kiểm tra một ô quy tắc) để kiểm tra tiền giảm trước khi lưu cùng hai
+                           quy tắc còn lại.
+                         ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDGT02].
+                    --%>
                     <input class="loyalty-input ${not empty loyaltyFieldErrors.pointsStepValue ? 'is-invalid' : ''}" name="pointsStepValue" type="text" inputmode="numeric" value="${fn:escapeXml(pointsStepValue)}" aria-invalid="${not empty loyaltyFieldErrors.pointsStepValue}" aria-describedby="stepValueError" required>
                     <div id="stepValueError" class="text-danger small"><c:out value="${loyaltyFieldErrors.pointsStepValue}" /></div>
                 </label>
             </div>
+            <%-- [TDVD01]
+         . Dòng ví dụ dưới form dùng bộ settings đã đọc từ ShopSettingDAO.getSettingsStrict (đọc các thiết lập đang
+                   lưu) để diễn giải quy tắc đang lưu: chi bao nhiêu nhận một điểm, đổi bao nhiêu điểm được giảm bao
+                   nhiêu tiền. Khi nhập sai, các ô giữ bản đang nhập nhưng dòng ví dụ vẫn phản ánh quy tắc cũ chưa bị
+                   thay.
+            --%>
             <p class="rule-example">
                 Tích điểm: chi <strong><fmt:formatNumber value="${settings.pointsEarnUnit}" pattern="#,##0" />đ</strong> nhận <strong>1 điểm</strong>.
                 Đổi điểm: dùng <strong>${settings.pointsStep} điểm</strong> được giảm
                 <strong><fmt:formatNumber value="${settings.pointsStepValue}" pattern="#,##0" />đ</strong>.
             </p>
             <div class="save-row">
-                <%-- RU08: [SLBF12] Click "Save Rules"
-                     . Submit ba ô quy tắc cùng csrfToken và operationToken; form novalidate để server báo lỗi từng ô.
-                     .. Không có JavaScript xử lý submit quy tắc; trình duyệt gửi POST trực tiếp.
-                     ... AdminLoyaltyController.doPost() [RU09] nhận POST /admin/loyalty. --%>
+
+                <%-- [TDQT01]
+         . Em bắt đầu từ nút Lưu quy tắc trong admin-loyalty.jsp. Khi bấm, admin-form-validation.js kiểm tra
+           ba ô ngay trên trang. Đúng thì form gửi tiền chi tiêu nhận một điểm, mốc đổi và tiền giảm tới
+           AdminLoyaltyController.doPost qua /admin/loyalty, kèm action=updateRules để chọn thao tác lưu.
+                     ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDQT02].
+                --%>
                 <button class="save-btn" type="submit"><span class="material-symbols-outlined" style="font-size:15px">save</span>Lưu quy tắc</button>
             </div>
         </form>
 
         <section class="loyalty-panel content-card">
             <h2 class="section-title">Tra cứu &amp; điều chỉnh điểm</h2>
-            <%-- CU01: . Form tra cứu dùng GET, chỉ đọc khách hàng và không đổi điểm.
-                 ... Nhập ô SĐT [CU02] rồi bấm Tra cứu [CU03]. --%>
+
+
             <form class="search-form" method="get" action="${ctx}/admin/loyalty" novalidate>
-                <%-- CU02: [SLBF12] Enter customer phone number
-                     . Ô phone nhận SĐT cần tra; cho nhập dữ liệu sai để server báo lỗi.
-                     ... Bấm Tra cứu [CU03] mới gửi dữ liệu; doGet() kiểm tra tại [CU04]. --%>
+
+                <%-- [TDSDT01]
+                     . Ô Số điện thoại gửi phone khi bấm Tra cứu. AdminLoyaltyController.doGet bỏ các dấu phân cách được hỗ
+                       trợ rồi kiểm tra đủ 10 chữ số, bắt đầu bằng 0. Số đúng mới dùng để tìm khách; sai thì hiện
+                       lookupError và không chọn nhầm khách mặc định.
+                     ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDSDT02].
+                --%>
                 <input class="loyalty-input ${not empty lookupError ? 'is-invalid' : ''}" type="tel" name="phone" value="${fn:escapeXml(searchPhone)}" aria-label="Số điện thoại" aria-invalid="${not empty lookupError}" placeholder="Nhập số điện thoại..." required>
-                <%-- CU03: [SLBF12] Click "Search"
-                     . Submit GET /admin/loyalty?phone=...; không chạy JavaScript trước khi gửi.
-                     ... AdminLoyaltyController.doGet() xử lý SĐT tại [CU04]. --%>
+
+                <%-- [TDTK01]
+                     . Em bắt đầu từ nút Tra cứu trong admin-loyalty.jsp. Khi bấm, form gửi phone tới
+                       AdminLoyaltyController.doGet qua /admin/loyalty để kiểm tra số và gọi
+                       LoyaltyTransactionDAO.findCustomerByPhone tìm đúng khách cần xem điểm.
+                     ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDTK02].
+                --%>
                 <button class="search-btn" type="submit">Tra cứu</button>
             </form>
             <c:if test="${not empty lookupError}"><div class="alert alert-warning py-2 px-3 mt-2 mb-0 small"><c:out value="${lookupError}" /></div></c:if>
             <c:if test="${not empty activeCustomer}">
               <div class="customer-box">
-                <%-- CU10: [SLBF12] Show customer information and point balance
-                     . Hiển thị tên, SĐT và email của activeCustomer do controller trả về.
-                     .. Các dữ liệu hiển thị được escape; chỉ có khách mới hiện nút Cộng/Trừ.
-                     ... Xem số dư [LP18] và chi tiêu [CU11]; điều chỉnh bắt đầu từ nút [LP01]. --%>
+
+                <%-- [TDTK05]
+                     . Khi admin-loyalty.jsp nhận activeCustomer, em hiện tên, số điện thoại và email của khách tìm được.
+                       Em đồng thời đặt mã của khách vào form điều chỉnh để các lần bấm Cộng hoặc Trừ gửi đúng người đang
+                       hiển thị.
+                --%>
                 <h3><c:out value="${activeCustomer.fullName}" /></h3>
                 <p class="customer-contact"><c:out value="${activeCustomer.phone}" /> • <c:out value="${activeCustomer.email}" /></p>
-                <%-- LP18: [SLBF12] Show updated balance and transaction history
-                     . Hiển thị số dư mới của activeCustomer và tiền quy đổi sau khi đọc lại database.
-                     .. Nhật ký bên dưới là 50 giao dịch toàn hệ thống, không chỉ riêng khách đang tra.
-                     ... Các dòng nhật ký hiển thị tại [HI05]; điều chỉnh tiếp bắt đầu từ [LP01]. --%>
+
                 <div class="customer-metrics">
+                    <%-- [TDSD02]
+                         . Ở admin-loyalty.jsp, em lấy số dư từ activeCustomer.totalPoints và tiền có thể đổi từ
+                           customerPointValue. doGet trong AdminLoyaltyController.java đã tính số tiền theo quy tắc hiện tại
+                           rồi đưa sang, để người dùng đối chiếu điểm với giá trị được giảm.
+                    --%>
                     <div class="customer-metric"><span>Điểm hiện có</span><strong style="color:#a51225"><fmt:formatNumber value="${activeCustomer.totalPoints}" pattern="#,##0" /></strong><small>= <fmt:formatNumber value="${customerPointValue}" pattern="#,##0" />đ</small></div>
-                    <%-- CU11: . Hiển thị tổng chi tiêu và thời điểm đơn gần nhất của đúng khách đang xem.
-                         .. Đây là dữ liệu tham khảo, không phải số tiền dùng để tính điểm tại trang này.
-                         ... Dữ liệu từ DAO [CU07]; thao tác điều chỉnh qua [LP01]. --%>
+
+                    <%-- [TDCT03]
+                         . Phần hoạt động mua trong admin-loyalty.jsp lấy dữ liệu từ customerActivity. Trước đó
+                           AdminLoyaltyController.doGet đã gọi LoyaltyTransactionDAO.getCustomerActivity (đọc tổng tiền mua
+                           và ngày có đơn gần nhất) theo mã khách để đọc tổng tiền đã mua và ngày có đơn gần nhất rồi đưa
+                           sang đây.
+                    --%>
                     <div class="customer-metric"><span>Tổng chi tiêu</span><strong><fmt:formatNumber value="${customerActivity.totalSpent}" pattern="#,##0" />đ</strong><small><c:choose><c:when test="${not empty customerActivity.lastOrderAt}">Đơn gần nhất <fmt:formatDate value="${customerActivity.lastOrderAt}" pattern="dd/MM/yyyy HH:mm" /></c:when><c:otherwise>Chưa có đơn</c:otherwise></c:choose></small></div>
                 </div>
-                <%-- LP01: [SLBF12] Select "Add Points" or "Subtract Points"
-                     . Hai nút gọi submitAdjustment(add/subtract), chưa tự sửa số dư.
-                     ... submitAdjustment() [LP02] mở hộp nhập số điểm. --%>
+
                 <div class="adjust-row">
+                    <%-- [TDC01]
+                         . Khi bấm Cộng điểm trong admin-loyalty.jsp, em gọi submitAdjustment ngay trong file và truyền add
+                           để nhập rồi gửi số điểm cần cộng. Hàm này dùng chung với nút Trừ điểm; loại thao tác quyết định
+                           sẽ cộng hay trừ cho khách đang xem.
+                    --%>
                     <button class="adjust-btn adjust-add" type="button" onclick="submitAdjustment('add')">Cộng điểm</button>
+                    <%-- [TDT01]
+                         . Khi bấm Trừ điểm trong admin-loyalty.jsp, em gọi submitAdjustment ngay trong file và truyền
+                           subtract để nhập rồi gửi số điểm cần trừ. Hàm dùng cùng mã khách đang xem; phía xử lý sẽ kiểm tra
+                           số dư trước khi cho phép trừ.
+                    --%>
                     <button class="adjust-btn adjust-subtract" type="button" onclick="submitAdjustment('subtract')">Trừ điểm</button>
                 </div>
-                <%-- LP03: . Form ẩn gửi action=adjust, customerId, phone, adjustType và points cùng hai token.
-                     .. customerId quyết định khách cần sửa; phone chỉ giữ kết quả tra cứu sau redirect.
-                     ... POST /admin/loyalty tới AdminLoyaltyController.doPost() [RU09] để kiểm tra quyền và chọn nhánh. --%>
+
                 <form id="adjustPointsForm" method="post" action="${ctx}/admin/loyalty">
                     <input type="hidden" name="action" value="adjust">
                     <input type="hidden" name="csrfToken" value="${sessionScope.loyaltyCsrfToken}">
@@ -235,25 +276,50 @@
             <table class="log-table">
                 <thead><tr><th>ID</th><th>Thời gian</th><th>Khách hàng</th><th>Loại</th><th class="text-end">Điểm biến động</th><th class="text-end">Số dư sau</th><th>Đơn hàng</th></tr></thead>
                 <tbody>
-                <%-- HI05: . Lặp transactions do controller nạp, tối đa 50 dòng mới nhất toàn hệ thống.
-                     .. Không có giao dịch thì hiện trạng thái danh sách trống.
-                     ... Mỗi dòng hiển thị tại [HI06]. --%>
+
+                <%-- [TDLS01]
+                     . Bảng lịch sử trong admin-loyalty.jsp lặp danh sách transactions do AdminLoyaltyController.doGet đưa
+                       sang. Danh sách này được đọc bằng LoyaltyTransactionDAO.findRecent (đọc các giao dịch điểm gần nhất)
+                       với giới hạn 50 giao dịch mới nhất, để người dùng kiểm tra lịch sử chung đã ghi.
+                --%>
                 <c:forEach var="tx" items="${transactions}">
                     <tr>
-                        <%-- HI06: . Hiển thị id, thời gian, tên/SĐT khách và mã đơn của từng giao dịch.
-                             .. Các ô lấy dữ liệu DAO đã JOIN, tên/SĐT và mã đơn được escape.
-                             ... Loại giao dịch [HI07], điểm có dấu và số dư sau [HI08]. --%>
+
+                        <%-- [TDLS03]
+                             . Mã, thời gian, tên và số điện thoại của dòng này lấy từ tx trong transactions.
+                               LoyaltyTransactionDAO.findDetailed (đọc lịch sử điểm kèm thông tin khách và đơn) đọc mã và
+                               thời gian từ loyalty_transactions, ghép users để có tên và số điện thoại rồi controller đưa
+                               danh sách về trang.
+                        --%>
                         <td class="mono text-muted">#${tx.id}</td>
                         <td class="mono text-muted"><fmt:formatDate value="${tx.createdAt}" pattern="dd/MM/yyyy HH:mm" /></td>
                         <td><span class="customer-name"><c:out value="${tx.customerName}" /></span><span class="customer-phone mono"><c:out value="${tx.customerPhone}" /></span></td>
-                        <%-- HI07: . Phân biệt EARN, REDEEM, REFUND và ADJUST từ transactionType.
-                             .. Điểm tăng hiện dấu +, điểm giảm giữ dấu âm; trang này chỉ ghi ADJUST khi điều chỉnh.
-                             ... Số dư sau giao dịch tại [HI08]; tích/đổi tự động thuộc luồng thanh toán, không chạy ở trang này. --%>
+
+                        <%-- [TDLS04]
+                             . Loại giao dịch lấy từ transactionType do findDetailed (đọc lịch sử điểm kèm thông tin khách
+                               và đơn) đọc: EARN là tích điểm, REDEEM là đổi điểm, REFUND là hoàn điểm, còn nhánh khác hiện
+                               điều chỉnh. Màu nền dựa theo dấu của pointsChange, không quyết định lại loại giao dịch.
+                        --%>
                         <td><span class="type-badge ${tx.pointsChange gt 0 ? 'type-earn' : 'type-redeem'}"><c:choose><c:when test="${tx.transactionType eq 'EARN'}">EARN - Tích điểm</c:when><c:when test="${tx.transactionType eq 'REDEEM'}">REDEEM - Đổi điểm</c:when><c:when test="${tx.transactionType eq 'REFUND'}">REFUND - Hoàn điểm</c:when><c:otherwise>ADJUST - Điều chỉnh</c:otherwise></c:choose></span></td>
+                        <%-- [TDLS05]
+                             . Điểm biến động lấy từ points_change của giao dịch. Số dương có dấu cộng và màu cộng điểm, số
+                               âm giữ dấu trừ và màu trừ điểm. Đây là lượng thay đổi của riêng giao dịch này, khác số dư
+                               điểm hiện tại của khách.
+                        --%>
                         <td class="text-end mono ${tx.pointsChange gt 0 ? 'points-plus' : 'points-minus'}">${tx.pointsChange gt 0 ? '+' : ''}${tx.pointsChange}</td>
-                        <%-- HI08: . Hiển thị balanceAfter được suy ngược tại DAO [HI04].
-                             .. Giao dịch không gắn đơn hiển thị Điều chỉnh thủ công ở cột Đơn hàng. --%>
+
+                        <%-- [TDSAU01]
+                             . Cột Số dư sau hiện tx.balanceAfter do LoyaltyTransactionDAO.findDetailed (đọc lịch sử điểm
+                               kèm thông tin khách và đơn) tính. Hàm đọc giao dịch mới nhất trước, bắt đầu từ điểm hiện tại
+                               của từng khách rồi lần ngược qua các biến động để tính số dư sau từng giao dịch.
+                             ... Đọc tiếp tại LoyaltyTransactionDAO.java, tìm [TDSAU02].
+                        --%>
                         <td class="text-end mono fw-bold"><fmt:formatNumber value="${tx.balanceAfter}" pattern="#,##0" /></td>
+                        <%-- [TDLS06]
+                             . Mã đơn lấy từ orderCode mà findDetailed (đọc lịch sử điểm kèm thông tin khách và đơn) ghép
+                               thêm từ bảng orders bằng order_id. Có mã thì trang hiện mã đơn; không có thì giao diện hiện
+                               Điều chỉnh thủ công. Thao tác cộng/trừ tại màn hình này ghi ADJUST và không gắn mã đơn.
+                        --%>
                         <td class="text-muted"><c:choose><c:when test="${not empty tx.orderCode}"><c:out value="${tx.orderCode}" /></c:when><c:otherwise>Điều chỉnh thủ công</c:otherwise></c:choose></td>
                     </tr>
                 </c:forEach>
@@ -263,12 +329,18 @@
         </div>
     </section>
 </main>
+<%-- . Ba ô quy tắc được kiểm tra ngay trên màn hình bằng tệp bên dưới, trước khi gửi sang controller.
+     ... Xem phần kiểm tra số quy tắc tại assets/js/admin-form-validation.js, tìm [TDKT01].
+--%>
+<script src="${ctx}/assets/js/admin-form-validation.js"></script>
 <script>
+    // [TDDC01]
+    // . Trong submitAdjustment của admin-loyalty.jsp, em nhận add hoặc subtract rồi mở hộp hỏi số điểm. Bấm
+    //   Hủy thì dừng; nhập số nguyên từ 1 đến 1.000.000 thì em điền mã khách, điểm và loại thao tác vào
+    //   form, gửi đến AdminLoyaltyController.doPost để kiểm tra và cập nhật.
+    // ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDDC02].
     function submitAdjustment(type) {
-        // LP02: [SLBF12] Enter adjustment points
-        // . Hộp prompt nhận số nguyên từ 1 đến 1.000.000; Cancel dừng thao tác.
-        // .. Sai định dạng/ngoài giới hạn thì alert và chưa gửi POST.
-        // ... Hợp lệ gán adjustType và points vào form [LP03] rồi submit tới doPost() [RU09].
+
         const label = type === 'add' ? 'cộng' : 'trừ';
         const raw = window.prompt('Nhập số điểm muốn ' + label + ':', '10');
         if (raw === null) return;

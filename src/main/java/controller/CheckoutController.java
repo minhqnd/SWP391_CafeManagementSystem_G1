@@ -179,11 +179,6 @@ public class CheckoutController extends HttpServlet {
         order.setScheduledAt(scheduledAt);
         order.setOrderNote(orderNote.isEmpty() ? null : orderNote);
 
-        // Khách quay lại sửa giỏ rồi xác nhận lại: huỷ đơn chờ thanh toán trước đó (hoàn điểm nếu có)
-        // để không sinh nhiều đơn "Chờ thanh toán" cho cùng một giỏ hàng
-        // RD04: . Ở đây em gửi đơn, các món đã chọn và điểm dùng sang phần lưu đơn.
-        // .. Lưu được thì nhận mã đơn; thiếu hàng hoặc thiếu điểm thì quay lại báo khách.
-        // ... OrderDAO.placeOrder(đơn, món, điểm dùng) [RD05] → trang thanh toán; QR [EA01], COD [CD01].
         int orderId;
         synchronized (session) {
             Object duplicateToken = session.getAttribute(LAST_CHECKOUT_TOKEN);
@@ -326,7 +321,6 @@ public class CheckoutController extends HttpServlet {
         }
         return scheduled;
     }
-
 
     private String paramOrDefault(HttpServletRequest request, String name, String defaultValue) {
         String value = request.getParameter(name);

@@ -3,9 +3,8 @@ package model;
 import java.math.BigDecimal;
 import java.util.List;
 
-/** View data for one product card on the admin recipe screen. */
 public class RecipeProductSummary {
-    // BF11: dữ liệu hiển thị một thẻ món/BOM/giá vốn; model này không tự truy vấn database.
+
     private final Product product;
     private final List<IngredientLine> ingredientLines;
     private final BigDecimal recipeCost;
@@ -38,8 +37,13 @@ public class RecipeProductSummary {
         public String getUnit() { return ingredient.getUnit(); }
         public double getQuantity() { return ingredient.getQuantityRequired(); }
         public boolean isCostAvailable() { return unitCost != null; }
+        // [CTGT03]
+        // . Khi admin-recipes.jsp đọc line.lineCost, hàm getLineCost (tính chi phí của một dòng nguyên liệu) lấy
+        //   đơn giá nhân định lượng của nguyên liệu mà controller đã đưa vào IngredientLine. Có giá thì trả chi
+        //   phí để hiện trên thẻ món; thiếu đơn giá thì trả null và isCostAvailable (kiểm tra nguyên liệu đã có
+        //   đơn giá chưa) giúp trang hiện chưa có giá.
         public BigDecimal getLineCost() {
-            // BF11: chi phí một dòng = lượng cần cho một phần x đơn giá nhập; thiếu giá trả null.
+
             return unitCost == null
                     ? null
                     : unitCost.multiply(BigDecimal.valueOf(ingredient.getQuantityRequired()));

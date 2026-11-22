@@ -9,12 +9,15 @@ import model.CategoryImage;
 
 import java.io.IOException;
 
-// BF11 - ĐỌC ẢNH: GET /category-image?id=... trả BLOB ảnh từ category_images, không trả trang HTML.
 @WebServlet(name = "CategoryImageController", urlPatterns = {"/category-image"})
 public class CategoryImageController extends HttpServlet {
     private final CategoryDAO categoryDAO = new CategoryDAO();
 
     @Override
+    // [DMAN03]
+    // . Để hiện ảnh danh mục, thẻ img gửi mã danh mục tới doGet trong CategoryImageController.java. Em
+    //   truyền mã này vào CategoryDAO.getCategoryImage (đọc ảnh đang lưu của danh mục) để đọc ảnh, rồi gửi
+    //   nội dung ảnh về trình duyệt cho đúng hàng danh mục.
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         int categoryId;
         try {
@@ -27,9 +30,7 @@ public class CategoryImageController extends HttpServlet {
 
         CategoryImage image;
         try {
-            // IM01: . Ở đây em nhận yêu cầu tải ảnh danh mục và kiểm tra mã danh mục.
-            // .. Có ảnh thì trả nội dung ảnh cho trình duyệt; không có thì báo không tìm thấy.
-            // ... categoryDAO.getCategoryImage(mã danh mục) [IM02] → ghi byte ảnh vào response.
+
             image = categoryDAO.getCategoryImage(categoryId);
         } catch (RuntimeException e) {
             getServletContext().log("Failed to load category image " + categoryId, e);

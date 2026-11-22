@@ -171,9 +171,7 @@ public class Cart implements Serializable {
      * Trả về false nếu đã phải điều chỉnh.
      */
     public boolean normalizePointsUsed() {
-        // RD06: . Ở đây em đưa số điểm đang dùng về mức hợp lệ theo số dư, tiền hàng và mốc đổi.
-        // .. Nếu phải giảm số điểm thì em trả kết quả để giao diện nhắc khách kiểm tra lại.
-        // ... getMaxRedeemablePoints() dùng [CF03]; getDiscount() dùng [CF02]; kết quả về CartService [RD03].
+
         int validPoints = Math.min(pointsUsed, getMaxRedeemablePoints());
         if (settings.getPointsStep() > 0) {
             validPoints -= validPoints % settings.getPointsStep();

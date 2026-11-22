@@ -391,6 +391,12 @@
                                         Thực đơn Aura Café
                                     </c:otherwise>
                                 </c:choose>
+                                <%-- [MNSO01]
+                                     . Số món cạnh tiêu đề là products.size của danh sách sau khi lọc, do
+                                       MenuController.doGet đọc qua ProductDAO.filterProducts (lọc món còn bán theo danh mục
+                                       và từ khóa). Vì vậy số này thay đổi theo danh mục và từ khóa, không phải tổng mọi sản
+                                       phẩm trong bảng.
+                                --%>
                                 <span class="text-muted fs-6 fw-normal ms-2">(${products.size()} món)</span>
                             </h1>
                             <p class="text-muted small mb-0">Hương vị cà phê đặc sản và trà hảo hạng pha chế thủ công.
@@ -399,9 +405,12 @@
 
                         <!-- Menu Search Box -->
                         <div class="menu-search-container flex-grow-1 flex-md-grow-0">
-                            <%-- MN06: . hiển thị menu và cho khách tìm món theo danh mục hoặc từ khóa.
-                                 .. Bấm tìm thì gửi điều kiện lọc; chọn đồ uống thì có thể mở hộp chọn size và topping.
-                                 ... GET /menu → MenuController.doGet() [MN02]; hộp chọn món bắt đầu tại [MN08]. --%>
+
+                            <%-- [MNTK01]
+                                 . Khi tìm kiếm trên menu.jsp, form gửi keyword và category đến MenuController.doGet qua
+                                   /menu. Controller truyền hai giá trị vào ProductDAO.filterProducts (lọc món còn bán theo
+                                   danh mục và từ khóa) để đọc món khớp điều kiện rồi đưa danh sách về menu.jsp để hiển thị.
+                            --%>
                             <form action="${pageContext.request.contextPath}/menu" method="GET"
                                 class="position-relative w-100">
                                 <c:if test="${not empty currentCategory}">
@@ -414,6 +423,11 @@
                                     placeholder="Tìm tên món, trà, cà phê..." autocomplete="off">
                                 <c:choose>
                                     <c:when test="${not empty currentKeyword}">
+                                        <%-- [MNX01]
+                                             . Dấu x trong ô tìm kiếm mở lại Menu không có keyword nhưng giữ category.
+                                               MenuController.doGet đọc lại món trong danh mục đang chọn, không còn giới hạn
+                                               theo từ khóa vừa xóa.
+                                        --%>
                                         <a href="${pageContext.request.contextPath}/menu${not empty currentCategory ? '?category=' : ''}${currentCategory}"
                                             class="menu-search-btn-clear" title="Xoá tìm kiếm">
                                             <span class="material-symbols-outlined fs-5">close</span>
@@ -439,6 +453,11 @@
                                     <span>Danh mục: <c:forEach var="c" items="${categories}">
                                             <c:if test="${c.id == currentCategory}">${c.name}</c:if>
                                         </c:forEach></span>
+                                    <%-- [MNX02]
+                                         . Dấu x ở nhãn Danh mục bỏ category khỏi đường dẫn nhưng giữ keyword.
+                                           MenuController.doGet tìm lại từ khóa trên các danh mục hoạt động, thay vì chỉ
+                                           trong nhóm vừa chọn; dữ liệu sản phẩm không bị xóa.
+                                    --%>
                                     <a href="${pageContext.request.contextPath}/menu${not empty currentKeyword ? '?keyword=' : ''}${currentKeyword}"
                                         class="text-muted text-decoration-none ms-1">
                                         <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
@@ -450,12 +469,21 @@
                                     class="badge bg-white text-dark border px-2.5 py-1.5 rounded-pill d-inline-flex align-items-center gap-1 shadow-sm"
                                     style="font-weight: 500;">
                                     <span>Từ khóa: "${currentKeyword}"</span>
+                                    <%-- [MNX03]
+                                         . Dấu x ở nhãn Từ khóa bỏ keyword nhưng giữ category rồi mở lại Menu.
+                                           MenuController.doGet đọc lại các món còn bán theo danh mục hiện tại.
+                                    --%>
                                     <a href="${pageContext.request.contextPath}/menu${not empty currentCategory ? '?category=' : ''}${currentCategory}"
                                         class="text-muted text-decoration-none ms-1">
                                         <span class="material-symbols-outlined" style="font-size: 15px;">close</span>
                                     </a>
                                 </span>
                             </c:if>
+                            <%-- [MNX04]
+                                 . Xóa tất cả bỏ cả từ khóa lẫn danh mục bằng cách mở /menu không có tham số.
+                                   MenuController.doGet gọi ProductDAO.filterProducts (lọc món còn bán theo danh mục và từ
+                                   khóa) không kèm điều kiện để hiện lại toàn bộ món còn bán trong danh mục hoạt động.
+                            --%>
                             <a href="${pageContext.request.contextPath}/menu"
                                 class="btn btn-sm btn-link text-danger text-decoration-none p-0 ms-2 small fw-semibold">
                                 Xoá tất cả
@@ -467,10 +495,14 @@
                     <c:choose>
                         <c:when test="${not empty products}">
                             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="productsGrid">
-                                <%-- MN07: [SLBF11] Display product on the menu
-                                     . Lặp products được MenuController nạp và hiển thị thẻ từng món.
-                                     .. Chỉ sản phẩm đang bán trong danh mục ACTIVE được truy vấn; không kiểm tra đã có công thức.
-                                     ... Dữ liệu từ filterProducts() [MN04] → controller [MN05] → giao diện. --%>
+
+                                <%-- [MNDS01]
+                                     . Danh sách món trong menu.jsp lấy từ products do MenuController.doGet đưa sang sau khi
+                                       gọi ProductDAO.filterProducts (lọc món còn bán theo danh mục và từ khóa). Em lặp từng
+                                       sản phẩm và đưa vào product_card.jsp để dựng thẻ món đã thỏa điều kiện bán cùng bộ
+                                       lọc đang chọn.
+                                     ... Đọc tiếp tại ProductDAO.java, tìm [MNDS02].
+                                --%>
                                 <c:forEach var="p" items="${products}">
                                     <div class="col">
                                         <c:set var="product" value="${p}" scope="request" />
@@ -487,6 +519,10 @@
                                 <h3 class="h5 fw-bold mb-2">Không tìm thấy món phù hợp</h3>
                                 <p class="text-muted small mb-4">Vui lòng thử tìm với từ khoá khác hoặc xem toàn bộ danh
                                     mục thực đơn.</p>
+                                <%-- [MNX05]
+                                     . Khi không có kết quả, nút Xem tất cả món mở /menu không kèm từ khóa hoặc danh mục để
+                                       MenuController.doGet đọc lại danh sách còn bán.
+                                --%>
                                 <a href="${pageContext.request.contextPath}/menu"
                                     class="btn btn-danger btn-sm px-4 py-2 rounded-pill fw-semibold">
                                     Xem tất cả món
@@ -548,6 +584,10 @@
 
                     var openCartModal = openSelectedItemsModal;
 
+                    // [MNBM02]
+                    // . Nút Danh mục sản phẩm trên Menu thêm hoặc bỏ class show của menuCategoryDropdown, đồng thời đổi
+                    //   aria-expanded. Nếu đường dẫn có phần #menuCategoryDropdown thì mở sẵn danh sách. Đây chỉ là mở bộ
+                    //   chọn; bấm tên danh mục mới gửi điều kiện lọc tới controller.
                     const menuCategoryPicker = document.getElementById('menuCategoryDropdown');
                     const menuCategoryToggle = document.querySelector('.menu-category-toggle');
                     if (menuCategoryPicker && menuCategoryToggle) {

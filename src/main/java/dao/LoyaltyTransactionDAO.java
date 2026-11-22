@@ -21,17 +21,24 @@ public class LoyaltyTransactionDAO extends BaseDAO {
         return findDetailed("WHERE lt.customer_id = ?", customerId, 100);
     }
 
+    // [TDM03]
+    // . Trong findRecent (đọc các giao dịch điểm gần nhất) của LoyaltyTransactionDAO.java, em nhận giới hạn
+    //   50 từ AdminLoyaltyController.doGet. Em gọi findDetailed (đọc lịch sử điểm kèm thông tin khách và
+    //   đơn) ngay trong file để đọc 50 giao dịch gần nhất, rồi trả danh sách về controller để hiện bảng lịch
+    //   sử chung.
     public List<LoyaltyTransaction> findRecent(int limit) throws SQLException {
-        // HI02: . Yêu cầu danh sách toàn hệ thống, không lọc theo khách đang tra.
-        // ... findDetailed() [HI03] JOIN dữ liệu và giới hạn số dòng.
+
         return findDetailed("", null, limit);
     }
 
+    // [TDLS02]
+    // . Ở findDetailed (đọc lịch sử điểm kèm thông tin khách và đơn) trong LoyaltyTransactionDAO.java, em
+    //   nhận điều kiện, mã khách và giới hạn từ findRecent (đọc các giao dịch điểm gần nhất) hoặc
+    //   findByCustomer (đọc lịch sử điểm của một khách). Em đọc loyalty_transactions kèm tên, số điện thoại
+    //   và mã đơn rồi trả danh sách về hàm đã gọi để đưa lên màn hình.
     private List<LoyaltyTransaction> findDetailed(String whereClause, Integer customerId, int limit)
             throws SQLException {
-        // HI03: . JOIN loyalty_transactions với users và LEFT JOIN orders, sắp mới nhất trước.
-        // .. Giao dịch điều chỉnh không gắn đơn vẫn được giữ trong danh sách.
-        // ... Tính số dư sau từng dòng tại [HI04], trả transactions về controller [HI01] → JSP [HI05].
+
         String sql = "SELECT lt.id, lt.customer_id, lt.order_id, lt.points_change, "
                 + "lt.transaction_type, lt.created_at, u.full_name, u.phone, u.total_points, o.order_code "
                 + "FROM loyalty_transactions lt JOIN users u ON u.id = lt.customer_id "
@@ -47,6 +54,11 @@ public class LoyaltyTransactionDAO extends BaseDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     int ownerId = rs.getInt("customer_id");
+                    // [TDSAU02]
+                    // . Trong findDetailed (đọc lịch sử điểm kèm thông tin khách và đơn), giao dịch được đọc từ mới tới cũ.
+                    //   Với mỗi khách, em bắt đầu bằng users.total_points rồi dùng làm balanceAfter của dòng mới nhất. Sau
+                    //   khi đưa số dư vào dòng, em trừ pointsChange để có số dư cho giao dịch cũ tiếp theo của khách.
+                    //   runningBalance giữ riêng theo ownerId để các khách không bị lẫn số dư.
                     int balanceAfter = runningBalance.computeIfAbsent(ownerId,
                             ignored -> getIntQuietly(rs, "total_points"));
                     LoyaltyTransaction row = new LoyaltyTransaction(
@@ -56,9 +68,7 @@ public class LoyaltyTransactionDAO extends BaseDAO {
                     row.setCustomerName(rs.getString("full_name"));
                     row.setCustomerPhone(rs.getString("phone"));
                     row.setOrderCode(rs.getString("order_code"));
-                    // HI04: . Bắt đầu từ số dư hiện tại, suy ngược biến động mới hơn theo từng khách.
-                    // .. balanceAfter là số dư sau giao dịch đang duyệt, không cập nhật users.
-                    // ... Danh sách trả về JSP [HI05], cột số dư hiển thị tại [HI08].
+
                     row.setBalanceAfter(balanceAfter);
                     runningBalance.put(ownerId, balanceAfter - row.getPointsChange());
                     rows.add(row);
@@ -78,24 +88,23 @@ public class LoyaltyTransactionDAO extends BaseDAO {
         }
     }
 
+    // [TDTS02]
+    // . Để cung cấp số liệu cho AdminLoyaltyController.doGet, các hàm trong LoyaltyTransactionDAO.java lần
+    //   lượt đếm khách có điểm, cộng tổng điểm và đếm giao dịch. Em trả các số về controller qua
+    //   countCustomersWithPoints (đếm khách đang có điểm), getTotalPoints (cộng tổng điểm hiện tại của
+    //   khách) và countTransactions (đếm các giao dịch điểm) để hiện thẻ tổng quan.
     public long countCustomersWithPoints() throws SQLException {
-        // ST01: . đếm số khách có điểm lớn hơn không.
-        // .. Kết quả là số khách có điểm, không phải số điểm.
-        // ... Trả số đếm về Controller → ô thống kê [ST05].
+
         return queryLong("SELECT COUNT(*) FROM users WHERE role='CUSTOMER' AND total_points > 0");
     }
 
     public long getTotalPoints() throws SQLException {
-        // ST02: . cộng số dư điểm của tất cả khách.
-        // .. Chưa có dữ liệu thì kết quả bằng không.
-        // ... Trả tổng về Controller → ô thống kê [ST06].
+
         return queryLong("SELECT COALESCE(SUM(total_points),0) FROM users WHERE role='CUSTOMER'");
     }
 
     public long countTransactions() throws SQLException {
-        // ST04: . đếm các dòng lịch sử điểm.
-        // .. Bao gồm tích, đổi, hoàn và điều chỉnh.
-        // ... Trả số đếm về Controller → ô thống kê [ST08].
+
         return queryLong("SELECT COUNT(*) FROM loyalty_transactions");
     }
 
@@ -109,10 +118,13 @@ public class LoyaltyTransactionDAO extends BaseDAO {
         }
     }
 
+    // [TDTK03]
+    // . Trong findCustomerByPhone của LoyaltyTransactionDAO.java, em nhận số điện thoại đã kiểm tra và tìm
+    //   tài khoản CUSTOMER trong users. Tìm được thì trả User về doGet; không có thì trả null để controller
+    //   hiện thông báo không tìm thấy khách.
+    // ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDTK04].
     public User findCustomerByPhone(String phone) throws SQLException {
-        // CU05: . SELECT đúng phone đã chuẩn hóa và role=CUSTOMER.
-        // .. Có dữ liệu trả User; không có trả null; lỗi SQL ném về controller.
-        // ... doGet() [CU04] nhận khách, gọi getCustomerActivity() [CU07]; không tìm thấy báo [CU12].
+
         String sql = "SELECT id, full_name, phone, email, role, position, status, total_points "
                 + "FROM users WHERE role='CUSTOMER' AND phone=? LIMIT 1";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -125,10 +137,12 @@ public class LoyaltyTransactionDAO extends BaseDAO {
         }
     }
 
+    // [TDMD01]
+    // . Khi người dùng chưa nhập số điện thoại, AdminLoyaltyController.doGet gọi findDefaultCustomer (chọn
+    //   khách ban đầu khi chưa tra cứu) trong LoyaltyTransactionDAO.java. Em chọn khách có điểm cao nhất và
+    //   trả về controller để trang có thông tin ban đầu trước khi người dùng tra cứu khách khác.
     public User findDefaultCustomer() throws SQLException {
-        // CU06: . Chỉ khi mở trang không truyền phone mới chọn khách có điểm cao nhất, bằng điểm lấy id nhỏ nhất.
-        // .. Không dùng khách mặc định khi Admin gửi SĐT rỗng hoặc sai.
-        // ... Trả User về doGet() [CU04], rồi đọc hoạt động tại [CU07].
+
         String sql = "SELECT id, full_name, phone, email, role, position, status, total_points "
                 + "FROM users WHERE role='CUSTOMER' ORDER BY total_points DESC, id LIMIT 1";
         try (Connection conn = getConnection();
@@ -146,10 +160,13 @@ public class LoyaltyTransactionDAO extends BaseDAO {
                 rs.getString("status"), "", "", rs.getInt("total_points"));
     }
 
+    // [TDCT01]
+    // . Ở getCustomerActivity (đọc tổng tiền mua và ngày có đơn gần nhất) trong LoyaltyTransactionDAO.java,
+    //   em nhận mã khách từ AdminLoyaltyController.doGet. Em cộng tiền các đơn COMPLETED và lấy ngày có đơn
+    //   gần nhất rồi trả về controller, để hiện hoạt động mua của đúng khách đang xem.
+    // ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDCT02].
     public CustomerActivity getCustomerActivity(int customerId) throws SQLException {
-        // CU07: . Lấy tổng final_amount của đơn COMPLETED và ngày tạo đơn gần nhất của khách.
-        // .. Tổng chi tiêu gồm phí giao; ngày gần nhất xét đơn ở mọi trạng thái.
-        // ... doGet() quy đổi điểm ở [CU08], rồi gửi customerActivity sang ô [CU11].
+
         String sql = "SELECT COALESCE(SUM(CASE WHEN status='COMPLETED' THEN final_amount ELSE 0 END),0) total_spent, "
                 + "MAX(created_at) last_order_at FROM orders WHERE customer_id=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -165,10 +182,14 @@ public class LoyaltyTransactionDAO extends BaseDAO {
         return new CustomerActivity(BigDecimal.ZERO, null);
     }
 
+    // [TDDC03]
+    // . Đến adjustPoints trong LoyaltyTransactionDAO.java, em nhận mã khách và số điểm thay đổi để cập nhật
+    //   điểm, ghi lịch sử. Em đọc số dư hiện tại và tính số dư mới; hợp lệ mới ghi cả users.total_points và
+    //   loyalty_transactions, hoàn tất cả hai rồi mới báo thành công về controller.
+    // .. Em chặn trừ quá số điểm hiện có và chặn số dư mới vượt mức kiểu số đang lưu cho phép. Nếu cập nhật
+    //    số dư hay ghi lịch sử bị lỗi thì hủy cả lần điều chỉnh để hai phần luôn khớp.
     public boolean adjustPoints(int customerId, int pointsChange) throws SQLException {
-        // LP09: . Kiểm tra lại id và giới hạn điểm trước khi mở transaction.
-        // .. Điều chỉnh 0 hoặc ngoài +/-1.000.000 bị từ chối ngay.
-        // ... Mở transaction và khóa dòng khách tại [LP10].
+
         LoyaltyValidation.requireRange(customerId, "Khách hàng", 1, Integer.MAX_VALUE);
         if (pointsChange == 0 || pointsChange < -LoyaltyValidation.MAX_POINTS
                 || pointsChange > LoyaltyValidation.MAX_POINTS) {
@@ -182,9 +203,10 @@ public class LoyaltyTransactionDAO extends BaseDAO {
             boolean oldAutoCommit = conn.getAutoCommit();
             conn.setAutoCommit(false);
             try {
-                // LP10: . SELECT số dư theo id và role=CUSTOMER với FOR UPDATE.
-                // .. Không có khách thì báo lỗi; khóa dòng giữ hai điều chỉnh không dùng cùng số dư cũ.
-                // ... Tính số dư sau điều chỉnh và xét hợp lệ tại [LP11].
+
+                // . Trong LoyaltyTransactionDAO.adjustPoints (cập nhật điểm và ghi lịch sử), em đọc users.total_points
+                //   theo mã khách và giữ dòng đang xử lý để lần cập nhật khác không chen vào. Em dùng số dư vừa đọc để
+                //   tính lần cộng hoặc trừ này.
                 int current;
                 try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
                     ps.setInt(1, customerId);
@@ -193,41 +215,44 @@ public class LoyaltyTransactionDAO extends BaseDAO {
                         current = rs.getInt(1);
                     }
                 }
-                // LP11: [SLBF12] Adjustment is valid?
-                // . Tính số dư mới bằng long, yêu cầu từ 0 đến Integer.MAX_VALUE.
-                // .. Yes: tiếp tục cập nhật; No: ném lỗi trước khi ghi và rollback tại [LP15].
-                // ... Hợp lệ UPDATE số dư [LP12], rồi INSERT lịch sử [LP13].
+
+                // . Em lấy số dư hiện tại cộng pointsChange để tính next trong LoyaltyTransactionDAO.adjustPoints (cập
+                //   nhật điểm và ghi lịch sử). Em kiểm tra số dư mới không âm và còn nằm trong mức lưu được rồi mới ghi,
+                //   tránh trừ quá điểm hoặc làm số dư quá lớn.
                 long next = (long) current + pointsChange;
-                if (next < 0) throw new IllegalArgumentException("Không thể trừ nhiều hơn số điểm hiện có.");
-                if (next > Integer.MAX_VALUE) throw new IllegalArgumentException("Số điểm vượt giới hạn cho phép.");
-                // LP12: [SLBF12] Update point balance
-                // . UPDATE total_points của khách đang khóa; yêu cầu đúng một dòng cập nhật.
-                // .. Thay đổi chưa commit, vẫn phải ghi lịch sử thành công.
-                // ... INSERT giao dịch ADJUST tại [LP13].
+                if (next < 0) throw new IllegalArgumentException("Khách hàng chỉ có " + current + " điểm. Không thể trừ " + Math.abs((long) pointsChange) + " điểm.");
+                if (next > Integer.MAX_VALUE) throw new IllegalArgumentException("Tổng điểm sau điều chỉnh không được vượt quá 2.147.483.647 điểm.");
+
+                // [TDDC04]
+                // . Khi số dư mới đã được kiểm tra, trong LoyaltyTransactionDAO.adjustPoints em ghi next vào
+                //   users.total_points theo mã khách. Sau bước này em tiếp tục ghi lịch sử trong cùng lần điều chỉnh;
+                //   chưa xác nhận lưu riêng số dư.
                 try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                     ps.setInt(1, (int) next);
                     ps.setInt(2, customerId);
                     if (ps.executeUpdate() != 1) throw new SQLException("Không cập nhật được số dư khách hàng.");
                 }
-                // LP13: [SLBF12] Record adjustment history
-                // . INSERT customer_id, điểm có dấu, transaction_type=ADJUST và order_id=NULL.
-                // .. Yêu cầu đúng một dòng lịch sử; lỗi thì rollback cả cập nhật số dư.
-                // ... Commit tại [LP14] hoặc hoàn tác tại [LP15].
+
+                // [TDDC05]
+                // . Sau khi cập nhật số dư, em thêm giao dịch ADJUST vào loyalty_transactions bằng mã khách và số điểm
+                //   thay đổi. Chỉ khi cả số dư lẫn lịch sử đều ghi được thì adjustPoints mới xác nhận lưu và trả thành
+                //   công về controller.
                 try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
                     ps.setInt(1, customerId);
                     ps.setInt(2, pointsChange);
                     if (ps.executeUpdate() != 1) throw new SQLException("Không ghi được lịch sử điều chỉnh điểm.");
                 }
-                // LP14: . Commit cả số dư và dòng ADJUST trong cùng transaction.
-                // .. Trả true sau khi commit, không ghi thêm giao dịch ở controller.
-                // ... Controller đặt thông báo rồi redirect tại [LP16].
+
+                // . Khi ghi được cả số dư và lịch sử, trong LoyaltyTransactionDAO.adjustPoints (cập nhật điểm và ghi
+                //   lịch sử) em gọi conn.commit (xác nhận lưu toàn bộ thay đổi) để xác nhận lần điều chỉnh. Em trả true
+                //   về controller để doPost mới đặt thông báo thành công.
+                // ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDDC06].
                 conn.commit();
                 return true;
             } catch (Exception e) {
-                // LP15: [SLBF12] Keep point balance unchanged
-                // . Lỗi kiểm tra hoặc ghi SQL thì rollback transaction.
-                // .. Số dư và lịch sử trở về trước thao tác; không giữ phần UPDATE chưa đủ lịch sử.
-                // ... Ném lỗi về controller để báo tại [MS04] và redirect [LP16].
+                // . Nếu cập nhật số dư hoặc ghi lịch sử gặp lỗi, trong LoyaltyTransactionDAO.adjustPoints (cập nhật điểm
+                //   và ghi lịch sử) em gọi conn.rollback (hủy các thay đổi của lần lưu) để hủy cả hai thay đổi. Em báo
+                //   lỗi về controller, tránh có số dư mới nhưng thiếu lịch sử hoặc ngược lại.
                 conn.rollback();
                 if (e instanceof SQLException) throw (SQLException) e;
                 if (e instanceof RuntimeException) throw (RuntimeException) e;
@@ -241,9 +266,7 @@ public class LoyaltyTransactionDAO extends BaseDAO {
     }
 
     public boolean earnForCompletedOrder(int customerId, int orderId, int points) throws SQLException {
-        // EA00: . Ở đây em giữ một hàm cộng điểm riêng nhưng hiện chưa có chỗ gọi hàm này trong luồng đang chạy.
-        // .. Khi trình bày, em lần theo lời gọi thật của thao tác đang demo.
-        // Tham khảo: QR hoặc COD gọi PaymentDAO.earnPointsOnce() [EA03]; tiền mặt tại quầy xử lý trong [CT02].
+
         if (points <= 0) return false;
         String existsSql = "SELECT 1 FROM loyalty_transactions WHERE order_id=? AND transaction_type='EARN'";
         String updateSql = "UPDATE users SET total_points=total_points+? WHERE id=? AND role='CUSTOMER'";

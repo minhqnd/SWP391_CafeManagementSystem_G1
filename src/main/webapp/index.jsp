@@ -15,7 +15,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Aura Café | Trang Chủ</title>
-    
+
     <!-- Google Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
@@ -23,7 +23,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Shared Product Card & Modal CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/product-card.css">
-    
+
     <style>
         :root {
             --primary: #900b1a;
@@ -38,34 +38,33 @@
             --tertiary-container: #95815a;
         }
         body { font-family: 'Inter', sans-serif; background-color: var(--surface-container-lowest); color: #1a1c1e; overflow-x: hidden; }
-        
+
         .bg-primary-custom { background-color: var(--primary) !important; color: white !important; }
         .text-primary-custom { color: var(--primary) !important; }
         .text-secondary-custom { color: var(--secondary) !important; }
-        
+
         /* Hero Section */
         .hero-section { background-color: var(--surface-container-low); position: relative; padding: 5rem 0; overflow: hidden; }
         .blur-blob-1 { position: absolute; right: -5rem; top: -6rem; width: 24rem; height: 24rem; border-radius: 50%; background-color: rgba(144, 11, 26, 0.1); filter: blur(3rem); pointer-events: none; }
         .blur-blob-2 { position: absolute; left: 25%; bottom: -4rem; width: 20rem; height: 20rem; border-radius: 50%; background-color: rgba(149, 129, 90, 0.1); filter: blur(3rem); pointer-events: none; }
-        
+
         .hero-title { font-size: 3.25rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.025em; color: #0f172a; }
         @media (max-width: 768px) { .hero-title { font-size: 2.25rem; } }
-        
+
         .btn-custom-primary { background-color: var(--primary); color: white; border-radius: 0.75rem; font-weight: 600; padding: 0.85rem 1.75rem; transition: all 0.2s ease; border: none; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 4px 14px rgba(144, 11, 26, 0.2); }
         .btn-custom-primary:hover { opacity: 0.95; color: white; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(144, 11, 26, 0.28); }
         .btn-custom-secondary { background-color: #ffffff; color: #1e293b; border-radius: 0.75rem; font-weight: 600; padding: 0.85rem 1.75rem; transition: all 0.2s ease; border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
         .btn-custom-secondary:hover { background-color: #f8fafc; color: #0f172a; border-color: #cbd5e1; transform: translateY(-1px); }
-        
+
         .stats-box { background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 1rem; padding: 1.25rem 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
         .stat-value { font-size: 1.35rem; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.25rem; }
         .stat-label { font-size: 0.8rem; color: #64748b; font-weight: 500; }
-        
+
         .hero-img-container { position: relative; height: 440px; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 1rem 3rem rgba(0,0,0,0.1); }
         .hero-img-bg { background-size: cover; background-position: center; width: 100%; height: 100%; transition: transform 0.7s; }
         .hero-img-container:hover .hero-img-bg { transform: scale(1.05); }
         .hero-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 65%); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; color: white; }
-        
-        
+
         /* Category Section */
         .category-section { background-color: var(--surface-container-low); padding: 5rem 0; }
         .cat-card {
@@ -142,7 +141,6 @@
             padding-top: 0.75rem;
             border-top: 1px solid #f1f5f9;
         }
-
 
         /* Sticky Bottom Mini Cart Bar */
         .sticky-cart-bar {
@@ -265,11 +263,13 @@
         <jsp:param name="activePage" value="home" />
     </jsp:include>
 
-    <%-- BF10/BF11 - TRANG CHỦ: hiện gọi DAO trực tiếp trong JSP, không đi qua HomeController. --%>
     <!-- Fetch Data for Hero and Best Sellers -->
     <%
         ProductDAO productDAO = new ProductDAO();
-        // BF10: lấy tối đa 4 món nổi bật; món đầu dùng cho hero, danh sách dùng cho thẻ sản phẩm.
+        // [TCSP01]
+        // . Ở index.jsp, em gọi getBestSellingProducts (đọc các món nổi bật theo lượng bán) trong
+        //   ProductDAO.java và truyền giới hạn 4 để lấy món nổi bật. Danh sách trả về được dùng cho banner và
+        //   phần sản phẩm yêu thích, giúp nội dung Trang chủ lấy từ các món đang bán.
         List<Product> productsList = productDAO.getBestSellingProducts(4);
         request.setAttribute("bestSellerProducts", productsList);
         if (productsList != null && !productsList.isEmpty()) {
@@ -279,8 +279,12 @@
     %>
 
     <%
+        // [TCDM02]
+        // . Ở index.jsp, em gọi CategoryDAO.getAllActiveCategoriesWithCount (đọc danh mục hoạt động kèm số món
+        //   đang bán) để đọc danh mục đang hoạt động cùng số món đang bán. Em đặt landingCategories để danh sách
+        //   và số đếm bên cạnh tên được dựng từ dữ liệu thật; khi bấm một nhóm, MenuController.doGet lọc sản
+        //   phẩm theo mã danh mục đó.
         CategoryDAO categoryDAO = new CategoryDAO();
-        // BF11: danh sách danh mục bên khách chỉ lấy ACTIVE; đọc cấu hình cửa hàng cho thông tin trang chủ.
         List<Category> landingCategories = categoryDAO.getAllActiveCategoriesWithCount();
         request.setAttribute("landingCategories", landingCategories);
         ShopSettings homeSettings = new ShopSettingDAO().getSettings();
@@ -291,6 +295,12 @@
             <aside class="col-md-3 col-lg-2" id="homeCategories">
                 <div class="home-category-panel">
                     <div class="home-category-list" id="homeCategoryList">
+                        <%-- [TCDM01]
+                             . Danh mục bên trái lấy từ landingCategories; số cạnh tên là productCount của nhóm đó. Khi bấm,
+                               em mở /menu kèm category để MenuController.doGet gọi ProductDAO.filterProducts (lọc món còn
+                               bán theo danh mục và từ khóa) và chỉ hiện món còn bán của nhóm đã chọn.
+                             ... Đọc tiếp tại index.jsp, tìm [TCDM02].
+                        --%>
                         <c:forEach var="cat" items="${landingCategories}">
                             <a class="home-category-link" href="${pageContext.request.contextPath}/menu?category=${cat.id}">
                                 <c:url var="storedCategoryImage" value="/category-image"><c:param name="id" value="${cat.id}" /></c:url>
@@ -313,6 +323,11 @@
                                 <span class="eyebrow">${slide.first ? 'Hương vị đặc trưng Aura' : 'Được khách hàng yêu thích'}</span>
                                 <h1>${bannerProduct.name}</h1>
                                 <p>${bannerProduct.description}</p>
+                                <%-- [TCMN01]
+                                     . Nút Khám phá menu mở /menu không kèm bộ lọc. MenuController.doGet đọc danh mục hoạt
+                                       động và các món còn bán rồi đưa về menu.jsp cho khách xem. Nút Xem toàn bộ thực đơn
+                                       bên dưới và banner mặc định dùng cùng đường dẫn.
+                                --%>
                                 <a class="btn btn-light btn-sm fw-bold px-3 py-2" href="${pageContext.request.contextPath}/menu">Khám phá menu</a>
                             </div>
                         </div>
@@ -322,6 +337,12 @@
                             <div class="home-banner-copy"><span class="eyebrow">Chào mừng đến Aura Café</span><h1>Một chất phin, trọn vị thân quen</h1><p>Khám phá đồ uống và món ngon được chuẩn bị mỗi ngày.</p><a class="btn btn-light btn-sm fw-bold px-3 py-2" href="${pageContext.request.contextPath}/menu">Khám phá menu</a></div>
                         </div>
                     </c:if>
+                    <%-- [TCAN01]
+                         . Khi bấm nút trước, sau hoặc chấm chọn trên banner, em gọi show (đổi ảnh banner và chấm đang sáng)
+                           ngay trong index.jsp bằng vị trí ảnh cần xem. Hàm đổi ảnh và chấm đang sáng, không gửi dữ liệu
+                           lên controller. Bộ đếm cũng gọi hàm này để tự đổi ảnh sau mỗi sáu giây.
+                         ... Đọc tiếp tại index.jsp, tìm [TCAN02].
+                    --%>
                     <button class="home-banner-arrow home-banner-prev" type="button" aria-label="Ảnh trước">‹</button>
                     <button class="home-banner-arrow home-banner-next" type="button" aria-label="Ảnh tiếp theo">›</button>
                     <div class="home-banner-dots" aria-label="Chọn ảnh"></div>
@@ -364,6 +385,10 @@
             dot.addEventListener('click', () => show(index)); dots.appendChild(dot);
         });
         const dotButtons = Array.from(dots.querySelectorAll('button'));
+        // [TCAN02]
+        // . Trong show (đổi ảnh banner và chấm đang sáng) của index.jsp, em nhận vị trí ảnh từ nút bấm hoặc bộ
+        //   đếm, tính vòng lại khi tới đầu hoặc cuối danh sách. Em đổi active và aria-hidden của ảnh, đồng thời
+        //   đổi chấm đang sáng để người dùng biết banner nào đang được xem.
         function show(index) {
             current = (index + slides.length) % slides.length;
             slides.forEach((slide, i) => { slide.classList.toggle('active', i === current); slide.setAttribute('aria-hidden', i !== current); });
@@ -375,10 +400,16 @@
     })();
     </script>
 
-
     <!-- Shared Footer Component -->
     <jsp:include page="/components/footer.jsp" />
 
+    <%-- [TCGIO01]
+         . Thanh Xem món lấy số lượng từ sessionScope.cart.totalQuantity. Khi bấm thanh hoặc nút, em gọi
+           openSelectedItemsModal (đọc giỏ rồi mở danh sách món đã chọn) trong product_detail_modal.jsp để đọc
+           giỏ hiện tại và mở hộp danh sách món. Đây là điểm chuyển từ Trang chủ sang phần xem món đang chọn
+           của luồng đặt hàng.
+         ... Đọc tiếp tại product_detail_modal.jsp, tìm [TCGIO02].
+    --%>
     <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Bấm Xem món ra popup) -->
     <div id="stickyMiniCart" class="sticky-cart-bar ${empty sessionScope.cart || sessionScope.cart.totalQuantity == 0 ? 'd-none' : ''}" onclick="openSelectedItemsModal()"
         style="cursor: pointer;" title="Bấm để xem danh sách món">

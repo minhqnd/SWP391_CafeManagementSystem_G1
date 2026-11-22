@@ -564,9 +564,6 @@
 </head>
 
 <body>
-<%-- MN12: . Ở đây em hiển thị món và các món liên quan mà máy chủ vừa gửi sang.
-     .. Bấm một món liên quan thì mở trang chi tiết của món đó.
-     ... GET /product-detail?id=... → ProductDetailController [MN11]. --%>
 
     <!-- Shared Header -->
     <jsp:include page="/components/header.jsp">
@@ -617,6 +614,11 @@
                         </div>
 
                         <!-- Product Name -->
+                        <%-- [MNTHE04]
+                             . Ở product-detail.jsp, em nhận product mà ProductDetailController.doGet đã đọc bằng
+                               ProductDAO.getAvailableProductById (đọc món còn bán theo mã). Trang dùng sản phẩm này để hiện
+                               tên, giá, ảnh và các lựa chọn, giúp chi tiết khớp đúng món người dùng vừa bấm.
+                        --%>
                         <h1 class="product-detail-name">${product.name}</h1>
 
                         <!-- Info Tags -->
@@ -787,7 +789,7 @@
                         <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-1 small fw-semibold" style="font-size: 0.85rem;" onclick="clearAllCart()">
                             Xoá tất cả
                         </button>
-                        <button type="button" class="btn btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none" 
+                        <button type="button" class="btn btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none"
                                 style="width: 36px; height: 36px; transition: background 0.2s;" data-bs-dismiss="modal" aria-label="Close">
                             <span class="material-symbols-outlined fs-5">close</span>
                         </button>
@@ -820,7 +822,6 @@
             </div>
         </div>
     </div>
-
 
     <!-- Include Auth Modal -->
     <jsp:include page="/components/auth_modal.jsp" />
@@ -1080,7 +1081,7 @@
             } else {
                 if (emptyEl) emptyEl.classList.add('d-none');
                 if (summaryEl) summaryEl.classList.remove('d-none');
-                
+
                 var html = '';
                 items.forEach(function(item) {
                     var toppingsText = (item.toppings && item.toppings.length > 0) ? item.toppings.join(', ') : '';
