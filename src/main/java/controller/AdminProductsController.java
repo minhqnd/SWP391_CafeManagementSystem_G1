@@ -93,6 +93,8 @@ public class AdminProductsController extends HttpServlet {
 
             request.setAttribute("productTotal", stats[0]);
             request.setAttribute("productAvailable", stats[1]);
+            // [SQL11-48] Thẻ Tạm ngừng sản phẩm: Java lấy tổng món trừ số đang bán.
+            // . Hai số được getProductAdminStats trả về; không đếm từ các hàng đang thấy sau khi lọc.
             request.setAttribute("productPaused", stats[0] - stats[1]);
             request.setAttribute("selectedCategoryId", categoryId == null ? 0 : categoryId);
             request.setAttribute("searchKeyword", keyword == null ? "" : keyword);

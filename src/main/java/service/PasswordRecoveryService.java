@@ -120,6 +120,9 @@ public final class PasswordRecoveryService {
             //   minh. Đúng thì bỏ OTP, giữ thời điểm xác minh để controller mở bước nhập mật khẩu mới.
             // ... Quay lại VerifyOtpController.java sau service.verify: xác minh được thì mở tab reset_password;
             //     sai hoặc hết hạn thì nhánh catch báo lỗi và chọn màn hình tiếp tục.
+            // [SQL10-17] Nút Xác minh OTP: Java đối chiếu mã và trạng thái khôi phục giữ trong phiên đăng nhập.
+            // . Không có câu SELECT OTP trong MySQL; hạn dùng và số lần nhập sai cũng được kiểm tra trong dịch
+            //   vụ này.
             boolean match=input!=null && input.matches("[0-9]{6}") && MessageDigest.isEqual(state.otp.getBytes(StandardCharsets.UTF_8),input.getBytes(StandardCharsets.UTF_8));
             if(!match){state.failures++;if(state.failures>=5){clear(session);throw new IllegalArgumentException("Bạn đã nhập sai 5 lần. Vui lòng yêu cầu mã mới.");}throw new IllegalArgumentException("Mã OTP không chính xác. Còn "+(5-state.failures)+" lần thử.");}
             state.otp=null;state.verifiedAt=now;

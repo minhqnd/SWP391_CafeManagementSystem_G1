@@ -68,6 +68,8 @@ public class AdminLoyaltyController extends HttpServlet {
             //   điểm và số giao dịch từ LoyaltyTransactionDAO. Với tiền quy đổi, em lấy tổng điểm chia lấy phần
             //   nguyên cho mốc đổi rồi nhân tiền giảm mỗi lần đổi, sau đó đưa các số về trang.
             // ... Đọc tiếp tại LoyaltyTransactionDAO.java, tìm [TDTS02].
+            // [SQL12-13] Thẻ Giá trị quy đổi: Java lấy tổng điểm chia nguyên cho mốc đổi rồi nhân tiền giảm.
+            // . Nguồn là getTotalPoints và getSettingsStrict; Math.round làm tròn tiền trước khi hiển thị.
             long redeemableSteps = settings.getPointsStep() > 0 ? totalPoints / settings.getPointsStep() : 0;
             long totalPointValue = Math.round(redeemableSteps * settings.getPointsStepValue());
 
@@ -125,6 +127,9 @@ public class AdminLoyaltyController extends HttpServlet {
                 //   phần nguyên cho mốc đổi, rồi nhân tiền giảm mỗi lần đổi. Em đưa kết quả customerPointValue về
                 //   admin-loyalty.jsp, đặt cạnh số dư điểm để đối chiếu.
                 // ... Đọc tiếp tại admin-loyalty.jsp, tìm [TDSD02].
+                // [SQL12-14] Tiền có thể đổi của một khách: Java dùng số điểm riêng của khách với bộ quy tắc
+                //   hiện tại.
+                // . Không lấy giá trị quy đổi của toàn hệ thống để hiển thị cho từng khách.
                 long customerSteps = settings.getPointsStep() > 0
                         ? customer.getTotalPoints() / settings.getPointsStep() : 0;
                 request.setAttribute("customerPointValue",

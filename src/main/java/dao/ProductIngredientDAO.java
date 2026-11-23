@@ -14,7 +14,14 @@ public class ProductIngredientDAO extends BaseDAO {
     // ... Đọc tiếp tại AdminRecipeController.java, tìm [CTL07].
     public void saveRecipe(int productId, List<ProductIngredient> ingredients) throws Exception {
 
+        // [SQL11-36] Nút Lưu công thức: xóa các dòng công thức cũ của món.
+        // . Dấu ? từ trái sang phải: 1=mã sản phẩm.
+        // . Chưa xác nhận riêng bước xóa; phải thêm đủ công thức mới mới commit, lỗi thì rollback để giữ công
+        //   thức cũ.
         String deleteOldBomSql = "DELETE FROM product_ingredients WHERE product_id = ?";
+        // [SQL11-37] Nút Lưu công thức: thêm từng dòng nguyên liệu và định lượng mới.
+        // . Dấu ? từ trái sang phải: 1=mã sản phẩm; 2=mã nguyên liệu; 3=định lượng.
+        // . Java điền lại 3 giá trị cho từng dòng rồi executeBatch; không phải chỉ lưu một nguyên liệu.
         String insertBomSql = "INSERT INTO product_ingredients (product_id, ingredient_id, quantity_required) VALUES (?, ?, ?)";
 
         try (Connection conn = getConnection()) {
@@ -25,6 +32,10 @@ public class ProductIngredientDAO extends BaseDAO {
                  PreparedStatement psInsert = conn.prepareStatement(insertBomSql)) {
 
                 java.util.Set<Integer> oldIds = new java.util.HashSet<>();
+                // [SQL11-38] Trước khi lưu công thức: đọc các nguyên liệu đã có.
+                // . Dấu ? từ trái sang phải: 1=mã sản phẩm.
+                // . DAO dùng danh sách này để nhận biết nguyên liệu mới; controller vẫn kiểm tra dữ liệu được
+                //   gửi trước khi gọi DAO.
                 try (PreparedStatement old = conn.prepareStatement("SELECT ingredient_id FROM product_ingredients WHERE product_id = ?")) {
                     old.setInt(1, productId);
                     try (java.sql.ResultSet rs = old.executeQuery()) {
@@ -79,6 +90,8 @@ public class ProductIngredientDAO extends BaseDAO {
     public List<ProductIngredient> getIngredientsByProductId(int productId) {
 
         List<ProductIngredient> list = new java.util.ArrayList<>();
+        // [SQL11-39] Đọc riêng công thức một món kèm tên và đơn vị nguyên liệu.
+        // . Dấu ? từ trái sang phải: 1=mã sản phẩm.
         String sql = "SELECT pi.product_id, pi.ingredient_id, pi.quantity_required, i.name AS ingredient_name, i.unit "
                    + "FROM product_ingredients pi "
                    + "JOIN ingredients i ON pi.ingredient_id = i.id "
@@ -114,6 +127,8 @@ public class ProductIngredientDAO extends BaseDAO {
     public java.util.Map<Integer, List<ProductIngredient>> getAllProductIngredientsMap() {
 
         java.util.Map<Integer, List<ProductIngredient>> map = new java.util.LinkedHashMap<>();
+        // [SQL11-40] Trang công thức: đọc các dòng định mức của toàn bộ món.
+        // . Java nhóm các dòng theo product_id để mở form, đếm món đã có công thức và tính giá vốn.
         String sql = "SELECT pi.product_id, pi.ingredient_id, pi.quantity_required, i.name AS ingredient_name, i.unit "
                    + "FROM product_ingredients pi "
                    + "JOIN ingredients i ON pi.ingredient_id = i.id "

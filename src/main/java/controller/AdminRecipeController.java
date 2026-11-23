@@ -106,6 +106,9 @@ public class AdminRecipeController extends HttpServlet {
             //   để người dùng biết giá vốn đang được tính từ đâu.
             // ... Trong AdminRecipeController.java, tiếp tục doGet tới chỗ đặt recipeCost, recipeCostComplete và
             //     missingCostIngredients; admin-recipes.jsp dùng các giá trị này hiện chi phí hoặc phần còn thiếu.
+            // [SQL11-44] Giá vốn công thức đang mở: Java cộng giá nhập mới nhất nhân định lượng từng dòng.
+            // . Nguồn là getAllProductIngredientsMap và getLatestPurchasePrices; thiếu giá nhập thì đánh dấu
+            //   chưa đủ dữ liệu.
             BigDecimal recipeCost = BigDecimal.ZERO;
             List<String> missingCostIngredients = new ArrayList<>();
             for (ProductIngredient recipeIngredient : recipeIngredients) {
@@ -126,6 +129,10 @@ public class AdminRecipeController extends HttpServlet {
             //   thống kê.
             // ... Đọc tiếp tại admin-recipes.jsp, tìm [CTM04].
 
+            // [SQL11-45] Thẻ Có/Chưa có định mức: Java đếm món có danh sách nguyên liệu rồi lấy tổng món trừ số
+            //   đã có.
+            // . Không có câu COUNT riêng trong SQL cho hai thẻ này; nguồn là danh sách sản phẩm và bản nhóm
+            //   công thức.
             int productsWithRecipe = 0;
             int recipeLineCount = 0;
             for (Product product : products) {
@@ -140,6 +147,10 @@ public class AdminRecipeController extends HttpServlet {
                 //   đã có hoặc chưa có công thức.
                 // ... Đọc tiếp tại RecipeProductSummary.java, tìm [CTGT03].
                 List<RecipeProductSummary.IngredientLine> costLines = new ArrayList<>();
+                // [SQL11-46] Cột Giá vốn trên bảng món: Java tính riêng tổng giá nhập nhân định lượng của từng
+                //   sản phẩm.
+                // . Không lấy giá bán làm giá vốn; món thiếu giá nhập được đánh dấu thay vì kết luận chi phí
+                //   bằng 0.
                 BigDecimal productCost = BigDecimal.ZERO;
                 boolean productCostComplete = !productIngredients.isEmpty();
                 for (ProductIngredient ingredient : productIngredients) {

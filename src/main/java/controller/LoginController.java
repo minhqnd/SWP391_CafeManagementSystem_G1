@@ -35,6 +35,8 @@ public class LoginController extends HttpServlet {
         // ... Kết thúc Đăng xuất khi trình duyệt mở Trang chủ và phiên đăng nhập cũ đã bị hủy.
         if ("logout".equals(action)) {
 
+            // [SQL10-18] Nút Đăng xuất: hủy phiên đăng nhập rồi chuyển về Trang chủ.
+            // . Không DELETE tài khoản trong users; thao tác này không có câu SQL riêng.
             session.invalidate();
             response.sendRedirect(request.getContextPath() + "/");
             return;

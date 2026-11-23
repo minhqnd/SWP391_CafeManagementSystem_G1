@@ -413,6 +413,10 @@
     function recalculateCost() {
 
         if (!rows || !costValue) return;
+        // [SQL11-49] Giá vốn xem trước khi sửa công thức: trình duyệt nhân lượng đang nhập với giá đã tải rồi
+        //   cộng lại.
+        // . Chưa bấm Lưu thì chưa thay database; Java vẫn đọc và tính lại giá vốn khi tải trang sau khi lưu.
+        // . Phần này tính trên trình duyệt; không có câu SQL chạy lại mỗi lần sửa định lượng.
         let total = 0;
         let hasLine = false;
         let complete = true;

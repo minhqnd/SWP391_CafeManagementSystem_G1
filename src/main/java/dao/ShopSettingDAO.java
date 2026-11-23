@@ -88,6 +88,9 @@ public class ShopSettingDAO extends BaseDAO {
     public ShopSettings getSettingsStrict() {
 
         ShopSettings settings = new ShopSettings();
+        // [SQL12-11] Ba ô quy tắc tích/đổi điểm: đọc tên và giá trị đang lưu.
+        // . Câu SQL đọc mọi thiết lập; applyValue chọn đúng ba khóa điểm để điền form. Thiếu khóa hoặc giá trị
+        //   không đổi được sang số giữ mặc định.
         String sql = "SELECT setting_key, setting_value FROM shop_settings";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -122,6 +125,9 @@ public class ShopSettingDAO extends BaseDAO {
         LoyaltyValidation.requireRange(earnUnit, "Số tiền chi tiêu", 1, LoyaltyValidation.MAX_RULE_MONEY);
         LoyaltyValidation.requireRange(pointsStep, "Mốc đổi điểm", 1, LoyaltyValidation.MAX_POINTS);
         LoyaltyValidation.requireRange(stepValue, "Tiền giảm", 0, LoyaltyValidation.MAX_RULE_MONEY);
+        // [SQL12-12] Nút Lưu quy tắc: thêm hoặc cập nhật từng quy tắc trong shop_settings.
+        // . Dấu ? từ trái sang phải: 1=tên khóa; 2=giá trị mới; 3=lặp lại giá trị mới khi khóa đã có.
+        // . addValue gọi 3 lần cho tiền tích một điểm, mốc đổi và tiền giảm; executeBatch rồi commit cả bộ.
         String sql = "INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) "
                 + "ON DUPLICATE KEY UPDATE setting_value = ?";
         try (Connection conn = getConnection()) {

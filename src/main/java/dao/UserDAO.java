@@ -39,6 +39,9 @@ public class UserDAO extends BaseDAO {
             return null;
         }
         identifier = identifier.trim();
+        // [SQL10-01] Đăng nhập: tìm tài khoản theo email hoặc số điện thoại.
+        // . Dấu ? từ trái sang phải: 1=định danh đăng nhập; 2=cùng định danh đăng nhập.
+        // . SQL chỉ tìm tài khoản; Java kiểm tra ACTIVE và gọi PasswordHasher.verify để đối chiếu mật khẩu.
         String sql = "SELECT * FROM users WHERE (email = ? OR phone = ?)";
 
         try (Connection conn = getConnection();
@@ -60,6 +63,11 @@ public class UserDAO extends BaseDAO {
                         return null;
                     }
                     if (!PasswordHasher.encoded(dbHash)) {
+                        // [SQL10-02] Đăng nhập bằng mật khẩu cũ: thay giá trị cũ bằng chuỗi băm.
+                        // . Dấu ? từ trái sang phải: 1=chuỗi băm mới; 2=mã người dùng; 3=giá trị mật khẩu cũ
+                        //   trong database.
+                        // . Chỉ chạy sau khi Java đối chiếu mật khẩu thành công; không lấy mật khẩu nhập để so
+                        //   trực tiếp bằng SQL.
                         try (PreparedStatement upgrade = conn.prepareStatement("UPDATE users SET password_hash=? WHERE id=? AND password_hash=? AND status='ACTIVE'")) {
                             upgrade.setString(1, PasswordHasher.hash(password));
                             upgrade.setInt(2, rs.getInt("id")); upgrade.setString(3, dbHash);
@@ -112,6 +120,11 @@ public class UserDAO extends BaseDAO {
     //   được báo riêng về controller để giữ form và thông báo chưa tạo được tài khoản.
     // ... Đọc tiếp tại RegisterController.java, tìm [DKL07].
     public boolean register(User user, String password) {
+        // [SQL10-03] Tạo tài khoản: thêm tên, liên hệ, vai trò, vị trí và mật khẩu đã băm.
+        // . Dấu ? từ trái sang phải: 1=họ tên; 2=số điện thoại; 3=email; 4=vai trò; 5=vị trí, có thể NULL;
+        //   6=chuỗi băm mật khẩu.
+        // . Trạng thái ACTIVE được ghi cố định; chuỗi băm do PasswordHasher.hash tạo, không phải mật khẩu gõ
+        //   trên web.
         String sql = "INSERT INTO users (full_name, phone, email, role, position, status, password_hash) " +
                      "VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?)";
 
@@ -148,6 +161,8 @@ public class UserDAO extends BaseDAO {
     // ... Quay lại RegisterController.java, trong doPost ngay sau userDAO.checkEmailExists: trùng thì thêm lỗi
     //     email, rồi xét errors trước khi tạo tài khoản.
     public boolean checkEmailExists(String email) {
+        // [SQL10-04] Ô Email đăng ký: tìm email đã được dùng.
+        // . Dấu ? từ trái sang phải: 1=email đã làm gọn và chuyển chữ thường.
         String sql = "SELECT id FROM users WHERE email = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -171,6 +186,8 @@ public class UserDAO extends BaseDAO {
         if (phone == null || phone.trim().isEmpty()) {
             return false;
         }
+        // [SQL10-05] Ô Số điện thoại đăng ký: tìm số đã được dùng.
+        // . Dấu ? từ trái sang phải: 1=số điện thoại đã làm gọn.
         String sql = "SELECT id FROM users WHERE phone = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -195,6 +212,9 @@ public class UserDAO extends BaseDAO {
     public boolean contactExists(String field, String value, int excludedUserId) {
         if (!"email".equals(field) && !"phone".equals(field)) throw new IllegalArgumentException("Invalid contact field");
         String column = "email".equals(field) ? "LOWER(TRIM(email))" : "phone";
+        // [SQL10-06] Kiểm tra liên hệ ngay trên form: tìm trùng và bỏ qua tài khoản đang sửa.
+        // . Dấu ? từ trái sang phải: 1=liên hệ cần kiểm tra; 2=mã tài khoản bỏ qua; đăng ký dùng 0.
+        // . Tên cột do Java chọn: email dùng LOWER(TRIM(email)); điện thoại dùng phone.
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT id FROM users WHERE " + column + "=? AND id<>? LIMIT 1")) {
             ps.setString(1, value);
@@ -212,6 +232,9 @@ public class UserDAO extends BaseDAO {
     // ... Quay lại PasswordRecoveryService.java, trong start sau users.findActiveAccountByEmail: không có tài
     //     khoản thì báo lỗi; có tài khoản mới kiểm tra thời gian chờ và gửi OTP.
     public User findActiveAccountByEmail(String email) {
+        // [SQL10-07] Quên mật khẩu: tìm tài khoản của email trước khi gửi OTP.
+        // . Dấu ? từ trái sang phải: 1=email đã làm gọn và chuyển chữ thường.
+        // . Câu SQL lấy tối đa 2 dòng; Java từ chối email trùng nhiều tài khoản hoặc tài khoản không ACTIVE.
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT id,email,status FROM users WHERE LOWER(TRIM(email))=? LIMIT 2")) {
             ps.setString(1, AccountValidation.email(email));
@@ -244,6 +267,8 @@ public class UserDAO extends BaseDAO {
     // ... Nếu AccountAvailabilityController.java gọi kiểm tra tài khoản trước khi tra trùng liên hệ, quay lại
     //     doPost sau users.getActiveUserById để tiếp tục tìm liên hệ; lỗi hoặc không có tài khoản thì dừng yêu cầu đó.
     public User getActiveUserById(int id) {
+        // [SQL10-08] Mở hồ sơ: đọc thông tin và số điểm hiện tại của người đang đăng nhập.
+        // . Dấu ? từ trái sang phải: 1=mã người dùng trong phiên đăng nhập.
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT id,full_name,phone,email,role,position,status,birthday,address,total_points FROM users WHERE id=? AND status='ACTIVE'")) {
             ps.setInt(1, id);
@@ -264,6 +289,9 @@ public class UserDAO extends BaseDAO {
     //     liệu xác minh; reset xong mới về ResetPasswordController.doPost.
     public boolean resetPasswordById(int id, String verifiedEmail, String password) {
         if (AccountValidation.passwordError(password, password) != null) return false;
+        // [SQL10-09] Đặt lại mật khẩu sau OTP: ghi mật khẩu mới cho đúng tài khoản.
+        // . Dấu ? từ trái sang phải: 1=chuỗi băm mật khẩu mới; 2=mã tài khoản đã xác minh; 3=email đã xác minh.
+        // . Java phải xác minh OTP trước khi gọi hàm này; bảng users không lưu mã OTP.
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "UPDATE users SET password_hash=? WHERE id=? AND LOWER(TRIM(email))=? AND status='ACTIVE'")) {
             ps.setString(1, PasswordHasher.hash(password)); ps.setInt(2,id); ps.setString(3,AccountValidation.email(verifiedEmail));
@@ -282,12 +310,19 @@ public class UserDAO extends BaseDAO {
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
+                // [SQL10-10] Đổi mật khẩu: đọc mật khẩu đang lưu của tài khoản ACTIVE.
+                // . Dấu ? từ trái sang phải: 1=mã người dùng.
+                // . FOR UPDATE giữ dòng trong lần đổi mật khẩu; Java dùng PasswordHasher.verify để so mật khẩu
+                //   hiện tại.
                 try (PreparedStatement read = conn.prepareStatement("SELECT password_hash FROM users WHERE id=? AND status='ACTIVE' FOR UPDATE")) {
                     read.setInt(1,id);
                     try (ResultSet rs=read.executeQuery()) {
                         if (!rs.next() || !PasswordHasher.verify(current,rs.getString(1))) { conn.rollback(); return false; }
                     }
                 }
+                // [SQL10-11] Đổi mật khẩu: ghi chuỗi băm mới sau khi mật khẩu hiện tại đã đúng.
+                // . Dấu ? từ trái sang phải: 1=chuỗi băm mật khẩu mới; 2=mã người dùng.
+                // . Đọc và ghi nằm trong cùng lần lưu; chỉ xác nhận khi cập nhật đúng một tài khoản.
                 try (PreparedStatement ps = conn.prepareStatement("UPDATE users SET password_hash=? WHERE id=? AND status='ACTIVE'")) {
                     ps.setString(1,PasswordHasher.hash(password));ps.setInt(2,id);
                     if(ps.executeUpdate()!=1){conn.rollback();return false;}
@@ -310,16 +345,24 @@ public class UserDAO extends BaseDAO {
     // ... Khi result là lỗi, quay lại update trong ProfileController.java ngay sau users.updateUserProfile;
     //     nhánh kiểm tra result giữ các ô, hiện lỗi rồi renderProfile mở lại trang để kết thúc lần lưu lỗi.
     public String updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
+        // [SQL10-12] Lưu thay đổi hồ sơ: cập nhật các trường của đúng tài khoản ACTIVE.
+        // . Dấu ? từ trái sang phải: 1=họ tên; 2=số điện thoại; 3=email; 4=ngày sinh hoặc NULL; 5=địa chỉ; 6=mã
+        //   người dùng.
+        // . Java kiểm tra định dạng và tra trùng liên hệ trước khi thực hiện lệnh cập nhật này.
         String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ? WHERE id = ? AND status='ACTIVE'";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             // . Trước khi cập nhật hồ sơ trong UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ mới), em
             //   dùng email và mã người dùng để tìm tài khoản khác đã dùng địa chỉ đó. Nếu trùng thì trả lý do lỗi về
             //   ProfileController.update (kiểm tra và cập nhật hồ sơ) và chưa ghi thay đổi.
+            // [SQL10-13] Lưu hồ sơ: kiểm tra email có thuộc người khác không.
+            // . Dấu ? từ trái sang phải: 1=email đã chuẩn hóa; 2=mã người dùng hiện tại.
             try (PreparedStatement duplicate=conn.prepareStatement("SELECT id FROM users WHERE LOWER(TRIM(email))=? AND id<>? LIMIT 1")) {
                 duplicate.setString(1,AccountValidation.email(email));duplicate.setInt(2,userId);
                 try(ResultSet rs=duplicate.executeQuery()){if(rs.next())return "Email đã được sử dụng bởi tài khoản khác!";}
             }
+            // [SQL10-14] Lưu hồ sơ: kiểm tra số điện thoại có thuộc người khác không.
+            // . Dấu ? từ trái sang phải: 1=số điện thoại; 2=mã người dùng hiện tại.
             try (PreparedStatement duplicate=conn.prepareStatement("SELECT id FROM users WHERE phone=? AND id<>? LIMIT 1")) {
                 duplicate.setString(1,phone);duplicate.setInt(2,userId);
                 try(ResultSet rs=duplicate.executeQuery()){if(rs.next())return "Số điện thoại đã được sử dụng bởi tài khoản khác!";}
@@ -354,6 +397,10 @@ public class UserDAO extends BaseDAO {
     /** Điểm Aura hiện tại (đọc lại sau khi thanh toán / đổi điểm để cập nhật user trong session) */
     public int getTotalPoints(int userId) {
 
+        // [SQL10-15] Đọc riêng số điểm của tài khoản khi cần làm mới thông tin đăng nhập.
+        // . Dấu ? từ trái sang phải: 1=mã người dùng.
+        // . Trang hồ sơ còn nhận total_points từ getActiveUserById; không phải mọi lần mở hồ sơ đều gọi hàm
+        //   này.
         String sql = "SELECT total_points FROM users WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -380,6 +427,9 @@ public class UserDAO extends BaseDAO {
     public java.util.List<model.LoyaltyTransaction> getLoyaltyHistoryByUserId(int userId) {
 
         java.util.List<model.LoyaltyTransaction> list = new java.util.ArrayList<>();
+        // [SQL10-16] Tab Lịch sử tích điểm trong hồ sơ: đọc giao dịch của người đang đăng nhập.
+        // . Dấu ? từ trái sang phải: 1=mã người dùng.
+        // . Sắp xếp theo thời gian mới trước; truy vấn này không tự tính số dư sau mỗi giao dịch.
         String sql = "SELECT id, customer_id, order_id, points_change, transaction_type, created_at " +
                      "FROM loyalty_transactions WHERE customer_id = ? ORDER BY created_at DESC";
         try (Connection conn = DBContext.getConnection();

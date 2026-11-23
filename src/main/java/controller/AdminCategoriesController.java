@@ -55,6 +55,9 @@ public class AdminCategoriesController extends HttpServlet {
             //   admin-categories.jsp qua categoryTotal, categoryActive, categoryInactive và productTotal.
             // ... Đọc tiếp tại admin-categories.jsp, tìm [DMM04].
 
+            // [SQL11-47] Thẻ Tổng/Hoạt động/Tạm ẩn danh mục: Java đếm từ danh sách categories đã đọc.
+            // . Tổng là categories.size; hoạt động và tạm ẩn đếm theo status. Nguồn SQL là
+            //   getAllCategoriesWithCount.
             request.setAttribute("categoryTotal", categories.size());
             request.setAttribute("categoryActive", categories.stream().filter(c -> "ACTIVE".equals(c.getStatus())).count());
             request.setAttribute("categoryInactive", categories.stream().filter(c -> "INACTIVE".equals(c.getStatus())).count());
