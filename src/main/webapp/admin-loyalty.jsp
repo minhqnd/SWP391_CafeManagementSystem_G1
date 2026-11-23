@@ -93,6 +93,8 @@
          . Khi admin-loyalty.jsp nhận dữ liệu trở lại, em hiện thông báo và điền ba ô bằng bộ quy tắc đã đọc.
            Nếu lần lưu bị lỗi thì dùng bản nhập dở đã giữ cho các ô, để người dùng sửa rồi bấm Lưu quy tắc lần
            nữa.
+         . Kết thúc Lưu quy tắc khi trang hiện kết quả và bộ quy tắc đã đọc lại. Với Cộng/Trừ điểm,
+           trang hiện kết quả tại đây, còn số dư và lịch sử mới được doGet đưa vào các phần bên dưới.
     --%>
     <c:if test="${not empty loyaltyMessage and empty loyaltyError}"><div data-form-notice class="alert alert-success py-2 small" role="status"><c:out value="${loyaltyMessage}" /></div></c:if>
 
@@ -220,6 +222,7 @@
                      . Khi admin-loyalty.jsp nhận activeCustomer, em hiện tên, số điện thoại và email của khách tìm được.
                        Em đồng thời đặt mã của khách vào form điều chỉnh để các lần bấm Cộng hoặc Trừ gửi đúng người đang
                        hiển thị.
+                     . Kết thúc tra cứu thành công khi trang hiện đúng khách cùng số dư và thông tin liên quan.
                 --%>
                 <h3><c:out value="${activeCustomer.fullName}" /></h3>
                 <p class="customer-contact"><c:out value="${activeCustomer.phone}" /> • <c:out value="${activeCustomer.email}" /></p>

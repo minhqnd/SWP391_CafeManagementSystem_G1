@@ -131,6 +131,7 @@ public class LoginController extends HttpServlet {
             session.setAttribute("user", loginUser);
 
             if (hasRedirect && "CUSTOMER".equalsIgnoreCase(loginUser.getRole())) {
+                // . Kết thúc đăng nhập thành công bằng cách đưa khách về đường dẫn hợp lệ đã chọn trước đó.
                 response.sendRedirect(request.getContextPath() + redirect);
                 return;
             }
@@ -138,6 +139,7 @@ public class LoginController extends HttpServlet {
             redirectByUser(loginUser, request, response);
         } else {
 
+            // . Kết thúc lần đăng nhập chưa thành công bằng cách mở lại form kèm thông báo, giữ ô tài khoản để sửa.
             utils.AccountFormFeedback.flash(request,"login",java.util.Map.of(),java.util.Map.of("username",userIdentifier));
             request.getSession().setAttribute("errorMsg", "Email, số điện thoại hoặc mật khẩu không đúng, hoặc tài khoản đã ngừng hoạt động.");
             response.sendRedirect(request.getContextPath() + (hasRedirect ? redirect : "/") + "?tab=login");
@@ -148,6 +150,7 @@ public class LoginController extends HttpServlet {
     // . Nếu cần chọn trang theo tài khoản, em gọi redirectByUser ngay trong LoginController.java. Hàm xem
     //   vai trò và vị trí của User vừa đăng nhập rồi chuyển tới màn hình dành cho quản trị, nhân viên hoặc
     //   khách hàng.
+    // . Kết thúc nhánh đăng nhập này khi chuyển tới đường dẫn phù hợp với tài khoản vừa đăng nhập.
     private void redirectByUser(User user, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String role = user.getRole();
         String position = user.getPosition();

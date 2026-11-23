@@ -106,7 +106,8 @@
          . Khi trang mở lại, admin-products.jsp hiện productMessage hoặc productError để báo kết quả. Với lỗi
            xảy ra sau khi đọc được form, controller giữ các ô và dòng size/topping để sửa tiếp, kể cả dòng
            trùng hoặc giá sai; ảnh mới phải chọn lại.
-         ... Xem phần giữ form sau lỗi tại AdminProductsController.java, tìm [SPL09].
+         . Kết thúc lần lưu khi trang hiện kết quả cùng danh sách và form đã đọc lại.
+         ... Chỉ khi xem cách giữ form sau lỗi, đọc AdminProductsController.java, tìm [SPL09].
     --%>
     <c:if test="${not empty productMessage and empty productError}"><div data-form-notice class="alert alert-success py-2 mb-0" role="status"><c:out value="${productMessage}" /></div></c:if>
     <c:if test="${not empty productError}"><div data-form-notice class="alert alert-danger py-2 mb-0" role="alert"><c:out value="${productError}" /></div></c:if>

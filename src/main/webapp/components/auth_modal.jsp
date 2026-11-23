@@ -172,6 +172,7 @@
                                      . Khi trang mở lại, auth_modal.jsp nhận successMsg hoặc errorMsg mà controller đã giữ
                                        để hiện kết quả đăng ký, đăng nhập hoặc khôi phục mật khẩu. Hiện xong em xóa bản
                                        thông báo đã dùng để lần mở sau không lặp lại kết quả cũ.
+                                     . Kết thúc lần đăng ký tại thông báo kết quả; đăng ký thành công chưa tự đăng nhập.
                                 --%>
                                 <% if (displayError !=null) { %>
                                     <div data-account-notice role="alert" class="alert alert-danger p-2 mb-3 text-center" style="font-size: 0.875rem;">

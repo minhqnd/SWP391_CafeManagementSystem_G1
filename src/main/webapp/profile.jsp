@@ -315,6 +315,7 @@
                              . Khi profile.jsp nhận dữ liệu trở lại, em hiện successMsg hoặc errorMsg để người dùng biết kết
                                quả lưu hồ sơ hay đổi mật khẩu. Với lỗi từng ô, account_feedback.jsp và account-validation.js
                                nhận dữ liệu từ AccountFormFeedback.show để hiện đúng vị trí cần sửa.
+                             . Kết thúc lần đổi mật khẩu khi trang hiện kết quả; có lỗi thì người dùng sửa rồi gửi lại.
                         --%>
                         <c:if test="${not empty successMsg and empty errorMsg}">
                             <div data-account-notice role="status"
@@ -415,6 +416,7 @@
                                                    đã cập nhật. Người dùng thấy hồ sơ vừa lưu; nếu lần xử lý có lỗi thì
                                                    account-validation.js dùng các giá trị đã giữ để điền lại phần đang sửa
                                                    và hiện lời báo.
+                                                 . Kết thúc lần cập nhật hồ sơ khi trang hiện kết quả và thông tin tương ứng.
                                             --%>
                                             <form id="profileForm"
                                                 action="${pageContext.request.contextPath}/profile?action=update"

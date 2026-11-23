@@ -118,7 +118,8 @@
     <%-- [CTL08]
          . Khi admin-recipes.jsp nhận dữ liệu trở lại, trang hiện thông báo cùng công thức và giá vốn đã đọc
            lại. Nếu lưu lỗi và đã xác định được món thì mở hộp sửa với các dòng đã giữ để người dùng sửa tiếp.
-         ... Xem phần giữ các dòng sau lỗi tại AdminRecipeController.java, tìm [CTL09].
+         . Khi lưu thành công, chuỗi kết thúc tại thông báo cùng công thức và giá vốn đã đọc lại từ dữ liệu đã lưu.
+         ... Chỉ khi xem cách giữ các dòng sau lỗi, đọc AdminRecipeController.java, tìm [CTL09].
     --%>
     <c:if test="${not empty recipeMessage and empty recipeError}"><div data-form-notice class="alert alert-success mb-0" role="status"><c:out value="${recipeMessage}" /></div></c:if>
     <c:if test="${not empty recipeError and empty selectedProduct}"><div data-form-notice class="alert alert-danger mb-0" role="alert"><c:out value="${recipeError}" /></div></c:if>

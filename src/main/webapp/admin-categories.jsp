@@ -96,7 +96,8 @@
          . Khi trang mở lại, admin-categories.jsp nhận categoryMessage hoặc categoryError từ controller để báo
            kết quả. Với lỗi xảy ra sau khi đọc được form, các ô được giữ để người dùng sửa tiếp; tệp ảnh mới
            cần chọn lại nếu muốn gửi lại.
-         ... Xem phần giữ form sau lỗi tại AdminCategoriesController.java, tìm [DML08].
+         . Kết thúc lần lưu khi trang hiện kết quả cùng danh sách và form đã đọc lại.
+         ... Chỉ khi xem cách giữ form sau lỗi, đọc AdminCategoriesController.java, tìm [DML08].
     --%>
     <c:if test="${not empty categoryMessage and empty categoryError}"><div data-form-notice class="alert alert-success py-2 mb-0" role="status"><c:out value="${categoryMessage}" /></div></c:if>
     <c:if test="${not empty categoryError}"><div data-form-notice class="alert alert-danger py-2 mb-0" role="alert"><c:out value="${categoryError}" /></div></c:if>
