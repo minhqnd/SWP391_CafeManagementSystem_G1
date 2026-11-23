@@ -23,6 +23,8 @@ public class ResendOtpController extends HttpServlet {
             // [OTGL04]
             // . Khi gửi lại mã thành công, chương trình quay về doPost trong ResendOtpController.java. Em đặt thông
             //   báo rồi mở lại tab=otp để người dùng nhập mã mới trong auth_modal.jsp.
+            // ... Kết thúc lần Gửi lại khi auth_modal.jsp mở lại ô OTP cùng thông báo; muốn xác minh mã mới thì
+            //     người dùng bấm Xác nhận OTP.
             request.getSession().setAttribute("successMsg","Mã OTP mới đã được gửi đến email của bạn.");
         }catch(IllegalArgumentException e){request.getSession().setAttribute("errorMsg",e.getMessage());}
         // . Em gọi nextTab trong PasswordRecoveryService.java để mở lại bước còn dùng được: gửi thành công

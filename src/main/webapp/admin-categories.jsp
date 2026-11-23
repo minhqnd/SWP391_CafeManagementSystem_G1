@@ -63,6 +63,8 @@
            /login?action=logout, do LoginController.doGet gọi session.invalidate (kết thúc lần đăng nhập hiện
            tại) rồi chuyển về Trang chủ. Hai nút này chuyển trang hoặc kết thúc phiên, không lưu hay xóa danh
            mục đang chỉnh dở.
+         ... Kết thúc tại trang quản trị khi bấm logo, hoặc tại Trang chủ sau khi LoginController.doGet hủy phiên nếu
+             bấm Đăng xuất.
     --%>
     <a href="${ctx}/admin-dashboard.jsp" class="text-decoration-none fw-bold text-danger"><span class="material-symbols-outlined align-middle">local_cafe</span> AURA CAFÉ · ADMIN</a>
     <a href="${ctx}/login?action=logout" class="btn btn-sm btn-light">Đăng xuất</a>
@@ -83,6 +85,7 @@
              . Bốn thẻ trên admin-categories.jsp lấy số từ categoryTotal, categoryActive, categoryInactive và
                productTotal. Trước đó doGet trong AdminCategoriesController.java đã đếm và đưa sang để người dùng
                nhìn tổng danh mục, số hoạt động, tạm ẩn và tổng sản phẩm.
+             ... Kết thúc phần thống kê khi bốn số tổng quan đã hiện trên admin-categories.jsp.
         --%>
         <div class="category-stats" aria-label="Thống kê danh mục">
             <div class="category-stat"><span>Tổng danh mục</span><strong><c:out value="${categoryTotal}" /></strong></div>
@@ -116,6 +119,8 @@
                              . Để dựng bảng trong admin-categories.jsp, em lặp danh sách categories mà
                                AdminCategoriesController.doGet đưa sang. Mỗi hàng dùng thông tin và mã của cùng danh mục,
                                nên nút Sửa, Ẩn hoặc Xóa sẽ gửi đúng mã của hàng vừa bấm.
+                             ... Kết thúc mở danh sách khi các hàng danh mục đã hiện trên admin-categories.jsp; bấm
+                                 một nút của hàng mới bắt đầu thao tác tiếp theo.
                         --%>
                         <c:forEach var="category" items="${categories}">
                             <tr>
@@ -128,6 +133,8 @@
                                        kèm số sản phẩm) đếm bằng COUNT(p.id) theo từng danh mục rồi controller đưa về. Số
                                        này gồm cả món đang bán và tạm ngừng thuộc nhóm; danh sách Menu cho khách dùng hàm
                                        đọc riêng và chỉ đếm món đang bán trong danh mục hoạt động.
+                                     ... Kết thúc phần đếm tại cột Số món của đúng danh mục trên
+                                         admin-categories.jsp.
                                 --%>
                                 <td class="text-end fw-bold font-monospace"><c:out value="${category.productCount}" /></td>
                                 <td><c:choose><c:when test="${category.status eq 'ACTIVE'}"><span class="badge rounded-pill text-bg-success">Hoạt động</span></c:when><c:otherwise><span class="badge rounded-pill text-bg-secondary">Tạm ẩn</span></c:otherwise></c:choose></td>
@@ -188,6 +195,8 @@
                      . Form trong admin-categories.jsp dùng selectedCategory từ AdminCategoriesController.doGet để biết
                        đang thêm hay sửa. Nếu đang sửa thì hiện thông tin danh mục đã chọn; nếu lần lưu trước bị lỗi thì
                        dùng bản nhập dở để người dùng tiếp tục sửa.
+                     ... Kết thúc mở form khi thông tin danh mục đã điền trên admin-categories.jsp; việc ghi chỉ bắt
+                         đầu khi bấm Tạo danh mục hoặc Lưu thay đổi.
                 --%>
                 <form data-admin-form="category" method="post" action="${ctx}/admin/categories" enctype="multipart/form-data" novalidate>
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="save">
@@ -225,6 +234,8 @@
                            AdminCategoriesController.save (kiểm tra và lưu danh mục) rồi CategoryDAO.saveCategory (ghi danh
                            mục) để xóa ảnh của danh mục. Nếu có ảnh mới thì ưu tiên lưu ảnh mới và bỏ lựa chọn xóa; chưa bấm
                            lưu thì ảnh cũ vẫn còn.
+                         ... Kết thúc chọn xóa ảnh tại lựa chọn removeImage và vùng xem trước; muốn ghi lựa chọn này
+                             thì bấm nút lưu của form danh mục.
                     --%>
                     <c:if test="${selectedHasImage}"><div class="form-check mt-2 mb-3"><input id="removeImage" name="removeImage" value="true" type="checkbox" class="form-check-input"><label for="removeImage" class="form-check-label small">Xóa ảnh hiện tại</label></div></c:if>
 
@@ -250,6 +261,7 @@
                          . Khi bấm Hủy sửa trong admin-categories.jsp, em mở lại /admin/categories mà không kèm editId.
                            doGet trong AdminCategoriesController.java dựng lại form thêm mới, nên phần đang sửa được đóng mà
                            không lưu thay đổi.
+                         ... Kết thúc Hủy sửa khi admin-categories.jsp mở lại form thêm mới.
                     --%>
                     <c:if test="${not empty selectedCategory}"><a href="${ctx}/admin/categories" class="btn btn-light w-100 mt-2">Hủy sửa</a></c:if>
                 </form>
@@ -272,6 +284,8 @@
     // . Khi chọn ảnh trong admin-categories.jsp, sự kiện change gọi URL.createObjectURL để hiện tệp vừa chọn
     //   ở vùng xem trước. Khi chọn xóa ảnh thì vùng này bỏ ảnh. Đây mới là xem trước; ảnh chỉ được gửi đến
     //   AdminCategoriesController.save (kiểm tra và lưu danh mục) khi bấm lưu.
+    // ... Kết thúc xem trước tại ảnh vừa chọn hoặc vùng ảnh trống trên admin-categories.jsp; chưa thực hiện bước
+    //     ghi ảnh.
     const showPlaceholder = () => { preview.hidden = true; placeholder.hidden = false; };
     preview.addEventListener('error', showPlaceholder);
     input.addEventListener('change', () => {

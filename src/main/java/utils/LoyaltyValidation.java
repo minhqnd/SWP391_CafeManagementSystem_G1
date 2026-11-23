@@ -10,6 +10,8 @@ public final class LoyaltyValidation {
     // . Từ ruleValue trong AdminLoyaltyController.java, em gọi wholeNumber trong LoyaltyValidation.java để
     //   kiểm tra số nguyên. Em truyền nội dung ô, tên hiển thị và hai giới hạn; hợp lệ thì trả số về
     //   ruleValue, sai thì báo lỗi để controller gắn đúng ô và dừng lưu.
+    // ... Quay lại ruleValue trong AdminLoyaltyController.java ngay sau LoyaltyValidation.wholeNumber; ruleValue
+    //     trả số cho updateRules hoặc giữ lỗi của ô, rồi updateRules xét errors của cả ba ô.
     public static long wholeNumber(String raw, String label, long min, long max) {
         // . Em bỏ khoảng trắng đầu cuối để kiểm tra đúng phần số người dùng nhập.
         String value = raw == null ? "" : raw.trim();

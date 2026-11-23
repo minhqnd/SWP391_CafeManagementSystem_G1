@@ -145,6 +145,8 @@ public class UserDAO extends BaseDAO {
     //   RegisterController.doPost và tìm trong users. Em trả đúng hoặc sai về controller để nếu địa chỉ đã
     //   được dùng thì báo lỗi tại ô Email trước khi tạo tài khoản. Nếu truy vấn bị lỗi thì báo không kiểm tra
     //   được thông tin; em không coi email đó là còn trống để tiếp tục đăng ký.
+    // ... Quay lại RegisterController.java, trong doPost ngay sau userDAO.checkEmailExists: trùng thì thêm lỗi
+    //     email, rồi xét errors trước khi tạo tài khoản.
     public boolean checkEmailExists(String email) {
         String sql = "SELECT id FROM users WHERE email = ?";
         try (Connection conn = DBContext.getConnection();
@@ -163,6 +165,8 @@ public class UserDAO extends BaseDAO {
     //   RegisterController.doPost và tìm trong users. Em trả kết quả về controller để nếu số đã có tài khoản
     //   thì báo tại ô Số điện thoại và chưa tạo tài khoản mới. Nếu không đọc được dữ liệu thì báo lỗi riêng,
     //   để controller dừng đăng ký và giữ các ô đang nhập.
+    // ... Quay lại RegisterController.java, trong doPost ngay sau userDAO.checkPhoneExists: trùng thì thêm lỗi
+    //     phone, rồi kiểm tra email và xét errors.
     public boolean checkPhoneExists(String phone) {
         if (phone == null || phone.trim().isEmpty()) {
             return false;
@@ -186,6 +190,8 @@ public class UserDAO extends BaseDAO {
     //   trong account-validation.js để báo ngay tại ô nhập.
     // .. Nếu việc đọc dữ liệu gặp lỗi thì em báo không kiểm tra được, thay vì coi liên hệ chắc chắn chưa có
     //    người dùng.
+    // ... Quay lại AccountAvailabilityController.java, trong doPost sau users.contactExists; controller gửi exists
+    //     về checkContact trong account-validation.js để hiện lỗi liên hệ hoặc cho gửi form.
     public boolean contactExists(String field, String value, int excludedUserId) {
         if (!"email".equals(field) && !"phone".equals(field)) throw new IllegalArgumentException("Invalid contact field");
         String column = "email".equals(field) ? "LOWER(TRIM(email))" : "phone";
@@ -203,6 +209,8 @@ public class UserDAO extends BaseDAO {
     // . Ở findActiveAccountByEmail trong UserDAO.java, em nhận email từ PasswordRecoveryService.start và tìm
     //   tài khoản tương ứng. Có đúng một tài khoản còn hoạt động thì trả User về start để gửi OTP; không có
     //   thì trả null. Tài khoản bị khóa, email gắn nhiều tài khoản hoặc lỗi tra cứu được báo riêng, chưa gửi mã.
+    // ... Quay lại PasswordRecoveryService.java, trong start sau users.findActiveAccountByEmail: không có tài
+    //     khoản thì báo lỗi; có tài khoản mới kiểm tra thời gian chờ và gửi OTP.
     public User findActiveAccountByEmail(String email) {
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT id,email,status FROM users WHERE LOWER(TRIM(email))=? LIMIT 2")) {
@@ -232,6 +240,9 @@ public class UserDAO extends BaseDAO {
     //   nhập từ ProfileController.authorize (đọc và kiểm tra người đang đăng nhập). Em đọc tài khoản ACTIVE
     //   cùng số điểm rồi trả User về authorize, để trang hồ sơ dùng thông tin hiện tại của đúng người. Không
     //   tìm thấy thì trả null; lỗi đọc dữ liệu được báo riêng để không xóa nhầm phiên đang đăng nhập.
+    // ... Nếu đang mở hồ sơ và tìm được tài khoản, quay lại ProfileController.java, tìm [HSTV01] để cập nhật thông tin vừa đọc.
+    // ... Nếu AccountAvailabilityController.java gọi kiểm tra tài khoản trước khi tra trùng liên hệ, quay lại
+    //     doPost sau users.getActiveUserById để tiếp tục tìm liên hệ; lỗi hoặc không có tài khoản thì dừng yêu cầu đó.
     public User getActiveUserById(int id) {
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT id,full_name,phone,email,role,position,status,birthday,address,total_points FROM users WHERE id=? AND status='ACTIVE'")) {
@@ -249,6 +260,8 @@ public class UserDAO extends BaseDAO {
     //   PasswordRecoveryService.reset. Em băm mật khẩu rồi cập nhật đúng tài khoản ACTIVE trong users, trả
     //   true nếu ghi được đúng một tài khoản, false nếu tài khoản không còn khớp. Nếu không đọc/ghi được dữ
     //   liệu thì báo lỗi riêng về reset; người dùng có thể thử lại khi lần xác minh vẫn còn hạn.
+    // ... Quay lại PasswordRecoveryService.java, trong reset sau users.resetPasswordById để xét updated và xóa dữ
+    //     liệu xác minh; reset xong mới về ResetPasswordController.doPost.
     public boolean resetPasswordById(int id, String verifiedEmail, String password) {
         if (AccountValidation.passwordError(password, password) != null) return false;
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
@@ -293,7 +306,9 @@ public class UserDAO extends BaseDAO {
     // . Đến updateUserProfile trong UserDAO.java, em kiểm tra email và số điện thoại có thuộc tài khoản khác
     //   không rồi cập nhật users theo mã người dùng còn ACTIVE. Em trả kết quả thành công hoặc lý do lỗi về
     //   ProfileController.update để hiện đúng kết quả.
-    // ... Đọc tiếp tại ProfileController.java, tìm [HSL06].
+    // ... Khi result là success, đọc tiếp tại ProfileController.java, tìm [HSL06] để cập nhật phiên đăng nhập.
+    // ... Khi result là lỗi, quay lại update trong ProfileController.java ngay sau users.updateUserProfile;
+    //     nhánh kiểm tra result giữ các ô, hiện lỗi rồi renderProfile mở lại trang để kết thúc lần lưu lỗi.
     public String updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
         String sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, birthday = ?, address = ? WHERE id = ? AND status='ACTIVE'";
         try (Connection conn = getConnection();
@@ -360,6 +375,8 @@ public class UserDAO extends BaseDAO {
     //   lịch sử của người đó trong loyalty_transactions rồi trả danh sách về renderProfile để đưa vào
     //   loyaltyHistory và hiện trên profile.jsp. Nếu truy vấn lỗi thì báo về renderProfile để hiện cảnh báo
     //   chưa tải được lịch sử, tránh hiển thị nhầm rằng khách chưa có giao dịch điểm.
+    // ... Quay qua renderProfile trong ProfileController.java để đặt loyaltyHistory; xem kết quả trên profile.jsp,
+    //     tìm [HSLS03].
     public java.util.List<model.LoyaltyTransaction> getLoyaltyHistoryByUserId(int userId) {
 
         java.util.List<model.LoyaltyTransaction> list = new java.util.ArrayList<>();

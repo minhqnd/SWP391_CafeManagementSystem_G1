@@ -18,6 +18,8 @@ public class CategoryDAO extends BaseDAO {
     // . Hàm getAllCategoriesWithCount (đọc danh mục kèm số sản phẩm) trong CategoryDAO.java được doGet của
     //   AdminCategoriesController.java gọi để lấy danh sách danh mục. Em đọc categories kèm số sản phẩm từng
     //   nhóm rồi trả danh sách về doGet để đưa lên bảng trong admin-categories.jsp.
+    // ... Quay qua doGet trong AdminCategoriesController.java để đặt categories; xem bảng trả về tại
+    //     admin-categories.jsp, tìm [DMD01].
     public List<Category> getAllCategoriesWithCount() {
 
         List<Category> list = new ArrayList<>();
@@ -72,6 +74,8 @@ public class CategoryDAO extends BaseDAO {
     //   CategoryDAO.java, em nhận mã danh mục từ hàm delete (kiểm tra điều kiện rồi xóa) của
     //   AdminCategoriesController.java. Em đếm sản phẩm thuộc danh mục đã xuất hiện trong order_items rồi
     //   trả số về delete, để chặn xóa nếu có lịch sử đơn hàng.
+    // ... Quay lại AdminCategoriesController.java, trong delete sau getOrderedProductCountByCategory; có món đã
+    //     bán thì báo lỗi, đủ điều kiện mới gọi deleteCategoryAndProducts trong CategoryDAO.java.
     public int getOrderedProductCountByCategory(int categoryId) {
         String sql = "SELECT COUNT(DISTINCT p.id) "
                 + "FROM products p JOIN order_items oi ON oi.product_id = p.id "
@@ -92,6 +96,8 @@ public class CategoryDAO extends BaseDAO {
     //   mục đang sửa từ AdminCategoriesController.save (kiểm tra và lưu danh mục). Em tìm tên trong
     //   categories và bỏ qua mã hiện tại, rồi trả đúng hoặc sai để hàm save biết có bị trùng với danh mục
     //   khác không.
+    // ... Quay lại AdminCategoriesController.java, trong save ngay sau categoryNameExists; tên trùng thì báo lỗi,
+    //     tên hợp lệ mới tiếp tục kiểm tra và gọi saveCategory.
     public boolean categoryNameExists(String name, int exceptId) {
         String sql = "SELECT 1 FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND id <> ? LIMIT 1";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -224,6 +230,8 @@ public class CategoryDAO extends BaseDAO {
     // . Ở updateCategoryStatus (lưu trạng thái ẩn/hiện danh mục) trong CategoryDAO.java, em nhận mã và trạng
     //   thái từ AdminCategoriesController.toggle (ẩn hoặc hiện danh mục). Em sửa categories.status theo đúng
     //   mã rồi trả kết quả về toggle để controller thông báo và mở lại danh sách đã cập nhật.
+    // ... Quay lại AdminCategoriesController.java, trong toggle sau updateCategoryStatus; đặt categoryMessage hoặc
+    //     báo lỗi rồi doPost mở lại admin-categories.jsp để hiện kết quả.
     public boolean updateCategoryStatus(int id, String status) throws SQLException, ClassNotFoundException {
 
         try (Connection conn = getConnection();
@@ -239,6 +247,8 @@ public class CategoryDAO extends BaseDAO {
     //   nhận mã danh mục từ AdminCategoriesController.delete (kiểm tra điều kiện rồi xóa). Em xóa các sản
     //   phẩm thuộc nhóm rồi xóa danh mục, hoàn tất cả hai mới xác nhận. Nếu gặp lỗi thì hủy thay đổi và báo
     //   kết quả về hàm delete.
+    // ... Quay lại AdminCategoriesController.java, trong delete sau deleteCategoryAndProducts; đặt kết quả xóa rồi
+    //     doPost mở lại danh sách trong admin-categories.jsp và hiện thông báo.
     public boolean deleteCategoryAndProducts(int id) throws SQLException, ClassNotFoundException {
         if (id <= 0) throw new IllegalArgumentException("Category id must be positive.");
         try (Connection conn = getConnection()) {
@@ -267,6 +277,9 @@ public class CategoryDAO extends BaseDAO {
     // . Hàm getAllActiveCategoriesWithCount (đọc danh mục hoạt động kèm số món đang bán) trong
     //   CategoryDAO.java được MenuController.doGet và index.jsp gọi để đọc danh mục cho khách xem. Em chỉ
     //   lấy nhóm ACTIVE kèm số món đang bán, rồi trả danh sách về nơi gọi để dựng Menu hoặc Trang chủ.
+    // ... Nếu MenuController.doGet gọi thì quay lại MenuController.java sau getAllActiveCategoriesWithCount để
+    //     chuẩn bị menu.jsp; nếu index.jsp hoặc footer.jsp gọi thì quay đúng lời gọi này để dựng danh mục ngay
+    //     trên trang.
     public List<Category> getAllActiveCategoriesWithCount() {
 
         List<Category> list = new ArrayList<>();
@@ -296,6 +309,8 @@ public class CategoryDAO extends BaseDAO {
     // . Hàm getCategoryById (đọc danh mục theo mã) trong CategoryDAO.java nhận mã từ phần sửa, xóa danh mục
     //   hoặc lưu sản phẩm. Em đọc danh mục cùng ảnh rồi trả Category về controller đang gọi để điền form,
     //   kiểm tra trước khi xóa hoặc gán sản phẩm vào nhóm.
+    // ... Quay lại lời gọi getCategoryById: trong AdminCategoriesController.java, doGet điền form Sửa hoặc delete
+    //     kiểm tra nhóm cần xóa; trong AdminProductsController.java, save kiểm tra danh mục trước khi gán món.
     public Category getCategoryById(int id) {
 
         String sql = "SELECT c.id, c.name, c.status, c.image_url, "

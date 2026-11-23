@@ -25,6 +25,10 @@ public final class AccountCsrf {
     // . Khi controller tài khoản gọi require (đối chiếu mã bảo vệ của form) trong AccountCsrf.java, em lấy
     //   csrfToken của form để so với mã đã cấp cho lần dùng trang này. Hàm trả đúng hoặc sai để controller
     //   tiếp tục xử lý hoặc dừng yêu cầu không hợp lệ.
+    // ... Quay lại đầu doPost trong LoginController.java, RegisterController.java, ProfileController.java,
+    //     AccountAvailabilityController.java, ForgotPasswordController.java, VerifyOtpController.java,
+    //     ResendOtpController.java hoặc ResetPasswordController.java; sau require, true mới đọc form tiếp, false
+    //     thì dừng.
     public static boolean require(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         Object expected = session == null ? null : session.getAttribute(KEY);

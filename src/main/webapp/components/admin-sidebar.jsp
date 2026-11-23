@@ -218,6 +218,8 @@
                  . Khi bấm Đăng xuất trong admin-sidebar.jsp, em mở /login?action=logout để doGet trong
                    LoginController.java xử lý. Controller hủy phiên đăng nhập rồi chuyển về Trang chủ để kết thúc lần
                    dùng tài khoản hiện tại.
+                 ... Kết thúc Đăng xuất tại Trang chủ sau khi doGet trong LoginController.java đã hủy phiên đăng
+                     nhập.
             --%>
             <a href="${ctx}/login?action=logout" class="btn-logout" title="Đăng xuất">
                 <span class="material-symbols-outlined fs-5">logout</span>

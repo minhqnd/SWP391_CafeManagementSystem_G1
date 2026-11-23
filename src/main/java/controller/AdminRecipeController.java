@@ -54,6 +54,8 @@ public class AdminRecipeController extends HttpServlet {
     // . Khi mở Quản lý công thức, doGet trong AdminRecipeController.java đọc sản phẩm qua ProductDAO, nguyên
     //   liệu và giá nhập qua IngredientDAO, công thức qua ProductIngredientDAO. Em đưa các dữ liệu này về
     //   admin-recipes.jsp để hiện danh sách món, công thức và giá vốn.
+    // ... Trong AdminRecipeController.java, đọc tiếp thân doGet ngay bên dưới: đọc các danh sách, tính chi phí rồi
+    //     đặt dữ liệu trước khi forward tới admin-recipes.jsp.
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         if (!isAdmin(request, response)) return;
@@ -70,6 +72,8 @@ public class AdminRecipeController extends HttpServlet {
             // . Ở doGet trong AdminRecipeController.java, em nhận productId của món vừa bấm. Em gọi findProduct (tìm
             //   đúng món trong danh sách đã đọc) ngay trong controller, truyền danh sách sản phẩm và mã này để chọn
             //   đúng món rồi điền công thức vào hộp chỉnh sửa.
+            // ... Khi findProduct đã chọn được món, doGet đưa selectedProduct sang admin-recipes.jsp; đọc tiếp tại
+            //     admin-recipes.jsp, tìm [CTCH04] để thấy món của hộp chỉnh sửa.
             int selectedProductId = parseOptionalProductId(request.getParameter("productId"));
             Product selectedProduct = findProduct(products, selectedProductId);
             if (selectedProduct == null) {
@@ -100,6 +104,8 @@ public class AdminRecipeController extends HttpServlet {
             // . Trong doGet của AdminRecipeController.java, em lấy từng lượng nguyên liệu nhân với giá nhập rồi cộng
             //   lại thành recipeCost. Em đưa tổng chi phí và danh sách nguyên liệu chưa có giá về admin-recipes.jsp
             //   để người dùng biết giá vốn đang được tính từ đâu.
+            // ... Trong AdminRecipeController.java, tiếp tục doGet tới chỗ đặt recipeCost, recipeCostComplete và
+            //     missingCostIngredients; admin-recipes.jsp dùng các giá trị này hiện chi phí hoặc phần còn thiếu.
             BigDecimal recipeCost = BigDecimal.ZERO;
             List<String> missingCostIngredients = new ArrayList<>();
             for (ProductIngredient recipeIngredient : recipeIngredients) {
@@ -279,6 +285,8 @@ public class AdminRecipeController extends HttpServlet {
     // . Khi lưu lỗi và đã xác định được mã món, doPost gọi submittedRows để giữ mã nguyên liệu cùng định
     //   lượng đúng từng dòng, kể cả dòng trống hoặc bị trùng. Em giữ tối đa 101 dòng trong recipeDraft;
     //   doGet lấy bản này cho recipeFormRows để mở lại hộp sửa, không ghi đè công thức đang lưu.
+    // ... Quay lại doPost trong AdminRecipeController.java sau submittedRows để giữ recipeDraft và thêm productId
+    //     vào đường dẫn; doGet mở lại hộp sửa để kết thúc lần lưu lỗi.
     private List<Map<String, String>> submittedRows(String[] ingredientIds, String[] quantities) {
         List<Map<String, String>> rows = new ArrayList<>();
         int length = Math.max(ingredientIds == null ? 0 : ingredientIds.length,
@@ -374,6 +382,8 @@ public class AdminRecipeController extends HttpServlet {
     // . Trước khi mở hoặc lưu công thức, doGet và doPost gọi isAdmin (kiểm tra tài khoản Admin còn hoạt
     //   động) trong AdminRecipeController.java. Hàm kiểm tra tài khoản là Admin còn hoạt động; đúng thì tiếp
     //   tục, sai thì trả lỗi và dừng yêu cầu.
+    // ... Quay lại đầu doGet hoặc doPost trong AdminRecipeController.java sau isAdmin; đúng thì tiếp tục đọc hoặc
+    //     lưu công thức, sai thì đã trả lỗi và kết thúc yêu cầu.
     private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");

@@ -23,6 +23,7 @@
        (giữ lỗi và các ô qua lần chuyển trang) hoặc show (hiện lỗi trên trang đang mở). Em đưa tên form,
        lỗi và giá trị vào data-account-feedback để account-validation.js tìm đúng các ô, điền lại và hiển
        thị lỗi khi trang mở ra.
+     ... Đọc tiếp tại account-validation.js, tìm [BMTV01] để xem cách nhận dữ liệu và điền lại form sau lỗi.
 --%>
 <c:if test="${not empty accountFeedback}">
     <div hidden data-account-feedback data-form="<c:out value='${accountFeedback.form}'/>">

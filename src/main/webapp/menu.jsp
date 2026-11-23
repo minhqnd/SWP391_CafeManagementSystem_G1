@@ -396,6 +396,8 @@
                                        MenuController.doGet đọc qua ProductDAO.filterProducts (lọc món còn bán theo danh mục
                                        và từ khóa). Vì vậy số này thay đổi theo danh mục và từ khóa, không phải tổng mọi sản
                                        phẩm trong bảng.
+                                     ... Kết thúc phần số kết quả tại tổng số món của danh sách đang hiển thị trên
+                                         menu.jsp.
                                 --%>
                                 <span class="text-muted fs-6 fw-normal ms-2">(${products.size()} món)</span>
                             </h1>
@@ -410,6 +412,9 @@
                                  . Khi tìm kiếm trên menu.jsp, form gửi keyword và category đến MenuController.doGet qua
                                    /menu. Controller truyền hai giá trị vào ProductDAO.filterProducts (lọc món còn bán theo
                                    danh mục và từ khóa) để đọc món khớp điều kiện rồi đưa danh sách về menu.jsp để hiển thị.
+                                 ... Đọc MenuController.java, trong doGet tại keywordParam và
+                                     productDAO.filterProducts; kết thúc khi menu.jsp hiện các món khớp từ khóa và
+                                     danh mục.
                             --%>
                             <form action="${pageContext.request.contextPath}/menu" method="GET"
                                 class="position-relative w-100">
@@ -427,6 +432,8 @@
                                              . Dấu x trong ô tìm kiếm mở lại Menu không có keyword nhưng giữ category.
                                                MenuController.doGet đọc lại món trong danh mục đang chọn, không còn giới hạn
                                                theo từ khóa vừa xóa.
+                                             ... Đọc MenuController.doGet trong MenuController.java sau khi bỏ keyword; kết
+                                                 thúc khi menu.jsp hiện lại món của danh mục đang giữ.
                                         --%>
                                         <a href="${pageContext.request.contextPath}/menu${not empty currentCategory ? '?category=' : ''}${currentCategory}"
                                             class="menu-search-btn-clear" title="Xoá tìm kiếm">
@@ -457,6 +464,8 @@
                                          . Dấu x ở nhãn Danh mục bỏ category khỏi đường dẫn nhưng giữ keyword.
                                            MenuController.doGet tìm lại từ khóa trên các danh mục hoạt động, thay vì chỉ
                                            trong nhóm vừa chọn; dữ liệu sản phẩm không bị xóa.
+                                         ... Đọc MenuController.doGet trong MenuController.java sau khi bỏ category;
+                                             kết thúc khi menu.jsp hiện kết quả tìm từ khóa trên các nhóm hoạt động.
                                     --%>
                                     <a href="${pageContext.request.contextPath}/menu${not empty currentKeyword ? '?keyword=' : ''}${currentKeyword}"
                                         class="text-muted text-decoration-none ms-1">
@@ -472,6 +481,8 @@
                                     <%-- [MNX03]
                                          . Dấu x ở nhãn Từ khóa bỏ keyword nhưng giữ category rồi mở lại Menu.
                                            MenuController.doGet đọc lại các món còn bán theo danh mục hiện tại.
+                                         ... Đọc MenuController.doGet trong MenuController.java sau khi bỏ keyword; kết
+                                             thúc khi menu.jsp hiện danh sách của danh mục còn giữ.
                                     --%>
                                     <a href="${pageContext.request.contextPath}/menu${not empty currentCategory ? '?category=' : ''}${currentCategory}"
                                         class="text-muted text-decoration-none ms-1">
@@ -483,6 +494,8 @@
                                  . Xóa tất cả bỏ cả từ khóa lẫn danh mục bằng cách mở /menu không có tham số.
                                    MenuController.doGet gọi ProductDAO.filterProducts (lọc món còn bán theo danh mục và từ
                                    khóa) không kèm điều kiện để hiện lại toàn bộ món còn bán trong danh mục hoạt động.
+                                 ... Đọc MenuController.doGet trong MenuController.java khi không có category và
+                                     keyword; kết thúc khi menu.jsp hiện lại toàn bộ món được phép bán.
                             --%>
                             <a href="${pageContext.request.contextPath}/menu"
                                 class="btn btn-sm btn-link text-danger text-decoration-none p-0 ms-2 small fw-semibold">
@@ -501,7 +514,7 @@
                                        gọi ProductDAO.filterProducts (lọc món còn bán theo danh mục và từ khóa). Em lặp từng
                                        sản phẩm và đưa vào product_card.jsp để dựng thẻ món đã thỏa điều kiện bán cùng bộ
                                        lọc đang chọn.
-                                     ... Đọc tiếp tại ProductDAO.java, tìm [MNDS02].
+                                     ... Để xem truy vấn đã chuẩn bị danh sách này, đọc ProductDAO.java, tìm [MNDS02].
                                 --%>
                                 <c:forEach var="p" items="${products}">
                                     <div class="col">
@@ -522,6 +535,8 @@
                                 <%-- [MNX05]
                                      . Khi không có kết quả, nút Xem tất cả món mở /menu không kèm từ khóa hoặc danh mục để
                                        MenuController.doGet đọc lại danh sách còn bán.
+                                     ... Đọc MenuController.doGet trong MenuController.java với yêu cầu /menu không
+                                         có bộ lọc; kết thúc khi menu.jsp mở lại danh sách món.
                                 --%>
                                 <a href="${pageContext.request.contextPath}/menu"
                                     class="btn btn-danger btn-sm px-4 py-2 rounded-pill fw-semibold">
@@ -588,6 +603,8 @@
                     // . Nút Danh mục sản phẩm trên Menu thêm hoặc bỏ class show của menuCategoryDropdown, đồng thời đổi
                     //   aria-expanded. Nếu đường dẫn có phần #menuCategoryDropdown thì mở sẵn danh sách. Đây chỉ là mở bộ
                     //   chọn; bấm tên danh mục mới gửi điều kiện lọc tới controller.
+                    // ... Kết thúc mở hoặc thu danh mục khi menuCategoryDropdown đã đổi trạng thái trên menu.jsp;
+                    //     bấm một danh mục mới bắt đầu yêu cầu lọc.
                     const menuCategoryPicker = document.getElementById('menuCategoryDropdown');
                     const menuCategoryToggle = document.querySelector('.menu-category-toggle');
                     if (menuCategoryPicker && menuCategoryToggle) {

@@ -32,6 +32,7 @@ public class LoginController extends HttpServlet {
         // . Khi bấm Đăng xuất, yêu cầu /login?action=logout đến doGet trong LoginController.java. Em gọi
         //   session.invalidate (kết thúc lần đăng nhập hiện tại) để xóa thông tin phiên đăng nhập rồi
         //   sendRedirect (chuyển sang đường dẫn khác) về Trang chủ, kết thúc lần dùng tài khoản hiện tại.
+        // ... Kết thúc Đăng xuất khi trình duyệt mở Trang chủ và phiên đăng nhập cũ đã bị hủy.
         if ("logout".equals(action)) {
 
             session.invalidate();
@@ -61,6 +62,8 @@ public class LoginController extends HttpServlet {
         // . Khi nhận form tại doPost trong LoginController.java, em lấy email hoặc số điện thoại và mật khẩu. Em
         //   bỏ khoảng trắng đầu cuối của định danh, kiểm tra hai ô có nội dung và đúng giới hạn rồi mới chuyển
         //   sang bước tìm tài khoản.
+        // ... Đọc tiếp trong LoginController.java, tìm [DNL03] sau phần kiểm tra hai ô để xem cách đối chiếu tài
+        //     khoản.
         String userIdentifier = request.getParameter("username");
         if (userIdentifier != null) {
             userIdentifier = userIdentifier.trim();
@@ -74,6 +77,8 @@ public class LoginController extends HttpServlet {
         // . Trong doPost của LoginController.java, em kiểm tra email hoặc số điện thoại không trống và tối đa
         //   150 ký tự, mật khẩu không trống và tối đa 255 ký tự. Nếu sai, em gọi AccountFormFeedback.flash (giữ
         //   lỗi và các ô qua lần chuyển trang) để giữ thông tin cần điền lại rồi mở form Đăng nhập kèm lỗi.
+        // ... Trong LoginController.java, còn lỗi thì doPost mở lại form Đăng nhập kèm lỗi; hết lỗi thì đọc tiếp
+        //     phần gọi userDAO.login ngay bên dưới.
         java.util.Map<String,String> inputErrors = new java.util.LinkedHashMap<>();
         if (userIdentifier == null || userIdentifier.isEmpty()) {
             inputErrors.put("username", "Vui lòng nhập email hoặc số điện thoại.");

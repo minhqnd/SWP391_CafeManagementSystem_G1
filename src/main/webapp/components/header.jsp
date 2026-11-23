@@ -150,6 +150,7 @@
                 <%-- [TCVE01]
                      . Khi bấm logo Aura Café trong header.jsp, em mở đường dẫn Trang chủ. index.jsp đọc
                        danh mục và món nổi bật để dựng lại màn hình; thao tác này không gửi form đang nhập.
+                     ... Kết thúc về Trang chủ khi index.jsp đã dựng xong danh mục, banner và các món nổi bật.
                 --%>
                 <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2 me-4"
                    href="${pageContext.request.contextPath}/">
@@ -175,6 +176,7 @@
              . Khi bấm biểu tượng ba gạch trên màn hình nhỏ, Bootstrap dùng data-bs-target để mở hoặc
                thu mainNavbar ngay trên trang. Nút chỉ hiện các đường dẫn; bấm một đường dẫn mới chuyển
                trang, còn mở hoặc thu thanh này không gửi thông tin tới controller.
+             ... Kết thúc thao tác khi mainNavbar đã được mở hoặc thu trên màn hình hiện tại.
         --%>
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
                 aria-controls="mainNavbar" aria-expanded="false" aria-label="Mở điều hướng">
@@ -263,6 +265,8 @@
                              . Khi đã đăng nhập, nút tài khoản dùng sessionScope.user để hiện tên, vai trò, số điện thoại
                                hoặc email và số điểm nếu có. Bấm nút thì Bootstrap mở danh sách Hồ sơ, Đăng xuất và các
                                đường dẫn phù hợp; thao tác mở không đọc lại tài khoản.
+                             ... Kết thúc mở danh sách tài khoản khi các lựa chọn Hồ sơ, Đăng xuất và các đường dẫn
+                                 tương ứng đã hiện.
                         --%>
                         <div class="dropdown">
                             <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark header-user" data-bs-toggle="dropdown">
@@ -401,6 +405,9 @@
                  . Liên kết Menu mở /menu để MenuController.doGet đọc món còn bán; Thành viên Aura mở /profile để
                    ProfileController.doGet đọc hồ sơ của người đang đăng nhập. Đây là các đường dẫn phụ tới cùng màn
                    hình với nút Menu và Hồ sơ đã giải thích ở phía trên.
+                 ... Bấm Menu thì đọc MenuController.doGet trong MenuController.java; bấm Thành viên Aura thì đọc
+                     ProfileController.doGet trong ProfileController.java. Kết thúc tại trang mà từng đường dẫn mở
+                     ra.
             --%>
             <a class="${param.activePage == 'menu' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/menu">Menu &amp; Đồ uống</a>
             <a class="${param.activePage == 'feedback' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/feedback">Liên hệ &amp; Góp ý</a>
@@ -411,6 +418,8 @@
                          . Mỗi danh mục dùng dữ liệu categories do MenuController.doGet đọc từ CategoryDAO. Khi bấm tên, em
                            gửi category là mã nhóm và giữ currentKeyword nếu có, để ProductDAO.filterProducts (lọc món còn
                            bán theo danh mục và từ khóa) tìm đúng món. Số cạnh tên là số món còn bán của nhóm.
+                         ... Đọc MenuController.java, phần doGet nhận category và keyword trước
+                             productDAO.filterProducts; kết thúc khi menu.jsp hiện các món của điều kiện vừa chọn.
                     --%>
                     <c:forEach var="cat" items="${categories}">
                         <c:url var="menuCategoryUrl" value="/menu">

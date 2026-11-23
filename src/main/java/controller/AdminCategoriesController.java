@@ -159,6 +159,8 @@ public class AdminCategoriesController extends HttpServlet {
     // . Nếu lưu danh mục bị lỗi sau khi đọc được form, em gọi preserveDraftAfterSaveError để giữ mã, tên và trạng thái
     //   đang nhập vào categoryDraft. Khi trang mở lại, doGet đưa bản này về form để sửa tiếp;
     //   tệp ảnh mới không nằm trong bản giữ lại nên người dùng cần chọn lại nếu muốn gửi lại.
+    // ... Quay lại nhánh catch của doPost trong AdminCategoriesController.java sau preserveDraftAfterSaveError;
+    //     đặt categoryError rồi chuyển trang, doGet đưa categoryDraft về form để kết thúc lần lưu lỗi.
     private void preserveDraftAfterSaveError(String action, HttpServletRequest request, HttpSession session) {
         if (!"save".equals(action)) return;
         int id;
@@ -200,7 +202,7 @@ public class AdminCategoriesController extends HttpServlet {
         //   mới được chuyển cho CategoryDAO.saveCategory (ghi danh mục) để lưu.
     // .. Em chỉ nhận ảnh JPG, PNG, GIF hoặc WebP, tối đa 5 MB; tệp sai thì báo lỗi và chưa lưu danh mục.
     //   Trường hợp cả biểu mẫu chưa đọc được được xử lý trước đó bởi AdminFormFeedback.readMultipart.
-    // ... Xem phần nhận biểu mẫu có ảnh tại AdminFormFeedback.java, tìm [DMAN04].
+    // ... Nếu cần xem cách nhận biểu mẫu trước khi vào save, đọc AdminFormFeedback.java, tìm [DMAN04].
         if (imagePart != null && imagePart.getSize() > 0) {
             if (imagePart.getSize() > MAX_IMAGE_SIZE) {
                 throw new IllegalArgumentException("Ảnh danh mục không được lớn hơn 5 MB.");
@@ -222,6 +224,8 @@ public class AdminCategoriesController extends HttpServlet {
         // . Trong hàm save (kiểm tra và lưu danh mục) của AdminCategoriesController.java, em lấy status từ ô
         //   Trạng thái. Em chỉ chấp nhận ACTIVE hoặc INACTIVE vì đây là hai trạng thái danh mục đang dùng; giá
         //   trị khác sẽ bị báo lỗi trước khi lưu.
+        // ... Trong AdminCategoriesController.java, tiếp tục save ngay dưới bước kiểm tra status; tạo Category rồi
+        //     gọi categoryDAO.saveCategory nếu các phần đều hợp lệ.
         if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) throw new IllegalArgumentException("Vui lòng chọn trạng thái Hoạt động hoặc Tạm ẩn.");
 
         // [DMTR01]
@@ -336,6 +340,8 @@ public class AdminCategoriesController extends HttpServlet {
     // . Trước khi mở hoặc xử lý danh mục, doGet và doPost gọi isAdmin (kiểm tra tài khoản Admin còn hoạt
     //   động) trong AdminCategoriesController.java. Hàm kiểm tra tài khoản đang dùng có phải Admin còn hoạt
     //   động không; đúng thì tiếp tục, sai thì trả lỗi và dừng yêu cầu.
+    // ... Quay lại đầu doGet hoặc doPost trong AdminCategoriesController.java sau isAdmin; đúng thì đọc hoặc xử lý
+    //     danh mục, sai thì đã trả lỗi và kết thúc yêu cầu.
     private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");

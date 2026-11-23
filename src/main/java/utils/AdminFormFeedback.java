@@ -21,6 +21,8 @@ public final class AdminFormFeedback {
     // . Trước khi đọc các ô và ảnh, controller gọi readMultipart trong AdminFormFeedback.java để đọc biểu
     //   mẫu có tệp đính kèm. Quá giới hạn thì báo dung lượng; lỗi đọc khác thì báo chưa đọc được biểu mẫu.
     //   Em trả false để controller quay về trang và chưa lưu, true thì controller tiếp tục nhận dữ liệu.
+    // ... Quay lại doPost trong AdminCategoriesController.java hoặc AdminProductsController.java ngay sau
+    //     AdminFormFeedback.readMultipart; false thì chuyển về trang báo lỗi, true mới đọc các ô để xử lý.
     public static boolean readMultipart(HttpServletRequest request, HttpSession session, String prefix) {
         if (request.getContentType() == null || !request.getContentType().toLowerCase(java.util.Locale.ROOT).startsWith("multipart/")) return true;
         try {

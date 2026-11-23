@@ -74,6 +74,8 @@
            /login?action=logout, do LoginController.doGet gọi session.invalidate (kết thúc lần đăng nhập hiện
            tại) rồi chuyển về Trang chủ. Hai nút này không gửi form lưu sản phẩm, nên thông tin đang chỉnh dở
            chưa được ghi.
+         ... Kết thúc tại trang quản trị khi bấm logo, hoặc tại Trang chủ sau khi LoginController.doGet hủy phiên nếu
+             bấm Đăng xuất.
     --%>
     <a href="${ctx}/admin-dashboard.jsp" class="text-decoration-none fw-bold text-danger"><span class="material-symbols-outlined align-middle">local_cafe</span> AURA CAFÉ · ADMIN</a>
     <a href="${ctx}/login?action=logout" class="btn btn-sm btn-light">Đăng xuất</a>
@@ -94,6 +96,7 @@
              . Ba thẻ trên admin-products.jsp dùng productTotal, productAvailable và productPaused mà
                AdminProductsController.doGet đưa sang. Em hiện lần lượt tổng món, số đang bán và số tạm ngừng để
                người dùng nắm tình trạng sản phẩm trước khi thao tác.
+             ... Kết thúc phần thống kê khi ba số tổng quan đã hiện trên admin-products.jsp.
         --%>
         <div class="product-stats" aria-label="Thống kê sản phẩm">
             <div class="product-stat"><span>Tổng sản phẩm</span><strong><c:out value="${productTotal}" /></strong></div>
@@ -121,6 +124,8 @@
                      . Khi bấm Lọc trong admin-products.jsp, form gửi từ khóa q và categoryId đến doGet trong
                        AdminProductsController.java. Controller truyền hai điều kiện vào ProductDAO.getProductsForAdmin
                        (đọc danh sách sản phẩm để quản lý) rồi đưa danh sách khớp về trang để hiển thị.
+                     ... Đọc AdminProductsController.java, phần doGet nhận q và categoryId rồi gọi
+                         getProductsForAdmin; kết thúc khi admin-products.jsp hiện bảng khớp bộ lọc.
                 --%>
                 <form method="get" action="${ctx}/admin/products" class="row g-2 align-items-center">
                     <div class="col-12 col-lg-5"><input name="q" value="${fn:escapeXml(searchKeyword)}" class="form-control form-control-sm" placeholder="Tìm tên, mã, mô tả..."></div>
@@ -136,6 +141,8 @@
                      . Khi bấm Xóa bộ lọc, em mở lại /admin/products không kèm q và categoryId.
                        AdminProductsController.doGet gọi ProductDAO.getProductsForAdmin (đọc danh sách sản phẩm để quản lý)
                        không có điều kiện để đọc lại toàn bộ món; thao tác này không xóa sản phẩm nào.
+                     ... Đọc AdminProductsController.java, phần doGet không có q và categoryId; kết thúc khi
+                         admin-products.jsp hiện lại bảng sản phẩm không còn hai bộ lọc.
                 --%>
                 <c:if test="${not empty searchKeyword or selectedCategoryId gt 0}"><a class="small d-inline-block mt-2" href="${ctx}/admin/products">Xóa bộ lọc</a></c:if>
             </div>
@@ -150,6 +157,8 @@
                              . Để dựng bảng trong admin-products.jsp, em lặp danh sách products mà
                                AdminProductsController.doGet đưa sang. Tên, giá, trạng thái và mã của các nút đều lấy từ
                                cùng một sản phẩm, nên thao tác Sửa, Ẩn hoặc Xóa sẽ tác động đúng hàng.
+                             ... Kết thúc mở danh sách khi các hàng sản phẩm đã hiện trên admin-products.jsp; nút của
+                                 mỗi hàng mở thao tác riêng với mã của hàng đó.
                         --%>
                         <c:forEach var="product" items="${products}">
                     <tr data-variants="${fn:escapeXml(product.variantsConfig)}">
@@ -227,6 +236,8 @@
              . Form trong admin-products.jsp dùng selectedProduct và bản nhập dở từ AdminProductsController.doGet.
                Có sản phẩm được chọn thì điền form Sửa; không có thì dùng id=0 cho yêu cầu thêm mới. Nếu lưu lỗi
                thì giữ thông tin để tiếp tục sửa.
+             ... Kết thúc mở form Sửa khi các ô sản phẩm, size và topping đã được điền; bấm Lưu thay đổi mới bắt đầu
+                 ghi dữ liệu.
         --%>
         <form id="productForm" data-admin-form="product" method="post" action="${ctx}/admin/products" enctype="multipart/form-data" novalidate>
             <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="${empty selectedProduct ? 0 : selectedProduct.id}">
@@ -282,6 +293,8 @@
                          . Chọn Xóa ảnh hiện tại mới bỏ ảnh ở phần xem trước. Khi bấm Lưu thay đổi, form gửi removeImage tới
                            AdminProductsController.save (kiểm tra và lưu sản phẩm) rồi ProductDAO.saveProduct (ghi sản phẩm)
                            để xóa ảnh đang lưu. Nếu chọn ảnh mới thì ưu tiên lưu ảnh mới và bỏ lựa chọn xóa ảnh.
+                         ... Kết thúc chọn xóa ảnh tại removeImage và vùng xem trước; bấm Lưu thay đổi mới gửi lựa
+                             chọn này để cập nhật ảnh.
                     --%>
                     <c:if test="${selectedHasImage}"><div class="form-check mt-2"><input id="removeImage" name="removeImage" value="true" type="checkbox" class="form-check-input"><label for="removeImage" class="form-check-label small">Xóa ảnh hiện tại</label></div></c:if>
                 </div>
@@ -291,6 +304,8 @@
                        topping) cùng file, truyền vùng size và tên hai ô sizeName, sizeDelta. Hàm tạo dòng tên và phụ thu;
                        khi lưu, buildVariantsConfig (kiểm tra và ghép size, topping để lưu) trong
                        AdminProductsController.java kiểm tra các cặp này để lưu cùng món.
+                     ... Trong admin-products.jsp, tìm định nghĩa function addVariantRow ở phần script để xem cách
+                         tạo dòng; thao tác kết thúc khi dòng size mới đã hiện.
                 --%>
                 <div class="col-12"><div class="variant-editor"><div class="variant-heading"><span>Size &amp; phụ thu</span><button type="button" class="btn btn-sm btn-outline-primary" id="addSize"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm size</button></div><div id="sizesList"></div></div></div>
 
@@ -299,6 +314,8 @@
                        topping) cùng file, truyền vùng topping và tên hai ô toppingName, toppingPrice. Dòng mới chỉ được
                        lưu khi gửi form, qua buildVariantsConfig (kiểm tra và ghép size, topping để lưu) trong
                        AdminProductsController.java để kiểm tra và ghép vào sản phẩm.
+                     ... Trong admin-products.jsp, tìm định nghĩa function addVariantRow ở phần script để xem cách
+                         tạo dòng; thao tác kết thúc khi dòng topping mới đã hiện.
                 --%>
                 <div class="col-12"><div class="variant-editor"><div class="variant-heading"><span>Topping &amp; giá</span><button type="button" class="btn btn-sm btn-outline-primary" id="addTopping"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm topping</button></div><div id="toppingsList"></div><div class="form-text">Không bắt buộc.</div></div></div>
                 </div>
@@ -317,6 +334,8 @@
                          . Khi bấm Hủy sửa trong admin-products.jsp, em mở lại /admin/products mà không có editId. doGet
                            trong AdminProductsController.java dựng form thêm mới để thoát phần đang sửa; thao tác này không
                            lưu những thay đổi vừa nhập.
+                         ... Kết thúc Hủy sửa khi admin-products.jsp mở lại form thêm mới, không còn sản phẩm đang
+                             chọn sửa.
                     --%>
                     <a href="${ctx}/admin/products" class="btn btn-light">Hủy sửa</a>
                 </c:if>
@@ -344,7 +363,7 @@
     //   hoặc topping cùng tên các ô cần tạo. Em thêm cặp ô tên và giá đúng tên gửi, để khi lưu form,
     //   buildVariantsConfig (kiểm tra và ghép size, topping để lưu) trong AdminProductsController.java đọc
     //   được từng cặp tương ứng.
-    // ... Đọc tiếp tại AdminProductsController.java, tìm [SPBT02].
+    // ... Khi bấm lưu sản phẩm, đọc tiếp tại AdminProductsController.java, tìm [SPBT02] để theo các dòng vừa tạo.
     const addVariantRow = (container, name, amount, nameField, amountField, namePlaceholder, amountPlaceholder) => {
         const row = document.createElement('div');
         row.className = 'variant-row';
@@ -367,6 +386,8 @@
         // . Nút thùng rác ở mỗi dòng size hoặc topping chỉ gọi row.remove để bỏ đúng dòng khỏi form. Những dòng
         //   còn lại được gửi khi bấm lưu; controller kiểm tra rồi ProductDAO.saveProduct (ghi sản phẩm) mới ghi
         //   cấu hình mới. Bấm xóa dòng chưa làm thay đổi sản phẩm đang lưu trong cơ sở dữ liệu.
+        // ... Kết thúc xóa dòng khi đúng dòng size hoặc topping đã biến mất khỏi form; bấm lưu mới ghi cấu hình
+        //     còn lại.
         row.querySelector('button').addEventListener('click', () => row.remove());
         container.appendChild(row);
     };
@@ -387,6 +408,8 @@
     //   vào productImagePreview cho người dùng xem trước. Khi bấm lưu, tệp mới tới
     //   AdminProductsController.save (kiểm tra và lưu sản phẩm) để kiểm tra rồi ProductDAO.saveProduct (ghi
     //   sản phẩm) để ghi vào cơ sở dữ liệu.
+    // ... Kết thúc xem trước khi ảnh vừa chọn đã hiện ở productImagePreview; bấm lưu mới gửi tệp sang phần kiểm
+    //     tra và ghi ảnh.
     const showPlaceholder = () => { preview.hidden = true; placeholder.hidden = false; };
     if (imageInput && preview && placeholder) {
         preview.addEventListener('error', showPlaceholder);
@@ -408,6 +431,7 @@
     //   sách size để hiện tên và phụ thu, đếm topping rồi điền vào variant-sizes và variant-toppings. Đây là
     //   cấu hình do ProductDAO.getProductsForAdmin (đọc danh sách sản phẩm để quản lý) đọc và controller đưa
     //   về, không phải dòng nhập dở.
+    // ... Kết thúc dựng cột khi tên size, phụ thu và số topping đã hiện trên đúng hàng sản phẩm.
     document.querySelectorAll('tr[data-variants]').forEach(row => {
         let data = {};
         try { data = JSON.parse(row.dataset.variants || '{}'); } catch (ignored) { data = {}; }

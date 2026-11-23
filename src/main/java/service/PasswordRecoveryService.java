@@ -90,6 +90,8 @@ public final class PasswordRecoveryService {
     // . Trong start (tạo và gửi mã OTP) của PasswordRecoveryService.java, em gọi reserve (kiểm tra giới hạn
     //   số lần gửi OTP) cùng file để kiểm tra giới hạn gửi mã. Em truyền email, nguồn yêu cầu và thời gian
     //   hiện tại; nếu gửi quá nhiều thì hàm báo phải chờ, còn trong giới hạn thì tiếp tục gửi OTP.
+    // ... Quay lại PasswordRecoveryService.java, trong start sau reserve; đủ điều kiện mới tạo mã và gọi
+    //     sender.test, còn vượt giới hạn thì báo lỗi về controller đang gửi mã.
     private synchronized void reserve(String email,String source,long now){
         emailSends.entrySet().removeIf(e->now-e.getValue()>=COOLDOWN);
         sourceSends.entrySet().removeIf(e->now-e.getValue().start()>=600000L);
@@ -116,6 +118,8 @@ public final class PasswordRecoveryService {
             // . Ở verify (xác minh mã OTP) trong PasswordRecoveryService.java, em so sáu chữ số vừa nhập với OTP
             //   đang giữ của lần yêu cầu này. Sai thì tăng số lần thử và báo lỗi; đủ năm lần sai thì hủy lần xác
             //   minh. Đúng thì bỏ OTP, giữ thời điểm xác minh để controller mở bước nhập mật khẩu mới.
+            // ... Quay lại VerifyOtpController.java sau service.verify: xác minh được thì mở tab reset_password;
+            //     sai hoặc hết hạn thì nhánh catch báo lỗi và chọn màn hình tiếp tục.
             boolean match=input!=null && input.matches("[0-9]{6}") && MessageDigest.isEqual(state.otp.getBytes(StandardCharsets.UTF_8),input.getBytes(StandardCharsets.UTF_8));
             if(!match){state.failures++;if(state.failures>=5){clear(session);throw new IllegalArgumentException("Bạn đã nhập sai 5 lần. Vui lòng yêu cầu mã mới.");}throw new IllegalArgumentException("Mã OTP không chính xác. Còn "+(5-state.failures)+" lần thử.");}
             state.otp=null;state.verifiedAt=now;
@@ -126,6 +130,9 @@ public final class PasswordRecoveryService {
     // . Khi bước xác minh hoặc đặt lại mật khẩu gặp lỗi, controller gọi nextTab trong file này để chọn
     //   màn hình có thể tiếp tục. Mã còn hạn thì về ô OTP, đã xác minh còn hạn thì về mật khẩu mới; hết hạn
     //   hoặc không còn dữ liệu xác minh thì quay về nhập email để yêu cầu mã mới.
+    // ... Quay lại nhánh catch trong VerifyOtpController.java, ResetPasswordController.java hoặc
+    //     ResendOtpController.java sau service.nextTab; controller ghép tab vào đường dẫn và mở lại form tương
+    //     ứng.
     public String nextTab(HttpSession session) {
         synchronized (session) {
             State state = (State) session.getAttribute(KEY);
@@ -155,6 +162,8 @@ public final class PasswordRecoveryService {
             //   bằng mật khẩu mới và xác nhận. Hàm kiểm tra 8–255 ký tự, có chữ và số, không có ký tự điều khiển,
             //   hai ô phải khớp. Có lỗi thì dừng trước khi gọi users.resetPasswordById (ghi mật khẩu mới cho tài
             //   khoản đã xác minh) để ghi mật khẩu mới.
+            // ... Trong PasswordRecoveryService.java, đọc tiếp reset ngay dưới bước kiểm tra: có error thì trả
+            //     lỗi, không có thì gọi users.resetPasswordById để ghi mật khẩu mới.
             String error=AccountValidation.passwordError(password,confirmation);if(error!=null)throw new IllegalArgumentException(error);
             boolean updated;
             try {
@@ -162,6 +171,9 @@ public final class PasswordRecoveryService {
             } catch (utils.AccountDataException e) {
                 throw new utils.RecoveryFailure(null,"Không lưu được mật khẩu mới lúc này. Vui lòng thử lại trước khi phiên xác minh hết hạn.");
             }
+            // . Sau khi UserDAO trả kết quả, em xóa dữ liệu xác minh; chưa đổi được thì báo lỗi,
+            //   đổi được thì reset trả về controller đã gọi để mở lại form Đăng nhập.
+            // ... Khi đổi thành công, đọc tiếp tại ResetPasswordController.java, tìm [OTDM05].
             clear(session);
             if(!updated)throw new IllegalArgumentException("Không thể đổi mật khẩu. Tài khoản có thể đã thay đổi; vui lòng yêu cầu lại.");
         }

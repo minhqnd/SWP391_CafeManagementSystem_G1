@@ -270,6 +270,8 @@
         // . Ở index.jsp, em gọi getBestSellingProducts (đọc các món nổi bật theo lượng bán) trong
         //   ProductDAO.java và truyền giới hạn 4 để lấy món nổi bật. Danh sách trả về được dùng cho banner và
         //   phần sản phẩm yêu thích, giúp nội dung Trang chủ lấy từ các món đang bán.
+        // ... Để xem cách đọc món nổi bật, đọc ProductDAO.java, tìm [MNBC01]; hàm trả về index.jsp để dựng banner
+        //     và sản phẩm yêu thích.
         List<Product> productsList = productDAO.getBestSellingProducts(4);
         request.setAttribute("bestSellerProducts", productsList);
         if (productsList != null && !productsList.isEmpty()) {
@@ -284,6 +286,8 @@
         //   đang bán) để đọc danh mục đang hoạt động cùng số món đang bán. Em đặt landingCategories để danh sách
         //   và số đếm bên cạnh tên được dựng từ dữ liệu thật; khi bấm một nhóm, MenuController.doGet lọc sản
         //   phẩm theo mã danh mục đó.
+        // ... Trong index.jsp, tiếp tục tới phần lặp landingCategories để dựng danh mục bên trái; kết thúc chuẩn
+        //     bị dữ liệu khi tên và số món của các nhóm đã hiện.
         CategoryDAO categoryDAO = new CategoryDAO();
         List<Category> landingCategories = categoryDAO.getAllActiveCategoriesWithCount();
         request.setAttribute("landingCategories", landingCategories);
@@ -299,7 +303,8 @@
                              . Danh mục bên trái lấy từ landingCategories; số cạnh tên là productCount của nhóm đó. Khi bấm,
                                em mở /menu kèm category để MenuController.doGet gọi ProductDAO.filterProducts (lọc món còn
                                bán theo danh mục và từ khóa) và chỉ hiện món còn bán của nhóm đã chọn.
-                             ... Đọc tiếp tại index.jsp, tìm [TCDM02].
+                             ... Nếu xem dữ liệu dựng danh mục ban đầu, đọc index.jsp, tìm [TCDM02]. Khi theo cú bấm
+                                 tên danh mục, đọc MenuController.java trong doGet tại phần nhận category và gọi filterProducts.
                         --%>
                         <c:forEach var="cat" items="${landingCategories}">
                             <a class="home-category-link" href="${pageContext.request.contextPath}/menu?category=${cat.id}">
@@ -327,6 +332,8 @@
                                      . Nút Khám phá menu mở /menu không kèm bộ lọc. MenuController.doGet đọc danh mục hoạt
                                        động và các món còn bán rồi đưa về menu.jsp cho khách xem. Nút Xem toàn bộ thực đơn
                                        bên dưới và banner mặc định dùng cùng đường dẫn.
+                                     ... Đọc MenuController.java, phần doGet nhận yêu cầu /menu không có bộ lọc; kết
+                                         thúc khi menu.jsp hiện danh mục hoạt động và các món đang bán.
                                 --%>
                                 <a class="btn btn-light btn-sm fw-bold px-3 py-2" href="${pageContext.request.contextPath}/menu">Khám phá menu</a>
                             </div>
@@ -389,6 +396,7 @@
         // . Trong show (đổi ảnh banner và chấm đang sáng) của index.jsp, em nhận vị trí ảnh từ nút bấm hoặc bộ
         //   đếm, tính vòng lại khi tới đầu hoặc cuối danh sách. Em đổi active và aria-hidden của ảnh, đồng thời
         //   đổi chấm đang sáng để người dùng biết banner nào đang được xem.
+        // ... Kết thúc mỗi lần chuyển ảnh khi banner và chấm active đã đổi sang đúng vị trí vừa chọn.
         function show(index) {
             current = (index + slides.length) % slides.length;
             slides.forEach((slide, i) => { slide.classList.toggle('active', i === current); slide.setAttribute('aria-hidden', i !== current); });

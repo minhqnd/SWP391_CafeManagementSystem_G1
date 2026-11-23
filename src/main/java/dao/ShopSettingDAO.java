@@ -112,7 +112,9 @@ public class ShopSettingDAO extends BaseDAO {
     // [TDQT05]
     // . Trong saveLoyaltyRules của ShopSettingDAO.java, em nhận ba số từ controller và thêm hoặc cập nhật
     //   các quy tắc trong shop_settings. Chỉ khi ghi được cả ba mới xác nhận và trả true; lỗi thì hủy cả bộ
-    //   thay đổi, trả false để controller báo chưa lưu được.
+    //   thay đổi và báo lỗi về controller để hiện chưa lưu được.
+    // ... Trong ShopSettingDAO.java, đọc tiếp conn.commit và return true của saveLoyaltyRules; nếu có lỗi thì
+    //     rollback và báo lỗi về AdminLoyaltyController.updateRules, không đặt thông báo thành công.
     public boolean saveLoyaltyRules(long earnUnit, int pointsStep, long stepValue) {
         // . Trước khi ghi quy tắc, trong ShopSettingDAO.saveLoyaltyRules (ghi cả ba quy tắc vào cơ sở dữ liệu)
         //   em gọi LoyaltyValidation.requireRange (kiểm tra số nằm trong khoảng cho phép) để kiểm tra lại cả ba

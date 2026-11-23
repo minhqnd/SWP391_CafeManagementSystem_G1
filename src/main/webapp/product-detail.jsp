@@ -618,6 +618,8 @@
                              . Ở product-detail.jsp, em nhận product mà ProductDetailController.doGet đã đọc bằng
                                ProductDAO.getAvailableProductById (đọc món còn bán theo mã). Trang dùng sản phẩm này để hiện
                                tên, giá, ảnh và các lựa chọn, giúp chi tiết khớp đúng món người dùng vừa bấm.
+                             ... Kết thúc xem chi tiết khi product-detail.jsp hiện đúng thông tin món vừa chọn; thao
+                                 tác chọn mua tiếp theo đi sang phần đặt hàng.
                         --%>
                         <h1 class="product-detail-name">${product.name}</h1>
 

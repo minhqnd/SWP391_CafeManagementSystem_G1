@@ -40,7 +40,7 @@ public class ProfileController extends HttpServlet {
         //   authorize (đọc và kiểm tra người đang đăng nhập) của ProfileController.java em cập nhật lại
         //   session.user. Vì profile.jsp đọc thông tin từ đây nên trang sẽ dùng tên, liên hệ và số điểm mới nhất
         //   của người đang đăng nhập.
-        // ... Đọc tiếp tại profile.jsp, tìm [HSTV02].
+        // ... Khi theo luồng mở hồ sơ, quay về doGet sau authorize rồi đọc tiếp tại ProfileController.java, tìm [HSXEM01].
 
         session.setAttribute("user",current);return current;
     }
@@ -111,22 +111,30 @@ public class ProfileController extends HttpServlet {
         // [HSHT02]
         // . Trong update của ProfileController.java, em lấy fullName rồi gọi AccountValidation.text để bỏ khoảng
         //   trắng đầu cuối. Em dùng tên đã làm gọn để kiểm tra và lưu, tránh giữ khoảng trắng thừa theo họ tên.
+        // ... Trong ProfileController.java, đọc tiếp phần nhận số điện thoại, email và ngày sinh của update; tên
+        //     được kiểm tra cùng các ô trong errors trước khi lưu.
         String name=AccountValidation.text(request.getParameter("fullName"));
 
         // [HSDT02]
         // . Tiếp theo trong update, em lấy phone rồi gọi AccountValidation.phone để chuẩn hóa số điện thoại
         //   trước khi kiểm tra. Nếu form không gửi ô này, em dùng số hiện tại của tài khoản để không làm mất
         //   liên hệ đang lưu.
+        // ... Trong ProfileController.java, tiếp tục update tới phần gọi AccountValidation.phoneError để kiểm tra
+        //     số vừa chuẩn hóa, rồi xét lỗi trước khi lưu hồ sơ.
         String phone=AccountValidation.phone(request.getParameter("phone")==null?user.getPhone():request.getParameter("phone"));
 
         // [HSEM02]
         // . Với email trong update, em gọi AccountValidation.email để bỏ khoảng trắng đầu cuối và chuyển về chữ
         //   thường. Em dùng cùng dạng địa chỉ này cho bước kiểm tra định dạng, tìm trùng và lưu hồ sơ.
+        // ... Trong ProfileController.java, tiếp tục update tới AccountValidation.emailError; email hợp lệ mới
+        //     được chuyển cho users.updateUserProfile để tìm trùng và lưu.
         String email=AccountValidation.email(request.getParameter("email")==null?user.getEmail():request.getParameter("email"));
         // [HSNS04]
         // . Trong update (kiểm tra và cập nhật hồ sơ) của ProfileController.java, em nhận ngày, tháng và năm từ
         //   ba ô của profile.jsp rồi ghép thành ngày sinh. Em đưa ngày này cho AccountValidation.birthdayError
         //   (kiểm tra ngày sinh hợp lệ) để kiểm tra ngày có thật và nằm trong khoảng cho phép trước khi lưu.
+        // ... Trong ProfileController.java, đọc tiếp phần ghép ba ô ngay dưới comment này rồi
+        //     AccountValidation.birthdayError trong update; sai thì hiện lỗi tại ô ngày sinh.
         String birthday=AccountValidation.text(request.getParameter("birthday"));
 
         String day=request.getParameter("birthDay");
@@ -147,6 +155,8 @@ public class ProfileController extends HttpServlet {
         //   AccountValidation.text để bỏ khoảng trắng đầu cuối. Em kiểm tra ký tự và độ dài trước khi truyền địa
         //   chỉ cùng các thông tin khác cho UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ mới) để
         //   lưu.
+        // ... Trong ProfileController.java, tiếp tục update tới AccountValidation.addressError và giới hạn 500 ký
+        //     tự; errors rỗng mới gọi users.updateUserProfile.
         String address=AccountValidation.text(request.getParameter("address"));
         java.util.Map<String,String> errors=new java.util.LinkedHashMap<>();
         // [HSL03]
@@ -225,6 +235,8 @@ public class ProfileController extends HttpServlet {
     //   người đó và ShopSettingDAO.getSettings (đọc các thiết lập đang lưu) để đọc quy tắc, rồi đưa dữ liệu
     //   về profile.jsp. Nếu lịch sử điểm chưa tải được, em đưa loyaltyHistoryError sang trang để báo rõ phần
     //   đang lỗi; thông tin hồ sơ vẫn được hiển thị.
+    // ... Sau khi renderProfile đặt dữ liệu và forward, đọc tiếp tại profile.jsp, tìm [HSM04] ở đầu phần hồ sơ để
+    //     thấy điểm kết thúc hiển thị.
     protected void renderProfile(HttpServletRequest request,HttpServletResponse response,User user)throws ServletException,IOException{
         try {
             request.setAttribute("loyaltyHistory",users.getLoyaltyHistoryByUserId(user.getId()));

@@ -178,6 +178,8 @@
     //   lấy các dòng, số lượng và tổng tiền của giỏ trong session. Em đưa dữ liệu cho
     //   renderSelectedItemsModal (đưa các món trong giỏ lên hộp danh sách) dựng nội dung rồi Bootstrap mở
     //   hộp selectedItemsModal. Nếu không đọc được thì chuyển về /cart để xem bằng trang giỏ hàng.
+    // ... Kết thúc mở danh sách món đã chọn khi selectedItemsModal hiện các dòng giỏ, hoặc khi trình duyệt chuyển
+    //     về trang /cart nếu chưa đọc được dữ liệu.
     function openSelectedItemsModal() {
         fetch('${pageContext.request.contextPath}/components/cart_api.jsp')
             .then(function(res) { return res.json(); })

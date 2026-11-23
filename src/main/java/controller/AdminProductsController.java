@@ -119,6 +119,8 @@ public class AdminProductsController extends HttpServlet {
                 // . Ở doGet trong AdminProductsController.java, em lấy editId từ nút Sửa rồi gọi getProductForAdmin (đọc
                 //   một sản phẩm để quản lý) trong ProductDAO.java bằng mã đó. Hàm trả về sản phẩm để em điền tên, giá,
                 //   danh mục, size và topping vào form Sửa trong admin-products.jsp.
+                // ... Khi đọc được sản phẩm, doGet đưa selectedProduct sang admin-products.jsp; đọc tiếp tại
+                //     admin-products.jsp, tìm [SPS03] để xem form được điền.
                 String editId = request.getParameter("editId");
                 if (editId != null && !editId.isBlank()) {
                 try {
@@ -194,6 +196,8 @@ public class AdminProductsController extends HttpServlet {
     // . Nếu thao tác lưu sản phẩm gặp lỗi sau khi đọc được form, em gọi preserveDraftAfterSaveError để giữ mã món, danh mục,
     //   tên, giá, mô tả và cấu hình dựng lại vào productDraft. Lần mở trang tiếp theo dùng bản này để
     //   điền form cho người dùng sửa tiếp; tệp ảnh mới không được giữ nên cần chọn lại nếu muốn gửi lại.
+    // ... Quay lại nhánh catch của doPost trong AdminProductsController.java sau preserveDraftAfterSaveError; đặt
+    //     productError rồi chuyển trang, doGet đưa productDraft về form để kết thúc lần lưu lỗi.
     private void preserveDraftAfterSaveError(String action, HttpServletRequest request, HttpSession session) {
         if (!"save".equals(action)) return;
         int id = parseDraftInt(request.getParameter("id"));
@@ -261,11 +265,15 @@ public class AdminProductsController extends HttpServlet {
         //   kiểm tra tên không trống, không quá 150 ký tự và không chứa ký tự điều khiển bằng
     //   MenuValidation.requiredName (kiểm tra tên bắt buộc, độ dài và ký tự). Tên đúng mới được dùng để tìm trùng
         //   trước khi lưu.
+        // ... Trong AdminProductsController.java, đọc tiếp save tại lời gọi productNameExists sau khi nhận tên;
+        //     tên trùng thì dừng, tên đúng được dùng tạo Product.
         name = MenuValidation.requiredName(name, "Tên món", 150);
         // [SPMT02]
         // . Trong save (kiểm tra và lưu sản phẩm) của AdminProductsController.java, em nhận mô tả từ description
         //   và kiểm tra tối đa 5.000 ký tự. Nếu quá dài thì báo lỗi về doPost để giữ lại form đang nhập; nếu hợp
         //   lệ thì đưa mô tả vào sản phẩm để lưu.
+        // ... Trong AdminProductsController.java, tiếp tục save bên dưới phần kiểm tra độ dài; mô tả hợp lệ được
+        //     gán vào Product trước khi gọi productDAO.saveProduct.
         if (description != null && description.length() > 5000) {
             throw new IllegalArgumentException("Mô tả không được dài quá 5000 ký tự.");
         }
@@ -276,6 +284,8 @@ public class AdminProductsController extends HttpServlet {
         //   mới được chuyển cho ProductDAO.saveProduct (ghi sản phẩm) để lưu cùng món.
         // .. Em chỉ nhận ảnh JPG, PNG, GIF hoặc WebP, tối đa 5 MB; nếu sai thì báo lỗi và giữ bản thông tin đang
         //    nhập.
+        // ... Trong AdminProductsController.java, tiếp tục save sau phần đọc imageData; khi thông tin món cũng
+        //     đúng, dữ liệu ảnh được truyền vào productDAO.saveProduct trong cùng lần lưu.
         if (imagePart != null && imagePart.getSize() > 0) {
             if (imagePart.getSize() > MAX_IMAGE_SIZE) {
                 throw new IllegalArgumentException("Ảnh sản phẩm không được lớn hơn 5 MB.");
@@ -296,6 +306,8 @@ public class AdminProductsController extends HttpServlet {
         //   AdminProductsController.java em truyền categoryId vào getCategoryById (đọc danh mục theo mã) trong
         //   CategoryDAO.java. Em chỉ tiếp tục lưu khi danh mục còn tồn tại và đang hoạt động; trường hợp khác sẽ
         //   báo lỗi.
+        // ... Trong AdminProductsController.java, tiếp tục save sau categoryDAO.getCategoryById; danh mục hợp lệ
+        //     được gán vào Product rồi chuyển sang bước ghi sản phẩm.
         Category category = categoryDAO.getCategoryById(categoryId);
         if (category == null) throw new IllegalArgumentException("Hãy chọn một danh mục đang tồn tại.");
         if (!"ACTIVE".equalsIgnoreCase(category.getStatus())) {
@@ -360,6 +372,8 @@ public class AdminProductsController extends HttpServlet {
     //   cùng sản phẩm.
     // .. Em yêu cầu có ít nhất một size và một size phụ thu 0 để có lựa chọn theo giá cơ bản. Trong mỗi loại,
     //    tên không được trùng, giá không âm và tối đa 50 dòng; topping được phép không thêm.
+    // ... Trong AdminProductsController.java, buildVariantsConfig xét hết các dòng rồi return cấu hình về save tại
+    //     lời gọi buildVariantsConfig; save gán cấu hình vào Product trước khi ghi.
     private String buildVariantsConfig(HttpServletRequest request, String recipeInstructions) {
 
         String[] names = request.getParameterValues("sizeName");
@@ -431,6 +445,8 @@ public class AdminProductsController extends HttpServlet {
     //   tiền từ từng dòng size hoặc topping do buildVariantsConfig (kiểm tra và ghép size, topping để lưu)
     //   truyền vào. Em gọi MenuValidation.money trong MenuValidation.java, kèm tên ô và số dòng để kiểm tra
     //   số tiền. Số hợp lệ trả về buildVariantsConfig để ghép cùng tên size/topping; sai thì chưa lưu.
+    // ... Quay lại buildVariantsConfig trong AdminProductsController.java ngay sau parseNonNegative; tiền được
+    //     ghép với tên của chính dòng đang xét, rồi hàm tiếp tục các dòng còn lại.
     private BigDecimal parseNonNegative(String value, String label) {
         return MenuValidation.money(value, label);
     }
@@ -440,6 +456,8 @@ public class AdminProductsController extends HttpServlet {
     //   validateVariantName (kiểm tra ký tự trong tên size/topping) cùng file, truyền tên size hoặc topping
     //   và tên ô. Em loại ký tự điều khiển, dấu nháy và các ký tự đặc biệt bị cấm trong tên; nếu sai thì báo
     //   lỗi trước khi kiểm tra tên trùng, ghép cấu hình và lưu sản phẩm.
+    // ... Quay lại buildVariantsConfig trong AdminProductsController.java ngay sau validateVariantName; kiểm tra
+    //     tên trùng, nhận tiền rồi ghép dòng vào cấu hình sản phẩm.
     private void validateVariantName(String value, String label) {
         if (value.chars().anyMatch(ch -> Character.isISOControl(ch) || "\\\"'{}<>`".indexOf(ch) >= 0)) {
             throw new IllegalArgumentException(label + " chứa ký tự không được hỗ trợ.");
@@ -551,6 +569,8 @@ public class AdminProductsController extends HttpServlet {
     // . Trước khi mở hoặc xử lý sản phẩm, doGet và doPost gọi isAdmin (kiểm tra tài khoản Admin còn hoạt
     //   động) trong AdminProductsController.java. Hàm kiểm tra tài khoản phải là Admin còn hoạt động; đúng
     //   thì tiếp tục, sai thì trả lỗi và dừng yêu cầu.
+    // ... Quay lại đầu doGet hoặc doPost trong AdminProductsController.java sau isAdmin; đúng thì tiếp tục phần
+    //     sản phẩm, sai thì đã trả lỗi và kết thúc yêu cầu.
     private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");

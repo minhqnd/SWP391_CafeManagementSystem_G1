@@ -111,6 +111,7 @@
                  . Bốn thẻ trên admin-loyalty.jsp nhận số khách có điểm, tổng điểm, tiền quy đổi và số giao dịch từ
                    AdminLoyaltyController.doGet. Các giá trị customerCountWithPoints, totalPoints, totalPointValue và
                    transactionCount đã được đọc hoặc tính trước khi đưa sang trang.
+                 ... Kết thúc phần tổng quan khi bốn thẻ số liệu đã hiện trên admin-loyalty.jsp.
             --%>
             <div class="stat-card"><span>Khách hàng có điểm</span><strong><fmt:formatNumber value="${customerCountWithPoints}" pattern="#,##0" /></strong></div>
 
@@ -174,6 +175,7 @@
                    lưu) để diễn giải quy tắc đang lưu: chi bao nhiêu nhận một điểm, đổi bao nhiêu điểm được giảm bao
                    nhiêu tiền. Khi nhập sai, các ô giữ bản đang nhập nhưng dòng ví dụ vẫn phản ánh quy tắc cũ chưa bị
                    thay.
+                 ... Kết thúc phần diễn giải tại dòng ví dụ của bộ quy tắc đang lưu trên admin-loyalty.jsp.
             --%>
             <p class="rule-example">
                 Tích điểm: chi <strong><fmt:formatNumber value="${settings.pointsEarnUnit}" pattern="#,##0" />đ</strong> nhận <strong>1 điểm</strong>.
@@ -232,6 +234,8 @@
                          . Ở admin-loyalty.jsp, em lấy số dư từ activeCustomer.totalPoints và tiền có thể đổi từ
                            customerPointValue. doGet trong AdminLoyaltyController.java đã tính số tiền theo quy tắc hiện tại
                            rồi đưa sang, để người dùng đối chiếu điểm với giá trị được giảm.
+                         ... Kết thúc xem số dư khi điểm và giá trị có thể đổi của đúng khách đã hiện trên
+                             admin-loyalty.jsp.
                     --%>
                     <div class="customer-metric"><span>Điểm hiện có</span><strong style="color:#a51225"><fmt:formatNumber value="${activeCustomer.totalPoints}" pattern="#,##0" /></strong><small>= <fmt:formatNumber value="${customerPointValue}" pattern="#,##0" />đ</small></div>
 
@@ -240,6 +244,8 @@
                            AdminLoyaltyController.doGet đã gọi LoyaltyTransactionDAO.getCustomerActivity (đọc tổng tiền mua
                            và ngày có đơn gần nhất) theo mã khách để đọc tổng tiền đã mua và ngày có đơn gần nhất rồi đưa
                            sang đây.
+                         ... Kết thúc phần hoạt động mua tại tổng chi tiêu và ngày mua gần nhất của khách đang xem
+                             trên admin-loyalty.jsp.
                     --%>
                     <div class="customer-metric"><span>Tổng chi tiêu</span><strong><fmt:formatNumber value="${customerActivity.totalSpent}" pattern="#,##0" />đ</strong><small><c:choose><c:when test="${not empty customerActivity.lastOrderAt}">Đơn gần nhất <fmt:formatDate value="${customerActivity.lastOrderAt}" pattern="dd/MM/yyyy HH:mm" /></c:when><c:otherwise>Chưa có đơn</c:otherwise></c:choose></small></div>
                 </div>
@@ -249,12 +255,17 @@
                          . Khi bấm Cộng điểm trong admin-loyalty.jsp, em gọi submitAdjustment ngay trong file và truyền add
                            để nhập rồi gửi số điểm cần cộng. Hàm này dùng chung với nút Trừ điểm; loại thao tác quyết định
                            sẽ cộng hay trừ cho khách đang xem.
+                         ... Trong admin-loyalty.jsp, đọc phần định nghĩa submitAdjustment ở cuối file; add quyết
+                             định cộng điểm, rồi form adjustPointsForm được gửi tới AdminLoyaltyController.doPost.
                     --%>
                     <button class="adjust-btn adjust-add" type="button" onclick="submitAdjustment('add')">Cộng điểm</button>
                     <%-- [TDT01]
                          . Khi bấm Trừ điểm trong admin-loyalty.jsp, em gọi submitAdjustment ngay trong file và truyền
                            subtract để nhập rồi gửi số điểm cần trừ. Hàm dùng cùng mã khách đang xem; phía xử lý sẽ kiểm tra
                            số dư trước khi cho phép trừ.
+                         ... Trong admin-loyalty.jsp, đọc phần định nghĩa submitAdjustment ở cuối file; subtract
+                             quyết định trừ điểm, rồi form adjustPointsForm được gửi tới
+                             AdminLoyaltyController.doPost.
                     --%>
                     <button class="adjust-btn adjust-subtract" type="button" onclick="submitAdjustment('subtract')">Trừ điểm</button>
                 </div>
@@ -284,6 +295,8 @@
                      . Bảng lịch sử trong admin-loyalty.jsp lặp danh sách transactions do AdminLoyaltyController.doGet đưa
                        sang. Danh sách này được đọc bằng LoyaltyTransactionDAO.findRecent (đọc các giao dịch điểm gần nhất)
                        với giới hạn 50 giao dịch mới nhất, để người dùng kiểm tra lịch sử chung đã ghi.
+                     ... Kết thúc đọc lịch sử chung khi bảng giao dịch trong admin-loyalty.jsp đã hiện danh sách do
+                         controller trả về.
                 --%>
                 <c:forEach var="tx" items="${transactions}">
                     <tr>
@@ -293,6 +306,8 @@
                                LoyaltyTransactionDAO.findDetailed (đọc lịch sử điểm kèm thông tin khách và đơn) đọc mã và
                                thời gian từ loyalty_transactions, ghép users để có tên và số điện thoại rồi controller đưa
                                danh sách về trang.
+                             ... Kết thúc phần nhận diện giao dịch tại mã, thời gian và khách của đúng hàng trong
+                                 bảng lịch sử.
                         --%>
                         <td class="mono text-muted">#${tx.id}</td>
                         <td class="mono text-muted"><fmt:formatDate value="${tx.createdAt}" pattern="dd/MM/yyyy HH:mm" /></td>
@@ -302,12 +317,16 @@
                              . Loại giao dịch lấy từ transactionType do findDetailed (đọc lịch sử điểm kèm thông tin khách
                                và đơn) đọc: EARN là tích điểm, REDEEM là đổi điểm, REFUND là hoàn điểm, còn nhánh khác hiện
                                điều chỉnh. Màu nền dựa theo dấu của pointsChange, không quyết định lại loại giao dịch.
+                             ... Kết thúc phân loại tại nhãn giao dịch và màu nền của hàng đang xem trên
+                                 admin-loyalty.jsp.
                         --%>
                         <td><span class="type-badge ${tx.pointsChange gt 0 ? 'type-earn' : 'type-redeem'}"><c:choose><c:when test="${tx.transactionType eq 'EARN'}">EARN - Tích điểm</c:when><c:when test="${tx.transactionType eq 'REDEEM'}">REDEEM - Đổi điểm</c:when><c:when test="${tx.transactionType eq 'REFUND'}">REFUND - Hoàn điểm</c:when><c:otherwise>ADJUST - Điều chỉnh</c:otherwise></c:choose></span></td>
                         <%-- [TDLS05]
                              . Điểm biến động lấy từ points_change của giao dịch. Số dương có dấu cộng và màu cộng điểm, số
                                âm giữ dấu trừ và màu trừ điểm. Đây là lượng thay đổi của riêng giao dịch này, khác số dư
                                điểm hiện tại của khách.
+                             ... Kết thúc phần biến động tại số điểm có dấu cộng hoặc trừ của chính giao dịch đang
+                                 xem.
                         --%>
                         <td class="text-end mono ${tx.pointsChange gt 0 ? 'points-plus' : 'points-minus'}">${tx.pointsChange gt 0 ? '+' : ''}${tx.pointsChange}</td>
 
@@ -322,6 +341,8 @@
                              . Mã đơn lấy từ orderCode mà findDetailed (đọc lịch sử điểm kèm thông tin khách và đơn) ghép
                                thêm từ bảng orders bằng order_id. Có mã thì trang hiện mã đơn; không có thì giao diện hiện
                                Điều chỉnh thủ công. Thao tác cộng/trừ tại màn hình này ghi ADJUST và không gắn mã đơn.
+                             ... Kết thúc phần liên kết đơn tại mã đơn hoặc chữ Điều chỉnh thủ công của chính hàng
+                                 lịch sử đó.
                         --%>
                         <td class="text-muted"><c:choose><c:when test="${not empty tx.orderCode}"><c:out value="${tx.orderCode}" /></c:when><c:otherwise>Điều chỉnh thủ công</c:otherwise></c:choose></td>
                     </tr>

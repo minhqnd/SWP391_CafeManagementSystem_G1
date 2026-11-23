@@ -44,6 +44,7 @@ public class IngredientDAO extends BaseDAO {
     // . Trong getLatestPurchasePrices (đọc giá nhập đã nhận gần nhất) của IngredientDAO.java, em đọc đơn giá
     //   của lần nhập đã nhận gần nhất theo từng nguyên liệu. Em trả bảng mã nguyên liệu và giá về
     //   AdminRecipeController.doGet để nhân với định lượng, tính giá vốn công thức.
+    // ... Quay lại AdminRecipeController.java, tìm [CTTONG03] để xem cách lấy giá vừa đọc nhân với định lượng.
     public Map<Integer, BigDecimal> getLatestPurchasePrices() {
 
         Map<Integer, BigDecimal> prices = new HashMap<>();

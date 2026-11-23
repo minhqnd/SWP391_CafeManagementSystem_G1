@@ -7,6 +7,8 @@
     //   validate (kiểm tra giá trị của một ô nhập) để kiểm tra ngay trên màn hình. Em yêu cầu 8–255 ký tự,
     //   có chữ và số, không chứa ký tự điều khiển. Hàm trả lời báo về validate rồi feedback (hiển thị lời
     //   báo tại ô nhập) hiện lỗi dưới ô để người dùng sửa trước khi gửi.
+    // ... Quay lại hàm validate trong account-validation.js để dùng lời báo vừa nhận; đọc tiếp tại
+    //     account-validation.js, tìm [BMKT01].
     const passwordError = value => {
         if (!value) return 'Vui lòng nhập mật khẩu.';
         if (!value.trim()) return 'Mật khẩu không được chỉ có khoảng trắng.';
@@ -69,6 +71,7 @@
                 // . Khi bấm nút mắt, sự kiện toggle.click trong account-validation.js đổi field.type giữa password và
                 //   text rồi đổi biểu tượng. Nhờ vậy người dùng xem hoặc che cùng một mật khẩu, còn giá trị trong ô vẫn
                 //   giữ nguyên.
+                // ... Kết thúc thao tác tại ô mật khẩu vừa đổi cách che hoặc hiện trên cùng màn hình.
                 toggle.addEventListener('click', () => {
                     const visible = field.type === 'password';
                     field.type = visible ? 'text' : 'password';
@@ -84,6 +87,8 @@
             // . Ở feedback (hiển thị lời báo tại ô nhập) trong account-validation.js, em nhận ô nhập và lời báo từ
             //   bước kiểm tra hoặc kết quả sau khi gửi form. Em đặt viền lỗi và thông báo vào đúng ô đó, rồi cập
             //   nhật khi người dùng sửa để họ biết cần sửa phần nào.
+            // ... Kết thúc hiển thị lời báo khi viền và thông báo của đúng ô đã được cập nhật trên form; người
+            //     dùng sửa ô hoặc gửi lại để bắt đầu lần kiểm tra tiếp.
             const feedback = (field, message) => {
                 if (!field) return;
                 const fieldKey = field.name || field.id;
@@ -114,6 +119,8 @@
             // . Ở validate (kiểm tra giá trị của một ô nhập) trong account-validation.js, em nhận ô đang nhập hoặc
             //   sắp gửi, đọc tên ô để chọn cách kiểm tra phù hợp. Em trả lời báo cho feedback (hiển thị lời báo tại
             //   ô nhập) để hiện đúng vị trí; nếu đang gửi form mà còn lỗi thì bước gửi sẽ dừng lại.
+            // ... Quay lại sự kiện input hoặc submit trong account-validation.js sau validate; feedback hiện lời
+            //     báo và phần submit quyết định dừng hay gửi form.
             const validate = field => {
                 if (field.disabled || field.readOnly || ['submit', 'button'].includes(field.type)) return '';
                 const name = field.name || field.id;
@@ -200,6 +207,8 @@
                 //   form để so với ô xác nhận. Nếu không khớp thì báo lỗi ngay tại ô này. Khi gửi đăng ký,
                 //   RegisterController.doPost nhận cả hai và gọi AccountValidation.passwordErrors (kiểm tra mật khẩu và
                 //   xác nhận theo từng ô) để so lại trước khi lưu.
+                // ... Trong account-validation.js, trả lời báo về phần submit đang gọi validate; lỗi thì dừng tại
+                //     ô xác nhận, hết lỗi mới gửi form Đăng ký tới RegisterController.doPost.
                 if (name === 'confirm_password' || name === 'confirmPassword') {
                     const password = find(key === 'profile-password' ? 'newPassword' : 'password');
                     return raw !== password.value ? 'Mật khẩu xác nhận không khớp.' : '';
@@ -320,6 +329,8 @@
         // . Trong account-validation.js, em đọc data-account-feedback mà account_feedback.jsp đưa ra sau lần xử
         //   lý lỗi. Em tìm đúng form và ô để điền lại giá trị rồi gọi feedback (hiển thị lời báo tại ô nhập)
         //   hiện lời báo, giúp người dùng sửa tiếp thông tin vừa nhập.
+        // ... Đọc tiếp tại account-validation.js, tìm [BMLOI01] để xem cách hiện lời báo; kết thúc khôi phục form
+        //     khi các ô và lỗi cũ đã hiện đúng vị trí.
         document.querySelectorAll('[data-account-feedback]').forEach(payload => {
             const key = payload.dataset.form;
             const form = forms.get(key);

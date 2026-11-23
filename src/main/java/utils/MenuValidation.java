@@ -13,6 +13,8 @@ public final class MenuValidation {
     // . Trong requiredName của MenuValidation.java, em nhận tên vừa nhập, tên ô và giới hạn từ hàm save
     //   của controller danh mục hoặc sản phẩm. Em bỏ khoảng trắng hai đầu, kiểm tra tên trống, quá dài hoặc
     //   có ký tự không hỗ trợ. Đúng thì trả tên đã làm gọn về save; sai thì báo rõ ô cần sửa và chưa lưu.
+    // ... Quay lại save trong AdminCategoriesController.java hoặc AdminProductsController.java sau
+    //     MenuValidation.requiredName; tên hợp lệ được dùng tìm trùng, sai thì doPost giữ form và hiện lỗi.
     public static String requiredName(String raw, String label, int max) {
         String value = raw == null ? "" : raw.trim();
         if (value.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập " + label.toLowerCase(java.util.Locale.ROOT) + ".");
@@ -26,6 +28,8 @@ public final class MenuValidation {
     // . Từ AdminProductsController.save, em gọi money trong MenuValidation.java để kiểm tra giá cơ bản.
     //   Phụ thu size và giá topping cũng dùng hàm này qua parseNonNegative. Em gọi decimal ngay bên dưới,
     //   truyền giới hạn tiền và hai số thập phân; đúng thì trả số về nơi gọi để ghép vào sản phẩm, sai thì báo lỗi.
+    // ... Quay lại AdminProductsController.java sau MenuValidation.money: save nhận giá cơ bản, còn
+    //     parseNonNegative trả phụ thu hoặc giá topping về buildVariantsConfig trước khi ghép Product.
     public static BigDecimal money(String raw, String label) {
         return decimal(raw, label, 2, MAX_MONEY, "9.999.999.999,99", false);
     }
@@ -34,6 +38,8 @@ public final class MenuValidation {
     // . Từ parseIngredients trong AdminRecipeController.java, em gọi quantity để kiểm tra định lượng của
     //   từng dòng. Em gọi decimal ngay bên dưới với điều kiện lớn hơn 0, tối đa 999.999.999,999 và ba số
     //   thập phân. Hợp lệ thì trả số về để ghép với nguyên liệu; sai thì lời báo ghi cả số dòng cần sửa.
+    // ... Quay lại AdminRecipeController.java, trong parseIngredients sau MenuValidation.quantity; ghép lượng hợp
+    //     lệ với nguyên liệu, xét hết dòng rồi trả danh sách về doPost để lưu.
     public static BigDecimal quantity(String raw, String label) {
         return decimal(raw, label, 3, MAX_QUANTITY, "999.999.999,999", true);
     }

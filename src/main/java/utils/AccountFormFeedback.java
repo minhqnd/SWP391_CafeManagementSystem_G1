@@ -20,6 +20,8 @@ public final class AccountFormFeedback {
     //   lỗi và các giá trị được phép giữ từ controller. Em lưu accountFeedback qua lần chuyển trang để
     //   account_feedback.jsp và account-validation.js khôi phục đúng form, điền lại ô và hiển thị lỗi cho
     //   người dùng sửa.
+    // ... Controller chuyển trang rồi account_feedback.jsp nhận dữ liệu đã giữ; đọc tiếp tại account_feedback.jsp,
+    //     tìm [BMTV02].
     public static void flash(HttpServletRequest request, String form, Map<String,String> errors,
                              Map<String,String> values) {
         request.getSession().setAttribute("accountFeedback", feedback(form, errors, values));
@@ -29,6 +31,8 @@ public final class AccountFormFeedback {
     // . Ở show (hiện lỗi trên trang đang mở) trong AccountFormFeedback.java, em nhận tên form, lỗi và giá
     //   trị từ ProfileController.java. Em đưa chúng vào accountFeedback của trang đang mở để
     //   account_feedback.jsp và account-validation.js hiện lại thông tin đang sửa cùng lỗi đúng ô.
+    // ... Quay lại ProfileController.java sau AccountFormFeedback.show; renderProfile mở profile.jsp,
+    //     account_feedback.jsp đưa lỗi và các ô sang account-validation.js để hiện lại.
     public static void show(HttpServletRequest request, String form, Map<String,String> errors,
                             Map<String,String> values) {
         request.setAttribute("accountFeedback", feedback(form, errors, values));

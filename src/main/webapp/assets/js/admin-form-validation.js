@@ -84,6 +84,9 @@
                 // . Khi form danh mục gửi, validate đọc tên, trạng thái và ảnh để kiểm tra ngay trên trang;
                 //   form sản phẩm dùng chung phần tên và ảnh. Lời báo được giữ theo đúng ô để mark hiển thị.
                 //   Có lỗi thì chặn gửi; đúng thì form danh mục đến AdminCategoriesController.doPost để lưu.
+                // ... Trong admin-form-validation.js, đọc tiếp sự kiện submit của form ở cuối file: còn lỗi thì
+                //     mark hiện dưới ô và dừng, hợp lệ thì gửi tới AdminCategoriesController.doPost hoặc
+                //     AdminProductsController.doPost theo form.
                 check(field('name'), requiredName(field('name')?.value, kind === 'category' ? 'Tên danh mục' : 'Tên món', kind === 'category' ? 100 : 150));
                 if (kind === 'category' && !['ACTIVE', 'INACTIVE'].includes(field('status')?.value))
                     check(field('status'), 'Vui lòng chọn trạng thái Hoạt động hoặc Tạm ẩn.');
@@ -133,6 +136,9 @@
                 //   Em bỏ qua dòng trống hoàn toàn, chặn dòng nhập thiếu, nguyên liệu trùng, định lượng sai
                 //   và quá 100 dòng; lời báo gắn đúng ô.
                 //   Qua kiểm tra, form mới gửi đến AdminRecipeController.doPost để kiểm tra lại và lưu.
+                // ... Trong admin-form-validation.js, đọc tiếp sự kiện submit cuối file; lỗi thì dừng tại form,
+                //     hợp lệ thì gửi tới AdminRecipeController.doPost trong AdminRecipeController.java để kiểm tra
+                //     lại và lưu.
                 const rows = [...form.querySelectorAll('.ingredient-row')];
                 const seen = new Set();
                 let count = 0;
@@ -155,6 +161,9 @@
                 // . Khi bấm Lưu quy tắc, validate gọi wholeNumber ở đầu file cho từng ô tiền tích điểm,
                 //   mốc đổi và tiền giảm. Số sai được báo ngay dưới ô; tiền giảm được phép bằng 0. Đúng cả ba
                 //   thì form đến AdminLoyaltyController.doPost, nơi updateRules kiểm tra lại rồi lưu.
+                // ... Trong admin-form-validation.js, đọc tiếp sự kiện submit ở cuối file; sai thì mark hiện lỗi
+                //     và dừng trên form, đúng thì gửi tới AdminLoyaltyController.doPost trong
+                //     AdminLoyaltyController.java.
                 [['pointsEarnUnit', 'Số tiền chi tiêu để nhận 1 điểm', 1, 100000000],
                     ['pointsStep', 'Số điểm cho mỗi lần đổi', 1, 1000000],
                     ['pointsStepValue', 'Số tiền giảm cho mỗi lần đổi', 0, 100000000]]

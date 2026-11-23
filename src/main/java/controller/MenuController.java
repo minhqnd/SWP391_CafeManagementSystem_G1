@@ -27,6 +27,8 @@ public class MenuController extends HttpServlet {
     //   danh mục hoạt động kèm số món đang bán) để đọc danh mục hoạt động và ProductDAO.filterProducts (lọc
     //   món còn bán theo danh mục và từ khóa) để lấy món theo danh mục, từ khóa. Em đưa kết quả về menu.jsp
     //   để hiện những món khách được chọn mua.
+    // ... Trong MenuController.java, tiếp tục doGet tới productDAO.filterProducts rồi forward menu.jsp; kết thúc
+    //     mở Menu khi danh mục và các thẻ món đã hiện.
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -57,6 +59,8 @@ public class MenuController extends HttpServlet {
         //   Trống thì không giới hạn theo từ khóa; có nội dung thì truyền keyword cùng categoryId cho
         //   ProductDAO.filterProducts trong ProductDAO.java để tìm món còn bán trong danh mục hoạt động.
         //   Danh sách trả về được đặt vào products và chuyển sang menu.jsp để hiện kết quả vừa tìm.
+        // ... Trong MenuController.java, đọc tiếp lời gọi productDAO.filterProducts ngay bên dưới rồi phần đặt
+        //     products; kết thúc tìm kiếm khi menu.jsp hiện danh sách theo từ khóa vừa nhận.
         String keyword = null;
         if (keywordParam != null && !keywordParam.trim().isEmpty()) {
             keyword = keywordParam.trim();
@@ -80,6 +84,9 @@ public class MenuController extends HttpServlet {
     //   còn bán theo mã) đọc món còn bán. Em trả thông tin cùng cấu hình size/topping cho
     //   openProductDetailModal (đọc thông tin rồi mở hộp lựa chọn món); mã sai, món không còn bán hoặc đọc
     //   lỗi thì trả lỗi để trang báo không tải được món, không mở hộp với dữ liệu sản phẩm không hợp lệ.
+    // ... Quay lại product_detail_modal.jsp, trong openProductDetailModal sau khi nhận dữ liệu từ
+    //     /menu?action=detail; dựng lựa chọn rồi mở hộp món, hoặc hiện thông báo không tải được để kết thúc lần
+    //     mở.
     private void handleProductDetailApi(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 

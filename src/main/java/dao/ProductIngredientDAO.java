@@ -109,6 +109,8 @@ public class ProductIngredientDAO extends BaseDAO {
     //   ProductIngredientDAO.java, em đọc các dòng công thức kèm tên và đơn vị nguyên liệu, rồi nhóm theo mã
     //   món. Em trả dữ liệu về AdminRecipeController.doGet để mở đúng công thức, tính giá vốn và thống kê
     //   món đã có định mức.
+    // ... Quay lại doGet trong AdminRecipeController.java để dùng công thức theo mã món; đọc tiếp tại
+    //     AdminRecipeController.java, tìm [CTTONG04] ở bước lấy đơn giá nguyên liệu.
     public java.util.Map<Integer, List<ProductIngredient>> getAllProductIngredientsMap() {
 
         java.util.Map<Integer, List<ProductIngredient>> map = new java.util.LinkedHashMap<>();
