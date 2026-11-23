@@ -97,8 +97,8 @@
 
     <%-- [DML07]
          . Khi trang mở lại, admin-categories.jsp nhận categoryMessage hoặc categoryError từ controller để báo
-           kết quả. Với lỗi xảy ra sau khi đọc được form, các ô được giữ để người dùng sửa tiếp; tệp ảnh mới
-           cần chọn lại nếu muốn gửi lại.
+           kết quả. Với lỗi xảy ra sau khi đọc được form, tên và trạng thái được giữ để sửa tiếp. Tệp ảnh mới
+           cần chọn lại; ô Xóa ảnh hiện tại cũng cần đánh dấu lại nếu vẫn muốn xóa ảnh.
          . Kết thúc lần lưu khi trang hiện kết quả cùng danh sách và form đã đọc lại.
          ... Chỉ khi xem cách giữ form sau lỗi, đọc AdminCategoriesController.java, tìm [DML08].
     --%>

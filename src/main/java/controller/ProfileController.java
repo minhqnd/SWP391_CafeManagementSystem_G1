@@ -41,6 +41,8 @@ public class ProfileController extends HttpServlet {
         //   session.user. Vì profile.jsp đọc thông tin từ đây nên trang sẽ dùng tên, liên hệ và số điểm mới nhất
         //   của người đang đăng nhập.
         // ... Khi theo luồng mở hồ sơ, quay về doGet sau authorize rồi đọc tiếp tại ProfileController.java, tìm [HSXEM01].
+        // ... Nếu đang gửi form, quay về doPost sau authorize để đọc action rồi gọi update khi lưu hồ sơ,
+        //     hoặc xử lý nhánh changePassword khi đổi mật khẩu.
 
         session.setAttribute("user",current);return current;
     }

@@ -217,7 +217,6 @@ public class AdminLoyaltyController extends HttpServlet {
                 // . Khi cập nhật điểm và ghi lịch sử thành công, chương trình quay về doPost trong
                 //   AdminLoyaltyController.java. Em đặt thông báo rồi mở lại trang để doGet đọc số dư và lịch sử mới,
                 //   đưa về admin-loyalty.jsp hiển thị kết quả vừa cộng hoặc trừ.
-                // . Kết thúc điều chỉnh khi admin-loyalty.jsp hiện kết quả, số dư và lịch sử mới mà doGet đã đọc lại.
                 // ... Xem kết quả tại admin-loyalty.jsp, vùng loyaltyMessage/loyaltyError, khối activeCustomer và
                 //     bảng transactions; kết thúc điều chỉnh khi thông báo, số dư và lịch sử mới đã hiện.
                 session.setAttribute("loyaltyMessage", "Đã cập nhật điểm khách hàng và ghi lịch sử giao dịch.");

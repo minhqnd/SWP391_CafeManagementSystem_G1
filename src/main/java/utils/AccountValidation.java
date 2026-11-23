@@ -16,8 +16,9 @@ public final class AccountValidation {
 
     // [KTHT01]
     // . Ở nameError (kiểm tra họ tên và trả lời báo lỗi) trong AccountValidation.java, em nhận họ tên từ
-    //   phần đăng ký hoặc cập nhật hồ sơ. Em kiểm tra tên sau khi bỏ khoảng trắng phải dài 1–100 ký tự và
-    //   không có ký tự điều khiển. Em trả null nếu đúng, hoặc lời báo để controller gắn vào ô Họ tên.
+    //   phần đăng ký hoặc cập nhật hồ sơ; controller đã bỏ khoảng trắng đầu/cuối trước khi truyền vào.
+    //   Hàm này kiểm tra tên dài 1–100 ký tự và không có ký tự điều khiển, rồi trả null nếu đúng
+    //   hoặc lời báo để controller gắn vào ô Họ tên.
     // ... Quay lại RegisterController.java trong doPost nếu đăng ký, hoặc ProfileController.java trong update nếu
     //     sửa hồ sơ, ngay sau AccountValidation.nameError; thêm lời báo vào errors rồi xét có lưu hay trả form.
     public static String nameError(String name) {
@@ -81,6 +82,8 @@ public final class AccountValidation {
         //   lỗi này sẽ chưa cập nhật mật khẩu.
         // ... Quay lại PasswordRecoveryService.java, trong reset sau AccountValidation.passwordError; không khớp
         //     thì báo lỗi về ResetPasswordController, khớp mới gọi users.resetPasswordById.
+        // ... Nếu được gọi qua passwordErrors khi đăng ký hoặc đổi mật khẩu, quay lại passwordErrors cùng file;
+        //     hàm đó kiểm tra riêng ô xác nhận rồi trả danh sách lỗi về RegisterController hoặc ProfileController.
         if (confirmation == null || confirmation.isEmpty() || !password.equals(confirmation))
             return "Mật khẩu xác nhận không khớp hoặc chưa được nhập.";
         return null;

@@ -107,8 +107,8 @@
 
     <%-- [SPL08]
          . Khi trang mở lại, admin-products.jsp hiện productMessage hoặc productError để báo kết quả. Với lỗi
-           xảy ra sau khi đọc được form, controller giữ các ô và dòng size/topping để sửa tiếp, kể cả dòng
-           trùng hoặc giá sai; ảnh mới phải chọn lại.
+           xảy ra sau khi đọc được form, controller giữ tên, danh mục, giá, mô tả và các dòng size/topping
+           để sửa tiếp, kể cả dòng trùng hoặc giá sai. Ảnh mới phải chọn lại; ô Xóa ảnh hiện tại cần đánh dấu lại.
          . Kết thúc lần lưu khi trang hiện kết quả cùng danh sách và form đã đọc lại.
          ... Chỉ khi xem cách giữ form sau lỗi, đọc AdminProductsController.java, tìm [SPL09].
     --%>

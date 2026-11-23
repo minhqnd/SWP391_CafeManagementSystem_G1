@@ -191,9 +191,10 @@ public class AdminCategoriesController extends HttpServlet {
 
         // [DMT02]
         // . Trong hàm save (kiểm tra và lưu danh mục) của AdminCategoriesController.java, em nhận tên từ ô name
-    //   rồi gọi requiredName trong MenuValidation.java để làm gọn và kiểm tra tên bắt buộc, tối đa 100 ký tự,
-    //   không có ký tự không hỗ trợ. Đúng mới tìm tên trùng và lưu; sai thì báo lỗi để sửa ngay ô tên.
-    // ... Đọc tiếp tại MenuValidation.java, tìm [DMT03].
+        //   rồi gọi requiredName trong MenuValidation.java để làm gọn và kiểm tra tên bắt buộc, tối đa 100 ký tự,
+        //   không có ký tự không hỗ trợ. Đúng mới tìm tên trùng và lưu; sai thì doPost giữ tên, trạng thái
+        //   và chuyển lời báo về phần thông báo trên form để người dùng sửa tiếp.
+        // ... Đọc tiếp tại MenuValidation.java, tìm [DMT03].
         name = MenuValidation.requiredName(name, "Tên danh mục", 100);
         // [DMAN02]
         // . Với ảnh danh mục, hàm save (kiểm tra và lưu danh mục) trong AdminCategoriesController.java nhận tệp

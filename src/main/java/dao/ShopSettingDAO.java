@@ -82,8 +82,8 @@ public class ShopSettingDAO extends BaseDAO {
     // . Ở lần mở lại trang, doGet gọi getSettingsStrict trong ShopSettingDAO.java để đọc các thiết lập đang lưu.
     //   Em đọc shop_settings, dùng applyValue điền từng quy tắc vào ShopSettings rồi trả bộ này về
     //   controller để điền form và tính tiền quy đổi.
-    // .. Khóa chưa được tạo dùng giá trị mặc định. Nếu không đọc được dữ liệu thì báo lỗi, không hiển thị
-    //    một bộ quy tắc mặc định như thể đó là bộ vừa lưu thành công.
+    // .. Khóa chưa được tạo dùng giá trị mặc định; giá trị không đổi được sang số cũng giữ mặc định của khóa đó.
+    //    Lỗi kết nối hoặc câu lệnh đọc thì báo lỗi về controller, không trả một bộ mặc định thay cho kết quả đọc.
     // ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDQT08].
     public ShopSettings getSettingsStrict() {
 
@@ -111,10 +111,10 @@ public class ShopSettingDAO extends BaseDAO {
 
     // [TDQT05]
     // . Trong saveLoyaltyRules của ShopSettingDAO.java, em nhận ba số từ controller và thêm hoặc cập nhật
-    //   các quy tắc trong shop_settings. Chỉ khi ghi được cả ba mới xác nhận và trả true; lỗi thì hủy cả bộ
-    //   thay đổi và báo lỗi về controller để hiện chưa lưu được.
-    // ... Trong ShopSettingDAO.java, đọc tiếp conn.commit và return true của saveLoyaltyRules; nếu có lỗi thì
-    //     rollback và báo lỗi về AdminLoyaltyController.updateRules, không đặt thông báo thành công.
+    //   các quy tắc trong shop_settings. Ghi được cả ba rồi xác nhận mới trả true; nếu ghi lỗi thì hủy các
+    //   thay đổi của lần lưu và trả false. updateRules trong AdminLoyaltyController.java nhận false sẽ báo chưa lưu được.
+    // ... Trong ShopSettingDAO.java, đọc tiếp conn.commit và return true của saveLoyaltyRules. Lỗi ghi dữ liệu trả false
+    //     về ngay sau settingDAO.saveLoyaltyRules trong AdminLoyaltyController.updateRules để xử lý thất bại.
     public boolean saveLoyaltyRules(long earnUnit, int pointsStep, long stepValue) {
         // . Trước khi ghi quy tắc, trong ShopSettingDAO.saveLoyaltyRules (ghi cả ba quy tắc vào cơ sở dữ liệu)
         //   em gọi LoyaltyValidation.requireRange (kiểm tra số nằm trong khoảng cho phép) để kiểm tra lại cả ba
@@ -208,9 +208,10 @@ public class ShopSettingDAO extends BaseDAO {
         ps.addBatch();
     }
 
-    // . Khi đọc quy tắc trong ShopSettingDAO.getSettings (đọc các thiết lập đang lưu), em gọi applyValue
+    // . Khi đọc quy tắc trong ShopSettingDAO.getSettingsStrict (đọc các thiết lập đang lưu), em gọi applyValue
     //   (điền giá trị vào đúng thiết lập) cùng file bằng tên quy tắc và giá trị đọc được để điền vào
-    //   ShopSettings. Giá trị hợp lệ được gán đúng thuộc tính rồi bộ settings trả về controller để hiển thị.
+    //   ShopSettings. Nếu không đổi được giá trị sang số thì ghi lỗi vào nhật ký và giữ mặc định của khóa đó;
+    //   sau đó tiếp tục đọc các dòng còn lại, rồi trả bộ settings về controller để hiển thị.
     private void applyValue(ShopSettings settings, String key, String value) {
         try {
             switch (key) {
