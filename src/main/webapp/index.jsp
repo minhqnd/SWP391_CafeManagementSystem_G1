@@ -272,6 +272,11 @@
         //   phần sản phẩm yêu thích, giúp nội dung Trang chủ lấy từ các món đang bán.
         // ... Để xem cách đọc món nổi bật, đọc ProductDAO.java, tìm [MNBC01]; hàm trả về index.jsp để dựng banner
         //     và sản phẩm yêu thích.
+        // [SUA11-01] Luyện sửa: Trang chủ lấy tối đa 8 món nổi bật thay vì 4.
+        // . Số 4 truyền tới getBestSellingProducts rồi xuống LIMIT trong SQL; đổi thành 8 để yêu cầu tối đa 8
+        //   món.
+        // . Danh sách này được dùng cho banner và sản phẩm yêu thích; kiểm tra cả hai vùng và trường hợp
+        //   database có ít món hơn giới hạn.
         List<Product> productsList = productDAO.getBestSellingProducts(4);
         request.setAttribute("bestSellerProducts", productsList);
         if (productsList != null && !productsList.isEmpty()) {

@@ -70,6 +70,11 @@ public class AdminLoyaltyController extends HttpServlet {
             // ... Đọc tiếp tại LoyaltyTransactionDAO.java, tìm [TDTS02].
             // [SQL12-13] Thẻ Giá trị quy đổi: Java lấy tổng điểm chia nguyên cho mốc đổi rồi nhân tiền giảm.
             // . Nguồn là getTotalPoints và getSettingsStrict; Math.round làm tròn tiền trước khi hiển thị.
+            // [SUA12-05] Luyện sửa: Thay cách tính thẻ Giá trị quy đổi của toàn bộ điểm.
+            // . Hiện lấy tổng điểm chia nguyên cho mốc đổi, nhân tiền giảm rồi làm tròn; mốc và tiền được đọc
+            //   từ settings.
+            // . Đây là thẻ tổng quan. Đổi tiền giảm thật của đơn hàng còn liên quan nơi sử dụng điểm trong
+            //   giỏ/thanh toán.
             long redeemableSteps = settings.getPointsStep() > 0 ? totalPoints / settings.getPointsStep() : 0;
             long totalPointValue = Math.round(redeemableSteps * settings.getPointsStepValue());
 
@@ -79,6 +84,11 @@ public class AdminLoyaltyController extends HttpServlet {
             request.setAttribute("totalPointValue", totalPointValue);
             request.setAttribute("transactionCount", loyaltyDAO.countTransactions());
 
+            // [SUA12-01] Luyện sửa: Bảng lịch sử chung chỉ hiện tối đa 10 giao dịch mới nhất thay vì 50.
+            // . Đổi đối số findRecent từ 50 thành 10; findDetailed đưa số này xuống LIMIT và đã xếp thời gian
+            //   mới trước.
+            // . Chỉ giảm số dòng được lấy để hiển thị, không xóa lịch sử và không đổi số của thẻ tổng giao
+            //   dịch.
             request.setAttribute("transactions", loyaltyDAO.findRecent(50));
 
             // [TDTK02]
@@ -130,6 +140,11 @@ public class AdminLoyaltyController extends HttpServlet {
                 // [SQL12-14] Tiền có thể đổi của một khách: Java dùng số điểm riêng của khách với bộ quy tắc
                 //   hiện tại.
                 // . Không lấy giá trị quy đổi của toàn hệ thống để hiển thị cho từng khách.
+                // [SUA12-06] Luyện sửa: Thay cách tính tiền có thể đổi của khách đang xem.
+                // . Dùng điểm riêng của khách, chia nguyên cho mốc rồi nhân tiền giảm; phải cùng quy tắc với
+                //   phần tổng quan và hồ sơ.
+                // . Nếu đề chỉ đổi mốc/tiền giảm đang dùng thì cập nhật qua Lưu quy tắc; sửa riêng phép hiển
+                //   thị chưa đổi tiền giảm của đơn hàng.
                 long customerSteps = settings.getPointsStep() > 0
                         ? customer.getTotalPoints() / settings.getPointsStep() : 0;
                 request.setAttribute("customerPointValue",
@@ -345,6 +360,10 @@ public class AdminLoyaltyController extends HttpServlet {
         // . Sau khi kiểm tra, em gọi adjustPoints (cập nhật điểm và ghi lịch sử) trong
         //   LoyaltyTransactionDAO.java để cập nhật điểm và ghi lịch sử. Em truyền customerId cùng điểm dương nếu
         //   cộng, điểm âm nếu trừ, để hàm tính số dư cho đúng khách và đúng hướng.
+        // [SUA12-02] Luyện sửa: Khi cộng 10 điểm thì tặng thêm 5, khách thực nhận 15 điểm.
+        // . Đổi điểm ở nhánh add trước khi gọi DAO; nhánh subtract vẫn truyền số âm như quy định.
+        // . Truyền cùng một số điểm thực tế để DAO vừa tính số dư vừa ghi ADJUST; kiểm tra giới hạn sau khi
+        //   cộng thưởng.
         if (!loyaltyDAO.adjustPoints(customerId, "subtract".equals(adjustType) ? -points : points)) {
             throw new IllegalArgumentException("Không thể điều chỉnh điểm khách hàng.");
         }

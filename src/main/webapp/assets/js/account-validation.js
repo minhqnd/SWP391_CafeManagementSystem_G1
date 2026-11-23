@@ -12,6 +12,10 @@
     const passwordError = value => {
         if (!value) return 'Vui lòng nhập mật khẩu.';
         if (!value.trim()) return 'Mật khẩu không được chỉ có khoảng trắng.';
+        // [SUA10-04] Luyện sửa: Đổi độ dài mật khẩu kiểm tra ngay trên màn hình.
+        // . Giới hạn và lời báo phải giống AccountValidation.passwordError; sửa JavaScript riêng sẽ chưa đổi
+        //   kiểm tra khi lưu.
+        // . Dùng mật khẩu ngắn hơn giới hạn một ký tự và vừa đủ giới hạn để kiểm tra hai phía.
         if (value.length < 8 || value.length > 255)
             return 'Mật khẩu phải từ 8 đến 255 ký tự.';
         if (/[\u0000-\u001F\u007F-\u009F]/.test(value))
@@ -191,6 +195,9 @@
                 if (name === 'email') {
                     if (!value) return 'Vui lòng nhập email.';
                     if (value.length > 150) return 'Email tối đa 150 ký tự.';
+                    // [SUA10-06] Luyện sửa: Đổi đuôi email được nhận ngay trên form.
+                    // . Quy tắc ở đây phải giống AccountValidation.emailError; thử cả đăng ký, hồ sơ và quên
+                    //   mật khẩu sau khi thay đổi.
                     if (!/^[A-Za-z0-9_+%-]+(?:\.[A-Za-z0-9_+%-]+)*@gmail\.com$/i.test(value)) return 'Sai định dạng email.';
                 }
                 // [DKMK02]

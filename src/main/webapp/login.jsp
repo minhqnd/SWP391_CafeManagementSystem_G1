@@ -407,6 +407,9 @@
                         long otpRemainingTime = 0;
                         if (lastOtpSentTime != null) {
                             long elapsed = System.currentTimeMillis() - lastOtpSentTime;
+                            // [SUA10-08] Luyện sửa: Đổi thời gian chờ Gửi lại ở trang đăng nhập riêng.
+                            // . Sửa cả điều kiện và phép tính otpRemainingTime; giữ giống
+                            //   PasswordRecoveryService.COOLDOWN và auth_modal.jsp.
                             if (elapsed < 60000) {
                                 otpRemainingTime = (60000 - elapsed) / 1000;
                             }

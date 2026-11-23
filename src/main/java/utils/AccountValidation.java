@@ -39,6 +39,11 @@ public final class AccountValidation {
     public static String emailError(String email) {
         if (email != null && email.isEmpty()) return "Vui lòng nhập email.";
         if (email != null && email.length() > 150) return "Email tối đa 150 ký tự.";
+        // [SUA10-05] Luyện sửa: Cho phép thêm đuôi email khác ngoài gmail.com.
+        // . Sửa điều kiện nhận email tại đây và phần validate email trong account-validation.js; kiểm tra
+        //   pattern/lời nhắc trong JSP nếu có.
+        // . Vẫn cần kiểm tra định dạng và email trùng; thay đuôi được nhận không thay thế việc tìm trùng trong
+        //   users.
         if (email == null || !email.matches("(?i)[A-Za-z0-9_+%-]+(?:\\.[A-Za-z0-9_+%-]+)*@gmail\\.com"))
             return "Sai định dạng email.";
         return null;
@@ -69,6 +74,10 @@ public final class AccountValidation {
     public static String passwordError(String password, String confirmation) {
         if (password == null || password.isEmpty()) return "Vui lòng nhập mật khẩu.";
         if (password.isBlank()) return "Mật khẩu không được chỉ có khoảng trắng.";
+        // [SUA10-03] Luyện sửa: Mật khẩu tối thiểu 10 ký tự thay vì 8.
+        // . Sửa điều kiện và lời báo ở đây; sửa passwordError trong account-validation.js cùng quy tắc.
+        // . Các ô mật khẩu trong auth_modal.jsp, login.jsp, profile.jsp có minlength/lời nhắc; kiểm tra lại khi
+        //   đổi giới hạn.
         if (password.length() < 8 || password.length() > 255) return "Mật khẩu phải từ 8 đến 255 ký tự.";
         if (password.chars().anyMatch(Character::isISOControl))
             return "Mật khẩu không được chứa ký tự điều khiển.";

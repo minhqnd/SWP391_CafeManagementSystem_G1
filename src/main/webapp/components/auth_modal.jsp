@@ -25,6 +25,10 @@
     long otpRemainingTime = 0;
     if (lastOtpSentTime != null) {
         long elapsed = System.currentTimeMillis() - lastOtpSentTime;
+        // [SUA10-07] Luyện sửa: Nút Gửi lại trong hộp đăng nhập mở sau 30 giây.
+        // . Sửa cả điều kiện elapsed và phép tính otpRemainingTime bên dưới từ 60000 thành 30000.
+        // . PasswordRecoveryService.COOLDOWN và trang login.jsp phải cùng thời gian; bộ đếm JavaScript đọc kết
+        //   quả này.
         if (elapsed < 60000) {
             otpRemainingTime = (60000 - elapsed) / 1000;
         }

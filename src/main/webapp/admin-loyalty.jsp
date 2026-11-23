@@ -370,6 +370,9 @@
         if (raw === null) return;
         const points = Number(raw);
         if (!/^[0-9]+$/.test(raw.trim()) || raw.trim().length > 19
+                // [SUA12-08] Luyện sửa: Đổi điểm tối đa được nhập khi bấm Cộng/Trừ điểm.
+                // . Số 1000000 ở đây phải khớp giới hạn điều chỉnh trong controller và LoyaltyTransactionDAO;
+                //   đây là kiểm tra trước khi gửi.
                 || !Number.isSafeInteger(points) || points <= 0 || points > 1000000) {
             window.alert('Số điểm phải là số nguyên từ 1 đến 1.000.000.');
             return;

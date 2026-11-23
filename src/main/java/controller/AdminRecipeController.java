@@ -30,6 +30,11 @@ import java.util.UUID;
 @WebServlet(name = "AdminRecipeController", urlPatterns = {"/admin/recipes", "/admin/recipe/update"})
 public class AdminRecipeController extends HttpServlet {
 
+    // [SUA11-07] Luyện sửa: Một công thức chỉ được tối đa 5 dòng nguyên liệu thay vì 100.
+    // . Đổi MAX_RECIPE_LINES và kiểm tra rows.length trong admin-form-validation.js; lời báo server dùng hằng
+    //   số này.
+    // . Phần giữ bản nhập dở dùng MAX_RECIPE_LINES+1 để còn hiện dòng vượt giới hạn cho người dùng sửa; kiểm
+    //   tra lại sau khi đổi.
     private static final int MAX_RECIPE_LINES = 100;
 
     private final ProductDAO productDAO;
@@ -109,6 +114,10 @@ public class AdminRecipeController extends HttpServlet {
             // [SQL11-44] Giá vốn công thức đang mở: Java cộng giá nhập mới nhất nhân định lượng từng dòng.
             // . Nguồn là getAllProductIngredientsMap và getLatestPurchasePrices; thiếu giá nhập thì đánh dấu
             //   chưa đủ dữ liệu.
+            // [SUA11-08] Luyện sửa: Giá vốn công thức đang mở cộng thêm 2000đ bao bì.
+            // . Cộng một lần sau vòng lặp tính nguyên liệu, không cộng 2000 vào từng dòng.
+            // . Cần thống nhất với productCost của từng món bên dưới và recalculateCost trong
+            //   admin-recipes.jsp; đây là chi phí, không phải giá bán.
             BigDecimal recipeCost = BigDecimal.ZERO;
             List<String> missingCostIngredients = new ArrayList<>();
             for (ProductIngredient recipeIngredient : recipeIngredients) {
@@ -151,6 +160,11 @@ public class AdminRecipeController extends HttpServlet {
                 //   sản phẩm.
                 // . Không lấy giá bán làm giá vốn; món thiếu giá nhập được đánh dấu thay vì kết luận chi phí
                 //   bằng 0.
+                // [SUA11-09] Luyện sửa: Giá vốn trên từng thẻ món cộng thêm một khoản cố định.
+                // . Nếu yêu cầu thêm phí cho mỗi phần thì cộng một lần sau khi tính xong nguyên liệu của món
+                //   đó.
+                // . Giữ giống recipeCost của công thức đang mở và phần xem trước; vẫn phân biệt món chưa có
+                //   công thức hoặc thiếu giá nhập.
                 BigDecimal productCost = BigDecimal.ZERO;
                 boolean productCostComplete = !productIngredients.isEmpty();
                 for (ProductIngredient ingredient : productIngredients) {

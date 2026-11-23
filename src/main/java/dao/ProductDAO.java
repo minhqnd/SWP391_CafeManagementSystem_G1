@@ -44,6 +44,11 @@ public class ProductDAO extends BaseDAO {
             params.add(term);
             params.add(term);
         }
+        // [SUA11-14] Luyện sửa: Bảng quản lý sản phẩm xếp giá cao trước thay vì mã mới trước.
+        // . Đổi phần ORDER BY, ví dụ p.base_price DESC, p.id DESC; các điều kiện danh mục/từ khóa phía trên vẫn
+        //   giữ nguyên.
+        // . AdminRecipeController cũng đọc danh sách từ hàm này, nên thứ tự món ở trang công thức cũng đổi;
+        //   Menu và món nổi bật có câu SQL riêng.
         sql.append(" ORDER BY p.id DESC");
         try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));

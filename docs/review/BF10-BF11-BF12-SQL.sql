@@ -180,7 +180,7 @@ WHERE customer_id = @user_id
 ORDER BY created_at DESC;
 
 -- [SQL10-17] Nút Xác minh OTP: Java đối chiếu mã và trạng thái khôi phục giữ trong phiên đăng nhập.
--- Source: src/main/java/service/PasswordRecoveryService.java:123 | Hàm: verify
+-- Source: src/main/java/service/PasswordRecoveryService.java:128 | Hàm: verify
 -- Không có câu SELECT OTP trong MySQL; hạn dùng và số lần nhập sai cũng được kiểm tra trong dịch vụ này.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 
@@ -396,13 +396,13 @@ WHERE 1=1 AND p.category_id=@category_id AND (p.name LIKE @term OR CAST(p.id AS 
 ORDER BY p.id DESC;
 
 -- [SQL11-19] Ba thẻ sản phẩm: SQL trả tổng món và số đang bán.
--- Source: src/main/java/dao/ProductDAO.java:63 | Hàm: getProductAdminStats
+-- Source: src/main/java/dao/ProductDAO.java:68 | Hàm: getProductAdminStats
 -- Số tạm ngừng được controller lấy tổng trừ số đang bán; thống kê này không phụ thuộc bộ lọc của bảng.
 SELECT COUNT(*) AS total, COALESCE(SUM(is_available = 1), 0) AS available
 FROM products;
 
 -- [SQL11-20] Nút Sửa sản phẩm/chọn món làm công thức: đọc món theo mã, kể cả món tạm ngừng.
--- Source: src/main/java/dao/ProductDAO.java:82 | Hàm: getProductForAdmin
+-- Source: src/main/java/dao/ProductDAO.java:87 | Hàm: getProductForAdmin
 -- Thứ tự dấu ?: 1=mã sản phẩm.
 SELECT p.*, c.name AS category_name, EXISTS(SELECT 1
 FROM product_images pi
@@ -412,7 +412,7 @@ LEFT JOIN categories c ON c.id = p.category_id
 WHERE p.id = @product_id;
 
 -- [SQL11-21] Ô Tên sản phẩm: tìm tên trùng, bỏ qua món đang sửa.
--- Source: src/main/java/dao/ProductDAO.java:101 | Hàm: productNameExists
+-- Source: src/main/java/dao/ProductDAO.java:106 | Hàm: productNameExists
 -- Thứ tự dấu ?: 1=tên sản phẩm; 2=mã sản phẩm đang sửa; thêm mới dùng 0.
 SELECT 1
 FROM products
@@ -420,7 +420,7 @@ WHERE LOWER(TRIM(name)) = LOWER(TRIM(@product_name)) AND id <> COALESCE(@product
 LIMIT 1;
 
 -- [SQL11-22] Nút Lưu sản phẩm: cập nhật món hiện có.
--- Source: src/main/java/dao/ProductDAO.java:165 | Hàm: saveProduct
+-- Source: src/main/java/dao/ProductDAO.java:170 | Hàm: saveProduct
 -- Thứ tự dấu ?: 1=mã danh mục; 2=tên món; 3=giá cơ bản; 4=chuỗi JSON size/topping; 5=mô tả; 6=1 đang bán hoặc 0 tạm ngừng; 7=mã sản phẩm.
 -- Size và topping được ghép vào variants_config; không có bảng size/topping riêng trong thao tác này.
 -- Câu ghi dữ liệu trong code (mẫu có ?; thao tác ghi được thực hiện qua web):
@@ -432,14 +432,14 @@ WHERE id = ?;
 SELECT id, category_id, name, base_price, variants_config, description, is_available, image_url FROM products WHERE id=@product_id;
 
 -- [SQL11-23] Lưu sản phẩm không đổi giá trị: kiểm tra món vẫn tồn tại.
--- Source: src/main/java/dao/ProductDAO.java:175 | Hàm: saveProduct
+-- Source: src/main/java/dao/ProductDAO.java:180 | Hàm: saveProduct
 -- Thứ tự dấu ?: 1=mã sản phẩm.
 SELECT 1
 FROM products
 WHERE id = @product_id;
 
 -- [SQL11-24] Nút Thêm sản phẩm: tạo món mới và lấy mã vừa tạo.
--- Source: src/main/java/dao/ProductDAO.java:186 | Hàm: saveProduct
+-- Source: src/main/java/dao/ProductDAO.java:191 | Hàm: saveProduct
 -- Thứ tự dấu ?: 1=mã danh mục; 2=tên món; 3=giá cơ bản; 4=chuỗi JSON size/topping; 5=mô tả; 6=1 đang bán hoặc 0 tạm ngừng.
 -- Câu ghi dữ liệu trong code (mẫu có ?; thao tác ghi được thực hiện qua web):
 /*
@@ -449,7 +449,7 @@ INSERT INTO products (category_id, name, base_price, variants_config, descriptio
 SELECT id, category_id, name, base_price, variants_config, description, is_available FROM products WHERE name=@product_name;
 
 -- [SQL11-25] Ảnh sản phẩm: thêm hoặc thay ảnh lưu trong database.
--- Source: src/main/java/dao/ProductDAO.java:211 | Hàm: saveImage
+-- Source: src/main/java/dao/ProductDAO.java:216 | Hàm: saveImage
 -- Thứ tự dấu ?: 1=mã sản phẩm; 2=dữ liệu nhị phân của ảnh; 3=loại ảnh; 4=tên tệp.
 -- Java đọc tệp đã kiểm tra; trên MySQL có thể SELECT tên tệp, loại ảnh và số byte để đối chiếu.
 -- Câu ghi dữ liệu trong code (mẫu có ?; thao tác ghi được thực hiện qua web):
@@ -460,7 +460,7 @@ INSERT INTO product_images (product_id, image_data, content_type, file_name) VAL
 SELECT product_id, content_type, file_name, OCTET_LENGTH(image_data) AS image_bytes FROM product_images WHERE product_id=@product_id;
 
 -- [SQL11-26] Ô Xóa ảnh hiện tại của sản phẩm: xóa ảnh đang lưu.
--- Source: src/main/java/dao/ProductDAO.java:227 | Hàm: deleteImage
+-- Source: src/main/java/dao/ProductDAO.java:232 | Hàm: deleteImage
 -- Thứ tự dấu ?: 1=mã sản phẩm.
 -- Câu ghi dữ liệu trong code (mẫu có ?; thao tác ghi được thực hiện qua web):
 /*
@@ -472,7 +472,7 @@ WHERE product_id = ?;
 SELECT product_id, content_type, file_name, OCTET_LENGTH(image_data) AS image_bytes FROM product_images WHERE product_id=@product_id;
 
 -- [SQL11-27] Thay hoặc xóa ảnh sản phẩm: bỏ đường dẫn ảnh cũ.
--- Source: src/main/java/dao/ProductDAO.java:236 | Hàm: clearLegacyImageUrl
+-- Source: src/main/java/dao/ProductDAO.java:241 | Hàm: clearLegacyImageUrl
 -- Thứ tự dấu ?: 1=mã sản phẩm.
 -- Câu ghi dữ liệu trong code (mẫu có ?; thao tác ghi được thực hiện qua web):
 /*
@@ -483,7 +483,7 @@ WHERE id = ?;
 SELECT id, category_id, name, base_price, variants_config, description, is_available, image_url FROM products WHERE id=@product_id;
 
 -- [SQL11-28] Nút Đang bán/Tạm ngừng: đổi trạng thái bán của món.
--- Source: src/main/java/dao/ProductDAO.java:253 | Hàm: updateProductAvailability
+-- Source: src/main/java/dao/ProductDAO.java:258 | Hàm: updateProductAvailability
 -- Thứ tự dấu ?: 1=1 đang bán hoặc 0 tạm ngừng; 2=mã sản phẩm.
 -- Câu ghi dữ liệu trong code (mẫu có ?; thao tác ghi được thực hiện qua web):
 /*
@@ -494,7 +494,7 @@ WHERE id = ?;
 SELECT id, category_id, name, base_price, variants_config, description, is_available, image_url FROM products WHERE id=@product_id;
 
 -- [SQL11-29] Nút Xóa sản phẩm: chỉ xóa món tạm ngừng và chưa có trong order_items.
--- Source: src/main/java/dao/ProductDAO.java:269 | Hàm: deleteProduct
+-- Source: src/main/java/dao/ProductDAO.java:274 | Hàm: deleteProduct
 -- Thứ tự dấu ?: 1=mã sản phẩm cần xóa; 2=cùng mã sản phẩm để kiểm tra lịch sử.
 -- NOT EXISTS là điều kiện chặn xóa món đã có trong đơn; không xóa lịch sử đơn hàng.
 -- Câu ghi dữ liệu trong code (mẫu có ?; thao tác ghi được thực hiện qua web):
@@ -510,14 +510,14 @@ SELECT id, category_id, name, base_price, variants_config, description, is_avail
 SELECT id, order_id, product_id FROM order_items WHERE product_id=@product_id;
 
 -- [SQL11-30] Ảnh sản phẩm trên web: đọc ảnh đang lưu theo mã món.
--- Source: src/main/java/dao/ProductDAO.java:314 | Hàm: getProductImage
+-- Source: src/main/java/dao/ProductDAO.java:319 | Hàm: getProductImage
 -- Thứ tự dấu ?: 1=mã sản phẩm.
 SELECT image_data, content_type
 FROM product_images
 WHERE product_id = @product_id;
 
 -- [SQL11-31] Tìm/lọc trên Menu: chỉ đọc món đang bán trong danh mục ACTIVE.
--- Source: src/main/java/dao/ProductDAO.java:436 | Hàm: filterProducts
+-- Source: src/main/java/dao/ProductDAO.java:441 | Hàm: filterProducts
 -- Có nhóm thì thêm category_id; có từ khóa thì thêm 3 dấu ? LIKE cho tên món, nhóm, mô tả cùng dùng %từ khóa%; ORDER BY p.id ASC.
 -- Câu chạy thử đầu là trường hợp chưa lọc; xem thêm các trường hợp ngay bên dưới.
 SELECT p.*, c.name AS category_name, EXISTS(SELECT 1
@@ -553,7 +553,7 @@ WHERE p.is_available=1 AND c.status='ACTIVE' AND p.category_id=@category_id AND 
 ORDER BY p.id ASC;
 
 -- [SQL11-32] Mở chi tiết món trên Menu: chỉ trả món đang bán thuộc nhóm ACTIVE.
--- Source: src/main/java/dao/ProductDAO.java:510 | Hàm: getAvailableProductById
+-- Source: src/main/java/dao/ProductDAO.java:515 | Hàm: getAvailableProductById
 -- Thứ tự dấu ?: 1=mã sản phẩm.
 SELECT p.*, c.name AS category_name, EXISTS(SELECT 1
 FROM product_images pi
@@ -563,14 +563,14 @@ JOIN categories c ON p.category_id = c.id
 WHERE p.id = @product_id AND p.is_available = 1 AND c.status = 'ACTIVE';
 
 -- [SQL11-33] Con số tổng món ở Menu: đếm products có is_available=1.
--- Source: src/main/java/dao/ProductDAO.java:526 | Hàm: getTotalAvailableCount
+-- Source: src/main/java/dao/ProductDAO.java:531 | Hàm: getTotalAvailableCount
 -- Câu đếm hiện tại không lọc trạng thái danh mục; danh sách món và số kết quả sau lọc được lấy riêng.
 SELECT COUNT(*)
 FROM products
 WHERE is_available = 1;
 
 -- [SQL11-34] Phần Món liên quan: chọn món cùng nhóm, bỏ món đang xem.
--- Source: src/main/java/dao/ProductDAO.java:546 | Hàm: getRelatedProducts
+-- Source: src/main/java/dao/ProductDAO.java:551 | Hàm: getRelatedProducts
 -- Thứ tự dấu ?: 1=mã danh mục; 2=mã món đang xem; 3=giới hạn, trang chi tiết truyền 4.
 -- ORDER BY RAND chọn ngẫu nhiên nên các món được gợi ý có thể thay đổi mỗi lần mở.
 SELECT p.*, c.name AS category_name, EXISTS(SELECT 1
@@ -583,7 +583,7 @@ ORDER BY RAND()
 LIMIT 4;
 
 -- [SQL11-35] Banner/Sản phẩm yêu thích: xếp món theo tổng số lượng bán.
--- Source: src/main/java/dao/ProductDAO.java:583 | Hàm: getBestSellingProducts
+-- Source: src/main/java/dao/ProductDAO.java:588 | Hàm: getBestSellingProducts
 -- Thứ tự dấu ?: 1=giới hạn, Trang chủ truyền 4.
 -- Chỉ cộng đơn CONFIRMED, PREPARING, READY, DELIVERING, COMPLETED; loại món ngừng bán và danh mục không ACTIVE.
 SELECT p.*, c.name AS category_name, EXISTS(SELECT 1
@@ -676,27 +676,27 @@ FROM ingredients
 WHERE id = @ingredient_id;
 
 -- [SQL11-44] Giá vốn công thức đang mở: Java cộng giá nhập mới nhất nhân định lượng từng dòng.
--- Source: src/main/java/controller/AdminRecipeController.java:109 | Hàm: doGet
+-- Source: src/main/java/controller/AdminRecipeController.java:114 | Hàm: doGet
 -- Nguồn là getAllProductIngredientsMap và getLatestPurchasePrices; thiếu giá nhập thì đánh dấu chưa đủ dữ liệu.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 
 -- [SQL11-45] Thẻ Có/Chưa có định mức: Java đếm món có danh sách nguyên liệu rồi lấy tổng món trừ số đã có.
--- Source: src/main/java/controller/AdminRecipeController.java:132 | Hàm: doGet
+-- Source: src/main/java/controller/AdminRecipeController.java:141 | Hàm: doGet
 -- Không có câu COUNT riêng trong SQL cho hai thẻ này; nguồn là danh sách sản phẩm và bản nhóm công thức.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 
 -- [SQL11-46] Cột Giá vốn trên bảng món: Java tính riêng tổng giá nhập nhân định lượng của từng sản phẩm.
--- Source: src/main/java/controller/AdminRecipeController.java:150 | Hàm: doGet
+-- Source: src/main/java/controller/AdminRecipeController.java:159 | Hàm: doGet
 -- Không lấy giá bán làm giá vốn; món thiếu giá nhập được đánh dấu thay vì kết luận chi phí bằng 0.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 
 -- [SQL11-47] Thẻ Tổng/Hoạt động/Tạm ẩn danh mục: Java đếm từ danh sách categories đã đọc.
--- Source: src/main/java/controller/AdminCategoriesController.java:58 | Hàm: doGet
+-- Source: src/main/java/controller/AdminCategoriesController.java:63 | Hàm: doGet
 -- Tổng là categories.size; hoạt động và tạm ẩn đếm theo status. Nguồn SQL là getAllCategoriesWithCount.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 
 -- [SQL11-48] Thẻ Tạm ngừng sản phẩm: Java lấy tổng món trừ số đang bán.
--- Source: src/main/java/controller/AdminProductsController.java:96 | Hàm: doGet
+-- Source: src/main/java/controller/AdminProductsController.java:109 | Hàm: doGet
 -- Hai số được getProductAdminStats trả về; không đếm từ các hàng đang thấy sau khi lọc.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 
@@ -828,7 +828,7 @@ SELECT setting_key, setting_value FROM shop_settings WHERE setting_key IN ('poin
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 
 -- [SQL12-14] Tiền có thể đổi của một khách: Java dùng số điểm riêng của khách với bộ quy tắc hiện tại.
--- Source: src/main/java/controller/AdminLoyaltyController.java:130 | Hàm: doGet
+-- Source: src/main/java/controller/AdminLoyaltyController.java:140 | Hàm: doGet
 -- Không lấy giá trị quy đổi của toàn hệ thống để hiển thị cho từng khách.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 

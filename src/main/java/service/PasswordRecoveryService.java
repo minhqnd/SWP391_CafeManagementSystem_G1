@@ -15,6 +15,11 @@ import utils.AccountValidation;
 import utils.EmailUtil;
 
 public final class PasswordRecoveryService {
+    // [SUA10-01] Luyện sửa: OTP từ 5 phút thành 2 phút; chờ gửi lại từ 60 giây thành 30 giây.
+    // . TTL/COOLDOWN tính bằng mili giây: 2 phút = 120000L; 30 giây = 30000L.
+    // . Đổi COOLDOWN còn phải sửa số 60000 ở auth_modal.jsp và login.jsp, cùng lời báo 60 giây trong file này.
+    // . TTL cũng giới hạn thời gian đặt lại mật khẩu sau xác minh; cập nhật lời nhắc 5 phút trong
+    //   auth_modal.jsp và các comment mô tả thời hạn.
     public static final long TTL = 300000L, COOLDOWN = 60000L;
     private static final String KEY = "passwordRecovery";
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -124,6 +129,9 @@ public final class PasswordRecoveryService {
             // . Không có câu SELECT OTP trong MySQL; hạn dùng và số lần nhập sai cũng được kiểm tra trong dịch
             //   vụ này.
             boolean match=input!=null && input.matches("[0-9]{6}") && MessageDigest.isEqual(state.otp.getBytes(StandardCharsets.UTF_8),input.getBytes(StandardCharsets.UTF_8));
+            // [SUA10-02] Luyện sửa: Chỉ cho nhập sai OTP 3 lần thay vì 5 lần.
+            // . Sửa điều kiện state.failures>=5, phép tính 5-state.failures và lời báo số lần trong cùng nhánh.
+            // . Thử sai liên tiếp đến giới hạn mới để kiểm tra mã bị hủy và phải yêu cầu gửi lại.
             if(!match){state.failures++;if(state.failures>=5){clear(session);throw new IllegalArgumentException("Bạn đã nhập sai 5 lần. Vui lòng yêu cầu mã mới.");}throw new IllegalArgumentException("Mã OTP không chính xác. Còn "+(5-state.failures)+" lần thử.");}
             state.otp=null;state.verifiedAt=now;
         }

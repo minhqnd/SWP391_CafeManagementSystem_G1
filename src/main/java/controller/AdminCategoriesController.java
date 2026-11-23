@@ -23,6 +23,11 @@ import java.util.UUID;
 @MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 6 * 1024 * 1024)
 public class AdminCategoriesController extends HttpServlet {
 
+    // [SUA11-06] Luyện sửa: Ảnh danh mục tối đa 2 MB thay vì 5 MB.
+    // . Sửa MAX_IMAGE_SIZE, @MultipartConfig, kiểm tra trong admin-form-validation.js và lời nhắc ở
+    //   admin-categories.jsp.
+    // . AdminFormFeedback.readMultipart đang báo chung 5/6 MB cho cả hai trang; lời báo phải phù hợp nếu đặt
+    //   hai giới hạn khác nhau.
     private static final long MAX_IMAGE_SIZE = 5L * 1024 * 1024;
 
     private final CategoryDAO categoryDAO;

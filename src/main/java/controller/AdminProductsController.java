@@ -30,8 +30,21 @@ import java.util.UUID;
 @WebServlet(name = "AdminProductsController", urlPatterns = {"/admin/products"})
 @MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 6 * 1024 * 1024)
 public class AdminProductsController extends HttpServlet {
+    // [SUA11-05] Luyện sửa: Ảnh sản phẩm tối đa 2 MB thay vì 5 MB.
+    // . Sửa MAX_IMAGE_SIZE và maxFileSize/maxRequestSize trong @MultipartConfig ở đầu file; giới hạn cả form
+    //   phải đủ chứa ảnh và các ô.
+    // . Sửa kiểm tra ảnh trong admin-form-validation.js, lời nhắc ở admin-products.jsp và lời báo dung lượng
+    //   trong AdminFormFeedback.readMultipart.
     private static final long MAX_IMAGE_SIZE = 5L * 1024 * 1024;
+    // [SUA11-03] Luyện sửa: Một sản phẩm chỉ được tối đa 5 size thay vì 50.
+    // . Đổi MAX_SIZES và giới hạn dòng trong admin-form-validation.js; kiểm tra lời báo đi cùng.
+    // . Thử lưu đúng 5 và 6 dòng. Quy định ít nhất một size và một size phụ thu 0 vẫn được kiểm tra riêng.
     private static final int MAX_SIZES = 50;
+    // [SUA11-04] Luyện sửa: Một sản phẩm chỉ được tối đa 5 topping thay vì 50.
+    // . Đổi MAX_TOPPINGS và giới hạn dòng trong admin-form-validation.js; size và topping đang dùng chung một
+    //   bước kiểm tra trên form.
+    // . Nếu đổi riêng topping thì tách giới hạn theo loại, giữ topping không bắt buộc nếu đề không yêu cầu đổi
+    //   quy định đó.
     private static final int MAX_TOPPINGS = 50;
     private final ProductDAO productDAO;
     private final CategoryDAO categoryDAO;
@@ -336,6 +349,10 @@ public class AdminProductsController extends HttpServlet {
     //   MenuValidation.java để kiểm tra giá. Em truyền cả tên ô để nếu sai thì báo đúng Giá bán cơ bản;
     //   số không âm, tối đa hai số thập phân và 9.999.999.999,99 mới được đưa vào sản phẩm để lưu.
     // ... Đọc tiếp tại MenuValidation.java, tìm [SPG03].
+        // [SUA11-02] Luyện sửa: Nhập giá sản phẩm 10000đ, khi lưu cộng thêm 20000đ.
+        // . Đây là giá cơ bản được gán vào Product và lưu database; sửa ở đây sẽ ảnh hưởng các nơi đọc giá món.
+        // . Nếu cộng thêm tiền thì phải kiểm tra cả giá sau cộng. Yêu cầu chỉ tăng giá trong giỏ phải xử lý ở
+        //   CartService, không đổi giá lưu ở đây.
         double basePrice = MenuValidation.money(request.getParameter("basePrice"), "Giá bán cơ bản").doubleValue();
 
         Product product = new Product();

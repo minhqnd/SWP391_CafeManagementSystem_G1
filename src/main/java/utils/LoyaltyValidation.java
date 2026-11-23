@@ -1,7 +1,16 @@
 package utils;
 
 public final class LoyaltyValidation {
+    // [SUA12-04] Luyện sửa: Giới hạn số tiền trong quy tắc còn tối đa 1000000đ.
+    // . Hằng này dùng cho tiền tích một điểm và tiền giảm mỗi lần đổi; đổi cùng giới hạn trong
+    //   admin-form-validation.js.
+    // . Đây là mức lớn nhất được phép nhập, không phải giá trị quy tắc đang lưu trong shop_settings.
     public static final long MAX_RULE_MONEY = 100_000_000L;
+    // [SUA12-03] Luyện sửa: Mỗi lần điều chỉnh chỉ cho tối đa 1000 điểm thay vì 1000000.
+    // . Hằng này còn giới hạn mốc đổi điểm trong updateRules và saveLoyaltyRules; nếu chỉ đổi điều chỉnh thì
+    //   cần giới hạn riêng.
+    // . Đồng bộ kiểm tra trong admin-loyalty.jsp, admin-form-validation.js và lời báo 1.000.000 trong
+    //   LoyaltyTransactionDAO.
     public static final int MAX_POINTS = 1_000_000;
 
     private LoyaltyValidation() { }

@@ -91,6 +91,9 @@
                 if (kind === 'category' && !['ACTIVE', 'INACTIVE'].includes(field('status')?.value))
                     check(field('status'), 'Vui lòng chọn trạng thái Hoạt động hoặc Tạm ẩn.');
                 const image = field('imageFile')?.files?.[0];
+                // [SUA11-13] Luyện sửa: Đổi giới hạn dung lượng ảnh kiểm tra trước khi gửi.
+                // . Đoạn này dùng chung danh mục và sản phẩm; giữ khớp controller của từng trang cùng lời báo
+                //   và lời nhắc JSP.
                 if (image?.size > 5 * 1024 * 1024) check(field('imageFile'), 'Ảnh ' + (kind === 'category' ? 'danh mục' : 'sản phẩm') + ' không được lớn hơn 5 MB.');
                 else if (image && !['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(image.type))
                     check(field('imageFile'), 'Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WebP.');
@@ -125,6 +128,11 @@
                         check(amount, amountError);
                         if (!amountError && Number(amount.value) === 0) base = true;
                     });
+                    // [SUA11-11] Luyện sửa: Đổi giới hạn số dòng size/topping kiểm tra trước khi gửi form.
+                    // . Số 50 đang dùng chung cả hai loại; đổi cùng MAX_SIZES/MAX_TOPPINGS trong
+                    //   AdminProductsController.
+                    // . Sửa cả vị trí rows[50] dùng gắn lỗi và lời báo; nếu hai loại có giới hạn khác nhau thì
+                    //   chọn theo type.
                     if (rows.length > 50) check(rows[50]?.querySelector('input'), 'Không được thêm quá 50 ' + type + '.');
                     if (type === 'size' && !count) check(document.getElementById('addSize'), 'Sản phẩm cần có ít nhất một size.');
                     else if (type === 'size' && !base && !errors.size) check(rows[0]?.querySelector('[name="sizeDelta"]'), 'Cần có một size phụ thu 0đ để giá mặc định đúng bằng giá bán cơ bản.');
@@ -154,6 +162,9 @@
                     check(amount, quantity(amount.value, 'Định lượng dòng ' + (index + 1)));
                 });
                 if (!count) check(document.getElementById('addIngredient'), 'Công thức phải có ít nhất một nguyên liệu.');
+                // [SUA11-12] Luyện sửa: Đổi số nguyên liệu tối đa kiểm tra ngay trên form.
+                // . Giới hạn 100 và lời báo phải giống MAX_RECIPE_LINES trong AdminRecipeController; thử trường
+                //   hợp vừa đủ và vượt một dòng.
                 if (rows.length > 100) check(document.getElementById('addIngredient'), 'Không được thêm quá 100 dòng nguyên liệu.');
             }
             if (kind === 'loyalty') {
@@ -164,6 +175,9 @@
                 // ... Trong admin-form-validation.js, đọc tiếp sự kiện submit ở cuối file; sai thì mark hiện lỗi
                 //     và dừng trên form, đúng thì gửi tới AdminLoyaltyController.doPost trong
                 //     AdminLoyaltyController.java.
+                // [SUA12-09] Luyện sửa: Đổi khoảng được nhập trong ba ô quy tắc.
+                // . Đồng bộ từng min/max với AdminLoyaltyController.updateRules và LoyaltyValidation; tiền giảm
+                //   hiện được phép bằng 0.
                 [['pointsEarnUnit', 'Số tiền chi tiêu để nhận 1 điểm', 1, 100000000],
                     ['pointsStep', 'Số điểm cho mỗi lần đổi', 1, 1000000],
                     ['pointsStepValue', 'Số tiền giảm cho mỗi lần đổi', 0, 100000000]]

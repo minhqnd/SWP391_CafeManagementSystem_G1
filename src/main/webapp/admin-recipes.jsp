@@ -454,6 +454,11 @@
                 if (lineCostLabel) lineCostLabel.textContent = !hasSelection ? 'Chọn nguyên liệu' : duplicate ? 'Trùng nguyên liệu' : invalidQuantity ? 'Kiểm tra lượng' : 'Thiếu giá';
                 return;
             }
+            // [SUA11-10] Luyện sửa: Đổi cách tính giá vốn xem trước khi nhập định lượng.
+            // . lineCost là tiền của một dòng; tổng các dòng nằm trong total. Phí bao bì cho cả phần phải cộng
+            //   sau vòng lặp.
+            // . Sửa tương ứng phần tính trong AdminRecipeController; số xem trước trên trình duyệt chưa phải dữ
+            //   liệu đã lưu.
             const lineCost = amount * unitCost;
             total += lineCost;
             if (lineCostLabel) lineCostLabel.textContent = money.format(lineCost) + 'đ';
