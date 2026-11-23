@@ -147,6 +147,10 @@
                 </span>
             </c:when>
             <c:otherwise>
+                <%-- [TCVE01]
+                     . Khi bấm logo Aura Café trong header.jsp, em mở đường dẫn Trang chủ. index.jsp đọc
+                       danh mục và món nổi bật để dựng lại màn hình; thao tác này không gửi form đang nhập.
+                --%>
                 <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2 me-4"
                    href="${pageContext.request.contextPath}/">
                     ${auraBrandMarkup}
@@ -155,13 +159,23 @@
         </c:choose>
 
         <c:if test="${param.navbarMode != 'barista'}">
+            <%-- [TCTK01]
+                 . Khi bấm kính lúp hoặc nhấn Enter ở ô tìm trên header.jsp, form gửi keyword tới
+                   MenuController.doGet qua /menu. Em dùng từ khóa để tìm món rồi mở Menu với kết quả;
+                   form này không gửi danh mục nên tìm trong các danh mục đang hoạt động.
+                 ... Đọc tiếp tại MenuController.java, tìm [TCTK02].
+            --%>
             <form class="aura-home-search" action="${pageContext.request.contextPath}/menu" method="get" role="search">
                 <input type="search" name="keyword" placeholder="Xin chào, bạn cần tìm gì?" aria-label="Tìm món trong thực đơn" />
                 <button type="submit" aria-label="Tìm kiếm"><span class="material-symbols-outlined">search</span></button>
             </form>
         </c:if>
 
-        <!-- Mobile Toggler -->
+        <%-- [MNNAV01]
+             . Khi bấm biểu tượng ba gạch trên màn hình nhỏ, Bootstrap dùng data-bs-target để mở hoặc
+               thu mainNavbar ngay trên trang. Nút chỉ hiện các đường dẫn; bấm một đường dẫn mới chuyển
+               trang, còn mở hoặc thu thanh này không gửi thông tin tới controller.
+        --%>
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
                 aria-controls="mainNavbar" aria-expanded="false" aria-label="Mở điều hướng">
             <span class="material-symbols-outlined">menu</span>

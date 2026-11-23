@@ -81,6 +81,11 @@
 </head>
 <body class="admin-body">
 <div class="d-md-none d-flex align-items-center justify-content-between p-3 bg-white border-bottom">
+    <%-- [CTHD01]
+         . Trên màn hình nhỏ, bấm Aura Café · Admin mở admin-dashboard.jsp để về trang quản trị.
+           Bấm Đăng xuất mở /login?action=logout; doGet trong LoginController.java hủy phiên đăng nhập
+           rồi chuyển về Trang chủ. Hai nút không gửi form nên công thức đang nhập chưa được lưu.
+    --%>
     <a href="${ctx}/admin-dashboard.jsp" class="text-decoration-none fw-bold text-danger">Aura Café · Admin</a>
     <a href="${ctx}/login?action=logout" class="btn btn-sm btn-light">Đăng xuất</a>
 </div>

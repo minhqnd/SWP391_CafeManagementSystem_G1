@@ -159,6 +159,7 @@
                                                action=delete đến doPost của AdminCategoriesController.java. Controller gọi
                                                delete (kiểm tra điều kiện rồi xóa) để kiểm tra lịch sử đơn hàng trước khi
                                                quyết định xóa danh mục và các món bên trong.
+                                             .. Bấm Hủy ở hộp xác nhận thì confirm trả false, dừng gửi form và chưa xóa gì.
                                              ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMX02].
                                         --%>
                                         <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="${category.id}">

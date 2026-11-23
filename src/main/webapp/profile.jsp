@@ -270,6 +270,12 @@
                                                 <span class="fs-5 fw-bold text-muted">pts</span>
                                             </div>
                                             <div class="text-muted mt-1" style="font-size: 0.8rem;">
+                                                <%-- [HSGIO01]
+                                                     . Khi bấm Giỏ hàng tại phần điểm của profile.jsp, em mở /cart để
+                                                       CartController.doGet chuẩn bị trang giỏ. Đây là đường sang bước
+                                                       đặt hàng để người dùng chọn dùng điểm; chỉ bấm liên kết này chưa
+                                                       trừ điểm khỏi tài khoản.
+                                                --%>
                                                 Dùng điểm trừ thẳng vào đơn ở <a href="${pageContext.request.contextPath}/cart" class="text-primary-custom fw-semibold">Giỏ hàng</a>:
                                                 mỗi ${shopSettings.pointsStep} điểm giảm <fmt:formatNumber value="${shopSettings.pointsStepValue}" pattern="#,##0" />đ
                                             </div>
@@ -1036,6 +1042,11 @@
                                 <span class="material-symbols-outlined text-success fs-5">check_circle</span>
                                 <span id="profileToastMsg">Đã sao chép!</span>
                             </div>
+                            <%-- [HSTB01]
+                                 . Sau khi sao chép mã thành viên, showToast trong profile.jsp hiện thông báo ngắn.
+                                   Bấm X thì Bootstrap dùng data-bs-dismiss="toast" để ẩn thông báo ngay trên trang;
+                                   nút không gửi form, không đổi hồ sơ hay xóa mã vừa sao chép.
+                            --%>
                             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
                                 aria-label="Close"></button>
                         </div>

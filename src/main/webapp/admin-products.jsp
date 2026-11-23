@@ -196,6 +196,8 @@
                                            action=delete tới doPost của AdminProductsController.java. Controller gọi delete
                                            (kiểm tra điều kiện rồi xóa) rồi ProductDAO.deleteProduct (kiểm tra điều kiện rồi
                                            xóa sản phẩm) để kiểm tra điều kiện và xóa nếu được phép, sau đó báo kết quả.
+                                         .. Nút chỉ hiện khi món đã ngừng bán. Bấm Hủy ở hộp xác nhận thì dừng gửi form,
+                                           sản phẩm vẫn được giữ nguyên.
                                          ... Đọc tiếp tại AdminProductsController.java, tìm [SPX02].
                                     --%>
                                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="${product.id}">

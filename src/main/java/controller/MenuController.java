@@ -52,6 +52,11 @@ public class MenuController extends HttpServlet {
             }
         }
 
+        // [TCTK02]
+        // . Từ ô tìm trên header.jsp hoặc menu.jsp, doGet nhận keyword rồi em bỏ khoảng trắng hai đầu.
+        //   Trống thì không giới hạn theo từ khóa; có nội dung thì truyền keyword cùng categoryId cho
+        //   ProductDAO.filterProducts trong ProductDAO.java để tìm món còn bán trong danh mục hoạt động.
+        //   Danh sách trả về được đặt vào products và chuyển sang menu.jsp để hiện kết quả vừa tìm.
         String keyword = null;
         if (keywordParam != null && !keywordParam.trim().isEmpty()) {
             keyword = keywordParam.trim();
