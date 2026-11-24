@@ -67,7 +67,7 @@ public class LoginController extends HttpServlet {
         //   tài khoản.
         String userIdentifier = request.getParameter("username");
         if (userIdentifier != null) {
-            userIdentifier = userIdentifier.trim();
+            userIdentifier = utils.AccountValidation.text(userIdentifier);
         }
 
         String pass = request.getParameter("password");

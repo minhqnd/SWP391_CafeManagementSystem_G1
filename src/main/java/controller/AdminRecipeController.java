@@ -353,8 +353,8 @@ public class AdminRecipeController extends HttpServlet {
 
         Set<Integer> seenIngredientIds = new HashSet<>();
         for (int i = 0; i < ingredientIds.length; i++) {
-            String rawId = ingredientIds[i] == null ? "" : ingredientIds[i].trim();
-            String rawQuantity = quantities[i] == null ? "" : quantities[i].trim();
+            String rawId = utils.FormInput.trim(ingredientIds[i]);
+            String rawQuantity = utils.FormInput.trim(quantities[i]);
             if (rawId.isEmpty() && rawQuantity.isEmpty()) continue;
             String rowLabel = "Dòng " + (i + 1) + ": ";
             if (rawId.isEmpty()) throw new IllegalArgumentException(rowLabel + "vui lòng chọn nguyên liệu.");

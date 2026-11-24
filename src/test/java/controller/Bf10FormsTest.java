@@ -83,6 +83,43 @@ class Bf10FormsTest {
     private ProfileController profile(UserDAO users){return new ProfileController(users){
         @Override protected void renderProfile(HttpServletRequest r,HttpServletResponse p,User u){}
     };}
+
+    @Test void profileNameAndAddressCheckBothSidesOfTheLimitAndRetainInvalidInput() throws Exception {
+        for (String field : new String[]{"fullName", "address"}) {
+            int max = field.equals("fullName") ? 100 : 500;
+            for (int size : new int[]{max - 1, max, max + 1}) {
+                ServletMocks mock = new ServletMocks(); mock.csrf(); mock.sessionValues.put("user", user());
+                mock.parameters.putAll(java.util.Map.of("action", "update", "fullName", "QA", "address", "123 Pho Hue"));
+                String value = "x".repeat(size); mock.parameters.put(field, value);
+                int[] saves = {0};
+                profile(new UserDAO() {
+                    @Override public User getActiveUserById(int id) { return user(); }
+                    @Override public String updateUserProfile(int id,String n,String p,String e,String b,String a) { saves[0]++; return "success"; }
+                }).doPost(mock.request, mock.response);
+                assertEquals(size <= max ? 1 : 0, saves[0]);
+                if (size > max) {
+                    java.util.Map<?,?> feedback = (java.util.Map<?,?>)mock.attributes.get("accountFeedback");
+                    assertEquals((field.equals("fullName") ? "Họ và tên" : "Địa chỉ") + " tối đa " + max + " ký tự.", ((java.util.Map<?,?>)feedback.get("errors")).get(field));
+                    assertEquals(value, ((java.util.Map<?,?>)feedback.get("values")).get(field));
+                    assertNull(mock.attributes.get("successMsg"));
+                }
+            }
+        }
+    }
+
+    @Test void registrationWhitespaceFieldsAndMissingConfirmationHaveExactRequiredErrors() throws Exception {
+        ServletMocks mock = new ServletMocks(); mock.csrf();
+        mock.parameters.putAll(java.util.Map.of("fullname", "\u00a0", "email", "\ufeff", "phone", "().-", "password", "Secret123", "confirm_password", "\u2003"));
+        new RegisterController(new UserDAO() {
+            @Override public boolean checkPhoneExists(String phone) { fail("Empty phone must not query"); return false; }
+            @Override public boolean checkEmailExists(String email) { fail("Empty email must not query"); return false; }
+            @Override public boolean register(User u,String p) { fail("Invalid form must not save"); return false; }
+        }).doPost(mock.request, mock.response);
+        java.util.Map<?,?> feedback = (java.util.Map<?,?>)mock.sessionValues.get("accountFeedback");
+        assertEquals(java.util.Map.of("fullname", "Vui lòng nhập họ và tên.", "email", "Vui lòng nhập email.",
+                "phone", "Vui lòng nhập số điện thoại.", "confirm_password", "Vui lòng nhập mật khẩu xác nhận."), feedback.get("errors"));
+        assertNull(mock.sessionValues.get("successMsg"));
+    }
     @Test void profileRejectsMissingCsrf()throws Exception{
         ServletMocks mock=new ServletMocks();mock.sessionValues.put("user",user());profile(new UserDAO()).doPost(mock.request,mock.response);assertEquals(403,mock.error);
     }

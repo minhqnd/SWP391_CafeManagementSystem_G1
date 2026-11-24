@@ -14,7 +14,8 @@
     const decimal = (raw, label, scale, maximum, displayMax, positive = false) => {
         const value = String(raw ?? '').trim();
         if (!value) return 'Vui lòng nhập ' + label.toLocaleLowerCase('vi') + '.';
-        if (value.length > 64 || !/^-?[0-9]+(?:\.[0-9]+)?$/.test(value))
+        if (value.length > 64) return label + ' tối đa 64 ký tự.';
+        if (!/^-?[0-9]+(?:\.[0-9]+)?$/.test(value))
             return label + ' phải là số, dùng dấu chấm nếu có phần thập phân.';
         // So sánh bằng số nguyên đã bỏ dấu chấm để giữ chính xác tại giá trị biên.
         const [integer, fraction = ''] = value.replace(/^-/, '').split('.');
@@ -191,7 +192,7 @@
             if (kind === 'loyalty-lookup') {
                 const raw = field('phone')?.value || '';
                 const phone = raw.trim().replace(/[\s.()-]/g, '');
-                check(field('phone'), raw.length > 64 ? 'Số điện thoại sai định dạng.'
+                check(field('phone'), raw.length > 64 ? 'Số điện thoại tối đa 64 ký tự.'
                     : !phone ? 'Vui lòng nhập số điện thoại.' : !/^0[0-9]{9}$/.test(phone) ? 'Số điện thoại sai định dạng.' : '');
             }
             form.querySelectorAll('input:not([type="hidden"]),select,textarea,button').forEach(input => mark(input, errors.get(input) || ''));

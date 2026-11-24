@@ -195,6 +195,72 @@ class AdminMenuValidationTest {
         });
     }
 
+    @Test void exactNameDescriptionAndVariantNameLimitsSaveButOneExtraCharacterDoesNot() throws Exception {
+        for (int size : new int[]{149, 150, 151}) {
+            mock.parameters.put("name", "x".repeat(size)); int before = productSaves; productPost();
+            assertEquals(before + (size <= 150 ? 1 : 0), productSaves);
+            if (size > 150) assertEquals("Tên món tối đa 150 ký tự.", error("product"));
+        }
+        mock.parameters.put("name", "Cà phê");
+        for (int size : new int[]{4999, 5000, 5001}) {
+            mock.parameters.put("description", "x".repeat(size)); int before = productSaves; productPost();
+            assertEquals(before + (size <= 5000 ? 1 : 0), productSaves);
+            if (size > 5000) assertEquals("Mô tả không được dài quá 5000 ký tự.", error("product"));
+        }
+        mock.parameters.remove("description");
+        for (String type : List.of("size", "topping")) {
+            int max = type.equals("size") ? 30 : 50;
+            for (int size : new int[]{max - 1, max, max + 1}) {
+                arrays.put(type + "Name", new String[]{"x".repeat(size)});
+                arrays.put(type.equals("size") ? "sizeDelta" : "toppingPrice", new String[]{"0"});
+                int before = productSaves; productPost();
+                assertEquals(before + (size <= max ? 1 : 0), productSaves);
+                if (size > max) assertEquals("Tên " + type + " dòng 1 tối đa " + max + " ký tự.", error("product"));
+            }
+            arrays.put("sizeName", new String[]{"M"}); arrays.put("sizeDelta", new String[]{"0"});
+        }
+        for (int size : new int[]{99, 100, 101}) {
+            mock.parameters.put("name", "x".repeat(size)); int before = categorySaves; categoryPost();
+            assertEquals(before + (size <= 100 ? 1 : 0), categorySaves);
+            if (size > 100) assertEquals("Tên danh mục tối đa 100 ký tự.", error("category"));
+        }
+    }
+
+    @Test void sizeAndToppingRowLimitsCheck49And50And51BeforeSaving() throws Exception {
+        for (String type : List.of("size", "topping")) {
+            for (int count : new int[]{49, 50, 51}) {
+                arrays.put(type + "Name", java.util.stream.IntStream.range(0, count).mapToObj(i -> "N" + i).toArray(String[]::new));
+                String[] prices = new String[count]; Arrays.fill(prices, "0");
+                arrays.put(type.equals("size") ? "sizeDelta" : "toppingPrice", prices);
+                int before = productSaves; productPost();
+                assertEquals(before + (count <= 50 ? 1 : 0), productSaves);
+                if (count > 50) assertEquals("Không được thêm quá 50 " + type + ".", error("product"));
+            }
+            arrays.put("sizeName", new String[]{"M"}); arrays.put("sizeDelta", new String[]{"0"});
+        }
+    }
+
+    @Test void exact5MbImageIsAllowedAndOneByteOverIsRejectedForBothForms() throws Exception {
+        byte[] png = new byte[5 * 1024 * 1024];
+        byte[] signature = {(byte)0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
+        System.arraycopy(signature, 0, png, 0, signature.length);
+        imagePart = image(png.length, "image/png", png); productPost(); categoryPost();
+        assertEquals(1, productSaves); assertEquals(1, categorySaves);
+        imagePart = image(png.length + 1L, "image/png", png); productPost(); categoryPost();
+        assertEquals(1, productSaves); assertEquals(1, categorySaves);
+        assertEquals("Ảnh sản phẩm không được lớn hơn 5 MB.", error("product"));
+        assertEquals("Ảnh danh mục không được lớn hơn 5 MB.", error("category"));
+    }
+
+    @Test void unicodeBlankFieldsReceiveRequiredMessagesAndNeverSave() throws Exception {
+        mock.parameters.put("name", "\u00a0\u2003"); productPost(); categoryPost();
+        assertEquals("Vui lòng nhập tên món.", error("product"));
+        assertEquals("Vui lòng nhập tên danh mục.", error("category"));
+        mock.parameters.put("name", "Cà phê"); arrays.put("sizeDelta", new String[]{"\u00a0"}); productPost();
+        assertEquals("Vui lòng nhập phụ thu size dòng 1; nhập 0 nếu không phụ thu.", error("product"));
+        assertEquals(0, productSaves); assertEquals(0, categorySaves);
+    }
+
     private void productPost() throws Exception { products.doPost(request(), mock.response); }
     private void categoryPost() throws Exception { categories.doPost(request(), mock.response); }
     private String error(String prefix) { return Objects.toString(mock.sessionValues.get(prefix + "Error")); }

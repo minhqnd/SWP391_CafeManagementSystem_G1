@@ -216,3 +216,39 @@ test('changing password clears an obsolete confirmation error returned from the 
         assert.equal(await page.locator('#account-register-confirm_password-error').textContent(), '');
     });
 });
+
+test('registration blank-looking fields use the same required messages as the server', async () => {
+    await fixture(async ({page, register, counts}) => {
+        await register.locator('[name=fullname]').fill('\u00a0');
+        await register.locator('[name=email]').fill('\ufeff');
+        await register.locator('[name=phone]').fill('().-');
+        await register.locator('[name=password]').fill('Secret123');
+        await register.locator('[name=confirm_password]').fill('\u2003');
+        await register.locator('button[type=submit]').click();
+        for (const [name, expected] of [['fullname', 'Vui lòng nhập họ và tên.'], ['email', 'Vui lòng nhập email.'],
+            ['phone', 'Vui lòng nhập số điện thoại.'], ['confirm_password', 'Vui lòng nhập mật khẩu xác nhận.']])
+            assert.equal(await page.locator(`#account-register-${name}-error`).textContent(), expected);
+        assert.equal(counts().registrations, 0);
+        assert.equal(counts().lookups, 0);
+    });
+});
+
+test('registration password rejects 7 and 256 characters and accepts exact 8 and 255 boundaries', async () => {
+    await fixture(async ({page, register, counts}) => {
+        await register.locator('[name=fullname]').fill('QA');
+        await register.locator('[name=email]').fill('bad'); // Keeps the page open for the matrix.
+        await register.locator('[name=phone]').fill('0965999999');
+        await register.locator('button[type=submit]').click();
+        for (const size of [7, 8, 254, 255, 256]) {
+            const value = 'A1' + 'x'.repeat(size - 2);
+            await register.locator('[name=password]').evaluate((field, value) => {
+                field.value = value; field.dispatchEvent(new Event('input', {bubbles: true}));
+            }, value);
+            await register.locator('[name=confirm_password]').evaluate((field, value) => {
+                field.value = value; field.dispatchEvent(new Event('input', {bubbles: true}));
+            }, value);
+            assert.equal(await page.locator('#account-register-password-error').textContent(), size < 8 || size > 255 ? 'Mật khẩu phải từ 8 đến 255 ký tự.' : '');
+        }
+        assert.equal(counts().registrations, 0);
+    });
+});

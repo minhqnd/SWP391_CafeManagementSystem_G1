@@ -380,7 +380,7 @@
                 // . Số 1000000 ở đây phải khớp giới hạn điều chỉnh trong controller và LoyaltyTransactionDAO;
                 //   đây là kiểm tra trước khi gửi.
                 || !Number.isSafeInteger(points) || points <= 0 || points > 1000000) {
-            window.alert('Số điểm phải là số nguyên từ 1 đến 1.000.000.');
+            window.alert(AuraAdminValidation.wholeNumber(raw, 'Số điểm điều chỉnh', 1, 1000000));
             return;
         }
         document.getElementById('adjustType').value = type;

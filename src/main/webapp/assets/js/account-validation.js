@@ -185,7 +185,7 @@
                 //   AccountValidation.phoneError (kiểm tra định dạng số điện thoại) kiểm tra lại trước khi tìm trùng và
                 //   tạo tài khoản.
                 // ... Đọc tiếp tại RegisterController.java, tìm [DKDT03].
-                if (name === 'phone' && !value) return 'Vui lòng nhập số điện thoại.';
+                if (name === 'phone' && !value.replace(/[\s.()-]/g, '')) return 'Vui lòng nhập số điện thoại.';
                 if (name === 'phone' && !/^0[0-9]{9}$/.test(value.replace(/[\s.()-]/g, ''))) return 'Số điện thoại sai định dạng.';
 
                 // [DKEM02]
@@ -219,6 +219,7 @@
                 // ... Trong account-validation.js, trả lời báo về phần submit đang gọi validate; lỗi thì dừng tại
                 //     ô xác nhận, hết lỗi mới gửi form Đăng ký tới RegisterController.doPost.
                 if (name === 'confirm_password' || name === 'confirmPassword') {
+                    if (!value) return 'Vui lòng nhập mật khẩu xác nhận.';
                     const password = find(key === 'profile-password' ? 'newPassword' : 'password');
                     return raw !== password.value ? 'Mật khẩu xác nhận không khớp.' : '';
                 }

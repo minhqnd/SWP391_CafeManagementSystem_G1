@@ -85,7 +85,7 @@ test('phone lookup blocks blank and malformed values and clears the old lookup n
     await fixture(`<style>${css}</style><div data-lookup-notice>Không tìm thấy khách hàng.</div><div data-form-notice>Lỗi lưu quy tắc khác</div>
         <form data-admin-form="loyalty-lookup" class="search-form" novalidate><input name="phone" class="loyalty-input is-invalid"><button type="submit">Tra cứu</button></form>`, async page => {
         const phone = page.locator('[name=phone]');
-        for (const [value, expected] of [['', 'Vui lòng nhập số điện thoại.'], ['096599999', 'Số điện thoại sai định dạng.'], ['09659999999', 'Số điện thoại sai định dạng.'], ['abc', 'Số điện thoại sai định dạng.']]) {
+        for (const [value, expected] of [['', 'Vui lòng nhập số điện thoại.'], ['096599999', 'Số điện thoại sai định dạng.'], ['09659999999', 'Số điện thoại sai định dạng.'], ['abc', 'Số điện thoại sai định dạng.'], ['0'.repeat(65), 'Số điện thoại tối đa 64 ký tự.']]) {
             await phone.fill(value);
             await page.locator('button').click();
             assert.equal(await page.locator('.invalid-feedback.d-block').textContent(), expected);
@@ -100,6 +100,78 @@ test('phone lookup blocks blank and malformed values and clears the old lookup n
         assert.equal(await page.locator('[data-form-notice]').isVisible(), true);
         await page.locator('button').click();
         assert.equal(await page.evaluate(() => window.sent), 1);
+    });
+});
+
+test('point prompt uses the same required, integer and range errors as the server', async () => {
+    const jsp = readFileSync(path.join(webRoot, 'admin-loyalty.jsp'), 'utf8');
+    const inline = [...jsp.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1];
+    await fixture('<form id="adjustPointsForm"><input id="adjustType"><input id="adjustPoints"></form>', async page => {
+        await page.addScriptTag({content: inline});
+        const cases = [
+            ['', 'Vui lòng nhập số điểm điều chỉnh.'], ['\u00a0', 'Vui lòng nhập số điểm điều chỉnh.'],
+            ['1.5', 'Số điểm điều chỉnh phải là số nguyên từ 1 đến 1000000.'], ['-1', 'Số điểm điều chỉnh phải là số nguyên từ 1 đến 1000000.'],
+            ['0', 'Số điểm điều chỉnh phải từ 1 đến 1000000.'], ['1000001', 'Số điểm điều chỉnh phải từ 1 đến 1000000.'],
+            ['9223372036854775808', 'Số điểm điều chỉnh phải từ 1 đến 1000000.'], ['1', null], ['999999', null], ['1000000', null]
+        ];
+        const result = await page.evaluate(cases => {
+            const results = [];
+            const form = document.getElementById('adjustPointsForm');
+            for (const [raw] of cases) {
+                let message = null, sent = false;
+                window.prompt = () => raw;
+                window.alert = value => message = value;
+                form.submit = () => sent = true;
+                submitAdjustment('subtract');
+                results.push({message, sent, type: document.getElementById('adjustType').value});
+            }
+            return results;
+        }, cases);
+        cases.forEach(([raw, expected], index) => {
+            assert.equal(result[index].message, expected, raw);
+            assert.equal(result[index].sent, expected === null, raw);
+            if (expected === null) assert.equal(result[index].type, 'subtract');
+        });
+    });
+});
+
+test('dynamic rows accept 50 size or topping rows and reject row 51; recipes reject row 101', async () => {
+    await fixture(productForm, async page => {
+        await page.locator('[name=sizeName]').nth(1).fill('L');
+        for (const type of ['size', 'topping']) {
+            for (const count of [49, 50, 51]) {
+                await page.evaluate(({type, count}) => {
+                    const container = document.getElementById(type === 'size' ? 'sizesList' : 'toppingsList');
+                    container.replaceChildren();
+                    for (let i = 0; i < count; i++) {
+                        const row = document.createElement('div'); row.className = 'variant-row';
+                        row.innerHTML = `<input name="${type}Name" value="N${i}"><input name="${type === 'size' ? 'sizeDelta' : 'toppingPrice'}" value="0">`;
+                        container.append(row);
+                    }
+                }, {type, count});
+                await page.locator('button[type=submit]').click();
+                assert.equal(await page.locator('.invalid-feedback.d-block').count(), count > 50 ? 1 : 0);
+                if (count > 50) assert.equal(await page.locator('.invalid-feedback.d-block').textContent(), `Không được thêm quá 50 ${type}.`);
+            }
+            await page.evaluate(() => document.getElementById('sizesList').lastElementChild.remove());
+        }
+        assert.equal(await page.evaluate(() => window.sent), 4);
+    });
+    await fixture('<form data-admin-form="recipe" novalidate><div id="rows"></div><button id="addIngredient" type="button">Thêm</button><button type="submit">Lưu</button></form>', async page => {
+        for (const count of [99,100,101]) {
+            await page.evaluate(count => {
+                const rows = document.getElementById('rows'); rows.replaceChildren();
+                for (let i = 0; i < count; i++) {
+                    const row = document.createElement('div'); row.className = 'ingredient-row';
+                    row.innerHTML = `<select name="ingredientId"><option value="${i + 1}">Nguyên liệu ${i + 1}</option></select><input name="quantity" value="0.001">`;
+                    rows.append(row);
+                }
+            }, count);
+            await page.locator('button[type=submit]').click();
+            assert.equal(await page.locator('.invalid-feedback.d-block').count(), count > 100 ? 1 : 0);
+            if (count > 100) assert.equal(await page.locator('.invalid-feedback.d-block').textContent(), 'Không được thêm quá 100 dòng nguyên liệu.');
+        }
+        assert.equal(await page.evaluate(() => window.sent), 2);
     });
 });
 

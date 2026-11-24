@@ -16,7 +16,7 @@ public final class MenuValidation {
     // ... Quay lại save trong AdminCategoriesController.java hoặc AdminProductsController.java sau
     //     MenuValidation.requiredName; tên hợp lệ được dùng tìm trùng, sai thì doPost giữ form và hiện lỗi.
     public static String requiredName(String raw, String label, int max) {
-        String value = raw == null ? "" : raw.trim();
+        String value = FormInput.trim(raw);
         if (value.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập " + label.toLowerCase(java.util.Locale.ROOT) + ".");
         if (value.length() > max) throw new IllegalArgumentException(label + " tối đa " + max + " ký tự.");
         if (value.chars().anyMatch(Character::isISOControl))
@@ -49,11 +49,13 @@ public final class MenuValidation {
                                       String displayMax, boolean positive) {
         // . Em nhận nội dung từ money hoặc quantity, bỏ khoảng trắng rồi kiểm tra ô trống và cách viết số.
         //   Tên ô được giữ trong label để lời báo chỉ rõ giá bán, phụ thu, topping hay dòng định lượng đang lỗi.
-        String value = raw == null ? "" : raw.trim();
+        String value = FormInput.trim(raw);
         if (value.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập " + label.toLowerCase(java.util.Locale.ROOT) + ".");
-        // . Em chỉ nhận số viết trực tiếp, dùng dấu chấm cho phần thập phân; số mũ, dấu phẩy và chuỗi quá
-        //   dài bị báo sai định dạng trước khi đổi thành số.
-        if (value.length() > 64 || !value.matches("-?[0-9]+(?:\\.[0-9]+)?"))
+        // . Chuỗi quá dài báo giới hạn độ dài; nhập chữ, số mũ hoặc dấu phẩy báo sai cách viết số.
+        //   Em chỉ đổi thành số sau khi nội dung đã qua hai bước kiểm tra này.
+        if (value.length() > 64)
+            throw new IllegalArgumentException(label + " tối đa 64 ký tự.");
+        if (!value.matches("-?[0-9]+(?:\\.[0-9]+)?"))
             throw new IllegalArgumentException(label + " phải là số, dùng dấu chấm nếu có phần thập phân.");
         // . Đổi được thành số, em kiểm tra lần lượt số âm hoặc bằng 0, giới hạn lớn nhất và số chữ số sau
         //   dấu chấm. Mỗi điều kiện có lời báo riêng; qua hết mới trả số về hàm vừa gọi để tiếp tục lưu.

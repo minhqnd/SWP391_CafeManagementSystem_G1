@@ -18,13 +18,13 @@ class LoyaltyPersistenceTest {
 
     @Test void insufficientBalanceAndOverflowNeverUpdateOrInsert() {
         Store insufficient=new Store(10);
-        assertThrows(IllegalArgumentException.class,()->insufficient.loyalty().adjustPoints(7,-11));
+        assertEquals("Khách hàng chỉ có 10 điểm. Không thể trừ 11 điểm.", assertThrows(IllegalArgumentException.class,()->insufficient.loyalty().adjustPoints(7,-11)).getMessage());
         assertEquals(0,insufficient.writes);assertEquals(1,insufficient.rollbacks);
         Store zero=new Store(0);
-        assertThrows(IllegalArgumentException.class,()->zero.loyalty().adjustPoints(7,-1));
+        assertEquals("Khách hàng chỉ có 0 điểm. Không thể trừ 1 điểm.", assertThrows(IllegalArgumentException.class,()->zero.loyalty().adjustPoints(7,-1)).getMessage());
         assertEquals(0,zero.writes);assertEquals(1,zero.rollbacks);
         Store full=new Store(Integer.MAX_VALUE);
-        assertThrows(IllegalArgumentException.class,()->full.loyalty().adjustPoints(7,1));
+        assertEquals("Tổng điểm sau điều chỉnh không được vượt quá 2.147.483.647 điểm.", assertThrows(IllegalArgumentException.class,()->full.loyalty().adjustPoints(7,1)).getMessage());
         assertEquals(0,full.writes);assertEquals(1,full.rollbacks);
     }
 

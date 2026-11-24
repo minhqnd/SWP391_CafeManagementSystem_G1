@@ -418,7 +418,7 @@ public class AdminProductsController extends HttpServlet {
         if (names != null) {
             for (int i = 0; i < names.length; i++) {
                 String name = trimToNull(names[i]);
-                String rawDelta = deltas[i] == null ? "" : deltas[i].trim();
+                String rawDelta = utils.FormInput.trim(deltas[i]);
                 if (name == null) {
                     if (!rawDelta.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập tên size dòng " + (i + 1) + ".");
                     continue;
@@ -446,7 +446,7 @@ public class AdminProductsController extends HttpServlet {
         if (toppingNames != null) {
             for (int i = 0; i < toppingNames.length; i++) {
                 String name = trimToNull(toppingNames[i]);
-                String rawPrice = toppingPrices[i] == null ? "" : toppingPrices[i].trim();
+                String rawPrice = utils.FormInput.trim(toppingPrices[i]);
                 if (name == null) {
                     if (!rawPrice.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập tên topping dòng " + (i + 1) + ".");
                     continue;
@@ -555,7 +555,7 @@ public class AdminProductsController extends HttpServlet {
 
     private String trimToNull(String value) {
         if (value == null) return null;
-        String trimmed = value.trim();
+        String trimmed = utils.FormInput.trim(value);
         return trimmed.isEmpty() ? null : trimmed;
     }
 

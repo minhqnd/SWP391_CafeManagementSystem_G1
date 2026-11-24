@@ -828,7 +828,7 @@ SELECT setting_key, setting_value FROM shop_settings WHERE setting_key IN ('poin
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 
 -- [SQL12-14] Tiền có thể đổi của một khách: Java dùng số điểm riêng của khách với bộ quy tắc hiện tại.
--- Source: src/main/java/controller/AdminLoyaltyController.java:142 | Hàm: doGet
+-- Source: src/main/java/controller/AdminLoyaltyController.java:143 | Hàm: doGet
 -- Không lấy giá trị quy đổi của toàn hệ thống để hiển thị cho từng khách.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 

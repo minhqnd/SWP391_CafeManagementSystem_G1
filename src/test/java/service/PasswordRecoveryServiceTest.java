@@ -50,7 +50,9 @@ class PasswordRecoveryServiceTest {
     @Test void locksAfterFiveWrongAttempts(){
         start();String code=delivered;
         String wrong = "000000".equals(code) ? "111111" : "000000";
-        for(int i=0;i<5;i++)assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,wrong));
+        for(int i=0;i<5;i++)assertEquals(i == 4 ? "Bạn đã nhập sai 5 lần. Vui lòng yêu cầu mã mới."
+                : "Mã OTP không chính xác. Còn " + (4 - i) + " lần thử.",
+                assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,wrong)).getMessage());
         assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,code));assertEquals(0,updates.get());
     }
     @Test void resendAndInitialRequestsShareCooldownAcrossSessions(){
@@ -79,19 +81,27 @@ class PasswordRecoveryServiceTest {
     }
     @Test void malformedOtpHasFormatMessageWithoutConsumingAttempts(){
         start();
-        for(int i=0;i<10;i++)assertEquals("Mã OTP phải gồm đúng 6 chữ số.",
-                assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,"abc")).getMessage());
+        for(String invalid:new String[]{"abc", "12345", "1234567", "１２３４５６", "123 45", " 123456", "123456 "})
+            assertEquals("Mã OTP phải gồm đúng 6 chữ số.",
+                assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,invalid)).getMessage());
         service.verify(mock.session,delivered);
         assertEquals("reset_password",service.nextTab(mock.session));
     }
     @Test void missingOtpIsRequiredAndDoesNotConsumeAttempts(){
         start();
-        for (String value : new String[]{null, "", "   "}) {
+        for (String value : new String[]{null, "", "   ", "\u00a0", "\ufeff"}) {
             assertEquals("Vui lòng nhập mã OTP.", assertThrows(IllegalArgumentException.class,
                     () -> service.verify(mock.session, value)).getMessage());
         }
         service.verify(mock.session, delivered);
         assertEquals("reset_password", service.nextTab(mock.session));
+    }
+    @Test void resendRejectsOneMillisecondBeforeCooldownButAcceptsTheExactBoundary(){
+        start();now.addAndGet(PasswordRecoveryService.COOLDOWN - 1);
+        assertEquals("Vui lòng đợi đủ 60 giây trước khi yêu cầu mã mới.",
+                assertThrows(IllegalArgumentException.class,()->service.resend(mock.session,"ip")).getMessage());
+        assertEquals(1,sends);
+        now.incrementAndGet();service.resend(mock.session,"ip");assertEquals(2,sends);
     }
     @Test void expiredOtpReturnsToEmailEntryAndAllowsANewRequest(){
         start();now.addAndGet(PasswordRecoveryService.TTL);

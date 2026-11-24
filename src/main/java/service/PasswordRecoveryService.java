@@ -122,7 +122,7 @@ public final class PasswordRecoveryService {
         synchronized(session){
             State state=state(session);long now=clock.getAsLong();
             if(state.otp==null || state.verifiedAt!=null || now-state.sentAt>=TTL){clear(session);throw expired();}
-            if (input == null || input.isBlank())
+            if (AccountValidation.text(input).isEmpty())
                 throw new utils.RecoveryFailure("otp", "Vui lòng nhập mã OTP.");
             if (!input.matches("[0-9]{6}"))
                 throw new utils.RecoveryFailure("otp", "Mã OTP phải gồm đúng 6 chữ số.");

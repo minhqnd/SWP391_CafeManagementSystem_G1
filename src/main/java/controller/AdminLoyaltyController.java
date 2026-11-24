@@ -108,10 +108,11 @@ public class AdminLoyaltyController extends HttpServlet {
             //   findDefaultCustomer. doGet đưa khách tìm được và lookupError về admin-loyalty.jsp để hiển thị.
             // ... Trong AdminLoyaltyController.java, đọc tiếp nhánh chọn activeCustomer trong doGet; kết quả
             //   tra cứu và lookupError được đưa tới admin-loyalty.jsp để kết thúc tra cứu.
-            String phone = rawPhone != null && rawPhone.length() > 64
+            boolean phoneTooLong = rawPhone != null && rawPhone.length() > 64;
+            String phone = phoneTooLong
                     ? rawPhone.substring(0, 64) : AccountValidation.phone(rawPhone);
-            boolean invalidPhone = rawPhone != null && (rawPhone.length() > 64
-                    || AccountValidation.phoneError(phone) != null);
+            String phoneError = phoneTooLong ? "Số điện thoại tối đa 64 ký tự." : AccountValidation.phoneError(phone);
+            boolean invalidPhone = rawPhone != null && phoneError != null;
 
             User customer = invalidPhone ? null : rawPhone == null
                     ? loyaltyDAO.findDefaultCustomer() : loyaltyDAO.findCustomerByPhone(phone);
@@ -154,7 +155,7 @@ public class AdminLoyaltyController extends HttpServlet {
                         Math.round(customerSteps * settings.getPointsStepValue()));
             } else if (invalidPhone) {
 
-                request.setAttribute("lookupError", AccountValidation.phoneError(phone));
+                request.setAttribute("lookupError", phoneError);
             } else if (!phone.isEmpty()) {
 
                 request.setAttribute("lookupError", "Không tìm thấy khách hàng có số điện thoại " + phone + ".");
@@ -434,6 +435,6 @@ public class AdminLoyaltyController extends HttpServlet {
     }
 
     private String trim(String value) {
-        return value == null ? "" : value.trim();
+        return utils.FormInput.trim(value);
     }
 }

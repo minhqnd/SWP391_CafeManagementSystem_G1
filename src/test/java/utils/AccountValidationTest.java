@@ -4,6 +4,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AccountValidationTest {
+    @Test void trimsBrowserWhitespaceWithoutRemovingControlsOrChangingInternalText(){
+        for (int space : new int[]{0x09,0x0A,0x0B,0x0C,0x0D,0x20,0xA0,0x1680,0x2000,0x2003,0x200A,0x2028,0x2029,0x202F,0x205F,0x3000,0xFEFF})
+            assertEquals("QA",AccountValidation.text((char)space + "QA" + (char)space));
+        String internal="Q" + " ".repeat(100000) + "A";
+        assertEquals(internal,AccountValidation.text("\u00a0" + internal + "\ufeff"));
+        assertEquals("\u0000QA\u0000",AccountValidation.text("\u0000QA\u0000"));
+    }
     @Test void requiresMatchingConfirmationAndBoundsPasswords(){
         for(String bad:new String[]{null,"","12345","Abc1234","12345678","abcdefgh","!!!!!!!!","      ","x".repeat(256)})assertNotNull(AccountValidation.passwordError(bad,bad));
         assertNull(AccountValidation.passwordError("Abcd1234","Abcd1234"));
@@ -27,7 +34,7 @@ class AccountValidationTest {
             assertNotNull(AccountValidation.phoneError(invalid),invalid);
     }
     @Test void acceptsOnlyExactGmailDomainAndKeepsLengthErrorsSeparate(){
-        for(String bad:new String[]{null,"nguyen@gmaill.comm","nguyen@gmail.comm","nguyen@gmaill.com",
+        for(String bad:new String[]{"nguyen@gmaill.comm","nguyen@gmail.comm","nguyen@gmaill.com",
                 "nguyen@gmail.com.evil.com","nguyen@sub.gmail.com","nguyen@yahoo.com",
                 "nguyen@gmailcom","nguyen@@gmail.com",".nguyen@gmail.com","nguyen..a@gmail.com","nguyen@gmail.com\n"})
             assertEquals("Sai định dạng email.",AccountValidation.emailError(bad),bad);

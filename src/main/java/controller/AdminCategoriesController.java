@@ -310,7 +310,7 @@ public class AdminCategoriesController extends HttpServlet {
 
     private String trimToNull(String value) {
         if (value == null) return null;
-        String trimmed = value.trim();
+        String trimmed = utils.FormInput.trim(value);
         return trimmed.isEmpty() ? null : trimmed;
     }
 

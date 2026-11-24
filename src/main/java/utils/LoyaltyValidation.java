@@ -25,7 +25,7 @@ public final class LoyaltyValidation {
     //   ruleValue trả số cho updateRules hoặc giữ lỗi của ô, rồi updateRules xét errors của cả ba ô.
     public static long wholeNumber(String raw, String label, long min, long max) {
         // . Em bỏ khoảng trắng đầu cuối để kiểm tra đúng phần số người dùng nhập.
-        String value = raw == null ? "" : raw.trim();
+        String value = FormInput.trim(raw);
 
         // . Ô trống thì yêu cầu nhập; có chữ, dấu âm hoặc dấu thập phân thì báo phải nhập số nguyên.
         //   Chuỗi số quá dài cũng bị chặn trước khi đổi thành số để tránh lỗi khi đọc giá trị.

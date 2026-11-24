@@ -122,18 +122,18 @@ Tìm dòng: const lineCost = amount * unitCost;
 - Sửa tương ứng phần tính trong AdminRecipeController; số xem trước trên trình duyệt chưa phải dữ liệu đã lưu.
 
 [SUA11-11] Đổi giới hạn số dòng size/topping kiểm tra trước khi gửi form.
-Vị trí: src/main/webapp/assets/js/admin-form-validation.js:135
+Vị trí: src/main/webapp/assets/js/admin-form-validation.js:136
 Tìm dòng: if (rows.length > 50) check(
 - Số 50 đang dùng chung cả hai loại; đổi cùng MAX_SIZES/MAX_TOPPINGS trong AdminProductsController.
 - Sửa cả vị trí rows[50] dùng gắn lỗi và lời báo; nếu hai loại có giới hạn khác nhau thì chọn theo type.
 
 [SUA11-12] Đổi số nguyên liệu tối đa kiểm tra ngay trên form.
-Vị trí: src/main/webapp/assets/js/admin-form-validation.js:169
+Vị trí: src/main/webapp/assets/js/admin-form-validation.js:170
 Tìm dòng: if (rows.length > 100) check(
 - Giới hạn 100 và lời báo phải giống MAX_RECIPE_LINES trong AdminRecipeController; thử trường hợp vừa đủ và vượt một dòng.
 
 [SUA11-13] Đổi giới hạn dung lượng ảnh kiểm tra trước khi gửi.
-Vị trí: src/main/webapp/assets/js/admin-form-validation.js:95
+Vị trí: src/main/webapp/assets/js/admin-form-validation.js:96
 Tìm dòng: if (image?.size > 5 * 1024 * 1024)
 - Đoạn này dùng chung danh mục và sản phẩm; giữ khớp controller của từng trang cùng lời báo và lời nhắc JSP.
 
@@ -154,7 +154,7 @@ Tìm dòng: request.setAttribute("transactions", loyaltyDAO.findRecent(50));
 - Chỉ giảm số dòng được lấy để hiển thị, không xóa lịch sử và không đổi số của thẻ tổng giao dịch.
 
 [SUA12-02] Khi cộng 10 điểm thì tặng thêm 5, khách thực nhận 15 điểm.
-Vị trí: src/main/java/controller/AdminLoyaltyController.java:365
+Vị trí: src/main/java/controller/AdminLoyaltyController.java:366
 Tìm dòng: if (!loyaltyDAO.adjustPoints(customerId, "subtract".equals(adjustType) ? -points : points))
 - Đổi điểm ở nhánh add trước khi gọi DAO; nhánh subtract vẫn truyền số âm như quy định.
 - Truyền cùng một số điểm thực tế để DAO vừa tính số dư vừa ghi ADJUST; kiểm tra giới hạn sau khi cộng thưởng.
@@ -178,7 +178,7 @@ Tìm dòng: long redeemableSteps =
 - Đây là thẻ tổng quan. Đổi tiền giảm thật của đơn hàng còn liên quan nơi sử dụng điểm trong giỏ/thanh toán.
 
 [SUA12-06] Thay cách tính tiền có thể đổi của khách đang xem.
-Vị trí: src/main/java/controller/AdminLoyaltyController.java:146
+Vị trí: src/main/java/controller/AdminLoyaltyController.java:147
 Tìm dòng: long customerSteps =
 - Dùng điểm riêng của khách, chia nguyên cho mốc rồi nhân tiền giảm; phải cùng quy tắc với phần tổng quan và hồ sơ.
 - Nếu đề chỉ đổi mốc/tiền giảm đang dùng thì cập nhật qua Lưu quy tắc; sửa riêng phép hiển thị chưa đổi tiền giảm của đơn hàng.
@@ -195,6 +195,6 @@ Tìm dòng: || !Number.isSafeInteger(points) || points <= 0 || points > 1000000)
 - Số 1000000 ở đây phải khớp giới hạn điều chỉnh trong controller và LoyaltyTransactionDAO; đây là kiểm tra trước khi gửi.
 
 [SUA12-09] Đổi khoảng được nhập trong ba ô quy tắc.
-Vị trí: src/main/webapp/assets/js/admin-form-validation.js:183
+Vị trí: src/main/webapp/assets/js/admin-form-validation.js:184
 Tìm dòng: [['pointsEarnUnit', 'Số tiền chi tiêu để nhận 1 điểm', 1, 100000000],
 - Đồng bộ từng min/max với AdminLoyaltyController.updateRules và LoyaltyValidation; tiền giảm hiện được phép bằng 0.

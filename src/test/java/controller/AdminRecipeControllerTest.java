@@ -188,6 +188,31 @@ class AdminRecipeControllerTest {
         controller.doPost(request(), response());
     }
 
+    @Test void recipeRowLimitsAccept99And100ButReject101WithExactMessage() throws Exception {
+        for (int count : new int[]{99, 100, 101}) {
+            String[] ids = java.util.stream.IntStream.rangeClosed(1, count).mapToObj(Integer::toString).toArray(String[]::new);
+            String[] amounts = new String[count]; java.util.Arrays.fill(amounts, "0.001");
+            int before = saves; submit(ids, amounts);
+            assertEquals(before + (count <= 100 ? 1 : 0), saves);
+            if (count > 100) assertEquals("Không được thêm quá 100 dòng nguyên liệu.", sessionValues.get("recipeError"));
+        }
+    }
+
+    @Test void quantityAtMaximumSavesAndOneStepAboveKeepsTheDraftAndExactError() throws Exception {
+        submit(new String[]{"1"}, new String[]{"999999999.999"}); assertEquals(1, saves);
+        submit(new String[]{"1"}, new String[]{"1000000000"}); assertEquals(1, saves);
+        assertEquals("Định lượng dòng 1 không được vượt quá 999.999.999,999.", sessionValues.get("recipeError"));
+        load(); assertEquals("1000000000", formRows().get(0).get("quantity"));
+    }
+
+    @Test void blankQuantityAndDuplicateIngredientReportTheActualRow() throws Exception {
+        submit(new String[]{"1", "2"}, new String[]{"1", "\u00a0"});
+        assertEquals("Dòng 2: vui lòng nhập định lượng.", sessionValues.get("recipeError"));
+        submit(new String[]{"1", "1"}, new String[]{"1", "2"});
+        assertEquals("Dòng 2: nguyên liệu bị chọn trùng với dòng trước. Mỗi nguyên liệu chỉ chọn một lần.", sessionValues.get("recipeError"));
+        assertEquals(0, saves);
+    }
+
     private void load() throws Exception {
         attributes.clear();
         controller.doGet(request(), response());

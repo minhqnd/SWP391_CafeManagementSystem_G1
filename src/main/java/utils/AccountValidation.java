@@ -8,11 +8,11 @@ import java.util.Locale;
 public final class AccountValidation {
     private AccountValidation() {}
 
-    public static String text(String raw) { return raw == null ? "" : raw.trim(); }
+    public static String text(String raw) { return FormInput.trim(raw); }
 
     public static String email(String raw) { return text(raw).toLowerCase(Locale.ROOT); }
 
-    public static String phone(String raw) { return text(raw).replaceAll("[\\s.()-]", ""); }
+    public static String phone(String raw) { return text(raw).replaceAll("[\\s\\p{Z}\\uFEFF.()-]", ""); }
 
     // [KTHT01]
     // . nameError trong AccountValidation.java nhận họ tên đã được controller bỏ khoảng trắng đầu/cuối. Em kiểm
@@ -23,7 +23,7 @@ public final class AccountValidation {
     //   nếu sửa hồ sơ, ngay sau AccountValidation.nameError; thêm lời báo vào errors rồi xét có lưu hay trả
     //   form.
     public static String nameError(String name) {
-        if (name == null || name.isBlank()) return "Vui lòng nhập họ và tên.";
+        if (text(name).isEmpty()) return "Vui lòng nhập họ và tên.";
         if (name.length() > 100) return "Họ và tên tối đa 100 ký tự.";
         if (name.chars().anyMatch(Character::isISOControl)) return "Họ và tên chứa ký tự không được hỗ trợ.";
         return null;
@@ -38,7 +38,7 @@ public final class AccountValidation {
     //   AccountAvailabilityController.java hoặc PasswordRecoveryService.java; có lỗi thì dừng nhánh đang xét,
     //   đúng mới đọc dữ liệu tiếp.
     public static String emailError(String email) {
-        if (email != null && email.isEmpty()) return "Vui lòng nhập email.";
+        if (email == null || email.isEmpty()) return "Vui lòng nhập email.";
         if (email != null && email.length() > 150) return "Email tối đa 150 ký tự.";
         // [SUA10-05] Luyện sửa: Cho phép thêm đuôi email khác ngoài gmail.com.
         // . Sửa điều kiện nhận email tại đây và phần validate email trong account-validation.js; kiểm tra
@@ -58,7 +58,7 @@ public final class AccountValidation {
     //     AccountAvailabilityController.java hoặc AdminLoyaltyController.java; số sai thì báo lỗi, số đúng mới tìm
     //     trùng hoặc tra khách.
     public static String phoneError(String phone) {
-        if (phone != null && phone.isEmpty()) return "Vui lòng nhập số điện thoại.";
+        if (phone == null || phone.isEmpty()) return "Vui lòng nhập số điện thoại.";
         return phone != null && phone.matches("0[0-9]{9}") ? null : "Số điện thoại sai định dạng.";
     }
 
@@ -74,7 +74,7 @@ public final class AccountValidation {
     //   ngay sau AccountValidation.passwordError; lỗi thì trả false, hợp lệ mới thực hiện phần ghi bên dưới.
     public static String passwordError(String password, String confirmation) {
         if (password == null || password.isEmpty()) return "Vui lòng nhập mật khẩu.";
-        if (password.isBlank()) return "Mật khẩu không được chỉ có khoảng trắng.";
+        if (text(password).isEmpty()) return "Mật khẩu không được chỉ có khoảng trắng.";
         // [SUA10-03] Luyện sửa: Mật khẩu tối thiểu 10 ký tự thay vì 8.
         // . Sửa điều kiện và lời báo ở đây; sửa passwordError trong account-validation.js cùng quy tắc.
         // . Các ô mật khẩu trong auth_modal.jsp, login.jsp, profile.jsp có minlength/lời nhắc; kiểm tra lại khi
@@ -96,8 +96,8 @@ public final class AccountValidation {
         // ... Nếu được gọi qua passwordErrors khi đăng ký hoặc đổi mật khẩu, quay lại passwordErrors cùng file;
         //   hàm đó kiểm tra riêng ô xác nhận rồi trả danh sách lỗi về RegisterController hoặc
         //   ProfileController.
-        if (confirmation == null || confirmation.isEmpty() || !password.equals(confirmation))
-            return "Mật khẩu xác nhận không khớp hoặc chưa được nhập.";
+        if (text(confirmation).isEmpty()) return "Vui lòng nhập mật khẩu xác nhận.";
+        if (!password.equals(confirmation)) return "Mật khẩu xác nhận không khớp.";
         return null;
     }
 
@@ -106,7 +106,7 @@ public final class AccountValidation {
         java.util.Map<String,String> errors = new java.util.LinkedHashMap<>();
         String error = passwordError(password, password);
         if (error != null) errors.put(passwordField, error);
-        if (confirmation == null || confirmation.isEmpty())
+        if (text(confirmation).isEmpty())
             errors.put(confirmationField, "Vui lòng nhập mật khẩu xác nhận.");
         else if (!confirmation.equals(password))
             errors.put(confirmationField, "Mật khẩu xác nhận không khớp.");
