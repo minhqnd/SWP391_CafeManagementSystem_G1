@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
-// BF11 - XEM CÔNG KHAI: GET /menu xem/lọc; GET ?action=detail&id=... trả JSON cho popup.
 @WebServlet(name = "MenuController", urlPatterns = {"/menu"})
 public class MenuController extends HttpServlet {
 
@@ -23,6 +22,13 @@ public class MenuController extends HttpServlet {
     private final CategoryDAO categoryDAO = new CategoryDAO();
 
     @Override
+    // [MNM02]
+    // . Khi mở Menu, doGet trong MenuController.java gọi CategoryDAO.getAllActiveCategoriesWithCount (đọc
+    //   danh mục hoạt động kèm số món đang bán) để đọc danh mục hoạt động và ProductDAO.filterProducts (lọc
+    //   món còn bán theo danh mục và từ khóa) để lấy món theo danh mục, từ khóa. Em đưa kết quả về menu.jsp
+    //   để hiện những món khách được chọn mua.
+    // ... Trong MenuController.java, tiếp tục doGet tới productDAO.filterProducts rồi forward menu.jsp; kết thúc
+    //     mở Menu khi danh mục và các thẻ món đã hiện.
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -48,16 +54,18 @@ public class MenuController extends HttpServlet {
             }
         }
 
+        // [TCTK02]
+        // . Từ ô tìm trên header.jsp hoặc menu.jsp, doGet nhận keyword rồi em bỏ khoảng trắng hai đầu.
+        //   Trống thì không giới hạn theo từ khóa; có nội dung thì truyền keyword cùng categoryId cho
+        //   ProductDAO.filterProducts trong ProductDAO.java để tìm món còn bán trong danh mục hoạt động.
+        //   Danh sách trả về được đặt vào products và chuyển sang menu.jsp để hiện kết quả vừa tìm.
+        // ... Trong MenuController.java, đọc tiếp lời gọi productDAO.filterProducts ngay bên dưới rồi phần đặt
+        //     products; kết thúc tìm kiếm khi menu.jsp hiện danh sách theo từ khóa vừa nhận.
         String keyword = null;
         if (keywordParam != null && !keywordParam.trim().isEmpty()) {
             keyword = keywordParam.trim();
         }
 
-        // 3. Truy vấn danh sách món ăn đã lọc
-        // MN02: [SLBF11] Load available products in active categories
-        // . đọc danh mục và từ khóa khách vừa chọn để tìm món.
-        // .. Có danh mục, danh sách món và điều kiện lọc để hiển thị.
-        // ... CategoryDAO [MN03] và ProductDAO.filterProducts() [MN04] → menu.jsp [MN06].
         List<Product> products = productDAO.filterProducts(categoryId, keyword);
 
         // 4. Gán thuộc tính gửi sang view menu.jsp
@@ -67,18 +75,21 @@ public class MenuController extends HttpServlet {
         request.setAttribute("currentCategory", categoryId);
         request.setAttribute("currentKeyword", keyword != null ? keyword : "");
 
-        // 5. Chuyển tiếp tới giao diện menu.jsp
-        // MN05: . Gắn products/categories vào request rồi forward, không ghi database.
-        // ... menu.jsp lặp danh sách tại [MN07].
         request.getRequestDispatcher("/menu.jsp").forward(request, response);
     }
 
+    // [MNCT03]
+    // . Từ doGet với action=detail, em gọi handleProductDetailApi (đọc và trả thông tin món cho hộp lựa
+    //   chọn) ngay trong MenuController.java để nhận id và gọi ProductDAO.getAvailableProductById (đọc món
+    //   còn bán theo mã) đọc món còn bán. Em trả thông tin cùng cấu hình size/topping cho
+    //   openProductDetailModal (đọc thông tin rồi mở hộp lựa chọn món); mã sai, món không còn bán hoặc đọc
+    //   lỗi thì trả lỗi để trang báo không tải được món, không mở hộp với dữ liệu sản phẩm không hợp lệ.
+    // ... Quay lại product_detail_modal.jsp, trong openProductDetailModal sau khi nhận dữ liệu từ
+    //     /menu?action=detail; dựng lựa chọn rồi mở hộp món, hoặc hiện thông báo không tải được để kết thúc lần
+    //     mở.
     private void handleProductDetailApi(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        // MN09: . chọn nhánh lấy dữ liệu món vì yêu cầu gửi lên có thao tác xem chi tiết.
-        // .. trả thông tin món để hộp chọn món tự hiển thị, không chuyển sang trang khác.
-        // ... ProductDAO.getAvailableProductById(mã món) [MN10] → JSON về openProductDetailModal() [MN08].
-        // JSON API chỉ cung cấp dữ liệu món cho giao diện; không thêm món vào giỏ ở hàm này.
+
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
 

@@ -8,7 +8,7 @@ import java.io.IOException;
 final class ScaffoldAccess {
     private ScaffoldAccess() {}
     static boolean requireAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        // BF12: chỉ cho role ADMIN đi tiếp; không phải kiểm tra token hay kiểm tra số điểm.
+
         User user = (User) request.getSession().getAttribute("user");
         if (user == null || !"ACTIVE".equalsIgnoreCase(user.getStatus()) || !"ADMIN".equals(user.getRole())) {
             response.sendRedirect(request.getContextPath() + "/?tab=login");

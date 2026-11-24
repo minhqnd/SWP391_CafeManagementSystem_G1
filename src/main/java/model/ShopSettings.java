@@ -28,6 +28,9 @@ public class ShopSettings implements Serializable {
     private double freeshipThreshold = 150000;  // tiền hàng tối thiểu để miễn phí giao hàng (0 = mọi đơn)
     private double deliveryFee = 25000;         // phí giao cố định cho mọi đơn giao tận nơi (chưa đạt freeship)
     private int deliveryMinutes = 30;           // thời gian giao dự kiến kể từ khi thanh toán
+    // [SUA12-07] Luyện sửa: Đổi mốc mặc định từ 10 điểm sang 20 điểm.
+    // . Giá trị ở đây là mặc định; getSettingsStrict đọc shop_settings và ghi đè nếu khóa đã có.
+    // . Quy tắc hiện tại thay qua Lưu quy tắc; sửa mặc định riêng có thể không làm con số trên web thay đổi.
     private int pointsStep = 10;                // mốc điểm: khách dùng 10, 20, 30... điểm
     private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm
     private double pointsEarnUnit = 10000;      // số tiền hàng sau giảm để nhận 1 điểm
@@ -44,7 +47,6 @@ public class ShopSettings implements Serializable {
 
     public double getDeliveryFee() { return deliveryFee; }
     public void setDeliveryFee(double deliveryFee) { this.deliveryFee = deliveryFee; }
-
 
     public int getDeliveryMinutes() { return deliveryMinutes; }
     public void setDeliveryMinutes(int deliveryMinutes) { this.deliveryMinutes = deliveryMinutes; }
@@ -80,9 +82,7 @@ public class ShopSettings implements Serializable {
     public String getPaymentAccountName(){return paymentAccountName;} public void setPaymentAccountName(String v){if(v!=null&&!v.isBlank())paymentAccountName=v;}
 
     public int calculateEarnedPoints(double goodsAmountAfterDiscount) {
-        // CF01: . Ở đây em tính điểm thưởng từ tiền hàng sau giảm.
-        // .. Kết quả là số điểm nguyên làm tròn xuống từ tiền hàng sau giảm, không tính phí giao.
-        // ... calculateEarnedPoints() trả số điểm về nơi gọi; tại quầy dùng ở [CT02].
+
         if (goodsAmountAfterDiscount <= 0 || pointsEarnUnit <= 0) return 0;
         return (int) Math.floor(goodsAmountAfterDiscount / pointsEarnUnit);
     }
@@ -102,9 +102,7 @@ public class ShopSettings implements Serializable {
      * không vượt quá số điểm khách đang có và số tiền giảm không vượt quá tiền hàng.
      */
     public int getMaxRedeemablePoints(int availablePoints, double subtotal) {
-        // CF03: . Ở đây em giới hạn điểm dùng theo số dư và tiền hàng.
-        // .. Điểm dùng không quá số dư, tiền giảm không quá tiền hàng và phải đúng mốc.
-        // ... getMaxRedeemablePoints() trả giới hạn cho giỏ [RD06] hoặc POS [CT01].
+
         if (pointsStep <= 0 || pointsStepValue <= 0 || availablePoints <= 0 || subtotal <= 0) {
             return 0;
         }

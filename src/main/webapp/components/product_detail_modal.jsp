@@ -90,7 +90,7 @@
                     <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-1 small fw-semibold" style="font-size: 0.85rem;" onclick="clearAllCart()">
                         Xoá tất cả
                     </button>
-                    <button type="button" class="btn btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none" 
+                    <button type="button" class="btn btn-light rounded-circle p-1 d-flex align-items-center justify-content-center text-muted border-0 shadow-none"
                             style="width: 36px; height: 36px; transition: background 0.2s;" data-bs-dismiss="modal" aria-label="Close">
                         <span class="material-symbols-outlined fs-5">close</span>
                     </button>
@@ -173,6 +173,13 @@
         updateCartBadge();
     });
 
+    // [TCGIO02]
+    // . Ở openSelectedItemsModal (đọc giỏ rồi mở danh sách món đã chọn), em đọc components/cart_api.jsp để
+    //   lấy các dòng, số lượng và tổng tiền của giỏ trong session. Em đưa dữ liệu cho
+    //   renderSelectedItemsModal (đưa các món trong giỏ lên hộp danh sách) dựng nội dung rồi Bootstrap mở
+    //   hộp selectedItemsModal. Nếu không đọc được thì chuyển về /cart để xem bằng trang giỏ hàng.
+    // ... Kết thúc mở danh sách món đã chọn khi selectedItemsModal hiện các dòng giỏ, hoặc khi trình duyệt chuyển
+    //     về trang /cart nếu chưa đọc được dữ liệu.
     function openSelectedItemsModal() {
         fetch('${pageContext.request.contextPath}/components/cart_api.jsp')
             .then(function(res) { return res.json(); })
@@ -212,7 +219,7 @@
         } else {
             if (emptyEl) emptyEl.classList.add('d-none');
             if (summaryEl) summaryEl.classList.remove('d-none');
-            
+
             var html = '';
             items.forEach(function(item) {
                 var toppingsText = (item.toppings && item.toppings.length > 0) ? item.toppings.join(', ') : '';
@@ -338,10 +345,13 @@
             });
     }
 
+    // [MNCT02]
+    // . Ở openProductDetailModal (đọc thông tin rồi mở hộp lựa chọn món), em nhận mã từ nút dấu cộng và đọc
+    //   /menu?action=detail&id theo mã đó. MenuController.doGet gọi handleProductDetailApi (đọc và trả thông
+    //   tin món cho hộp lựa chọn) để đọc món còn bán rồi trả tên, ảnh, giá và variantsConfig. Khi nhận được,
+    //   em dựng lựa chọn size/topping và mở productDetailModal.
+    // ... Đọc tiếp tại MenuController.java, tìm [MNCT03].
     function openProductDetailModal(productId) {
-        // MN08: . Ở đây em gửi mã món lên máy chủ khi khách mở hộp chọn món.
-        // .. Thông tin trả về được dùng để hiện tên món, size và topping.
-        // ... GET /menu?action=detail&id=... → handleProductDetailApi() [MN09] → DAO [MN10].
         fetch('${pageContext.request.contextPath}/menu?action=detail&id=' + productId)
             .then(function (res) {
                 if (!res.ok) {
@@ -360,16 +370,16 @@
 
                 var imgEl = document.getElementById('modalProductImg');
                 if (imgEl) imgEl.src = data.imageUrl || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';
-                
+
                 var nameEl = document.getElementById('modalProductName');
                 if (nameEl) nameEl.innerText = data.name || '';
-                
+
                 var catEl = document.getElementById('modalProductCategory');
                 if (catEl) catEl.innerText = data.categoryName || '';
-                
+
                 var descEl = document.getElementById('modalProductDesc');
                 if (descEl) descEl.innerText = data.description || '';
-                
+
                 var qtyEl = document.getElementById('modalProductQty');
                 if (qtyEl) qtyEl.innerText = 1;
 

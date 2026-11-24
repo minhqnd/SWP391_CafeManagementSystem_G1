@@ -15,7 +15,9 @@ public class EmailUtil {
     private static final String SENDER_EMAIL = smtpValue("AURA_SMTP_EMAIL", "smtp.email");
     private static final String SMTP_PASSWORD = smtpValue("AURA_SMTP_PASSWORD", "smtp.password");
 
-    // . Đọc cấu hình SMTP riêng trên máy; biến môi trường được ưu tiên, không đưa mật khẩu vào comment.
+    // . Ở loadSmtpConfig (đọc thiết lập để gửi email) trong EmailUtil.java, em đọc cấu hình gửi thư từ máy.
+    //   Hàm sendOTP (gửi email chứa mã xác minh) dùng các giá trị này để kết nối dịch vụ email và gửi mã tới
+    //   địa chỉ người dùng nhập.
     private static Properties loadSmtpConfig() {
         Properties config = new Properties();
         String configuredPath = System.getenv("AURA_SMTP_CONFIG");
@@ -60,7 +62,7 @@ public class EmailUtil {
             message.setFrom(new InternetAddress(SENDER_EMAIL, "Aura Café System", "UTF-8"));
             message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipientEmail));
             message.setSubject("Yêu cầu khôi phục mật khẩu - Aura Café", "UTF-8");
-            
+
             String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>"
                     + "<h2 style='color: #b2292e;'>Khôi phục mật khẩu Aura Café</h2>"
                     + "<p>Xin chào,</p>"
@@ -70,7 +72,7 @@ public class EmailUtil {
                     + "<br><hr>"
                     + "<p style='font-size: 12px; color: #999;'>Đây là email tự động, vui lòng không phản hồi.</p>"
                     + "</div>";
-            
+
             message.setContent(htmlContent, "text/html; charset=UTF-8");
 
             Transport.send(message);
@@ -81,9 +83,12 @@ public class EmailUtil {
         }
     }
 
-    // OT06e: . Nhận email và mã từ service rồi gửi thư OTP qua SMTP Gmail bằng Jakarta Mail.
-    // .. Trả true khi gửi được, false khi thiếu cấu hình hoặc gửi lỗi.
-    // ... Kết quả về PasswordRecoveryService.start() [OT06].
+    // [OTG05]
+    // . Trong sendOTP của EmailUtil.java, em nhận email và mã sáu số từ PasswordRecoveryService.start. Em
+    //   gửi thư xác minh rồi trả true hoặc false về start; chỉ khi gửi được thì bước tạo mã mới giữ dữ liệu
+    //   để người dùng xác minh.
+    // ... Quay lại PasswordRecoveryService.java, trong start sau sender.test: gửi được thì giữ State rồi về
+    //     ForgotPasswordController.doPost; gửi thất bại thì báo lỗi và chưa mở bước xác minh.
     public static boolean sendOTP(String recipientEmail, String otp) {
         if (SENDER_EMAIL == null || SENDER_EMAIL.isBlank() || SMTP_PASSWORD == null || SMTP_PASSWORD.isBlank()) return false;
         Properties properties = new Properties();
@@ -107,7 +112,7 @@ public class EmailUtil {
             message.setFrom(new InternetAddress(SENDER_EMAIL, "Aura Café System", "UTF-8"));
             message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipientEmail));
             message.setSubject("Mã xác thực khôi phục mật khẩu - Aura Café", "UTF-8");
-            
+
             String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>"
                     + "<h2 style='color: #b2292e;'>Khôi phục mật khẩu Aura Café</h2>"
                     + "<p>Xin chào,</p>"
@@ -117,7 +122,7 @@ public class EmailUtil {
                     + "<br><hr>"
                     + "<p style='font-size: 12px; color: #999;'>Đây là email tự động, vui lòng không phản hồi.</p>"
                     + "</div>";
-            
+
             message.setContent(htmlContent, "text/html; charset=UTF-8");
 
             Transport.send(message);

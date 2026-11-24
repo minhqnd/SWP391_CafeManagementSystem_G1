@@ -22,15 +22,16 @@ public class ProductDetailController extends HttpServlet {
     private final ProductDAO productDAO = new ProductDAO();
 
     @Override
+    // [MNTHE02]
+    // . Khi bấm một món, doGet trong ProductDetailController.java nhận mã sản phẩm. Em truyền mã vào
+    //   getAvailableProductById (đọc món còn bán theo mã) trong ProductDAO.java để đọc lại món còn bán, rồi
+    //   đưa sản phẩm về product-detail.jsp để hiện chi tiết.
+    // ... Đọc tiếp tại ProductDAO.java, tìm [MNTHE03].
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String idParam = request.getParameter("id");
-        // MN11: . Ở đây em nhận mã món khách muốn xem ở trang chi tiết riêng.
-        // .. Em đọc món đó và các món liên quan rồi gửi sang trang hiển thị.
-        // ... ProductDAO.getAvailableProductById() [MN10] → request → product-detail.jsp [MN12].
 
-        // Validate tham số id
         if (idParam == null || idParam.trim().isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/menu");
             return;
@@ -38,7 +39,7 @@ public class ProductDetailController extends HttpServlet {
 
         try {
             int productId = Integer.parseInt(idParam.trim());
-            // BF11: nhận ID từ URL -> DAO chỉ trả món còn bán trong danh mục ACTIVE -> gán request -> product-detail.jsp.
+
             Product product = productDAO.getAvailableProductById(productId);
 
             if (product == null) {

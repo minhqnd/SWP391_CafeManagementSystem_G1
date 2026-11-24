@@ -13,15 +13,24 @@ public final class PasswordHasher {
     private static final SecureRandom RANDOM = new SecureRandom();
     private PasswordHasher() {}
     public static boolean encoded(String stored) { return stored != null && stored.startsWith("pbkdf2_sha256$"); }
-    // . Băm mật khẩu bằng PBKDF2 và salt ngẫu nhiên trước khi DAO lưu.
-    // .. Trả chuỗi chứa thuật toán, số vòng, salt và hash; không trả mật khẩu rõ.
+    // [BMKB01]
+    // . Ở hash (tạo chuỗi băm mật khẩu để lưu) trong PasswordHasher.java, em nhận mật khẩu từ các hàm tạo
+    //   hoặc đổi tài khoản của UserDAO.java. Em tạo chuỗi băm có phần ngẫu nhiên rồi trả lại hàm đang lưu để
+    //   ghi password_hash, thay vì ghi nguyên mật khẩu người dùng nhập.
+    // ... Quay lại hàm register, changePasswordById hoặc resetPasswordById trong UserDAO.java, ngay sau
+    //     PasswordHasher.hash; chuỗi trả về được gán cho password_hash trước khi thực hiện lệnh ghi.
     public static String hash(String password) {
         byte[] salt = new byte[16]; RANDOM.nextBytes(salt);
         return "pbkdf2_sha256$" + ITERATIONS + "$" + Base64.getEncoder().encodeToString(salt) + "$"
                 + Base64.getEncoder().encodeToString(derive(password, salt, ITERATIONS));
     }
-    // . Đối chiếu mật khẩu nhập với dữ liệu đã lưu; hỗ trợ dữ liệu mật khẩu rõ cũ.
-    // .. Trả true/false cho DAO; không tạo session hoặc tự cho phép đăng nhập.
+    // [BMKXM01]
+    // . Ở verify (so mật khẩu nhập với giá trị đã lưu) trong PasswordHasher.java, em nhận mật khẩu vừa nhập
+    //   và giá trị đang lưu từ UserDAO.login (đối chiếu tài khoản để đăng nhập) hoặc changePasswordById (so
+    //   mật khẩu cũ rồi ghi mật khẩu mới). Em đối chiếu rồi trả đúng hoặc sai để hàm gọi quyết định cho đăng
+    //   nhập hoặc cho đổi mật khẩu.
+    // ... Quay lại UserDAO.java sau PasswordHasher.verify: trong login xét có trả User hay null; trong
+    //     changePasswordById xét có cho ghi mật khẩu mới hay báo mật khẩu cũ sai.
     public static boolean verify(String password, String stored) {
         if (password == null || password.isBlank() || password.length() > 255 || stored == null || stored.matches("[A-Za-z]+_hash")) return false;
         if (!encoded(stored)) {

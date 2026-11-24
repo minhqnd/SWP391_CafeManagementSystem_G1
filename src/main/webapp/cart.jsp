@@ -233,9 +233,7 @@
                                             <c:choose><c:when test="${cart.pointsUsed > 0}">-<fmt:formatNumber value="${cart.discount}" pattern="#,##0"/>đ</c:when><c:otherwise>Chưa dùng điểm</c:otherwise></c:choose>
                                         </span>
                                     </div>
-                                    <%-- RD01: . Ở đây em cho khách chọn số điểm muốn dùng để giảm tiền hàng.
-                                         .. Máy chủ sẽ kiểm tra lại theo số dư, mốc đổi và tiền hàng.
-                                         ... POST /cart, action=usePoints → CartController [RD02]; trừ điểm thật khi checkout [RD04]. --%>
+
                                     <input id="pointsRange" name="pointsUsed" class="form-range" type="range"
                                            min="0" max="${cart.maxRedeemablePoints}" step="${shop.pointsStep}" value="${cart.pointsUsed}">
                                     <div class="small text-muted">Đang dùng <b id="pointsValue">${cart.pointsUsed}</b> / ${cart.availablePoints} điểm.</div>

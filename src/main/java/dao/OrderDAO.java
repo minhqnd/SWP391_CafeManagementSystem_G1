@@ -305,9 +305,7 @@ public class OrderDAO extends BaseDAO {
      * Trả về id đơn hàng mới, NOT_ENOUGH_POINTS nếu không còn đủ điểm, hoặc -1 nếu lỗi.
      */
     public int placeOrder(Order order, List<CartItem> items, int pointsUsed) {
-        // RD05: . Ở đây em tạo đơn và trừ số điểm khách đã chọn dùng cho đơn đó.
-        // .. Đơn, món, số dư và lịch sử đổi điểm được lưu cùng nhau; tạo đơn chưa thưởng điểm.
-        // ... Trả mã đơn hoặc mã lỗi về CheckoutController [RD04]; lịch sử đổi dùng loại REDEEM.
+
         String insertOrderSql = "INSERT INTO orders (order_code, customer_id, order_type, status, " +
                                 "total_amount, discount_amount, delivery_fee, final_amount, " +
                                 "recipient_name, recipient_phone, delivery_address, order_note, table_number, scheduled_at) " +
@@ -572,9 +570,7 @@ public class OrderDAO extends BaseDAO {
      * trong cùng transaction. Lịch sử giữ REDEEM cũ và thêm REFUND để có thể đối chiếu điểm hoàn.
      */
     public boolean cancelPendingOrder(int orderId, int customerId) {
-        // RV01: . Ở đây em hủy đơn chưa thanh toán của đúng khách và hoàn điểm đã dùng cho đơn.
-        // .. Em giữ lịch sử đổi điểm cũ, thêm giao dịch hoàn điểm để đối chiếu.
-        // ... Trả boolean về CheckoutController hoặc OrdersController; xem lịch sử tại [HI03] hoặc [PH02].
+
         String cancelSql = "UPDATE orders SET status = 'CANCELLED' " +
                            "WHERE id = ? AND customer_id = ? AND status = 'PENDING' " +
                            "AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.order_id = orders.id AND p.status = 'SUCCESS')";
@@ -830,9 +826,7 @@ public class OrderDAO extends BaseDAO {
 
     public int createCounterOrder(Order order, List<OrderDetail> items, String paymentMethod,
                                   int pointsUsed, String paymentNote, ShopSettings settings) {
-        // CT02: . Ở đây em lưu đơn tại quầy, ghi nhận thanh toán và xử lý điểm cho khách có tài khoản.
-        // .. Tiền mặt thì cộng điểm ngay; chuyển khoản thì chờ xác nhận; điểm dùng được ghi vào lịch sử.
-        // ... Tiền mặt tính thưởng bằng calculateEarnedPoints() [CF01]; chuyển khoản qua callback [EA01]; mã đơn về [CT01].
+
         boolean bankTransfer = "BANK_TRANSFER".equalsIgnoreCase(paymentMethod);
         String orderStatus = bankTransfer ? "PENDING" : "CONFIRMED";
         String paymentStatus = bankTransfer ? "PENDING" : "SUCCESS";
@@ -988,7 +982,7 @@ public class OrderDAO extends BaseDAO {
      * Danh sách các đơn quầy tạo trong ngày hôm nay
      */
     public List<Order> getCounterOrdersToday() {
-        String sql = CUSTOMER_ORDER_SELECT + 
+        String sql = CUSTOMER_ORDER_SELECT +
                      "WHERE DATE(o.created_at) = CURDATE() " +
                      "  AND o.cashier_id IS NOT NULL AND o.order_type IN ('DINE_IN', 'TAKEAWAY') " +
                      "ORDER BY o.created_at DESC, o.id DESC";
@@ -1073,12 +1067,10 @@ public class OrderDAO extends BaseDAO {
      * Trả về null nếu thành công, hoặc chuỗi thông báo lỗi cụ thể.
      */
     public String cancelCounterOrderWithReason(int orderId) {
-        // RV03: . Ở đây em hủy đơn tại quầy còn được phép hủy và xử lý lại điểm của đơn.
-        // .. Em hoàn điểm đã dùng, thu hồi điểm thưởng rồi lưu cùng thay đổi trạng thái đơn.
-        // ... Trả kết quả về CounterOrderController: null là thành công, chuỗi còn lại là lý do lỗi.
+
         String querySql = "SELECT o.id, o.status, o.customer_id FROM orders o WHERE o.id = ? FOR UPDATE";
         String cancelSql = "UPDATE orders SET status = 'CANCELLED' WHERE id = ? AND status IN ('PENDING', 'CONFIRMED')";
-        
+
         String queryRedeemPointsSql = "SELECT points_change FROM loyalty_transactions WHERE order_id = ? AND transaction_type = 'REDEEM' LIMIT 1";
         String refundPointsSql = "INSERT INTO loyalty_transactions (customer_id, order_id, points_change, transaction_type) VALUES (?, ?, ?, 'REFUND')";
         String addBackUserPointsSql = "UPDATE users SET total_points = total_points + ? WHERE id = ?";

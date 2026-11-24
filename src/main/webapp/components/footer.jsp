@@ -3,6 +3,11 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%
+    // [TCFT01]
+    // . Phần cuối trang dùng danh mục đã đọc ở Trang chủ hoặc Menu; nếu chưa có thì gọi CategoryDAO để đọc
+    //   các nhóm hoạt động. Tương tự, em dùng homeSettings hoặc ShopSettingDAO.getSettings (đọc các thiết
+    //   lập đang lưu) để hiện phí giao hàng, thời gian và quy tắc đổi điểm từ thiết lập đang lưu.
+    // ... Kết thúc dựng cuối trang khi danh mục và các thiết lập đã được hiển thị trong footer.jsp.
     List<Category> footerCategories = (List<Category>) request.getAttribute("landingCategories");
     if (footerCategories == null) footerCategories = (List<Category>) request.getAttribute("categories");
     if (footerCategories == null) footerCategories = new CategoryDAO().getAllActiveCategoriesWithCount();
@@ -43,6 +48,14 @@
             </div>
             <div class="col-lg-3 col-md-6 col-6">
                 <h4 class="aura-footer-heading">Danh mục</h4>
+                <%-- [TCFT02]
+                     . Bấm một danh mục cuối trang mở /menu kèm category để MenuController.doGet lọc món. Tài khoản thành
+                       viên mở /profile, còn Đặt hàng mở Menu; các đường dẫn này dùng chung xử lý với nút tương ứng trên
+                       đầu trang, không tự ghi thêm dữ liệu.
+                     ... Bấm danh mục hoặc Đặt hàng thì đọc MenuController.doGet trong MenuController.java; bấm Tài
+                         khoản thành viên thì đọc ProfileController.doGet trong ProfileController.java. Kết thúc khi
+                         trang tương ứng mở ra.
+                --%>
                 <ul class="aura-footer-list">
                     <c:forEach var="footerCategory" items="${footerCategories}">
                         <li><a href="${pageContext.request.contextPath}/menu?category=${footerCategory.id}">${footerCategory.name}</a></li>
@@ -60,6 +73,12 @@
             </div>
             <div class="col-lg-2 col-md-6">
                 <h4 class="aura-footer-heading">Tích điểm Aura</h4>
+                <%-- [TCFT03]
+                     . Dòng Mỗi bao nhiêu điểm đổi bao nhiêu tiền lấy pointsStep và pointsStepValue từ footerSettings.
+                       ShopSettingDAO.getSettings (đọc các thiết lập đang lưu) đọc các quy tắc đang lưu, nên sau khi Admin
+                       lưu bộ mới và tải lại trang, phần này hiển thị mức đổi mới.
+                     ... Kết thúc phần quy đổi tại số điểm và tiền giảm đang hiển thị ở footer.jsp.
+                --%>
                 <p class="small mb-0">Mỗi ${footerSettings.pointsStep} điểm đổi <strong class="text-white"><fmt:formatNumber value="${footerSettings.pointsStepValue}" pattern="#,##0"/>đ</strong>.</p>
             </div>
         </div>

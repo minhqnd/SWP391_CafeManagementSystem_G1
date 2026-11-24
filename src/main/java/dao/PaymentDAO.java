@@ -59,9 +59,7 @@ public class PaymentDAO extends BaseDAO {
 
     /** Chooses COD; money and points stay pending until the assigned shipper collects it. */
     public boolean acceptCod(int orderId, int customerId) {
-        // CD01: . Ở đây em ghi nhận khách chọn trả tiền khi nhận hàng.
-        // .. Thanh toán vẫn chờ và chưa thưởng điểm vì khách chưa trả tiền.
-        // ... PaymentController đưa khách tới hóa đơn; sau khi giao và thu tiền, DeliveryController xử lý [CD02].
+
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -115,9 +113,7 @@ public class PaymentDAO extends BaseDAO {
             return new CallbackResult(false,false,0,0,orderCode,"Missing callback fields");
         }
         boolean success = "SUCCESS".equalsIgnoreCase(callbackStatus);
-        // EA02: . Ở đây em đối chiếu mã đơn, giao dịch, số tiền và trạng thái trước khi xác nhận thanh toán.
-        // .. Thanh toán thành công và đơn còn được phép nhận tiền thì mới cộng điểm; thông báo lặp không cộng lại.
-        // ... earnPointsOnce(kết nối, mã khách, mã đơn, tiền hàng sau giảm, mức tích) [EA03].
+
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -190,9 +186,7 @@ public class PaymentDAO extends BaseDAO {
 
     public static int earnPointsOnce(Connection conn,int customerId,int orderId,BigDecimal goods,double unit)
             throws java.sql.SQLException {
-        // EA03: . Ở đây em kiểm tra đơn này đã được thưởng điểm chưa rồi tính điểm từ tiền hàng sau giảm.
-        // .. Chưa thưởng thì em ghi lịch sử tích và cộng số dư; tiền tính điểm không gồm phí giao.
-        // ... Số điểm về nhánh gọi: xác nhận chuyển khoản [EA02] hoặc giao COD [CD03]; nhánh đó chốt hoặc hoàn tác dữ liệu.
+
         if(customerId<=0 || unit<=0) return 0;
         try(PreparedStatement ps=conn.prepareStatement(
                 "SELECT 1 FROM loyalty_transactions WHERE order_id=? AND transaction_type='EARN' LIMIT 1")){
@@ -225,9 +219,7 @@ public class PaymentDAO extends BaseDAO {
      * Chỉ làm 1 lần cho mỗi đơn; thu hồi không quá số điểm khách còn để số dư không âm.
      */
     public static void reversePointsOnCancel(Connection conn,int customerId,int orderId)throws java.sql.SQLException{
-        // RV02: . Ở đây em hoàn điểm khách đã dùng và thu hồi điểm đã thưởng khi nhánh hủy yêu cầu.
-        // .. Em tránh xử lý lặp và chỉ thu hồi tối đa số điểm khách còn giữ.
-        // ... Trở về DeliveryDAO.reportIssue() để chốt giao thất bại và hủy đơn; lịch sử đọc tại [HI03] hoặc [PH02].
+
         int used=sumPoints(conn,orderId,"REDEEM");          // số âm
         int refunded=sumPoints(conn,orderId,"REFUND");
         if(used<0 && refunded==0){

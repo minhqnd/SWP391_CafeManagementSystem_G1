@@ -1,20 +1,30 @@
-/* Dùng chung kiểm tra trường và hiển thị lỗi cho các form BF10; server vẫn là nơi xác nhận cuối cùng. */
+
 (() => {
     'use strict';
-    // . Kiểm tra mật khẩu mới 8–255 ký tự, có chữ và số tại trình duyệt.
-    // .. Trả chuỗi rỗng nếu hợp lệ; không áp quy tắc tạo mật khẩu mới cho ô đăng nhập.
-    // ... Server kiểm tra lại bằng AccountValidation.passwordError().
+
+    // [BMMK01]
+    // . Ở passwordError (kiểm tra điều kiện mật khẩu) trong account-validation.js, em nhận mật khẩu từ hàm
+    //   validate (kiểm tra giá trị của một ô nhập) để kiểm tra ngay trên màn hình. Em yêu cầu 8–255 ký tự,
+    //   có chữ và số, không chứa ký tự điều khiển. Hàm trả lời báo về validate rồi feedback (hiển thị lời
+    //   báo tại ô nhập) hiện lỗi dưới ô để người dùng sửa trước khi gửi.
+    // ... Quay lại hàm validate trong account-validation.js để dùng lời báo vừa nhận; đọc tiếp tại
+    //     account-validation.js, tìm [BMKT01].
     const passwordError = value => {
-        if (value.length < 8 || value.length > 255 || !value.trim())
+        if (!value) return 'Vui lòng nhập mật khẩu.';
+        if (!value.trim()) return 'Mật khẩu không được chỉ có khoảng trắng.';
+        // [SUA10-04] Luyện sửa: Đổi độ dài mật khẩu kiểm tra ngay trên màn hình.
+        // . Giới hạn và lời báo phải giống AccountValidation.passwordError; sửa JavaScript riêng sẽ chưa đổi
+        //   kiểm tra khi lưu.
+        // . Dùng mật khẩu ngắn hơn giới hạn một ký tự và vừa đủ giới hạn để kiểm tra hai phía.
+        if (value.length < 8 || value.length > 255)
             return 'Mật khẩu phải từ 8 đến 255 ký tự.';
-        if (/[\u0000-\u001F\u007F]/.test(value))
+        if (/[\u0000-\u001F\u007F-\u009F]/.test(value))
             return 'Mật khẩu không được chứa ký tự điều khiển.';
         if (!/[a-z]/i.test(value) || !/[0-9]/.test(value))
             return 'Mật khẩu phải có ít nhất một chữ cái (a-z, A-Z) và một chữ số (0-9).';
         return '';
     };
-    // . Đọc action của form để nhận diện đăng ký, đăng nhập, khôi phục, hồ sơ hoặc đổi mật khẩu.
-    // .. Chỉ gắn xử lý chung cho các form BF10 được liệt kê trong init().
+
     const formKey = form => {
         const url = new URL(form.action, location.href);
         const path = url.pathname.split('/').pop();
@@ -30,8 +40,7 @@
             let submitted = false;
             const serverErrors = new Map();
             const controls = [...form.elements].filter(field => field.matches('input,select,textarea') && field.type !== 'hidden');
-            // . Tạo một nút mắt cho từng ô mật khẩu; bỏ nút toggle cũ trong nhóm nếu có.
-            // .. Bấm mắt chỉ đổi password/text, không gửi form hoặc lưu dữ liệu.
+
             controls.filter(field => field.type === 'password').forEach((field, index) => {
                 if (!field.id) field.id = `account-${key}-password-${index}`;
                 field.dataset.passwordField = 'true';
@@ -45,6 +54,12 @@
                 group.classList.add('account-password-group');
                 field.classList.remove('w-100');
                 group.querySelectorAll('[onclick^="togglePassword"]').forEach(toggle => toggle.remove());
+                // [BMMAT01]
+                // . Trong account-validation.js, em tạo nút mắt cho từng ô mật khẩu và gắn sự kiện click. Mỗi nút giữ
+                //   đúng ô của nó để khi bấm chỉ che hoặc hiện mật khẩu tại ô đó, không gửi form hay đổi nội dung đã
+                //   nhập.
+                // ... Đọc tiếp tại account-validation.js, tìm [BMMAT02].
+
                 const toggle = document.createElement('button');
                 toggle.type = 'button';
                 toggle.className = 'btn btn-light border account-password-toggle';
@@ -56,6 +71,11 @@
                 icon.setAttribute('aria-hidden', 'true');
                 icon.textContent = 'visibility';
                 toggle.append(icon);
+                // [BMMAT02]
+                // . Khi bấm nút mắt, sự kiện toggle.click trong account-validation.js đổi field.type giữa password và
+                //   text rồi đổi biểu tượng. Nhờ vậy người dùng xem hoặc che cùng một mật khẩu, còn giá trị trong ô vẫn
+                //   giữ nguyên.
+                // ... Kết thúc thao tác tại ô mật khẩu vừa đổi cách che hoặc hiện trên cùng màn hình.
                 toggle.addEventListener('click', () => {
                     const visible = field.type === 'password';
                     field.type = visible ? 'text' : 'password';
@@ -66,8 +86,13 @@
                 group.append(toggle);
             });
             const find = name => form.elements.namedItem(name) || form.querySelector(`#${name}`);
-            // . Gắn thông báo dưới đúng trường và bật viền đỏ khi có lỗi.
-            // .. Không còn lỗi thì xóa thông báo, bỏ viền đỏ; đồng bộ aria-invalid và aria-describedby.
+
+            // [BMLOI01]
+            // . Ở feedback (hiển thị lời báo tại ô nhập) trong account-validation.js, em nhận ô nhập và lời báo từ
+            //   bước kiểm tra hoặc kết quả sau khi gửi form. Em đặt viền lỗi và thông báo vào đúng ô đó, rồi cập
+            //   nhật khi người dùng sửa để họ biết cần sửa phần nào.
+            // ... Kết thúc hiển thị lời báo khi viền và thông báo của đúng ô đã được cập nhật trên form; người
+            //     dùng sửa ô hoặc gửi lại để bắt đầu lần kiểm tra tiếp.
             const feedback = (field, message) => {
                 if (!field) return;
                 const fieldKey = field.name || field.id;
@@ -93,63 +118,125 @@
                 descriptions.add(id);
                 field.setAttribute('aria-describedby', [...descriptions].join(' '));
             };
-            // . Kiểm tra từng trường theo tên trong form; bỏ qua ô bị khóa và nút bấm.
-            // .. Trả thông báo lỗi hoặc chuỗi rỗng; server vẫn kiểm tra lại khi nhận POST.
-            // ... refresh() gọi feedback() trong account-validation.js; submit có lỗi thì dừng tại sự kiện submit trong account-validation.js.
+
+            // [BMKT01]
+            // . Ở validate (kiểm tra giá trị của một ô nhập) trong account-validation.js, em nhận ô đang nhập hoặc
+            //   sắp gửi, đọc tên ô để chọn cách kiểm tra phù hợp. Em trả lời báo cho feedback (hiển thị lời báo tại
+            //   ô nhập) để hiện đúng vị trí; nếu đang gửi form mà còn lỗi thì bước gửi sẽ dừng lại.
+            // ... Quay lại sự kiện input hoặc submit trong account-validation.js sau validate; feedback hiện lời
+            //     báo và phần submit quyết định dừng hay gửi form.
             const validate = field => {
                 if (field.disabled || field.readOnly || ['submit', 'button'].includes(field.type)) return '';
                 const name = field.name || field.id;
                 const raw = field.value;
                 const value = raw.trim();
                 if (serverErrors.has(name)) return serverErrors.get(name);
-                // . Kiểm tra ba ô ngày sinh từ [PF06d]: cùng trống hoặc đủ ba phần, ngày thật và không ở tương lai.
-                // ... ProfileController.update() [PF12d] kiểm tra lại ngày sau khi gửi.
+
                 if (['birthDay', 'birthMonth', 'birthYear'].includes(name)) {
                     const parts = ['birthDay', 'birthMonth', 'birthYear'].map(part => find(part).value);
                     const count = parts.filter(Boolean).length;
-                    if (count && count !== 3) return 'Vui lòng chọn đủ ngày, tháng và năm sinh.';
+                    if (count && count !== 3) return 'Vui lòng chọn đủ ngày, tháng và năm sinh hoặc để trống cả ba.';
                     if (count === 3) {
                         const [day, month, year] = parts.map(Number);
                         const date = new Date(year, month - 1, day);
                         if (year < 1900 || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day || date > new Date())
-                            return 'Ngày sinh không hợp lệ hoặc ở trong tương lai.';
+                            return 'Ngày sinh phải là ngày có thật, từ năm 1900 đến hôm nay.';
                     }
                     return '';
                 }
-                // . Trường required không được rỗng.
-                // .. Trường không bắt buộc và để trống được bỏ qua các bước kiểm tra tiếp theo.
-                if (field.required && !value) return 'Vui lòng nhập thông tin này.';
+
+                const requiredMessages = {
+                    username: 'Vui lòng nhập email hoặc số điện thoại.',
+                    fullname: 'Vui lòng nhập họ và tên.', fullName: 'Vui lòng nhập họ và tên.',
+                    email: 'Vui lòng nhập email.', phone: 'Vui lòng nhập số điện thoại.',
+                    password: 'Vui lòng nhập mật khẩu.', newPassword: 'Vui lòng nhập mật khẩu.',
+                    oldPassword: 'Vui lòng nhập mật khẩu hiện tại.',
+                    confirm_password: 'Vui lòng nhập mật khẩu xác nhận.', confirmPassword: 'Vui lòng nhập mật khẩu xác nhận.',
+                    otp: 'Vui lòng nhập mã OTP.'
+                };
+                if (field.required && !raw) return requiredMessages[name] || 'Vui lòng nhập thông tin này.';
                 if (!raw && !field.required) return '';
+                // [DNTK02]
+                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em kiểm tra ô username
+                //   của form Đăng nhập để báo lỗi sớm. Khi gửi, email hoặc số điện thoại này đi cùng mật khẩu đến doPost
+                //   trong LoginController.java để kiểm tra lại rồi gọi UserDAO.login (đối chiếu tài khoản để đăng nhập)
+                //   đối chiếu tài khoản.
+                // ... Đọc tiếp tại LoginController.java, tìm [DNTK03].
+                if (name === 'username' && !value) return 'Vui lòng nhập email hoặc số điện thoại.';
                 if (name === 'username' && value.length > 150) return 'Email hoặc số điện thoại tối đa 150 ký tự.';
-                // . Họ tên đăng ký [RG02a]/hồ sơ [PF06a] có từ 1 đến 100 ký tự sau trim.
-                // ... AccountValidation.nameError() xác nhận lại tại server.
-                if (['fullname', 'fullName'].includes(name)
-                        && (!value || value.length > 100 || /[\u0000-\u001F\u007F]/.test(value))) {
-                    return 'Họ và tên phải từ 1 đến 100 ký tự và không chứa ký tự điều khiển.';
+
+                // [DKHT02]
+                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em nhận fullname hoặc
+                //   fullName để kiểm tra họ tên trên form Đăng ký hoặc Hồ sơ. Khi gửi đăng ký, tên tiếp tục tới
+                //   RegisterController.doPost rồi AccountValidation.nameError (kiểm tra họ tên và trả lời báo lỗi) để
+                //   kiểm tra lại trước khi lưu.
+                // ... Đọc tiếp tại RegisterController.java, tìm [DKHT03].
+                if (['fullname', 'fullName'].includes(name)) {
+                    if (!value) return 'Vui lòng nhập họ và tên.';
+                    if (value.length > 100) return 'Họ và tên tối đa 100 ký tự.';
+                    if (/[\u0000-\u001F\u007F-\u009F]/.test(value)) return 'Họ và tên chứa ký tự không được hỗ trợ.';
                 }
-                // . SĐT từ [RG02b]/[PF06b] sau khi bỏ dấu phân cách phải bắt đầu bằng 0 và đủ 10 số.
-                // ... AccountValidation.phoneError() kiểm tra lại tại server.
+
+                // [DKDT02]
+                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em nhận phone để kiểm
+                //   tra định dạng số điện thoại trên form. Khi gửi đăng ký, RegisterController.doPost nhận số rồi gọi
+                //   AccountValidation.phoneError (kiểm tra định dạng số điện thoại) kiểm tra lại trước khi tìm trùng và
+                //   tạo tài khoản.
+                // ... Đọc tiếp tại RegisterController.java, tìm [DKDT03].
+                if (name === 'phone' && !value) return 'Vui lòng nhập số điện thoại.';
                 if (name === 'phone' && !/^0[0-9]{9}$/.test(value.replace(/[\s.()-]/g, ''))) return 'Số điện thoại sai định dạng.';
-                // . Email từ [RG02c]/[PF06c]/[OT02a] phải có đuôi @gmail.com và tối đa 150 ký tự.
-                // ... AccountValidation.emailError() kiểm tra lại; kiểm tra trùng qua checkContact() trong account-validation.js.
+
+                // [DKEM02]
+                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em kiểm tra email đúng
+                //   dạng Gmail và giới hạn độ dài. Sau đó checkContact (kiểm tra liên hệ trùng ngay trên form) tìm email
+                //   đã dùng; khi gửi đăng ký, RegisterController.doPost còn gọi AccountValidation.emailError (kiểm tra
+                //   định dạng và độ dài email) kiểm tra lại trước khi lưu.
+                // ... Đọc tiếp tại RegisterController.java, tìm [DKEM03].
                 if (name === 'email') {
+                    if (!value) return 'Vui lòng nhập email.';
                     if (value.length > 150) return 'Email tối đa 150 ký tự.';
+                    // [SUA10-06] Luyện sửa: Đổi đuôi email được nhận ngay trên form.
+                    // . Quy tắc ở đây phải giống AccountValidation.emailError; thử cả đăng ký, hồ sơ và quên
+                    //   mật khẩu sau khi thay đổi.
                     if (!/^[A-Za-z0-9_+%-]+(?:\.[A-Za-z0-9_+%-]+)*@gmail\.com$/i.test(value)) return 'Sai định dạng email.';
                 }
+                // [DKMK02]
+                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em gọi passwordError
+                //   (kiểm tra điều kiện mật khẩu) cùng file để kiểm tra mật khẩu mới trước khi gửi. Khi form Đăng ký
+                //   được gửi, RegisterController.doPost nhận mật khẩu và xác nhận rồi gọi
+                //   AccountValidation.passwordErrors (kiểm tra mật khẩu và xác nhận theo từng ô) kiểm tra lại trước khi
+                //   tạo tài khoản.
+                // ... Đọc tiếp tại RegisterController.java, tìm [DKMK03].
                 if ((name === 'password' && key !== 'login') || name === 'newPassword') return passwordError(raw);
-                // . So xác nhận với mật khẩu mới trong cùng form; không so với mật khẩu cũ trong database.
-                // .. Khác nhau thì báo lỗi ngay dưới ô xác nhận.
+
+                // [DKXN02]
+                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em lấy mật khẩu của cùng
+                //   form để so với ô xác nhận. Nếu không khớp thì báo lỗi ngay tại ô này. Khi gửi đăng ký,
+                //   RegisterController.doPost nhận cả hai và gọi AccountValidation.passwordErrors (kiểm tra mật khẩu và
+                //   xác nhận theo từng ô) để so lại trước khi lưu.
+                // ... Trong account-validation.js, trả lời báo về phần submit đang gọi validate; lỗi thì dừng tại
+                //     ô xác nhận, hết lỗi mới gửi form Đăng ký tới RegisterController.doPost.
                 if (name === 'confirm_password' || name === 'confirmPassword') {
                     const password = find(key === 'profile-password' ? 'newPassword' : 'password');
                     return raw !== password.value ? 'Mật khẩu xác nhận không khớp.' : '';
                 }
-                // . OTP phải gồm đúng 6 chữ số; trình duyệt chỉ kiểm tra định dạng.
-                // ... PasswordRecoveryService.verify() [OT11] kiểm tra mã đúng/sai và thời hạn.
+
+                // [OTN02]
+                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em kiểm tra ô otp phải
+                //   có đúng sáu chữ số. Nếu sai thì feedback (hiển thị lời báo tại ô nhập) hiện lỗi tại ô và dừng gửi.
+                //   Nếu đúng, form tới VerifyOtpController.doPost để gọi PasswordRecoveryService.verify (xác minh mã
+                //   OTP) kiểm tra mã thật đã gửi cho tài khoản này.
+                // ... Đọc tiếp tại PasswordRecoveryService.java, tìm [OTN03].
                 if (name === 'otp' && !/^[0-9]{6}$/.test(raw)) return 'Mã OTP phải gồm đúng 6 chữ số.';
-                // . Địa chỉ hồ sơ [PF06e] không quá 500 ký tự sau trim.
-                // ... ProfileController.update() [PF12e] kiểm tra lại trước khi ghi database.
+
+                // [HSDC02]
+                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em kiểm tra address để
+                //   báo lỗi địa chỉ ngay trên form Hồ sơ. Khi bấm Lưu thay đổi, dữ liệu tới update (kiểm tra và cập nhật
+                //   hồ sơ) trong ProfileController.java để kiểm tra lại trước khi gọi UserDAO.updateUserProfile (kiểm
+                //   tra liên hệ rồi ghi hồ sơ mới) ghi thông tin.
+                // ... Đọc tiếp tại ProfileController.java, tìm [HSDC03].
                 if (name === 'address' && value.length > 500) return 'Địa chỉ tối đa 500 ký tự.';
-                if (name === 'address' && /[\u0000-\u001F\u007F]/.test(raw)) return 'Địa chỉ chứa ký tự không được hỗ trợ.';
+                if (name === 'address' && /[\u0000-\u001F\u007F-\u009F]/.test(value)) return 'Địa chỉ chứa ký tự không được hỗ trợ.';
                 if (field.maxLength > 0 && raw.length > field.maxLength) return `Thông tin này tối đa ${field.maxLength} ký tự.`;
                 return '';
             };
@@ -157,10 +244,13 @@
             const contactState = new Map();
             const contactTimers = new Map();
             let checkingSubmit = false;
-            // RG04b: . Khi submit đăng ký, kiểm tra trùng email/SĐT đúng định dạng trước khi gửi form chính.
-            // ... POST /account-availability → Controller [RG04c] → DAO [RG04d]; nhận JSON rồi tiếp tục [RG05].
-            // PF10b: . Khi submit hồ sơ, dùng cùng checkContact() với scope=profile.
-            // ... Controller [PF10c] loại trừ tài khoản đang sửa; kết quả về để quyết định gửi tiếp [PF11].
+
+            // [BMLH01]
+            // . Ở checkContact (kiểm tra liên hệ trùng ngay trên form) trong account-validation.js, em nhận ô email
+            //   hoặc số điện thoại rồi gửi loại ô, giá trị và phạm vi kiểm tra tới /account-availability. doPost
+            //   trong AccountAvailabilityController.java gọi UserDAO.contactExists (tìm email hoặc số điện thoại
+            //   trùng) để tìm trùng, sau đó trả exists về đây để báo lỗi tại ô nhập.
+            // ... Đọc tiếp tại AccountAvailabilityController.java, tìm [BMLH02].
             const checkContact = async field => {
                 if (!['register', 'profile-update'].includes(key) || !['email', 'phone'].includes(field.name) || !field.value.trim() || field.disabled || field.readOnly) return;
                 const value = normalizeContact(field);
@@ -182,9 +272,7 @@
                         url.search = '';
                         const response = await fetch(url, {method: 'POST', body, credentials: 'same-origin', headers: {'Accept': 'application/json'}});
                         if (!response.ok) throw new Error('availability');
-                        // . Nhận JSON exists; bỏ phản hồi cũ nếu người dùng đã sửa giá trị.
-                        // .. Trùng thì gắn lỗi email/phone; không trùng thì xóa lỗi kiểm tra trùng cũ.
-                        // ... feedback() trong account-validation.js cập nhật thông báo ngay dưới ô.
+
                         const result = await response.json();
                         if (contactState.get(field.name) !== state || normalizeContact(field) !== value) return;
                         serverErrors.delete(field.name);
@@ -202,12 +290,15 @@
                 if (submitted) feedback(field, validate(field));
             });
             controls.forEach(field => {
-                // [SLBF10] Correct the information
-                // . Khi sửa trường, xóa lỗi server cũ và kiểm tra lại nếu đã từng submit.
-                // .. Chưa submit thì chưa tô đỏ; sau submit, email/SĐT được kiểm tra trùng sau 500 ms ngừng nhập.
-                // ... checkContact() trong account-validation.js và refresh() → feedback() trong account-validation.js.
+
                 const changed = () => {
                     serverErrors.delete(field.name || field.id);
+                    if (['birthDay', 'birthMonth', 'birthYear'].includes(field.name))
+                        ['birthDay', 'birthMonth', 'birthYear'].forEach(name => serverErrors.delete(name));
+                    if (field.dataset.feedbackRestore !== 'true') {
+                        const scope = form.closest('#authModal') || document;
+                        scope.querySelectorAll('[data-account-notice]').forEach(notice => { notice.classList.add('d-none'); });
+                    }
                     if (submitted && ['email', 'phone'].includes(field.name)) {
                         contactState.delete(field.name);
                         clearTimeout(contactTimers.get(field.name));
@@ -218,23 +309,12 @@
                 field.addEventListener('input', changed);
                 field.addEventListener('change', changed);
             });
-            // RG04: [SLBF10] Check registration information
-            // . Nhận submit đăng ký từ [RG03], kiểm tra các trường và chờ kiểm tra trùng email/SĐT.
-            // .. Có lỗi thì giữ form, focus ô sai; hợp lệ mới gửi POST /register tới [RG05].
-            // LG04: [SLBF10] Check login information
-            // . Nhận submit đăng nhập từ [LG03], kiểm tra dữ liệu bắt buộc và giới hạn trường.
-            // ... Hợp lệ gửi POST /login tới LoginController.doPost() [LG05].
-            // PF10: [SLBF10] Check updated information
-            // . Nhận submit Lưu thay đổi từ [PF09], kiểm tra từng trường và kiểm tra trùng email/SĐT.
-            // ... Hợp lệ gửi POST /profile?action=update tới ProfileController.doPost() [PF11].
-            // PW03: . Nhận submit đổi mật khẩu từ [PW02], kiểm tra mật khẩu mới và xác nhận.
-            // ... Hợp lệ gửi POST /profile?action=changePassword tới Controller [PW04].
-            // OT04: . Nhận email khôi phục từ [OT03], kiểm tra email trước khi gửi.
-            // ... POST /forgot-password tới ForgotPasswordController.doPost() [OT05].
-            // OT09: . Nhận OTP từ [OT08], kiểm tra định dạng 6 chữ số.
-            // ... POST /verify-otp tới VerifyOtpController.doPost() [OT10].
-            // OT14: . Nhận mật khẩu mới/xác nhận từ [OT13], kiểm tra trường trước khi gửi.
-            // ... POST /reset-password tới ResetPasswordController.doPost() [OT15].
+
+            // [DKL02]
+            // . Trước khi gửi form, em gọi validate để kiểm tra từng ô và chờ checkContact tìm email, số điện thoại
+            //   trùng. Có lỗi thì hiện lời báo và đưa con trỏ đến ô cần sửa; đúng hết mới gửi form Đăng ký tới
+            //   RegisterController.doPost qua /register.
+            // ... Đọc tiếp tại RegisterController.java, tìm [DKL03].
             form.addEventListener('submit', async event => {
                 event.preventDefault();
                 if (checkingSubmit) return;
@@ -251,9 +331,13 @@
             });
             form.accountFeedback = {find, feedback, serverErrors, refresh, markSubmitted: () => { submitted = true; }};
         });
-        // . Đọc payload từ payload trong account_feedback.jsp và mở lại đúng form bị lỗi.
-        // .. Chỉ điền các giá trị an toàn được server gửi; không điền lại mật khẩu/OTP.
-        // ... serverErrors giữ lỗi theo tên trường → feedback() trong account-validation.js tô đỏ đúng ô.
+
+        // [BMTV01]
+        // . Trong account-validation.js, em đọc data-account-feedback mà account_feedback.jsp đưa ra sau lần xử
+        //   lý lỗi. Em tìm đúng form và ô để điền lại giá trị rồi gọi feedback (hiển thị lời báo tại ô nhập)
+        //   hiện lời báo, giúp người dùng sửa tiếp thông tin vừa nhập.
+        // ... Đọc tiếp tại account-validation.js, tìm [BMLOI01] để xem cách hiện lời báo; kết thúc khôi phục form
+        //     khi các ô và lỗi cũ đã hiện đúng vị trí.
         document.querySelectorAll('[data-account-feedback]').forEach(payload => {
             const key = payload.dataset.form;
             const form = forms.get(key);
@@ -263,7 +347,12 @@
             const api = form.accountFeedback;
             payload.querySelectorAll('[data-value-field]').forEach(item => {
                 const field = api.find(item.dataset.valueField);
-                if (field) { field.value = item.dataset.value; field.dispatchEvent(new Event('input', {bubbles: true})); }
+                if (field) {
+                    field.value = item.dataset.value;
+                    field.dataset.feedbackRestore = 'true';
+                    field.dispatchEvent(new Event('input', {bubbles: true}));
+                    delete field.dataset.feedbackRestore;
+                }
             });
             payload.querySelectorAll('[data-field]').forEach(item => {
                 api.serverErrors.set(item.dataset.field, item.dataset.error);

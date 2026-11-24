@@ -90,9 +90,7 @@ public class CartController extends HttpServlet {
         } else if ("removeSelected".equals(action)) {
             cart.removeSelectedItems();
         } else if ("usePoints".equals(action)) {
-            // RD02: . Ở đây em chọn nhánh dùng điểm vì khách vừa gửi yêu cầu đổi điểm trong giỏ.
-            // .. Khách phải đăng nhập; em đọc lại số dư rồi điều chỉnh điểm về mức được phép.
-            // ... CartService.refreshCart(giỏ, mã khách) [RD03]; bước này chưa ghi giao dịch đổi điểm.
+
             Integer customerId = getCustomerId(session);
             if (customerId == null) {
                 session.setAttribute("cartError", "Vui lòng đăng nhập bằng tài khoản khách hàng để dùng điểm Aura.");
@@ -227,8 +225,6 @@ public class CartController extends HttpServlet {
             session.removeAttribute(key);
         }
     }
-
-
 
     private int parseInt(String value, int defaultValue) {
         try {

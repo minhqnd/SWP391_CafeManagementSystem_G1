@@ -5,61 +5,102 @@ import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
-/** Shared server rules for BF10 forms. Password characters are never trimmed. */
 public final class AccountValidation {
     private AccountValidation() {}
-    // . Chuẩn hóa văn bản null thành chuỗi rỗng và bỏ khoảng trắng đầu/cuối.
-    // .. Dùng cho họ tên/địa chỉ; không dùng để cắt ký tự mật khẩu.
+
     public static String text(String raw) { return raw == null ? "" : raw.trim(); }
-    // . Bỏ khoảng trắng đầu/cuối và đổi email sang chữ thường.
-    // .. Email viết hoa được chuẩn hóa trước khi kiểm tra và lưu.
+
     public static String email(String raw) { return text(raw).toLowerCase(Locale.ROOT); }
-    // . Bỏ khoảng trắng, dấu chấm, ngoặc và dấu gạch ngang trong số điện thoại.
-    // .. Trả chuỗi đã chuẩn hóa; kiểm tra đủ 10 số tại AccountValidation.phoneError().
+
     public static String phone(String raw) { return text(raw).replaceAll("[\\s.()-]", ""); }
-    // . Kiểm tra họ tên bắt buộc, dài từ 1 đến 100 ký tự sau chuẩn hóa.
-    // .. Hợp lệ trả null; sai trả thông báo để Controller gắn lỗi fullname/fullName.
-    // ... Đăng ký [RG06a]; hồ sơ [PF12a].
+
+    // [KTHT01]
+    // . nameError trong AccountValidation.java nhận họ tên đã được controller bỏ khoảng trắng đầu/cuối. Em kiểm
+    //   tra tên dài 1–100 ký tự và không có ký tự điều khiển, như xuống dòng hoặc tab.
+    // . Đúng thì trả null, nghĩa là ô này chưa có lỗi; sai thì trả lời báo để RegisterController hoặc
+    //   ProfileController hiện tại ô Họ tên.
+    // ... Quay lại RegisterController.java trong doPost nếu đăng ký, hoặc ProfileController.java trong update
+    //   nếu sửa hồ sơ, ngay sau AccountValidation.nameError; thêm lời báo vào errors rồi xét có lưu hay trả
+    //   form.
     public static String nameError(String name) {
-        if (name == null || name.isEmpty() || name.length() > 100
-                || name.chars().anyMatch(Character::isISOControl)) {
-            return "Họ và tên phải từ 1 đến 100 ký tự và không chứa ký tự điều khiển.";
-        }
+        if (name == null || name.isBlank()) return "Vui lòng nhập họ và tên.";
+        if (name.length() > 100) return "Họ và tên tối đa 100 ký tự.";
+        if (name.chars().anyMatch(Character::isISOControl)) return "Họ và tên chứa ký tự không được hỗ trợ.";
         return null;
     }
-    // . Chỉ nhận email có đuôi @gmail.com, đúng định dạng và tối đa 150 ký tự.
-    // .. Hợp lệ trả null; sai trả thông báo lỗi trường email.
-    // ... Đăng ký [RG06c], hồ sơ [PF12c], khôi phục [OT06].
+
+    // [KTEM01]
+    // . emailError trong AccountValidation.java kiểm tra email có dạng tên@gmail.com và dài không quá 150 ký
+    //   tự. Chữ hoa hoặc chữ thường đều được nhận.
+    // . Trả null nghĩa là email đúng định dạng; trả lời báo nghĩa là ô này có lỗi. Phần đang gọi hàm nhận kết
+    //   quả đó để quyết định có tiếp tục tìm trùng và xử lý yêu cầu hay không.
+    // ... Quay lại lời gọi AccountValidation.emailError trong RegisterController.java, ProfileController.java,
+    //   AccountAvailabilityController.java hoặc PasswordRecoveryService.java; có lỗi thì dừng nhánh đang xét,
+    //   đúng mới đọc dữ liệu tiếp.
     public static String emailError(String email) {
+        if (email != null && email.isEmpty()) return "Vui lòng nhập email.";
         if (email != null && email.length() > 150) return "Email tối đa 150 ký tự.";
+        // [SUA10-05] Luyện sửa: Cho phép thêm đuôi email khác ngoài gmail.com.
+        // . Sửa điều kiện nhận email tại đây và phần validate email trong account-validation.js; kiểm tra
+        //   pattern/lời nhắc trong JSP nếu có.
+        // . Vẫn cần kiểm tra định dạng và email trùng; thay đuôi được nhận không thay thế việc tìm trùng trong
+        //   users.
         if (email == null || !email.matches("(?i)[A-Za-z0-9_+%-]+(?:\\.[A-Za-z0-9_+%-]+)*@gmail\\.com"))
             return "Sai định dạng email.";
         return null;
     }
-    // . Kiểm tra SĐT có đúng 10 chữ số và bắt đầu bằng 0.
-    // .. Hợp lệ trả null; sai trả thông báo lỗi trường phone.
-    // ... Đăng ký [RG06b]; hồ sơ [PF12b].
+
+    // [KTDT01]
+    // . Ở phoneError (kiểm tra định dạng số điện thoại) trong AccountValidation.java, em nhận số điện thoại
+    //   từ controller tài khoản. Em yêu cầu đúng 10 chữ số và bắt đầu bằng 0, rồi trả null nếu hợp lệ hoặc
+    //   lời báo nếu sai để controller chưa tìm trùng hay lưu số không đúng.
+    // ... Quay lại lời gọi AccountValidation.phoneError trong RegisterController.java, ProfileController.java,
+    //     AccountAvailabilityController.java hoặc AdminLoyaltyController.java; số sai thì báo lỗi, số đúng mới tìm
+    //     trùng hoặc tra khách.
     public static String phoneError(String phone) {
+        if (phone != null && phone.isEmpty()) return "Vui lòng nhập số điện thoại.";
         return phone != null && phone.matches("0[0-9]{9}") ? null : "Số điện thoại sai định dạng.";
     }
-    // . Kiểm tra mật khẩu 8–255 ký tự, không chỉ khoảng trắng, có chữ a-z/A-Z và số 0-9.
-    // .. Xác nhận phải khớp; hợp lệ trả null, sai trả thông báo.
-    // ... AccountValidation.passwordErrors() tách lỗi từng ô; khôi phục gọi từ [OT16].
+
+    // [KTMK01]
+    // . passwordError trong AccountValidation.java kiểm tra mật khẩu dài 8–255 ký tự, có chữ và số, không có ký
+    //   tự điều khiển; mật khẩu xác nhận phải khớp.
+    // . Đúng thì trả null; sai thì trả lời báo. RegisterController, ProfileController hoặc
+    //   PasswordRecoveryService nhận kết quả để quyết định có tiếp tục lưu mật khẩu hay trả lỗi về form.
+    // ... Quay lại lời gọi passwordError hoặc passwordErrors trong RegisterController.java khi đăng ký,
+    //   ProfileController.java khi đổi mật khẩu, hoặc PasswordRecoveryService.java trong reset khi khôi phục;
+    //   có lời báo thì dừng ghi mật khẩu.
+    // ... Nếu UserDAO.java gọi kiểm tra lại trước khi ghi, quay về changePasswordById hoặc resetPasswordById
+    //   ngay sau AccountValidation.passwordError; lỗi thì trả false, hợp lệ mới thực hiện phần ghi bên dưới.
     public static String passwordError(String password, String confirmation) {
-        if (password == null || password.length() < 8 || password.length() > 255 || password.isBlank())
-            return "Mật khẩu phải từ 8 đến 255 ký tự và không được chỉ có khoảng trắng.";
+        if (password == null || password.isEmpty()) return "Vui lòng nhập mật khẩu.";
+        if (password.isBlank()) return "Mật khẩu không được chỉ có khoảng trắng.";
+        // [SUA10-03] Luyện sửa: Mật khẩu tối thiểu 10 ký tự thay vì 8.
+        // . Sửa điều kiện và lời báo ở đây; sửa passwordError trong account-validation.js cùng quy tắc.
+        // . Các ô mật khẩu trong auth_modal.jsp, login.jsp, profile.jsp có minlength/lời nhắc; kiểm tra lại khi
+        //   đổi giới hạn.
+        if (password.length() < 8 || password.length() > 255) return "Mật khẩu phải từ 8 đến 255 ký tự.";
         if (password.chars().anyMatch(Character::isISOControl))
             return "Mật khẩu không được chứa ký tự điều khiển.";
         if (!password.chars().anyMatch(c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
                 || !password.chars().anyMatch(c -> c >= '0' && c <= '9'))
             return "Mật khẩu phải có ít nhất một chữ cái (a-z, A-Z) và một chữ số (0-9).";
+        // [OTXN02]
+        // . Trong passwordError, em đối chiếu ô xác nhận confirmation với mật khẩu password. Xác nhận trống
+        //   hoặc khác thì trả lời báo; PasswordRecoveryService.reset nhận lỗi này sẽ dừng trước khi ghi mật
+        //   khẩu mới.
+        // . Khi đăng ký hoặc đổi mật khẩu qua passwordErrors, hàm đó kiểm tra riêng ô xác nhận và trả lỗi theo
+        //   từng ô về RegisterController hoặc ProfileController.
+        // ... Quay lại PasswordRecoveryService.java, trong reset sau AccountValidation.passwordError; không
+        //   khớp thì báo lỗi về ResetPasswordController, khớp mới gọi users.resetPasswordById.
+        // ... Nếu được gọi qua passwordErrors khi đăng ký hoặc đổi mật khẩu, quay lại passwordErrors cùng file;
+        //   hàm đó kiểm tra riêng ô xác nhận rồi trả danh sách lỗi về RegisterController hoặc
+        //   ProfileController.
         if (confirmation == null || confirmation.isEmpty() || !password.equals(confirmation))
             return "Mật khẩu xác nhận không khớp hoặc chưa được nhập.";
         return null;
     }
-    // . Tách lỗi mật khẩu và xác nhận bằng tên trường do Controller truyền vào.
-    // .. Mật khẩu sai và xác nhận sai có thể được báo riêng cùng lúc.
-    // ... Đăng ký [RG06d], đổi mật khẩu [PW05], đặt lại mật khẩu [OT15].
+
     public static java.util.Map<String,String> passwordErrors(String password, String confirmation,
                                                               String passwordField, String confirmationField) {
         java.util.Map<String,String> errors = new java.util.LinkedHashMap<>();
@@ -71,9 +112,13 @@ public final class AccountValidation {
             errors.put(confirmationField, "Mật khẩu xác nhận không khớp.");
         return errors;
     }
-    // . Cho phép bỏ trống ngày sinh; nếu có phải là ngày thật, từ năm 1900 và không ở tương lai.
-    // .. Hợp lệ trả null; lỗi trả thông báo cho birthDay.
-    // ... ProfileController.update() nhận kết quả tại [PF12d].
+
+    // [KTNS01]
+    // . Ở birthdayError (kiểm tra ngày sinh hợp lệ) trong AccountValidation.java, em nhận ngày sinh đã ghép
+    //   từ ProfileController.update (kiểm tra và cập nhật hồ sơ). Nếu để trống thì được phép; nếu nhập thì
+    //   phải là ngày có thật, từ năm 1900 đến hôm nay. Em trả kết quả về update để báo đúng ô khi sai.
+    // ... Quay lại ProfileController.java, trong update sau AccountValidation.birthdayError; thêm lỗi vào birthDay
+    //     nếu sai, rồi xét errors trước khi gọi users.updateUserProfile.
     public static String birthdayError(String birthday) {
         if (birthday == null || birthday.isEmpty()) return null;
         try {
@@ -81,10 +126,16 @@ public final class AccountValidation {
             if (!day.toString().equals(birthday) || day.getYear() < 1900
                     || day.isAfter(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))) throw new DateTimeParseException("date", birthday, 0);
             return null;
-        } catch (DateTimeParseException e) { return "Ngày sinh không hợp lệ hoặc ở trong tương lai."; }
+        } catch (DateTimeParseException e) { return "Ngày sinh phải là ngày có thật, từ năm 1900 đến hôm nay."; }
     }
 
-    /** Reject control characters in free-text profile fields before they reach JSP or the database. */
+    // [KTDC01]
+    // . Ở addressError (kiểm tra ký tự địa chỉ) trong AccountValidation.java, em nhận địa chỉ từ
+    //   ProfileController.update (kiểm tra và cập nhật hồ sơ) và kiểm tra ký tự điều khiển. Nếu có thì em
+    //   trả lời báo về update để hiện tại ô Địa chỉ. Giới hạn 500 ký tự được hàm update kiểm tra riêng trước
+    //   khi lưu.
+    // ... Quay lại ProfileController.java, trong update sau AccountValidation.addressError; kiểm tra thêm độ dài
+    //     địa chỉ rồi xét errors để lưu hoặc trả form.
     public static String addressError(String address) {
         if (address == null || address.isEmpty()) return null;
         return address.chars().anyMatch(Character::isISOControl)

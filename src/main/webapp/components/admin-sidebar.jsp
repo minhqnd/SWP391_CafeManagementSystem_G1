@@ -51,27 +51,39 @@
                 </a>
             </li>
             <li class="nav-item">
-                <%-- CA01: [SLBF11] Open Category Management
-                     . Mở trang quản lý bằng GET /admin/categories.
-                     ... AdminCategoriesController.doGet() [CA02]. --%>
+
+                <%-- [DMM01]
+                     . Khi bấm Quản lý danh mục trong admin-sidebar.jsp, em mở /admin/categories. Yêu cầu tới doGet trong
+                       AdminCategoriesController.java để đọc danh mục và thống kê, rồi chuyển dữ liệu về
+                       admin-categories.jsp dựng màn hình quản lý.
+                     ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMM02].
+                --%>
                 <a href="${ctx}/admin/categories" class="nav-link ${param.activeMenu == 'categories' ? 'active' : ''}">
                     <span class="material-symbols-outlined">category</span>
                     <span>Danh mục</span>
                 </a>
             </li>
             <li class="nav-item">
-                <%-- PR01: [SLBF11] Open Product Management
-                     . Mở trang quản lý bằng GET /admin/products.
-                     ... AdminProductsController.doGet() [PR02]. --%>
+
+                <%-- [SPM01]
+                     . Khi bấm Quản lý sản phẩm trong admin-sidebar.jsp, em mở /admin/products. doGet trong
+                       AdminProductsController.java đọc sản phẩm, danh mục và thống kê rồi đưa dữ liệu về
+                       admin-products.jsp để người dùng quản lý món.
+                     ... Đọc tiếp tại AdminProductsController.java, tìm [SPM02].
+                --%>
                 <a href="${ctx}/admin/products" class="nav-link ${param.activeMenu == 'products' ? 'active' : ''}">
                     <span class="material-symbols-outlined">coffee</span>
                     <span>Sản phẩm</span>
                 </a>
             </li>
             <li class="nav-item">
-                <%-- RC01: [SLBF11] Open Recipe Management
-                     . Mở trang quản lý bằng GET /admin/recipes.
-                     ... AdminRecipeController.doGet() [RC02]. --%>
+
+                <%-- [CTM01]
+                     . Khi bấm Quản lý công thức trong admin-sidebar.jsp, em mở /admin/recipes. doGet trong
+                       AdminRecipeController.java đọc sản phẩm, nguyên liệu, công thức và giá nhập rồi đưa về
+                       admin-recipes.jsp để hiển thị và chỉnh định mức.
+                     ... Đọc tiếp tại AdminRecipeController.java, tìm [CTM02].
+                --%>
                 <a href="${ctx}/admin/recipes" class="nav-link ${param.activeMenu == 'recipes' ? 'active' : ''}">
                     <span class="material-symbols-outlined">menu_book</span>
                     <span>Công thức (BOM)</span>
@@ -159,9 +171,13 @@
                 </a>
             </li>
             <li class="nav-item">
-                <%-- RU01: [SLBF12] Open Phone Loyalty Management
-                     . Mở trang quản lý tích điểm theo SĐT bằng GET /admin/loyalty.
-                     ... AdminLoyaltyController.doGet() [RU02]. --%>
+
+                <%-- [TDM01]
+                     . Khi bấm Quản lý tích điểm trong admin-sidebar.jsp, em mở /admin/loyalty. doGet trong
+                       AdminLoyaltyController.java đọc quy tắc, số liệu, khách và lịch sử rồi đưa về admin-loyalty.jsp để
+                       người dùng tra cứu hoặc điều chỉnh điểm.
+                     ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDM02].
+                --%>
                 <a href="${ctx}/admin/loyalty" class="nav-link ${param.activeMenu == 'loyalty' ? 'active' : ''}">
                     <span class="material-symbols-outlined">loyalty</span>
                     <span>Tích điểm</span>
@@ -198,6 +214,13 @@
                     <div class="text-muted" style="font-size: 0.72rem;">Quản trị viên</div>
                 </div>
             </div>
+            <%-- [DNQA01]
+                 . Khi bấm Đăng xuất trong admin-sidebar.jsp, em mở /login?action=logout để doGet trong
+                   LoginController.java xử lý. Controller hủy phiên đăng nhập rồi chuyển về Trang chủ để kết thúc lần
+                   dùng tài khoản hiện tại.
+                 ... Kết thúc Đăng xuất tại Trang chủ sau khi doGet trong LoginController.java đã hủy phiên đăng
+                     nhập.
+            --%>
             <a href="${ctx}/login?action=logout" class="btn-logout" title="Đăng xuất">
                 <span class="material-symbols-outlined fs-5">logout</span>
             </a>

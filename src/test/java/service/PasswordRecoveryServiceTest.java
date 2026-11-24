@@ -49,7 +49,8 @@ class PasswordRecoveryServiceTest {
     @Test void expiresVerifiedGrantSeparately(){verified();now.addAndGet(PasswordRecoveryService.TTL);assertThrows(IllegalArgumentException.class,()->service.reset(mock.session,"newSecret1","newSecret1"));assertEquals(0,updates.get());}
     @Test void locksAfterFiveWrongAttempts(){
         start();String code=delivered;
-        for(int i=0;i<5;i++)assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,"not-code"));
+        String wrong = "000000".equals(code) ? "111111" : "000000";
+        for(int i=0;i<5;i++)assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,wrong));
         assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,code));assertEquals(0,updates.get());
     }
     @Test void resendAndInitialRequestsShareCooldownAcrossSessions(){
@@ -75,5 +76,18 @@ class PasswordRecoveryServiceTest {
     @Test void limitsRequestsFromOneSource(){
         for(int i=0;i<10;i++)service.start(new ServletMocks().session,"qa"+i+"@gmail.com","same-ip");
         assertThrows(IllegalArgumentException.class,()->service.start(new ServletMocks().session,"extra@gmail.com","same-ip"));assertEquals(10,sends);
+    }
+    @Test void malformedOtpHasFormatMessageWithoutConsumingAttempts(){
+        start();
+        for(int i=0;i<10;i++)assertEquals("Mã OTP phải gồm đúng 6 chữ số.",
+                assertThrows(IllegalArgumentException.class,()->service.verify(mock.session,"abc")).getMessage());
+        service.verify(mock.session,delivered);
+        assertEquals("reset_password",service.nextTab(mock.session));
+    }
+    @Test void expiredOtpReturnsToEmailEntryAndAllowsANewRequest(){
+        start();now.addAndGet(PasswordRecoveryService.TTL);
+        assertEquals("forgot",service.nextTab(mock.session));
+        service.start(mock.session,"a@gmail.com","ip");
+        assertEquals("otp",service.nextTab(mock.session));
     }
 }

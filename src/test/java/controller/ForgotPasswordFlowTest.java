@@ -49,6 +49,7 @@ class ForgotPasswordFlowTest {
         new ForgotPasswordController(recovery).doPost(mock.request,mock.response);
         java.util.Map<?,?> feedback=(java.util.Map<?,?>)mock.sessionValues.get("accountFeedback");
         assertTrue(((java.util.Map<?,?>)feedback.get("errors")).isEmpty());
-        assertTrue(mock.sessionValues.get("errorMsg").toString().contains("SMTP"));
+        assertTrue(mock.sessionValues.get("errorMsg").toString().contains("Không gửi được email OTP"));
+        assertFalse(mock.sessionValues.get("errorMsg").toString().contains("SMTP"));
     }
 }
