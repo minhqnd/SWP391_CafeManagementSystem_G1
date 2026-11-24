@@ -29,9 +29,9 @@ public class RegisterController extends HttpServlet {
         utils.AccountFormFeedback.clear(request);
 
         // [DKL03]
-        // . Sau khi form được gửi, doPost trong RegisterController.java nhận thông tin đăng ký. Em bỏ khoảng
-        //   trắng thừa, chuẩn hóa liên hệ rồi gọi các hàm trong AccountValidation để kiểm tra lại từng ô trước
-        //   khi tìm liên hệ trùng và tạo tài khoản.
+        // . doPost trong RegisterController.java nhận các ô đăng ký. Em bỏ khoảng trắng đầu/cuối, chuyển email
+        //   về chữ thường và làm gọn số điện thoại, rồi gọi AccountValidation để kiểm tra từng ô trước khi tìm
+        //   trùng và tạo tài khoản.
         // ... Đọc tiếp tại RegisterController.java, tìm [DKL04].
         String fullName = AccountValidation.text(request.getParameter("fullname"));
         String email = request.getParameter("email");

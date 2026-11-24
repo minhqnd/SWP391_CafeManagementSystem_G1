@@ -61,11 +61,10 @@ public class LoginController extends HttpServlet {
         utils.AccountFormFeedback.clear(request);
 
         // [DNL02]
-        // . Khi nhận form tại doPost trong LoginController.java, em lấy email hoặc số điện thoại và mật khẩu. Em
-        //   bỏ khoảng trắng đầu cuối của định danh, kiểm tra hai ô có nội dung và đúng giới hạn rồi mới chuyển
-        //   sang bước tìm tài khoản.
-        // ... Đọc tiếp trong LoginController.java, tìm [DNL03] sau phần kiểm tra hai ô để xem cách đối chiếu tài
-        //     khoản.
+        // . doPost trong LoginController.java nhận email hoặc số điện thoại cùng mật khẩu từ form. Em bỏ khoảng
+        //   trắng đầu/cuối của ô tài khoản và kiểm tra hai ô đã nhập, độ dài hợp lệ rồi mới gọi tìm tài khoản.
+        // ... Đọc tiếp trong LoginController.java, tìm [DNL03] sau phần kiểm tra hai ô để xem cách đối chiếu
+        //   tài khoản.
         String userIdentifier = request.getParameter("username");
         if (userIdentifier != null) {
             userIdentifier = userIdentifier.trim();

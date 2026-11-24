@@ -251,9 +251,11 @@
                     </select></div>
 
                     <%-- [DML01]
-                         . Em bắt đầu từ nút Tạo danh mục hoặc Lưu thay đổi trong admin-categories.jsp. Khi bấm,
-                           admin-form-validation.js kiểm tra tên, trạng thái và ảnh ngay trên trang. Hợp lệ thì form gửi
-                           mã, tên, trạng thái và ảnh tới AdminCategoriesController.doPost qua /admin/categories để lưu.
+                         . Từ nút Tạo danh mục hoặc Lưu thay đổi trong admin-categories.jsp,
+                           admin-form-validation.js kiểm tra tên, trạng thái và ảnh. Hợp lệ thì form gửi các ô
+                           đến AdminCategoriesController.doPost qua /admin/categories.
+                         . Ô ẩn id gửi 0 khi tạo mới hoặc mã danh mục đang chọn khi sửa. Controller nhận mã này
+                           cùng các ô để xử lý đúng danh mục.
                          ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML02].
                     --%>
                     <button type="submit" class="btn btn-aura fw-bold w-100"><span class="material-symbols-outlined fs-6 align-middle">check</span> <c:choose><c:when test="${selectedCategory.id gt 0}">Lưu thay đổi</c:when><c:otherwise>Tạo danh mục</c:otherwise></c:choose></button>

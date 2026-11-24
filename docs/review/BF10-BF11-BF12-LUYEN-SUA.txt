@@ -18,13 +18,13 @@ Tìm dòng: public static final long TTL =
 - TTL cũng giới hạn thời gian đặt lại mật khẩu sau xác minh; cập nhật lời nhắc 5 phút trong auth_modal.jsp và các comment mô tả thời hạn.
 
 [SUA10-02] Chỉ cho nhập sai OTP 3 lần thay vì 5 lần.
-Vị trí: src/main/java/service/PasswordRecoveryService.java:132
+Vị trí: src/main/java/service/PasswordRecoveryService.java:133
 Tìm dòng: if(!match){state.failures++;
 - Sửa điều kiện state.failures>=5, phép tính 5-state.failures và lời báo số lần trong cùng nhánh.
 - Thử sai liên tiếp đến giới hạn mới để kiểm tra mã bị hủy và phải yêu cầu gửi lại.
 
 [SUA10-03] Mật khẩu tối thiểu 10 ký tự thay vì 8.
-Vị trí: src/main/java/utils/AccountValidation.java:77
+Vị trí: src/main/java/utils/AccountValidation.java:78
 Tìm dòng: if (password.length() < 8 || password.length() > 255)
 - Sửa điều kiện và lời báo ở đây; sửa passwordError trong account-validation.js cùng quy tắc.
 - Các ô mật khẩu trong auth_modal.jsp, login.jsp, profile.jsp có minlength/lời nhắc; kiểm tra lại khi đổi giới hạn.
@@ -36,7 +36,7 @@ Tìm dòng: if (value.length < 8 || value.length > 255)
 - Dùng mật khẩu ngắn hơn giới hạn một ký tự và vừa đủ giới hạn để kiểm tra hai phía.
 
 [SUA10-05] Cho phép thêm đuôi email khác ngoài gmail.com.
-Vị trí: src/main/java/utils/AccountValidation.java:42
+Vị trí: src/main/java/utils/AccountValidation.java:43
 Tìm dòng: if (email == null || !email.matches(
 - Sửa điều kiện nhận email tại đây và phần validate email trong account-validation.js; kiểm tra pattern/lời nhắc trong JSP nếu có.
 - Vẫn cần kiểm tra định dạng và email trùng; thay đuôi được nhận không thay thế việc tìm trùng trong users.
@@ -62,13 +62,13 @@ BF11: 14 vị trí luyện sửa
 ==============================================================================
 
 [SUA11-01] Trang chủ lấy tối đa 8 món nổi bật thay vì 4.
-Vị trí: src/main/webapp/index.jsp:275
+Vị trí: src/main/webapp/index.jsp:276
 Tìm dòng: List<Product> productsList = productDAO.getBestSellingProducts(4);
 - Số 4 truyền tới getBestSellingProducts rồi xuống LIMIT trong SQL; đổi thành 8 để yêu cầu tối đa 8 món.
 - Danh sách này được dùng cho banner và sản phẩm yêu thích; kiểm tra cả hai vùng và trường hợp database có ít món hơn giới hạn.
 
 [SUA11-02] Nhập giá sản phẩm 10000đ, khi lưu cộng thêm 20000đ.
-Vị trí: src/main/java/controller/AdminProductsController.java:352
+Vị trí: src/main/java/controller/AdminProductsController.java:353
 Tìm dòng: double basePrice = MenuValidation.money(
 - Đây là giá cơ bản được gán vào Product và lưu database; sửa ở đây sẽ ảnh hưởng các nơi đọc giá món.
 - Nếu cộng thêm tiền thì phải kiểm tra cả giá sau cộng. Yêu cầu chỉ tăng giá trong giỏ phải xử lý ở CartService, không đổi giá lưu ở đây.
@@ -104,13 +104,13 @@ Tìm dòng: private static final int MAX_RECIPE_LINES = 100;
 - Phần giữ bản nhập dở dùng MAX_RECIPE_LINES+1 để còn hiện dòng vượt giới hạn cho người dùng sửa; kiểm tra lại sau khi đổi.
 
 [SUA11-08] Giá vốn công thức đang mở cộng thêm 2000đ bao bì.
-Vị trí: src/main/java/controller/AdminRecipeController.java:117
+Vị trí: src/main/java/controller/AdminRecipeController.java:119
 Tìm dòng: BigDecimal recipeCost = BigDecimal.ZERO;
 - Cộng một lần sau vòng lặp tính nguyên liệu, không cộng 2000 vào từng dòng.
 - Cần thống nhất với productCost của từng món bên dưới và recalculateCost trong admin-recipes.jsp; đây là chi phí, không phải giá bán.
 
 [SUA11-09] Giá vốn trên từng thẻ món cộng thêm một khoản cố định.
-Vị trí: src/main/java/controller/AdminRecipeController.java:163
+Vị trí: src/main/java/controller/AdminRecipeController.java:166
 Tìm dòng: BigDecimal productCost = BigDecimal.ZERO;
 - Nếu yêu cầu thêm phí cho mỗi phần thì cộng một lần sau khi tính xong nguyên liệu của món đó.
 - Giữ giống recipeCost của công thức đang mở và phần xem trước; vẫn phân biệt món chưa có công thức hoặc thiếu giá nhập.
@@ -148,13 +148,13 @@ BF12: 9 vị trí luyện sửa
 ==============================================================================
 
 [SUA12-01] Bảng lịch sử chung chỉ hiện tối đa 10 giao dịch mới nhất thay vì 50.
-Vị trí: src/main/java/controller/AdminLoyaltyController.java:87
+Vị trí: src/main/java/controller/AdminLoyaltyController.java:89
 Tìm dòng: request.setAttribute("transactions", loyaltyDAO.findRecent(50));
 - Đổi đối số findRecent từ 50 thành 10; findDetailed đưa số này xuống LIMIT và đã xếp thời gian mới trước.
 - Chỉ giảm số dòng được lấy để hiển thị, không xóa lịch sử và không đổi số của thẻ tổng giao dịch.
 
 [SUA12-02] Khi cộng 10 điểm thì tặng thêm 5, khách thực nhận 15 điểm.
-Vị trí: src/main/java/controller/AdminLoyaltyController.java:363
+Vị trí: src/main/java/controller/AdminLoyaltyController.java:365
 Tìm dòng: if (!loyaltyDAO.adjustPoints(customerId, "subtract".equals(adjustType) ? -points : points))
 - Đổi điểm ở nhánh add trước khi gọi DAO; nhánh subtract vẫn truyền số âm như quy định.
 - Truyền cùng một số điểm thực tế để DAO vừa tính số dư vừa ghi ADJUST; kiểm tra giới hạn sau khi cộng thưởng.
@@ -172,13 +172,13 @@ Tìm dòng: public static final long MAX_RULE_MONEY = 100_000_000L;
 - Đây là mức lớn nhất được phép nhập, không phải giá trị quy tắc đang lưu trong shop_settings.
 
 [SUA12-05] Thay cách tính thẻ Giá trị quy đổi của toàn bộ điểm.
-Vị trí: src/main/java/controller/AdminLoyaltyController.java:73
+Vị trí: src/main/java/controller/AdminLoyaltyController.java:75
 Tìm dòng: long redeemableSteps =
 - Hiện lấy tổng điểm chia nguyên cho mốc đổi, nhân tiền giảm rồi làm tròn; mốc và tiền được đọc từ settings.
 - Đây là thẻ tổng quan. Đổi tiền giảm thật của đơn hàng còn liên quan nơi sử dụng điểm trong giỏ/thanh toán.
 
 [SUA12-06] Thay cách tính tiền có thể đổi của khách đang xem.
-Vị trí: src/main/java/controller/AdminLoyaltyController.java:143
+Vị trí: src/main/java/controller/AdminLoyaltyController.java:146
 Tìm dòng: long customerSteps =
 - Dùng điểm riêng của khách, chia nguyên cho mốc rồi nhân tiền giảm; phải cùng quy tắc với phần tổng quan và hồ sơ.
 - Nếu đề chỉ đổi mốc/tiền giảm đang dùng thì cập nhật qua Lưu quy tắc; sửa riêng phép hiển thị chưa đổi tiền giảm của đơn hàng.
@@ -195,6 +195,6 @@ Tìm dòng: || !Number.isSafeInteger(points) || points <= 0 || points > 1000000)
 - Số 1000000 ở đây phải khớp giới hạn điều chỉnh trong controller và LoyaltyTransactionDAO; đây là kiểm tra trước khi gửi.
 
 [SUA12-09] Đổi khoảng được nhập trong ba ô quy tắc.
-Vị trí: src/main/webapp/assets/js/admin-form-validation.js:178
+Vị trí: src/main/webapp/assets/js/admin-form-validation.js:179
 Tìm dòng: [['pointsEarnUnit', 'Số tiền chi tiêu để nhận 1 điểm', 1, 100000000],
 - Đồng bộ từng min/max với AdminLoyaltyController.updateRules và LoyaltyValidation; tiền giảm hiện được phép bằng 0.

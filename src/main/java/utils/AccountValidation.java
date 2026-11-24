@@ -15,12 +15,13 @@ public final class AccountValidation {
     public static String phone(String raw) { return text(raw).replaceAll("[\\s.()-]", ""); }
 
     // [KTHT01]
-    // . Ở nameError (kiểm tra họ tên và trả lời báo lỗi) trong AccountValidation.java, em nhận họ tên từ
-    //   phần đăng ký hoặc cập nhật hồ sơ; controller đã bỏ khoảng trắng đầu/cuối trước khi truyền vào.
-    //   Hàm này kiểm tra tên dài 1–100 ký tự và không có ký tự điều khiển, rồi trả null nếu đúng
-    //   hoặc lời báo để controller gắn vào ô Họ tên.
-    // ... Quay lại RegisterController.java trong doPost nếu đăng ký, hoặc ProfileController.java trong update nếu
-    //     sửa hồ sơ, ngay sau AccountValidation.nameError; thêm lời báo vào errors rồi xét có lưu hay trả form.
+    // . nameError trong AccountValidation.java nhận họ tên đã được controller bỏ khoảng trắng đầu/cuối. Em kiểm
+    //   tra tên dài 1–100 ký tự và không có ký tự điều khiển, như xuống dòng hoặc tab.
+    // . Đúng thì trả null, nghĩa là ô này chưa có lỗi; sai thì trả lời báo để RegisterController hoặc
+    //   ProfileController hiện tại ô Họ tên.
+    // ... Quay lại RegisterController.java trong doPost nếu đăng ký, hoặc ProfileController.java trong update
+    //   nếu sửa hồ sơ, ngay sau AccountValidation.nameError; thêm lời báo vào errors rồi xét có lưu hay trả
+    //   form.
     public static String nameError(String name) {
         if (name == null || name.isBlank()) return "Vui lòng nhập họ và tên.";
         if (name.length() > 100) return "Họ và tên tối đa 100 ký tự.";
@@ -29,13 +30,13 @@ public final class AccountValidation {
     }
 
     // [KTEM01]
-    // . Ở emailError (kiểm tra định dạng và độ dài email) trong AccountValidation.java, em kiểm tra email mà
-    //   phần đăng ký, hồ sơ hoặc tìm trùng truyền vào. Địa chỉ phải đúng dạng tên@gmail.com, tối đa 150 ký
-    //   tự; chữ hoa và chữ thường đều được nhận. Em trả null hoặc lời báo về nơi gọi để biết có tiếp tục tìm
-    //   trùng, lưu hay không.
+    // . emailError trong AccountValidation.java kiểm tra email có dạng tên@gmail.com và dài không quá 150 ký
+    //   tự. Chữ hoa hoặc chữ thường đều được nhận.
+    // . Trả null nghĩa là email đúng định dạng; trả lời báo nghĩa là ô này có lỗi. Phần đang gọi hàm nhận kết
+    //   quả đó để quyết định có tiếp tục tìm trùng và xử lý yêu cầu hay không.
     // ... Quay lại lời gọi AccountValidation.emailError trong RegisterController.java, ProfileController.java,
-    //     AccountAvailabilityController.java hoặc PasswordRecoveryService.java; có lỗi thì dừng nhánh đang xét,
-    //     đúng mới đọc dữ liệu tiếp.
+    //   AccountAvailabilityController.java hoặc PasswordRecoveryService.java; có lỗi thì dừng nhánh đang xét,
+    //   đúng mới đọc dữ liệu tiếp.
     public static String emailError(String email) {
         if (email != null && email.isEmpty()) return "Vui lòng nhập email.";
         if (email != null && email.length() > 150) return "Email tối đa 150 ký tự.";
@@ -62,15 +63,15 @@ public final class AccountValidation {
     }
 
     // [KTMK01]
-    // . Ở passwordError (kiểm tra điều kiện mật khẩu) trong AccountValidation.java, em kiểm tra mật khẩu và
-    //   xác nhận mà phần đăng ký, đổi hoặc đặt lại mật khẩu truyền vào. Mật khẩu phải dài 8–255 ký tự, có
-    //   chữ và số, không có ký tự điều khiển, xác nhận phải khớp. Em trả lời báo hoặc null để nơi gọi quyết
-    //   định có tiếp tục không.
+    // . passwordError trong AccountValidation.java kiểm tra mật khẩu dài 8–255 ký tự, có chữ và số, không có ký
+    //   tự điều khiển; mật khẩu xác nhận phải khớp.
+    // . Đúng thì trả null; sai thì trả lời báo. RegisterController, ProfileController hoặc
+    //   PasswordRecoveryService nhận kết quả để quyết định có tiếp tục lưu mật khẩu hay trả lỗi về form.
     // ... Quay lại lời gọi passwordError hoặc passwordErrors trong RegisterController.java khi đăng ký,
-    //     ProfileController.java khi đổi mật khẩu, hoặc PasswordRecoveryService.java trong reset khi khôi phục; có
-    //     lời báo thì dừng ghi mật khẩu.
+    //   ProfileController.java khi đổi mật khẩu, hoặc PasswordRecoveryService.java trong reset khi khôi phục;
+    //   có lời báo thì dừng ghi mật khẩu.
     // ... Nếu UserDAO.java gọi kiểm tra lại trước khi ghi, quay về changePasswordById hoặc resetPasswordById
-    //     ngay sau AccountValidation.passwordError; lỗi thì trả false, hợp lệ mới thực hiện phần ghi bên dưới.
+    //   ngay sau AccountValidation.passwordError; lỗi thì trả false, hợp lệ mới thực hiện phần ghi bên dưới.
     public static String passwordError(String password, String confirmation) {
         if (password == null || password.isEmpty()) return "Vui lòng nhập mật khẩu.";
         if (password.isBlank()) return "Mật khẩu không được chỉ có khoảng trắng.";
@@ -85,14 +86,16 @@ public final class AccountValidation {
                 || !password.chars().anyMatch(c -> c >= '0' && c <= '9'))
             return "Mật khẩu phải có ít nhất một chữ cái (a-z, A-Z) và một chữ số (0-9).";
         // [OTXN02]
-        // . Trong passwordError (kiểm tra điều kiện mật khẩu) của AccountValidation.java, em đối chiếu
-        //   confirmation với password sau khi kiểm tra điều kiện mật khẩu. Nếu ô xác nhận trống hoặc khác thì
-        //   trả lời báo về nơi gọi; PasswordRecoveryService.reset (đặt lại mật khẩu sau khi xác minh OTP) nhận
-        //   lỗi này sẽ chưa cập nhật mật khẩu.
-        // ... Quay lại PasswordRecoveryService.java, trong reset sau AccountValidation.passwordError; không khớp
-        //     thì báo lỗi về ResetPasswordController, khớp mới gọi users.resetPasswordById.
+        // . Trong passwordError, em đối chiếu ô xác nhận confirmation với mật khẩu password. Xác nhận trống
+        //   hoặc khác thì trả lời báo; PasswordRecoveryService.reset nhận lỗi này sẽ dừng trước khi ghi mật
+        //   khẩu mới.
+        // . Khi đăng ký hoặc đổi mật khẩu qua passwordErrors, hàm đó kiểm tra riêng ô xác nhận và trả lỗi theo
+        //   từng ô về RegisterController hoặc ProfileController.
+        // ... Quay lại PasswordRecoveryService.java, trong reset sau AccountValidation.passwordError; không
+        //   khớp thì báo lỗi về ResetPasswordController, khớp mới gọi users.resetPasswordById.
         // ... Nếu được gọi qua passwordErrors khi đăng ký hoặc đổi mật khẩu, quay lại passwordErrors cùng file;
-        //     hàm đó kiểm tra riêng ô xác nhận rồi trả danh sách lỗi về RegisterController hoặc ProfileController.
+        //   hàm đó kiểm tra riêng ô xác nhận rồi trả danh sách lỗi về RegisterController hoặc
+        //   ProfileController.
         if (confirmation == null || confirmation.isEmpty() || !password.equals(confirmation))
             return "Mật khẩu xác nhận không khớp hoặc chưa được nhập.";
         return null;

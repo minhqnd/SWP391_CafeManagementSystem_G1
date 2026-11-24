@@ -111,9 +111,8 @@ public class AdminCategoriesController extends HttpServlet {
 
     @Override
     // [DML02]
-    // . Khi nhận form tại doPost trong AdminCategoriesController.java, em đọc action để chọn thao tác. Với
-    //   save, em gọi hàm save ngay trong controller để kiểm tra và lưu danh mục; toggle đổi trạng thái, còn
-    //   delete kiểm tra điều kiện rồi xóa.
+    // . doPost trong AdminCategoriesController.java nhận action=save từ form Tạo hoặc Sửa danh mục. Em gọi save
+    //   trong cùng file, truyền request và session để đọc các ô, kiểm tra rồi lưu danh mục.
     // ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML03].
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -179,9 +178,9 @@ public class AdminCategoriesController extends HttpServlet {
     }
 
     // [DML03]
-    // . Đến save trong AdminCategoriesController.java, em nhận mã, tên, trạng thái và lựa chọn ảnh từ form.
-    //   Em kiểm tra tên, ảnh, trạng thái và tên trùng; đúng hết mới chuyển dữ liệu cho
-    //   CategoryDAO.saveCategory để lưu.
+    // . Trong AdminCategoriesController.save, em đọc id, tên, trạng thái và ảnh từ form. id=0 là tạo danh mục
+    //   mới; id lớn hơn 0 là sửa danh mục có mã đó. Em kiểm tra tên, tên trùng, trạng thái và ảnh trước khi gọi
+    //   CategoryDAO.saveCategory.
     // ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML04].
     private void save(HttpServletRequest request, HttpSession session)
             throws SQLException, ClassNotFoundException, ServletException, IOException {
@@ -205,13 +204,13 @@ public class AdminCategoriesController extends HttpServlet {
         // ... Đọc tiếp tại MenuValidation.java, tìm [DMT03].
         name = MenuValidation.requiredName(name, "Tên danh mục", 100);
         // [DMAN02]
-        // . Với ảnh danh mục, hàm save (kiểm tra và lưu danh mục) trong AdminCategoriesController.java nhận tệp
-        //   imageFile. Em kiểm tra dung lượng, loại ảnh bằng normalizeImageType (nhận biết loại tệp ảnh được hỗ
-        //   trợ) và nội dung tệp bằng matchesImageSignature (kiểm tra nội dung tệp đúng loại ảnh). Ảnh hợp lệ
-        //   mới được chuyển cho CategoryDAO.saveCategory (ghi danh mục) để lưu.
-    // .. Em chỉ nhận ảnh JPG, PNG, GIF hoặc WebP, tối đa 5 MB; tệp sai thì báo lỗi và chưa lưu danh mục.
-    //   Trường hợp cả biểu mẫu chưa đọc được được xử lý trước đó bởi AdminFormFeedback.readMultipart.
-    // ... Nếu cần xem cách nhận biểu mẫu trước khi vào save, đọc AdminFormFeedback.java, tìm [DMAN04].
+        // . AdminCategoriesController.save nhận tệp imageFile từ form. Em kiểm tra dung lượng, gọi
+        //   normalizeImageType để nhận loại ảnh rồi dùng matchesImageSignature để kiểm tra dữ liệu tệp có đúng
+        //   loại đó không.
+        // . Ảnh hợp lệ được chuyển cùng thông tin danh mục tới CategoryDAO.saveCategory để lưu. Em chỉ nhận
+        //   JPG, PNG, GIF hoặc WebP tối đa 5 MB; sai thì báo lỗi và dừng lưu.
+        // .. Trường hợp chưa đọc được cả form đã được AdminFormFeedback.readMultipart xử lý trước khi vào save.
+        // ... Nếu cần xem cách nhận biểu mẫu trước khi vào save, đọc AdminFormFeedback.java, tìm [DMAN04].
         if (imagePart != null && imagePart.getSize() > 0) {
             if (imagePart.getSize() > MAX_IMAGE_SIZE) {
                 throw new IllegalArgumentException("Ảnh danh mục không được lớn hơn 5 MB.");
@@ -279,11 +278,10 @@ public class AdminCategoriesController extends HttpServlet {
     }
 
     // [DMX02]
-    // . Ở hàm delete (kiểm tra điều kiện rồi xóa) trong AdminCategoriesController.java, em nhận mã danh mục
-    //   muốn xóa. Em gọi CategoryDAO.getCategoryById (đọc danh mục theo mã) để tìm danh mục và
-    //   getOrderedProductCountByCategory (đếm món trong danh mục đã có ở đơn hàng) để kiểm tra món đã có
-    //   trong đơn. Nếu được phép, em mới gọi deleteCategoryAndProducts (xóa danh mục cùng sản phẩm đủ điều
-    //   kiện) để xóa danh mục cùng các món bên trong.
+    // . Trong AdminCategoriesController.delete, em nhận mã danh mục cần xóa. Em gọi CategoryDAO.getCategoryById
+    //   để đọc đúng nhóm, rồi getOrderedProductCountByCategory để đếm món của nhóm đã xuất hiện trong đơn hàng.
+    // . Có món nằm trong đơn thì báo lỗi và dừng. Đủ điều kiện mới gọi CategoryDAO.deleteCategoryAndProducts để
+    //   xóa danh mục cùng các món thuộc nhóm.
     // ... Đọc tiếp tại CategoryDAO.java, tìm [DMDH01].
     private void delete(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
         int id = parseId(request.getParameter("id"), false);

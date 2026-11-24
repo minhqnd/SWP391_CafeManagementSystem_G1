@@ -79,11 +79,11 @@ public class ShopSettingDAO extends BaseDAO {
      * (Khung giờ ca theo tuần nằm ở bảng work_shifts - xem WorkShiftDAO.)
      */
     // [TDQT07]
-    // . Ở lần mở lại trang, doGet gọi getSettingsStrict trong ShopSettingDAO.java để đọc các thiết lập đang lưu.
-    //   Em đọc shop_settings, dùng applyValue điền từng quy tắc vào ShopSettings rồi trả bộ này về
-    //   controller để điền form và tính tiền quy đổi.
-    // .. Khóa chưa được tạo dùng giá trị mặc định; giá trị không đổi được sang số cũng giữ mặc định của khóa đó.
-    //    Lỗi kết nối hoặc câu lệnh đọc thì báo lỗi về controller, không trả một bộ mặc định thay cho kết quả đọc.
+    // . Khi trang mở lại, AdminLoyaltyController.doGet gọi getSettingsStrict trong ShopSettingDAO.java. Em đọc
+    //   tên và giá trị từ shop_settings, gọi applyValue để đặt từng giá trị vào ShopSettings rồi trả bộ này về
+    //   doGet để điền form và tính tiền quy đổi.
+    // .. Khóa chưa có hoặc giá trị không đổi được sang số thì giữ mặc định của khóa đó. Lỗi kết nối hay câu
+    //   lệnh đọc được báo về controller.
     // ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDQT08].
     public ShopSettings getSettingsStrict() {
 
@@ -113,11 +113,13 @@ public class ShopSettingDAO extends BaseDAO {
     }
 
     // [TDQT05]
-    // . Trong saveLoyaltyRules của ShopSettingDAO.java, em nhận ba số từ controller và thêm hoặc cập nhật
-    //   các quy tắc trong shop_settings. Ghi được cả ba rồi xác nhận mới trả true; nếu ghi lỗi thì hủy các
-    //   thay đổi của lần lưu và trả false. updateRules trong AdminLoyaltyController.java nhận false sẽ báo chưa lưu được.
-    // ... Trong ShopSettingDAO.java, đọc tiếp conn.commit và return true của saveLoyaltyRules. Lỗi ghi dữ liệu trả false
-    //     về ngay sau settingDAO.saveLoyaltyRules trong AdminLoyaltyController.updateRules để xử lý thất bại.
+    // . AdminLoyaltyController.updateRules gọi saveLoyaltyRules trong ShopSettingDAO.java, truyền ba số đã kiểm
+    //   tra. Em thêm hoặc cập nhật ba quy tắc trong shop_settings và chỉ xác nhận khi ghi được cả bộ.
+    // . Lưu xong thì trả true về updateRules. Nếu ghi lỗi thì hủy thay đổi và trả false; updateRules nhận false
+    //   sẽ báo chưa lưu được về doPost để hiện lỗi.
+    // ... Trong ShopSettingDAO.java, đọc tiếp conn.commit và return true của saveLoyaltyRules. Lỗi ghi dữ liệu
+    //   trả false về ngay sau settingDAO.saveLoyaltyRules trong AdminLoyaltyController.updateRules để xử lý
+    //   thất bại.
     public boolean saveLoyaltyRules(long earnUnit, int pointsStep, long stepValue) {
         // . Trước khi ghi quy tắc, trong ShopSettingDAO.saveLoyaltyRules (ghi cả ba quy tắc vào cơ sở dữ liệu)
         //   em gọi LoyaltyValidation.requireRange (kiểm tra số nằm trong khoảng cho phép) để kiểm tra lại cả ba

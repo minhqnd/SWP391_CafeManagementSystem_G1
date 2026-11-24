@@ -323,9 +323,11 @@
 
             <div class="d-flex flex-wrap gap-2 mt-4">
                 <%-- [SPL01]
-         . Em bắt đầu từ nút Thêm sản phẩm hoặc Lưu thay đổi trong admin-products.jsp. Khi bấm, mã trong
-           admin-form-validation.js kiểm tra các ô, ảnh, size và topping ngay trên trang. Hợp lệ thì form
-           gửi thông tin tới AdminProductsController.doPost qua /admin/products để kiểm tra lại và lưu.
+                     . Em bắt đầu từ nút Thêm sản phẩm hoặc Lưu thay đổi trong admin-products.jsp.
+                       admin-form-validation.js kiểm tra các ô, ảnh, size và topping; hợp lệ thì form gửi tới
+                       AdminProductsController.doPost qua /admin/products.
+                     . Form có ô ẩn id: thêm mới gửi 0, sửa gửi mã sản phẩm đang chọn. Controller dùng mã này để
+                       lưu đúng thao tác.
                      ... Đọc tiếp tại assets/js/admin-form-validation.js, tìm [SPL02].
                 --%>
                 <button type="submit" class="btn btn-aura fw-bold" <c:if test="${empty categories}">disabled</c:if>><span class="material-symbols-outlined fs-6 align-middle">check</span> <c:choose><c:when test="${not empty selectedProduct and selectedProduct.id gt 0}">Lưu thay đổi</c:when><c:otherwise>Thêm sản phẩm</c:otherwise></c:choose></button>

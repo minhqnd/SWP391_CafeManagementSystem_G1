@@ -129,9 +129,10 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DML05]
-    // . Trong saveCategory của CategoryDAO.java, em thêm hoặc sửa categories rồi xử lý ảnh trong
-    //   category_images trên cùng kết nối. Hoàn tất thì xác nhận lưu và trả true về controller. Nếu không
-    //   ghi được danh mục thì trả false; nếu phát sinh lỗi thì hủy thay đổi và báo lỗi về controller.
+    // . AdminCategoriesController.save gọi hàm này để lưu thông tin danh mục và ảnh. Phần lưu thông tin bên
+    //   dưới dùng id để chọn INSERT khi thêm mới hoặc UPDATE khi sửa; ảnh được xử lý trong category_images.
+    // . Cả thông tin và ảnh được lưu trong cùng lần xử lý. Hoàn tất thì trả true về controller; không lưu được
+    //   danh mục thì trả false, còn lỗi phát sinh thì hủy thay đổi và báo lỗi về controller.
     // ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML06].
     public boolean saveCategory(Category category, byte[] imageData, String contentType,
                                 String fileName, boolean removeImage)
@@ -140,24 +141,21 @@ public class CategoryDAO extends BaseDAO {
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
-                // . Trong CategoryDAO.java, em gọi saveCategory (ghi danh mục) bằng kết nối đang dùng và đối tượng danh
-                //   mục để ghi tên, trạng thái. Em tiếp tục xử lý ảnh trên cùng kết nối để thông tin và ảnh được lưu
-                //   cùng nhau.
+                // . Em gọi saveCategory(conn, category) cùng file để ghi tên và trạng thái trước.
+                //   Kết nối conn được dùng tiếp cho ảnh để thông tin và ảnh cùng thành công hoặc cùng bị hủy.
                 boolean saved = saveCategory(conn, category);
                 if (!saved) {
                     conn.rollback();
                     return false;
                 }
                 if (imageData != null) {
-                    // . Nếu có ảnh mới, trong CategoryDAO.saveCategory (ghi danh mục) em gọi saveImage (thêm hoặc thay ảnh
-                    //   đang lưu) cùng file, truyền mã danh mục và dữ liệu ảnh. Hàm thêm hoặc thay ảnh trong
-                    //   category_images để ảnh gắn đúng danh mục vừa lưu.
+                    // . Có ảnh mới thì em gọi saveImage cùng file, truyền mã danh mục và dữ liệu tệp.
+                    //   Hàm thêm hoặc thay ảnh trong category_images cho đúng danh mục vừa lưu.
                     saveImage(conn, category.getId(), imageData, contentType, fileName);
                     clearLegacyImageUrl(conn, category.getId());
                 } else if (removeImage) {
-                    // . Nếu không có ảnh mới nhưng người dùng chọn xóa ảnh, trong CategoryDAO.saveCategory (ghi danh mục)
-                    //   em gọi deleteImage (xóa ảnh đang lưu) cùng file bằng mã danh mục. Hàm xóa ảnh đang lưu của đúng
-                    //   danh mục đó.
+                    // . Người dùng chọn xóa ảnh và không gửi ảnh mới thì em gọi deleteImage cùng file.
+                    //   Hàm nhận mã danh mục để xóa ảnh của đúng nhóm trong category_images.
                     deleteImage(conn, category.getId());
                     clearLegacyImageUrl(conn, category.getId());
                 }
@@ -174,9 +172,8 @@ public class CategoryDAO extends BaseDAO {
 
     private boolean saveCategory(Connection conn, Category category) throws SQLException {
 
-        // . Khi danh mục đã có mã, em dùng UPDATE trong CategoryDAO.saveCategory (ghi danh mục) để sửa đúng dòng
-        //   categories. Mã vẫn giữ trên category để phần ảnh dùng tiếp, nên thao tác này không tạo thêm danh
-        //   mục.
+        // . id lớn hơn 0 nghĩa là sửa danh mục đã có. Em dùng UPDATE với điều kiện WHERE id để sửa đúng nhóm;
+        //   mã danh mục giữ nguyên để bước lưu ảnh tiếp tục dùng.
         if (category.getId() > 0) {
             // [SQL11-06] Nút Lưu danh mục: cập nhật tên và trạng thái.
             // . Dấu ? từ trái sang phải: 1=tên danh mục; 2=ACTIVE hoặc INACTIVE; 3=mã danh mục.
@@ -197,9 +194,9 @@ public class CategoryDAO extends BaseDAO {
                 }
             }
         }
-        // . Khi tạo danh mục mới, em dùng INSERT trong CategoryDAO.saveCategory (ghi danh mục) rồi lấy mã được
-        //   tạo bằng getGeneratedKeys (lấy mã của dòng vừa thêm). Em đặt mã vào category.id để phần lưu ảnh biết
-        //   ảnh thuộc danh mục nào.
+        // . id bằng 0 nghĩa là tạo danh mục mới. Em dùng INSERT rồi gọi getGeneratedKeys để lấy mã database vừa tạo.
+        //   Em đặt mã này vào category.id để ảnh được lưu cho đúng danh mục mới.
+
         // [SQL11-08] Nút Tạo danh mục: thêm nhóm mới và lấy mã vừa tạo.
         // . Dấu ? từ trái sang phải: 1=tên danh mục; 2=ACTIVE hoặc INACTIVE.
         String sql = "INSERT INTO categories (name, status) VALUES (?, ?)";
@@ -311,12 +308,13 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [MNDM01]
-    // . Hàm getAllActiveCategoriesWithCount (đọc danh mục hoạt động kèm số món đang bán) trong
-    //   CategoryDAO.java được MenuController.doGet và index.jsp gọi để đọc danh mục cho khách xem. Em chỉ
-    //   lấy nhóm ACTIVE kèm số món đang bán, rồi trả danh sách về nơi gọi để dựng Menu hoặc Trang chủ.
+    // . MenuController.doGet, index.jsp và footer.jsp gọi getAllActiveCategoriesWithCount trong
+    //   CategoryDAO.java để đọc danh mục cho khách xem. Em lấy nhóm ACTIVE kèm số món đang bán của từng nhóm.
+    // . Nếu MenuController gọi thì danh sách được đưa sang menu.jsp. Nếu index.jsp hoặc footer.jsp gọi thì danh
+    //   sách được dùng ngay để dựng các mục danh mục trên trang đó.
     // ... Nếu MenuController.doGet gọi thì quay lại MenuController.java sau getAllActiveCategoriesWithCount để
-    //     chuẩn bị menu.jsp; nếu index.jsp hoặc footer.jsp gọi thì quay đúng lời gọi này để dựng danh mục ngay
-    //     trên trang.
+    //   chuẩn bị menu.jsp; nếu index.jsp hoặc footer.jsp gọi thì quay đúng lời gọi này để dựng danh mục ngay
+    //   trên trang.
     public List<Category> getAllActiveCategoriesWithCount() {
 
         List<Category> list = new ArrayList<>();

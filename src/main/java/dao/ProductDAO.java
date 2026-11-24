@@ -120,9 +120,10 @@ public class ProductDAO extends BaseDAO {
     }
 
     // [SPL06]
-    // . Trong saveProduct của ProductDAO.java, em thêm hoặc sửa dòng products rồi xử lý product_images trên
-    //   cùng kết nối. Ghi xong thì xác nhận và trả true về controller. Nếu không ghi được sản phẩm thì trả
-    //   false; nếu có lỗi thì hủy thay đổi rồi báo lỗi về controller.
+    // . AdminProductsController.save truyền Product và ảnh đến hàm saveProduct này. Em gọi saveProduct(conn,
+    //   product) cùng file để ghi bảng products: id=0 dùng INSERT, id lớn hơn 0 dùng UPDATE.
+    // . Sau đó em thêm, thay hoặc xóa ảnh trong product_images theo lựa chọn. Hoàn tất mới xác nhận lưu và trả
+    //   true; không ghi được món thì hủy và trả false, còn lỗi phát sinh thì hủy rồi báo về controller.
     // ... Đọc tiếp tại AdminProductsController.java, tìm [SPL07].
     public boolean saveProduct(Product product, byte[] imageData, String contentType,
                                String fileName, boolean removeImage)
@@ -131,23 +132,21 @@ public class ProductDAO extends BaseDAO {
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try {
-                // . Trong ProductDAO.java, em gọi saveProduct (ghi sản phẩm) bằng kết nối đang dùng và đối tượng sản
-                //   phẩm để ghi thông tin món. Em xử lý ảnh trên cùng kết nối để toàn bộ thay đổi của sản phẩm được lưu
-                //   cùng nhau.
+                // . Em gọi saveProduct(conn, product) cùng file để ghi thông tin món trước.
+                //   Kết nối conn được dùng tiếp cho ảnh để thông tin và ảnh cùng thành công hoặc cùng bị hủy.
                 boolean saved = saveProduct(conn, product);
                 if (!saved) {
                     conn.rollback();
                     return false;
                 }
                 if (imageData != null) {
-                    // . Nếu có ảnh mới, trong ProductDAO.saveProduct (ghi sản phẩm) em gọi saveImage (thêm hoặc thay ảnh
-                    //   đang lưu) cùng file bằng mã sản phẩm và dữ liệu ảnh. Hàm thêm hoặc thay product_images để ảnh gắn
-                    //   đúng món vừa lưu.
+                    // . Có ảnh mới thì em gọi saveImage cùng file, truyền mã sản phẩm và dữ liệu tệp.
+                    //   Hàm thêm hoặc thay ảnh trong product_images cho đúng món vừa lưu.
                     saveImage(conn, product.getId(), imageData, contentType, fileName);
                     clearLegacyImageUrl(conn, product.getId());
                 } else if (removeImage) {
-                    // . Nếu không có ảnh mới và người dùng chọn xóa ảnh, trong ProductDAO.saveProduct (ghi sản phẩm) em gọi
-                    //   deleteImage (xóa ảnh đang lưu) cùng file bằng mã sản phẩm. Hàm xóa ảnh cũ của đúng món đó.
+                    // . Người dùng chọn xóa ảnh và không gửi ảnh mới thì em gọi deleteImage cùng file.
+                    //   Hàm nhận mã sản phẩm để xóa ảnh của đúng món trong product_images.
                     deleteImage(conn, product.getId());
                     clearLegacyImageUrl(conn, product.getId());
                 }
@@ -164,8 +163,8 @@ public class ProductDAO extends BaseDAO {
 
     private boolean saveProduct(Connection conn, Product product) throws SQLException {
 
-        // . Khi sản phẩm đã có mã, em dùng UPDATE trong ProductDAO.saveProduct (ghi sản phẩm) để sửa đúng dòng
-        //   products. Em giữ mã trên product để bước xử lý ảnh tiếp tục dùng mà không tạo sản phẩm mới.
+        // . id lớn hơn 0 nghĩa là sửa món đã có. Em dùng UPDATE và điều kiện WHERE id để sửa đúng dòng products;
+        //   mã sản phẩm giữ nguyên để bước lưu ảnh tiếp tục dùng.
         if (product.getId() > 0) {
             // [SQL11-22] Nút Lưu sản phẩm: cập nhật món hiện có.
             // . Dấu ? từ trái sang phải: 1=mã danh mục; 2=tên món; 3=giá cơ bản; 4=chuỗi JSON size/topping;
@@ -185,9 +184,9 @@ public class ProductDAO extends BaseDAO {
                 }
             }
         }
-        // . Khi tạo món mới, em dùng INSERT trong ProductDAO.saveProduct (ghi sản phẩm) rồi lấy mã bằng
-        //   getGeneratedKeys (lấy mã của dòng vừa thêm). Em đặt mã vào product.id để phần lưu ảnh gắn ảnh với
-        //   đúng sản phẩm vừa tạo.
+        // . id bằng 0 nghĩa là thêm món mới. Em dùng INSERT rồi gọi getGeneratedKeys để lấy mã database vừa tạo.
+        //   Em đặt mã này vào product.id để ảnh được lưu cho đúng sản phẩm mới.
+
         // [SQL11-24] Nút Thêm sản phẩm: tạo món mới và lấy mã vừa tạo.
         // . Dấu ? từ trái sang phải: 1=mã danh mục; 2=tên món; 3=giá cơ bản; 4=chuỗi JSON size/topping; 5=mô
         //   tả; 6=1 đang bán hoặc 0 tạm ngừng.

@@ -175,6 +175,7 @@
                 // ... Trong admin-form-validation.js, đọc tiếp sự kiện submit ở cuối file; sai thì mark hiện lỗi
                 //     và dừng trên form, đúng thì gửi tới AdminLoyaltyController.doPost trong
                 //     AdminLoyaltyController.java.
+
                 // [SUA12-09] Luyện sửa: Đổi khoảng được nhập trong ba ô quy tắc.
                 // . Đồng bộ từng min/max với AdminLoyaltyController.updateRules và LoyaltyValidation; tiền giảm
                 //   hiện được phép bằng 0.

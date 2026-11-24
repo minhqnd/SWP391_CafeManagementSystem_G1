@@ -125,6 +125,7 @@ public final class PasswordRecoveryService {
             //   minh. Đúng thì bỏ OTP, giữ thời điểm xác minh để controller mở bước nhập mật khẩu mới.
             // ... Quay lại VerifyOtpController.java sau service.verify: xác minh được thì mở tab reset_password;
             //     sai hoặc hết hạn thì nhánh catch báo lỗi và chọn màn hình tiếp tục.
+
             // [SQL10-17] Nút Xác minh OTP: Java đối chiếu mã và trạng thái khôi phục giữ trong phiên đăng nhập.
             // . Không có câu SELECT OTP trong MySQL; hạn dùng và số lần nhập sai cũng được kiểm tra trong dịch
             //   vụ này.

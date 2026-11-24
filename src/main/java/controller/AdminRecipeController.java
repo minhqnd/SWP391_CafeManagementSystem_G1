@@ -111,9 +111,11 @@ public class AdminRecipeController extends HttpServlet {
             //   để người dùng biết giá vốn đang được tính từ đâu.
             // ... Trong AdminRecipeController.java, tiếp tục doGet tới chỗ đặt recipeCost, recipeCostComplete và
             //     missingCostIngredients; admin-recipes.jsp dùng các giá trị này hiện chi phí hoặc phần còn thiếu.
+
             // [SQL11-44] Giá vốn công thức đang mở: Java cộng giá nhập mới nhất nhân định lượng từng dòng.
             // . Nguồn là getAllProductIngredientsMap và getLatestPurchasePrices; thiếu giá nhập thì đánh dấu
             //   chưa đủ dữ liệu.
+
             // [SUA11-08] Luyện sửa: Giá vốn công thức đang mở cộng thêm 2000đ bao bì.
             // . Cộng một lần sau vòng lặp tính nguyên liệu, không cộng 2000 vào từng dòng.
             // . Cần thống nhất với productCost của từng món bên dưới và recalculateCost trong
@@ -160,6 +162,7 @@ public class AdminRecipeController extends HttpServlet {
                 //   sản phẩm.
                 // . Không lấy giá bán làm giá vốn; món thiếu giá nhập được đánh dấu thay vì kết luận chi phí
                 //   bằng 0.
+
                 // [SUA11-09] Luyện sửa: Giá vốn trên từng thẻ món cộng thêm một khoản cố định.
                 // . Nếu yêu cầu thêm phí cho mỗi phần thì cộng một lần sau khi tính xong nguyên liệu của món
                 //   đó.
@@ -271,9 +274,9 @@ public class AdminRecipeController extends HttpServlet {
             productIngredientDAO.saveRecipe(productId, recipeIngredients);
             saved = true;
             // [CTL07]
-            // . Khi saveRecipe thực hiện xong, chương trình quay về doPost trong AdminRecipeController.java. Em đặt
-            //   thông báo thành công rồi mở lại trang để doGet đọc công thức mới, tính giá vốn và đưa dữ liệu về
-            //   admin-recipes.jsp.
+            // . saveRecipe ghi xong và trả về AdminRecipeController.doPost. Em đặt thông báo thành công rồi mở
+            //   lại trang; doGet đọc công thức vừa lưu, tính lại giá vốn và chuyển dữ liệu sang
+            //   admin-recipes.jsp để hiển thị.
             // ... Đọc tiếp tại admin-recipes.jsp, tìm [CTL08].
 
             session.setAttribute("recipeMessage", "Đã lưu công thức cho món “" + product.getName() + "”.");
@@ -307,11 +310,13 @@ public class AdminRecipeController extends HttpServlet {
     }
 
     // [CTL09]
-    // . Khi lưu lỗi và đã xác định được mã món, doPost gọi submittedRows để giữ mã nguyên liệu cùng định
-    //   lượng đúng từng dòng, kể cả dòng trống hoặc bị trùng. Em giữ tối đa 101 dòng trong recipeDraft;
-    //   doGet lấy bản này cho recipeFormRows để mở lại hộp sửa, không ghi đè công thức đang lưu.
-    // ... Quay lại doPost trong AdminRecipeController.java sau submittedRows để giữ recipeDraft và thêm productId
-    //     vào đường dẫn; doGet mở lại hộp sửa để kết thúc lần lưu lỗi.
+    // . Khi lưu lỗi và đã có mã món, doPost gọi submittedRows để giữ mã nguyên liệu và định lượng theo đúng
+    //   từng dòng, kể cả dòng trống hoặc bị trùng. Em giữ tối đa 101 dòng trong recipeDraft để người dùng sửa
+    //   tiếp.
+    // . doGet dùng bản này dựng lại các ô trong hộp sửa công thức. Các dòng nhập dở chưa được ghi vào
+    //   product_ingredients, nên công thức đang lưu vẫn được giữ.
+    // ... Quay lại doPost trong AdminRecipeController.java sau submittedRows để giữ recipeDraft và thêm
+    //   productId vào đường dẫn; doGet mở lại hộp sửa để kết thúc lần lưu lỗi.
     private List<Map<String, String>> submittedRows(String[] ingredientIds, String[] quantities) {
         List<Map<String, String>> rows = new ArrayList<>();
         int length = Math.max(ingredientIds == null ? 0 : ingredientIds.length,
@@ -326,11 +331,12 @@ public class AdminRecipeController extends HttpServlet {
     }
 
     // [CTL04]
-    // . Trong parseIngredients của AdminRecipeController.java, em kiểm tra công thức có ít nhất một nguyên
-    //   liệu và không gửi quá 100 dòng. Dòng đã nhập phải đủ nguyên liệu, định lượng và không trùng nguyên
-    //   liệu. Em gọi MenuValidation.quantity trong MenuValidation.java để kiểm tra định lượng dương, tối đa
-    //   999.999.999,999 và ba số thập phân. Có lỗi thì báo về doPost để chưa lưu; đúng hết thì trả danh sách
-    //   hợp lệ về doPost.
+    // . Hàm parseIngredients trong AdminRecipeController.java nhận mã món, các mã nguyên liệu và định lượng. Em
+    //   kiểm tra công thức có nguyên liệu, không quá 100 dòng, các dòng đã nhập phải đủ thông tin và không
+    //   trùng nguyên liệu.
+    // . Với từng định lượng, em gọi MenuValidation.quantity để kiểm tra số dương, tối đa 999.999.999,999 và
+    //   không quá ba chữ số thập phân. Đúng hết thì trả danh sách về doPost để lưu; sai thì báo lỗi để doPost
+    //   giữ form.
     // ... Đọc tiếp tại AdminRecipeController.java, tìm [CTL05].
     private List<ProductIngredient> parseIngredients(int productId, String[] ingredientIds, String[] quantities) {
 

@@ -25,11 +25,12 @@ public final class MenuValidation {
     }
 
     // [SPG03]
-    // . Từ AdminProductsController.save, em gọi money trong MenuValidation.java để kiểm tra giá cơ bản.
-    //   Phụ thu size và giá topping cũng dùng hàm này qua parseNonNegative. Em gọi decimal ngay bên dưới,
-    //   truyền giới hạn tiền và hai số thập phân; đúng thì trả số về nơi gọi để ghép vào sản phẩm, sai thì báo lỗi.
+    // . AdminProductsController.save gọi money trong MenuValidation.java để kiểm tra giá cơ bản. Phụ thu size
+    //   và giá topping cũng gọi hàm này qua parseNonNegative.
+    // . Em gọi decimal cùng file để kiểm tra số không âm, giới hạn tiền và tối đa hai chữ số thập phân. Đúng
+    //   thì trả số về save hoặc parseNonNegative để ghép vào Product; sai thì báo lỗi và dừng lưu.
     // ... Quay lại AdminProductsController.java sau MenuValidation.money: save nhận giá cơ bản, còn
-    //     parseNonNegative trả phụ thu hoặc giá topping về buildVariantsConfig trước khi ghép Product.
+    //   parseNonNegative trả phụ thu hoặc giá topping về buildVariantsConfig trước khi ghép Product.
     public static BigDecimal money(String raw, String label) {
         return decimal(raw, label, 2, MAX_MONEY, "9.999.999.999,99", false);
     }

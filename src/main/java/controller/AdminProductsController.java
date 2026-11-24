@@ -164,9 +164,8 @@ public class AdminProductsController extends HttpServlet {
 
     @Override
     // [SPL03]
-    // . Khi nhận form tại doPost trong AdminProductsController.java, em đọc action để biết nút vừa bấm. Với
-    //   action=save, em gọi save ngay trong controller để thêm hoặc sửa sản phẩm; toggle đổi trạng thái bán,
-    //   còn delete kiểm tra điều kiện rồi xóa.
+    // . doPost trong AdminProductsController.java nhận action=save từ nút Thêm sản phẩm hoặc Lưu thay đổi. Em
+    //   gọi save trong cùng file, truyền request và session để đọc thông tin sản phẩm, kiểm tra rồi lưu.
     // ... Đọc tiếp tại AdminProductsController.java, tìm [SPL04].
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
@@ -208,11 +207,12 @@ public class AdminProductsController extends HttpServlet {
     }
 
     // [SPL09]
-    // . Nếu thao tác lưu sản phẩm gặp lỗi sau khi đọc được form, em gọi preserveDraftAfterSaveError để giữ mã món, danh mục,
-    //   tên, giá, mô tả và cấu hình dựng lại vào productDraft. Lần mở trang tiếp theo dùng bản này để
-    //   điền form cho người dùng sửa tiếp; tệp ảnh mới không được giữ nên cần chọn lại nếu muốn gửi lại.
-    // ... Quay lại nhánh catch của doPost trong AdminProductsController.java sau preserveDraftAfterSaveError; đặt
-    //     productError rồi chuyển trang, doGet đưa productDraft về form để kết thúc lần lưu lỗi.
+    // . Khi lưu lỗi sau khi đọc được form, doPost gọi preserveDraftAfterSaveError để giữ mã món, danh mục, tên,
+    //   giá, mô tả và từng dòng size/topping vào productDraft.
+    // . doGet lấy bản này điền lại form để người dùng sửa tiếp. Đây chỉ là dữ liệu nhập dở, chưa lưu vào
+    //   products; ảnh mới cần chọn lại.
+    // ... Quay lại nhánh catch của doPost trong AdminProductsController.java sau preserveDraftAfterSaveError;
+    //   đặt productError rồi chuyển trang, doGet đưa productDraft về form để kết thúc lần lưu lỗi.
     private void preserveDraftAfterSaveError(String action, HttpServletRequest request, HttpSession session) {
         if (!"save".equals(action)) return;
         int id = parseDraftInt(request.getParameter("id"));
@@ -251,9 +251,10 @@ public class AdminProductsController extends HttpServlet {
     }
 
     // [SPL04]
-    // . Đến save trong AdminProductsController.java, em nhận các ô, ảnh, size và topping từ form. Em kiểm
-    //   tra từng phần rồi ghép thông tin vào Product để chuẩn bị lưu; thêm mới thì đặt món đang bán, còn sửa
-    //   thì giữ trạng thái hiện tại.
+    // . Trong AdminProductsController.save, em đọc id cùng thông tin món, ảnh, size và topping từ form. id=0 là
+    //   thêm mới; id lớn hơn 0 là sửa sản phẩm có mã đó.
+    // . Em kiểm tra các ô rồi đặt dữ liệu vào Product, gồm cả id để DAO chọn thêm hay sửa. Món mới được đặt
+    //   đang bán; món đang sửa giữ trạng thái hiện tại.
     // ... Đọc tiếp tại AdminProductsController.java, tìm [SPL05].
     private void save(HttpServletRequest request, HttpSession session)
             throws SQLException, ClassNotFoundException, ServletException, IOException {
@@ -293,14 +294,13 @@ public class AdminProductsController extends HttpServlet {
             throw new IllegalArgumentException("Mô tả không được dài quá 5000 ký tự.");
         }
         // [SPAN02]
-        // . Trong save (kiểm tra và lưu sản phẩm) của AdminProductsController.java, em nhận ảnh imageFile và lựa
-        //   chọn removeImage. Em kiểm tra dung lượng, loại và nội dung ảnh qua normalizeImageType (nhận biết
-        //   loại tệp ảnh được hỗ trợ), matchesImageSignature (kiểm tra nội dung tệp đúng loại ảnh). Tệp hợp lệ
-        //   mới được chuyển cho ProductDAO.saveProduct (ghi sản phẩm) để lưu cùng món.
-        // .. Em chỉ nhận ảnh JPG, PNG, GIF hoặc WebP, tối đa 5 MB; nếu sai thì báo lỗi và giữ bản thông tin đang
-        //    nhập.
+        // . AdminProductsController.save nhận tệp imageFile và lựa chọn removeImage từ form. Em kiểm tra dung
+        //   lượng, gọi normalizeImageType để nhận loại ảnh và matchesImageSignature để kiểm tra dữ liệu tệp có
+        //   đúng loại đó không.
+        // . Tệp hợp lệ được chuyển tới ProductDAO.saveProduct để lưu cùng món. Ảnh chỉ nhận JPG, PNG, GIF hoặc
+        //   WebP tối đa 5 MB; sai thì báo lỗi để người dùng sửa form.
         // ... Trong AdminProductsController.java, tiếp tục save sau phần đọc imageData; khi thông tin món cũng
-        //     đúng, dữ liệu ảnh được truyền vào productDAO.saveProduct trong cùng lần lưu.
+        //   đúng, dữ liệu ảnh được truyền vào productDAO.saveProduct trong cùng lần lưu.
         if (imagePart != null && imagePart.getSize() > 0) {
             if (imagePart.getSize() > MAX_IMAGE_SIZE) {
                 throw new IllegalArgumentException("Ảnh sản phẩm không được lớn hơn 5 MB.");
@@ -349,6 +349,7 @@ public class AdminProductsController extends HttpServlet {
     //   MenuValidation.java để kiểm tra giá. Em truyền cả tên ô để nếu sai thì báo đúng Giá bán cơ bản;
     //   số không âm, tối đa hai số thập phân và 9.999.999.999,99 mới được đưa vào sản phẩm để lưu.
     // ... Đọc tiếp tại MenuValidation.java, tìm [SPG03].
+
         // [SUA11-02] Luyện sửa: Nhập giá sản phẩm 10000đ, khi lưu cộng thêm 20000đ.
         // . Đây là giá cơ bản được gán vào Product và lưu database; sửa ở đây sẽ ảnh hưởng các nơi đọc giá món.
         // . Nếu cộng thêm tiền thì phải kiểm tra cả giá sau cộng. Yêu cầu chỉ tăng giá trong giỏ phải xử lý ở
@@ -367,18 +368,18 @@ public class AdminProductsController extends HttpServlet {
 
         product.setVariantsConfig(buildVariantsConfig(request, recipeInstructions));
         // [SPL05]
-        // . Khi thông tin hợp lệ, em gọi saveProduct trong ProductDAO.java để ghi sản phẩm. Em truyền Product,
-        //   dữ liệu ảnh và lựa chọn xóa ảnh, vì thông tin món và ảnh phải được lưu cùng nhau trước khi báo thành
-        //   công.
+        // . Kiểm tra xong, em gọi saveProduct trong ProductDAO.java, truyền Product, dữ liệu ảnh và lựa chọn
+        //   xóa ảnh. Hàm này lưu thông tin món cùng ảnh, rồi trả kết quả về AdminProductsController.save để báo
+        //   đã lưu hay chưa lưu được.
         // ... Đọc tiếp tại ProductDAO.java, tìm [SPL06].
         if (!productDAO.saveProduct(product, imageData, imageType, imageName, removeImage)) {
             throw new IllegalArgumentException("Không tìm thấy sản phẩm cần cập nhật.");
         }
 
         // [SPL07]
-        // . Khi ProductDAO.saveProduct trả thành công, em quay lại save trong AdminProductsController.java để
-        //   xóa bản nhập dở và đặt productMessage. Sau đó doPost mở lại trang, doGet đọc danh sách mới và đưa về
-        //   admin-products.jsp để hiển thị.
+        // . Khi ProductDAO.saveProduct trả thành công, AdminProductsController.save xóa bản nhập dở và đặt
+        //   productMessage. doPost mở lại trang quản lý; doGet đọc danh sách mới rồi chuyển sang
+        //   admin-products.jsp để hiện thông báo và sản phẩm vừa lưu.
         // ... Đọc tiếp tại admin-products.jsp, tìm [SPL08].
         session.removeAttribute("productDraft");
         session.setAttribute("productMessage", id > 0 ? "Đã cập nhật món '" + name + "'." : "Đã thêm món '" + name + "'.");

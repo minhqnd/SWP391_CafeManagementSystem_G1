@@ -162,9 +162,9 @@ public class ProfileController extends HttpServlet {
         String address=AccountValidation.text(request.getParameter("address"));
         java.util.Map<String,String> errors=new java.util.LinkedHashMap<>();
         // [HSL03]
-        // . Sau khi nhận các ô trong update, em gọi các hàm của AccountValidation.java để kiểm tra tên, số điện
-        //   thoại, email, ngày sinh và địa chỉ. Em giữ lỗi theo từng ô trong errors; có lỗi thì trả form để sửa,
-        //   đúng hết mới chuyển sang bước lưu.
+        // . Trong ProfileController.update, em gọi AccountValidation để kiểm tra họ tên, số điện thoại, email,
+        //   ngày sinh và địa chỉ. Lỗi của ô nào được giữ cùng tên ô đó trong errors để hiện đúng vị trí. Còn
+        //   lỗi thì hiện lại form; không còn lỗi mới chuyển sang lưu.
         // ... Đọc tiếp tại ProfileController.java, tìm [HSL04].
         if(AccountValidation.nameError(name)!=null)errors.put("fullName",AccountValidation.nameError(name));
         if(AccountValidation.phoneError(phone)!=null)errors.put("phone",AccountValidation.phoneError(phone));

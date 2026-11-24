@@ -486,16 +486,19 @@
                                                         <label class="form-label-custom">Địa chỉ Email</label>
 
                                                         <%-- [HSEM01]
-                                                             . Ô Email trong profile.jsp được validate (kiểm tra giá trị của
-                                                               một ô nhập) và checkContact (kiểm tra liên hệ trùng ngay trên
-                                                               form) của account-validation.js kiểm tra trước khi lưu. Khi
-                                                               gửi, ProfileController.doPost gọi update (kiểm tra và cập
-                                                               nhật hồ sơ) rồi AccountValidation.emailError (kiểm tra định
-                                                               dạng và độ dài email) để kiểm tra lại; địa chỉ hợp lệ mới tới
-                                                               UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ
-                                                               mới) để tìm trùng và ghi.
-                                                             ... Đọc tiếp tại ProfileController.java, tìm [HSEM02] để xem cách nhận email
-                                                                 trước khi kiểm tra và lưu.
+                                                             . Khi sửa Email trong profile.jsp,
+                                                               account-validation.js gọi validate để kiểm tra
+                                                               định dạng và checkContact để tìm email đã được
+                                                               dùng. Đúng thì form gửi email tới
+                                                               ProfileController.doPost.
+                                                             . doPost gọi update; hàm này dùng
+                                                               AccountValidation.emailError để kiểm tra lại rồi
+                                                               truyền email tới UserDAO.updateUserProfile. DAO
+                                                               tìm email thuộc tài khoản khác trước khi ghi hồ
+                                                               sơ của người đang đăng nhập.
+                                                             ... Đọc tiếp tại ProfileController.java, tìm
+                                                               [HSEM02] để xem cách nhận email trước khi kiểm
+                                                               tra và lưu.
                                                         --%>
                                                         <input type="email" name="email" maxlength="150"
                                                             class="form-control-custom w-100 profile-input"

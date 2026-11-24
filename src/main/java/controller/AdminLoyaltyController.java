@@ -68,8 +68,10 @@ public class AdminLoyaltyController extends HttpServlet {
             //   điểm và số giao dịch từ LoyaltyTransactionDAO. Với tiền quy đổi, em lấy tổng điểm chia lấy phần
             //   nguyên cho mốc đổi rồi nhân tiền giảm mỗi lần đổi, sau đó đưa các số về trang.
             // ... Đọc tiếp tại LoyaltyTransactionDAO.java, tìm [TDTS02].
+
             // [SQL12-13] Thẻ Giá trị quy đổi: Java lấy tổng điểm chia nguyên cho mốc đổi rồi nhân tiền giảm.
             // . Nguồn là getTotalPoints và getSettingsStrict; Math.round làm tròn tiền trước khi hiển thị.
+
             // [SUA12-05] Luyện sửa: Thay cách tính thẻ Giá trị quy đổi của toàn bộ điểm.
             // . Hiện lấy tổng điểm chia nguyên cho mốc đổi, nhân tiền giảm rồi làm tròn; mốc và tiền được đọc
             //   từ settings.
@@ -92,21 +94,20 @@ public class AdminLoyaltyController extends HttpServlet {
             request.setAttribute("transactions", loyaltyDAO.findRecent(50));
 
             // [TDTK02]
-            // . Khi nhận phone trong doGet của AdminLoyaltyController.java, em chuẩn hóa số và kiểm tra định dạng.
-            //   Số hợp lệ mới được đưa vào findCustomerByPhone trong LoyaltyTransactionDAO.java để tìm khách; số sai
-            //   thì báo lỗi và không dùng khách mặc định thay thế.
-            // .. Chỉ khi chưa gửi số để tra cứu thì em mới lấy khách mặc định; số nhập sai hoặc không tìm được sẽ
-            //    được báo lỗi.
+            // . doGet trong AdminLoyaltyController.java nhận phone từ form tra cứu. Em làm gọn số điện thoại
+            //   bằng AccountValidation.phone rồi kiểm tra đủ 10 chữ số, bắt đầu bằng 0. Đúng mới gọi
+            //   LoyaltyTransactionDAO.findCustomerByPhone để tìm khách.
+            // .. Chưa gửi số để tìm thì lấy khách mặc định. Đã gửi số nhưng nhập sai hoặc không tìm thấy thì
+            //   hiện lỗi tương ứng.
             // ... Đọc tiếp tại LoyaltyTransactionDAO.java, tìm [TDTK03].
             String rawPhone = request.getParameter("phone");
             // [TDSDT02]
-            // . Ở doGet, em nhận phone từ ô Tra cứu. Đầu vào dài quá 64 ký tự bị coi là sai; số bình thường được
-            //   AccountValidation.phone (chuẩn hóa số điện thoại) chuẩn hóa và phoneError (kiểm tra định dạng số
-            //   điện thoại) kiểm tra 10 chữ số bắt đầu bằng 0. Nếu sai thì không gọi tìm khách; nếu đúng thì dùng
-            //   findCustomerByPhone (tìm khách theo số điện thoại), còn không gửi phone mới dùng findDefaultCustomer
-            //   (chọn khách ban đầu khi chưa tra cứu). Kết quả và lookupError được đưa về admin-loyalty.jsp.
-            // ... Trong AdminLoyaltyController.java, đọc tiếp nhánh chọn activeCustomer trong doGet; kết quả tra
-            //     cứu và lookupError được đưa tới admin-loyalty.jsp để kết thúc tra cứu.
+            // . doGet nhận phone từ ô Tra cứu. Chuỗi dài quá 64 ký tự bị báo sai; các số khác được
+            //   AccountValidation.phone làm gọn, rồi phoneError kiểm tra đủ 10 chữ số bắt đầu bằng 0.
+            // . Đúng mới gọi findCustomerByPhone; sai thì hiện lỗi. Chỉ khi chưa gửi phone mới gọi
+            //   findDefaultCustomer. doGet đưa khách tìm được và lookupError về admin-loyalty.jsp để hiển thị.
+            // ... Trong AdminLoyaltyController.java, đọc tiếp nhánh chọn activeCustomer trong doGet; kết quả
+            //   tra cứu và lookupError được đưa tới admin-loyalty.jsp để kết thúc tra cứu.
             String phone = rawPhone != null && rawPhone.length() > 64
                     ? rawPhone.substring(0, 64) : AccountValidation.phone(rawPhone);
             boolean invalidPhone = rawPhone != null && (rawPhone.length() > 64
@@ -137,9 +138,11 @@ public class AdminLoyaltyController extends HttpServlet {
                 //   phần nguyên cho mốc đổi, rồi nhân tiền giảm mỗi lần đổi. Em đưa kết quả customerPointValue về
                 //   admin-loyalty.jsp, đặt cạnh số dư điểm để đối chiếu.
                 // ... Đọc tiếp tại admin-loyalty.jsp, tìm [TDSD02].
+
                 // [SQL12-14] Tiền có thể đổi của một khách: Java dùng số điểm riêng của khách với bộ quy tắc
                 //   hiện tại.
                 // . Không lấy giá trị quy đổi của toàn hệ thống để hiển thị cho từng khách.
+
                 // [SUA12-06] Luyện sửa: Thay cách tính tiền có thể đổi của khách đang xem.
                 // . Dùng điểm riêng của khách, chia nguyên cho mốc rồi nhân tiền giảm; phải cùng quy tắc với
                 //   phần tổng quan và hồ sơ.
@@ -158,9 +161,8 @@ public class AdminLoyaltyController extends HttpServlet {
             }
 
             // [TDQT08]
-            // . Khi doGet trong AdminLoyaltyController.java đã chuẩn bị xong quy tắc, thông tin khách, lịch sử và
-            //   thông báo, em chuyển dữ liệu sang admin-loyalty.jsp bằng forward để trang dựng lại màn hình với kết
-            //   quả hiện tại.
+            // . Chuẩn bị xong dữ liệu trong doGet, em chuyển quy tắc, thông tin khách, lịch sử và thông báo
+            //   sang admin-loyalty.jsp. Trang dùng những dữ liệu này để hiện lại kết quả hiện tại.
             // ... Đọc tiếp tại admin-loyalty.jsp, tìm [TDQT09].
             moveFlash(session, request, "loyaltyMessage");
             moveFlash(session, request, "loyaltyError");
@@ -177,11 +179,11 @@ public class AdminLoyaltyController extends HttpServlet {
     @Override
 
     // [TDQT02]
-    // . Khi nhận form tại doPost trong AdminLoyaltyController.java, em đọc action=updateRules rồi gọi
-    //   updateRules ngay trong controller để kiểm tra và lưu quy tắc. Hàm nhận dữ liệu form, đọc ba giá trị
-    //   và kiểm tra từng ô trước khi ghi bộ mới.
+    // . doPost trong AdminLoyaltyController.java nhận action=updateRules từ nút Lưu quy tắc. Em gọi
+    //   updateRules(request) cùng file để đọc ba ô tiền tích điểm, mốc đổi và tiền giảm, rồi kiểm tra trước khi
+    //   lưu.
     // ... Trong AdminLoyaltyController.java, theo lời gọi updateRules(request) tới định nghĩa private void
-    //     updateRules bên dưới, rồi theo ruleValue để kiểm tra từng ô trước khi ghi.
+    //   updateRules bên dưới, rồi theo ruleValue để kiểm tra từng ô trước khi ghi.
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         if (!ScaffoldAccess.requireAdmin(request, response)) return;
         request.setCharacterEncoding("UTF-8");
@@ -221,12 +223,12 @@ public class AdminLoyaltyController extends HttpServlet {
                 updateRules(request);
 
                 // [TDQT06]
-                // . Khi saveLoyaltyRules lưu được cả bộ, chương trình quay qua updateRules về doPost trong
-                //   AdminLoyaltyController.java. Em đặt thông báo thành công rồi mở lại /admin/loyalty để đọc và hiển
-                //   thị bộ quy tắc vừa lưu.
-                // ... Trong AdminLoyaltyController.java, đọc cuối doPost tại sendRedirect rồi quay tới doGet của
-                //     cùng đường dẫn; doGet đọc bộ mới bằng getSettingsStrict và mở admin-loyalty.jsp để hiện kết
-                //     quả.
+                // . Lưu thành công thì saveLoyaltyRules trả true, updateRules kết thúc và doPost trong
+                //   AdminLoyaltyController.java tiếp tục đặt thông báo. Em mở lại /admin/loyalty để doGet đọc
+                //   bộ quy tắc vừa lưu trước khi đưa lên màn hình.
+                // ... Trong AdminLoyaltyController.java, đọc cuối doPost tại sendRedirect rồi quay tới doGet
+                //   của cùng đường dẫn; doGet đọc bộ mới bằng getSettingsStrict và mở admin-loyalty.jsp để hiện
+                //   kết quả.
 
                 session.setAttribute("loyaltyMessage", "Đã lưu quy tắc tích và đổi điểm.");
             } else if ("adjust".equals(action)) {
@@ -234,11 +236,11 @@ public class AdminLoyaltyController extends HttpServlet {
                 //   AdminLoyaltyController.java và truyền request để nhận mã khách, số điểm cùng lựa chọn cộng hoặc trừ.
                 adjustPoints(request);
                 // [TDDC06]
-                // . Khi cập nhật điểm và ghi lịch sử thành công, chương trình quay về doPost trong
-                //   AdminLoyaltyController.java. Em đặt thông báo rồi mở lại trang để doGet đọc số dư và lịch sử mới,
-                //   đưa về admin-loyalty.jsp hiển thị kết quả vừa cộng hoặc trừ.
-                // ... Xem kết quả tại admin-loyalty.jsp, vùng loyaltyMessage/loyaltyError, khối activeCustomer và
-                //     bảng transactions; kết thúc điều chỉnh khi thông báo, số dư và lịch sử mới đã hiện.
+                // . DAO cập nhật xong số dư và lịch sử, rồi trả kết quả về AdminLoyaltyController.adjustPoints.
+                //   Hàm này kết thúc, doPost đặt thông báo và mở lại trang để doGet đọc số dư, lịch sử mới sang
+                //   admin-loyalty.jsp.
+                // ... Xem kết quả tại admin-loyalty.jsp, vùng loyaltyMessage/loyaltyError, khối activeCustomer
+                //   và bảng transactions; kết thúc điều chỉnh khi thông báo, số dư và lịch sử mới đã hiện.
                 session.setAttribute("loyaltyMessage", "Đã cập nhật điểm khách hàng và ghi lịch sử giao dịch.");
             } else {
                 throw new IllegalArgumentException("Thao tác không hợp lệ.");
@@ -312,11 +314,10 @@ public class AdminLoyaltyController extends HttpServlet {
                 LoyaltyValidation.MAX_RULE_MONEY, errors);
 
         // [TDQT04]
-        // . Khi ruleValue kiểm tra xong ba ô, em quay lại updateRules và xem errors. Nếu có lỗi thì giữ lời báo
-        //   theo từng ô để người dùng sửa; nếu đúng hết thì gọi ShopSettingDAO.saveLoyaltyRules, truyền ba số đã
-        //   kiểm tra để ghi cả bộ quy tắc.
-        // ... Trong AdminLoyaltyController.java, đọc tiếp nhánh errors và lời gọi settingDAO.saveLoyaltyRules ngay
-        //     bên dưới; còn lỗi thì doPost giữ form, đúng hết mới gọi hàm ghi trong ShopSettingDAO.java.
+        // . Quay lại updateRules, em xem errors sau khi ruleValue kiểm tra ba ô. Còn lỗi thì giữ lời báo theo ô
+        //   và dừng lưu. Không còn lỗi mới gọi ShopSettingDAO.saveLoyaltyRules, truyền ba số để ghi bộ quy tắc.
+        // ... Trong AdminLoyaltyController.java, đọc tiếp nhánh errors và lời gọi settingDAO.saveLoyaltyRules
+        //   ngay bên dưới; còn lỗi thì doPost giữ form, đúng hết mới gọi hàm ghi trong ShopSettingDAO.java.
         if (!errors.isEmpty()) {
             request.getSession().setAttribute("loyaltyFieldErrors", errors);
             throw new IllegalArgumentException("Vui lòng kiểm tra các trường quy tắc được đánh dấu.");
@@ -331,11 +332,11 @@ public class AdminLoyaltyController extends HttpServlet {
     }
 
     // [TDDC02]
-    // . Khi doPost nhận action=adjust, em gọi adjustPoints trong AdminLoyaltyController.java để kiểm tra yêu
-    //   cầu cộng/trừ điểm. Em nhận mã khách, số điểm và loại thao tác; hợp lệ mới gọi adjustPoints trong
-    //   LoyaltyTransactionDAO.java, truyền điểm dương để cộng hoặc âm để trừ.
-    // .. Mã khách phải dương và số điểm nhập phải là số nguyên từ 1 đến 1.000.000 trước khi chuyển sang bước
-    //    cập nhật.
+    // . doPost nhận action=adjust rồi gọi adjustPoints trong AdminLoyaltyController.java. Em đọc mã khách, số
+    //   điểm và lựa chọn cộng/trừ; hợp lệ mới gọi adjustPoints trong LoyaltyTransactionDAO.java.
+    // . Nếu cộng thì truyền số điểm dương, nếu trừ thì truyền số âm. Ví dụ nhập trừ 30 điểm thì DAO nhận -30.
+    // .. Mã khách phải dương, điểm nhập là số nguyên từ 1 đến 1.000.000, loại thao tác phải là add hoặc
+    //   subtract.
     // ... Đọc tiếp tại LoyaltyTransactionDAO.java, tìm [TDDC03].
     private void adjustPoints(HttpServletRequest request) throws SQLException {
 
@@ -360,6 +361,7 @@ public class AdminLoyaltyController extends HttpServlet {
         // . Sau khi kiểm tra, em gọi adjustPoints (cập nhật điểm và ghi lịch sử) trong
         //   LoyaltyTransactionDAO.java để cập nhật điểm và ghi lịch sử. Em truyền customerId cùng điểm dương nếu
         //   cộng, điểm âm nếu trừ, để hàm tính số dư cho đúng khách và đúng hướng.
+
         // [SUA12-02] Luyện sửa: Khi cộng 10 điểm thì tặng thêm 5, khách thực nhận 15 điểm.
         // . Đổi điểm ở nhánh add trước khi gọi DAO; nhánh subtract vẫn truyền số âm như quy định.
         // . Truyền cùng một số điểm thực tế để DAO vừa tính số dư vừa ghi ADJUST; kiểm tra giới hạn sau khi
@@ -376,12 +378,12 @@ public class AdminLoyaltyController extends HttpServlet {
     private long ruleValue(HttpServletRequest request, String field, String label,
                            long min, long max, Map<String, String> errors) {
         try {
-            // . Em gọi wholeNumber (kiểm tra số nguyên trong giới hạn) trong LoyaltyValidation.java, truyền nội dung
-            //   ô, tên hiển thị và hai giới hạn để kiểm tra số nguyên. Hàm trả số về ruleValue (đọc và kiểm tra một
-            //   ô quy tắc); nếu báo lỗi thì em bắt tại đây để gắn lời báo vào đúng ô đang nhập.
+            // . Em gọi LoyaltyValidation.wholeNumber, truyền nội dung ô, tên ô và hai giới hạn.
+            //   Hàm trả số nếu đúng; báo lỗi thì nhánh catch bên dưới giữ lời báo cho đúng ô đang nhập.
             // ... Đọc tiếp tại LoyaltyValidation.java, tìm [TDQT03].
             return LoyaltyValidation.wholeNumber(request.getParameter(field), label, min, max);
         } catch (IllegalArgumentException e) {
+            // . Giữ lời báo vào errors rồi trả 0 tạm; updateRules thấy errors nên dừng trước khi lưu quy tắc.
             errors.put(field, e.getMessage());
             return 0;
         }

@@ -29,10 +29,10 @@ public class UserDAO extends BaseDAO {
     }
 
     // [DNL04]
-    // . Trong hàm login của UserDAO.java, em tìm tài khoản theo định danh vừa nhận rồi gọi
-    //   PasswordHasher.verify để so mật khẩu nhập với giá trị đang lưu. Đúng thông tin và đủ điều kiện thì
-    //   trả User về LoginController.doPost; không đúng thì trả null. Nếu không đọc được dữ liệu, em báo lỗi
-    //   riêng để controller thông báo lỗi hệ thống, tránh coi đó là nhập sai mật khẩu.
+    // . Trong UserDAO.login, em tìm dòng users có email hoặc số điện thoại vừa nhập. Tài khoản phải ACTIVE, sau
+    //   đó PasswordHasher.verify đối chiếu mật khẩu nhập với mật khẩu đang lưu.
+    // . Đúng thì em trả User về LoginController.doPost; sai thì trả null. Lỗi đọc database được báo riêng để
+    //   controller hiện lời báo lỗi hệ thống.
     // ... Đọc tiếp tại LoginController.java, tìm [DNL05].
     public User login(String identifier, String password) {
         if (identifier == null || password == null || identifier.length() > 150 || password.length() > 255) {
@@ -114,10 +114,10 @@ public class UserDAO extends BaseDAO {
     }
 
     // [DKL06]
-    // . Đến hàm register trong UserDAO.java, em nhận User và mật khẩu từ controller. Em gọi
-    //   PasswordHasher.hash để băm mật khẩu rồi thêm tài khoản ACTIVE vào users. Thêm được dòng thì trả true
-    //   về RegisterController.doPost. Trùng dữ liệu hoặc không thêm được dòng thì trả false; lỗi đọc/ghi khác
-    //   được báo riêng về controller để giữ form và thông báo chưa tạo được tài khoản.
+    // . RegisterController.doPost truyền User và mật khẩu đến hàm register trong UserDAO.java. Em gọi
+    //   PasswordHasher.hash để tạo chuỗi băm từ mật khẩu, rồi thêm tài khoản ACTIVE vào bảng users.
+    // . Thêm được thì trả true về controller; trùng dữ liệu hoặc không thêm được thì trả false. Lỗi đọc/ghi
+    //   khác được báo riêng để controller giữ form và hiện kết quả chưa tạo được tài khoản.
     // ... Đọc tiếp tại RegisterController.java, tìm [DKL07].
     public boolean register(User user, String password) {
         // [SQL10-03] Tạo tài khoản: thêm tên, liên hệ, vai trò, vị trí và mật khẩu đã băm.
@@ -338,12 +338,14 @@ public class UserDAO extends BaseDAO {
     }
 
     // [HSL05]
-    // . Đến updateUserProfile trong UserDAO.java, em kiểm tra email và số điện thoại có thuộc tài khoản khác
-    //   không rồi cập nhật users theo mã người dùng còn ACTIVE. Em trả kết quả thành công hoặc lý do lỗi về
-    //   ProfileController.update để hiện đúng kết quả.
+    // . ProfileController.update gọi updateUserProfile trong UserDAO.java, truyền mã người đăng nhập và các ô
+    //   hồ sơ. Em tìm email, số điện thoại thuộc tài khoản khác trước; không trùng mới cập nhật dòng users còn
+    //   ACTIVE theo mã này.
+    // . Hàm trả chuỗi success nếu lưu được hoặc lời báo lỗi nếu chưa lưu được. ProfileController.update đọc kết
+    //   quả để cập nhật thông tin trên trang hoặc giữ form cho người dùng sửa.
     // ... Khi result là success, đọc tiếp tại ProfileController.java, tìm [HSL06] để cập nhật phiên đăng nhập.
     // ... Khi result là lỗi, quay lại update trong ProfileController.java ngay sau users.updateUserProfile;
-    //     nhánh kiểm tra result giữ các ô, hiện lỗi rồi renderProfile mở lại trang để kết thúc lần lưu lỗi.
+    //   nhánh kiểm tra result giữ các ô, hiện lỗi rồi renderProfile mở lại trang để kết thúc lần lưu lỗi.
     public String updateUserProfile(int userId, String fullName, String phone, String email, String birthday, String address) {
         // [SQL10-12] Lưu thay đổi hồ sơ: cập nhật các trường của đúng tài khoản ACTIVE.
         // . Dấu ? từ trái sang phải: 1=họ tên; 2=số điện thoại; 3=email; 4=ngày sinh hoặc NULL; 5=địa chỉ; 6=mã
@@ -355,6 +357,7 @@ public class UserDAO extends BaseDAO {
             // . Trước khi cập nhật hồ sơ trong UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ mới), em
             //   dùng email và mã người dùng để tìm tài khoản khác đã dùng địa chỉ đó. Nếu trùng thì trả lý do lỗi về
             //   ProfileController.update (kiểm tra và cập nhật hồ sơ) và chưa ghi thay đổi.
+
             // [SQL10-13] Lưu hồ sơ: kiểm tra email có thuộc người khác không.
             // . Dấu ? từ trái sang phải: 1=email đã chuẩn hóa; 2=mã người dùng hiện tại.
             try (PreparedStatement duplicate=conn.prepareStatement("SELECT id FROM users WHERE LOWER(TRIM(email))=? AND id<>? LIMIT 1")) {
