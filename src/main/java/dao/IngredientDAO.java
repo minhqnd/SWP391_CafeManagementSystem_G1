@@ -15,12 +15,18 @@ import model.Ingredient;
 
 public class IngredientDAO extends BaseDAO {
 
+    // [CTNL01]
+    // . Hàm getAllIngredients trong IngredientDAO đọc danh sách nguyên liệu cho các ô lựa chọn trên form công
+    //   thức. Danh sách được trả về doGet của AdminRecipeController để các dòng cùng dùng một nguồn nguyên
+    //   liệu.
+    //
+    // Tra cứu: Trở về AdminRecipeController.java / CTM02 ngay sau getAllIngredients; danh sách được đưa vào
+    //          form admin-recipes.jsp / CTL01.
     public List<Ingredient> getAllIngredients() {
 
         List<Ingredient> list = new ArrayList<>();
         // [SQL11-41] Ô Chọn nguyên liệu: đọc mã, tên, đơn vị và trạng thái.
-        // . Câu này đọc cả nguyên liệu ngừng hoạt động; controller/JavaScript quyết định cho chọn hay giữ dữ
-        //   liệu cũ thế nào.
+
         String sql = "SELECT id, name, unit, is_active FROM ingredients ORDER BY name ASC";
 
         try (Connection conn = getConnection();
@@ -43,18 +49,18 @@ public class IngredientDAO extends BaseDAO {
     }
 
     /** Latest received purchase unit price per ingredient. Draft and ordered POs are not inventory costs. */
-    // [CTTONG05]
-    // . Trong hàm getLatestPurchasePrices của IngredientDAO.java, em đọc đơn giá của lần nhập đã nhận gần
-    //   nhất theo từng nguyên liệu. Em trả bảng mã nguyên liệu và giá về AdminRecipeController.doGet để
-    //   nhân với định lượng, tính giá vốn công thức.
-    // ... Quay lại AdminRecipeController.java, tìm [CTTONG03] để xem cách lấy giá vừa đọc nhân với định
-    //     lượng.
+    // [CTGIA01]
+    // . Hàm getLatestPurchasePrices trong IngredientDAO lấy đơn giá từ lần nhập đã nhận gần nhất của từng
+    //   nguyên liệu. Giá quay về doGet của AdminRecipeController để tính giá vốn; nguyên liệu chưa có giá
+    //   được giữ là thiếu giá.
+    //
+    // Tra cứu: Trở về AdminRecipeController.java / CTM02 ngay sau getLatestPurchasePrices; tính chi phí tại
+    //          AdminRecipeController.java / CTG01.
     public Map<Integer, BigDecimal> getLatestPurchasePrices() {
 
         Map<Integer, BigDecimal> prices = new HashMap<>();
         // [SQL11-42] Giá nhập/Cost mỗi phần: lấy đơn giá của lần nhập đã nhận gần nhất cho từng nguyên liệu.
-        // . ROW_NUMBER chia theo nguyên liệu, xếp lần nhận mới nhất rồi lấy row_num=1; giá vốn còn phải nhân
-        //   định lượng trong Java.
+
         String sql = "SELECT ingredient_id, unit_price FROM (" +
                      "  SELECT poi.ingredient_id, poi.unit_price, " +
                      "         ROW_NUMBER() OVER (PARTITION BY poi.ingredient_id " +
@@ -268,8 +274,7 @@ public class IngredientDAO extends BaseDAO {
     /** Locks the state until the caller commits its new purchase/restock/BOM. */
     static void requireActive(Connection conn, int id) throws SQLException {
         // [SQL11-43] Trước khi thêm nguyên liệu mới vào công thức: đọc và kiểm tra trạng thái.
-        // . Dấu ? từ trái sang phải: 1=mã nguyên liệu.
-        // . FOR UPDATE giữ dòng trong lần lưu công thức; không tìm thấy hoặc ngừng hoạt động thì báo lỗi.
+
         try (PreparedStatement ps = conn.prepareStatement("SELECT is_active FROM ingredients WHERE id = ? FOR UPDATE")) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {

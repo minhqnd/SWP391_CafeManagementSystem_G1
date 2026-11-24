@@ -1,12 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
-    // [ATCU01]
-    // . login.jsp chuyển người dùng về Trang chủ kèm tab tài khoản để auth_modal.jsp mở đúng form. Đây
-    //   là đường dẫn chuyển tiếp; việc đăng nhập chỉ được xử lý ở LoginController.doPost khi người dùng
-    //   gửi form thực tế.
-    // ... Đường dẫn cũ chuyển về Trang chủ để mở hộp tài khoản. Người dùng bấm nút gửi thì theo
-    //     auth_modal.jsp, tìm [DNL01] nếu đăng nhập hoặc auth_modal.jsp, tìm [DKL01] nếu đăng ký.
+
     String legacyTab = request.getParameter("tab");
     if (!java.util.Set.of("login", "register", "forgot", "otp", "reset_password").contains(legacyTab == null ? "" : legacyTab)) legacyTab = "login";
     response.sendRedirect(request.getContextPath() + "/?tab=" + legacyTab);
@@ -407,9 +402,6 @@
                         long otpRemainingTime = 0;
                         if (lastOtpSentTime != null) {
                             long elapsed = System.currentTimeMillis() - lastOtpSentTime;
-                            // [SUA10-08] Luyện sửa: Đổi thời gian chờ Gửi lại ở trang đăng nhập riêng.
-                            // . Sửa cả điều kiện và phép tính otpRemainingTime; giữ giống
-                            //   PasswordRecoveryService.COOLDOWN và auth_modal.jsp.
                             if (elapsed < 60000) {
                                 otpRemainingTime = (60000 - elapsed) / 1000;
                             }

@@ -267,17 +267,10 @@
     <%
         ProductDAO productDAO = new ProductDAO();
         // [TCSP01]
-        // . Ở index.jsp, em gọi getBestSellingProducts trong ProductDAO.java và truyền giới hạn 4 để lấy món
-        //   nổi bật. Danh sách trả về được dùng cho banner và phần sản phẩm yêu thích, giúp nội dung Trang chủ
-        //   lấy từ các món đang bán.
-        // ... Để xem cách đọc món nổi bật, đọc ProductDAO.java, tìm [MNBC01]; hàm trả về index.jsp để dựng
-        //     banner và sản phẩm yêu thích.
+        // . Em lấy danh sách món bán chạy để giới thiệu trên trang chủ và dùng cùng thẻ món như menu.
+        //
+        // Tra tiếp: ProductDAO.java / TCSP02.
 
-        // [SUA11-01] Luyện sửa: Trang chủ lấy tối đa 8 món nổi bật thay vì 4.
-        // . Số 4 truyền tới getBestSellingProducts rồi xuống LIMIT trong SQL; đổi thành 8 để yêu cầu tối đa 8
-        //   món.
-        // . Danh sách này được dùng cho banner và sản phẩm yêu thích; kiểm tra cả hai vùng và trường hợp
-        //   database có ít món hơn giới hạn.
         List<Product> productsList = productDAO.getBestSellingProducts(4);
         request.setAttribute("bestSellerProducts", productsList);
         if (productsList != null && !productsList.isEmpty()) {
@@ -287,12 +280,10 @@
     %>
 
     <%
-        // [TCDM02]
-        // . Ở index.jsp, em gọi CategoryDAO.getAllActiveCategoriesWithCount để đọc danh mục đang hoạt động
-        //   cùng số món đang bán. Em đặt landingCategories để danh sách và số đếm bên cạnh tên được dựng từ dữ
-        //   liệu thật; khi bấm một nhóm, MenuController.doGet lọc sản phẩm theo mã danh mục đó.
-        // ... Trong index.jsp, tiếp tục tới phần lặp landingCategories để dựng danh mục bên trái; kết thúc
-        //     chuẩn bị dữ liệu khi tên và số món của các nhóm đã hiện.
+        // [TCM01]
+        // . Em đọc các danh mục hoạt động để trang chủ có các nhóm món cho khách chọn.
+        //
+        // Tra tiếp: TCM02.
         CategoryDAO categoryDAO = new CategoryDAO();
         List<Category> landingCategories = categoryDAO.getAllActiveCategoriesWithCount();
         request.setAttribute("landingCategories", landingCategories);
@@ -304,12 +295,11 @@
             <aside class="col-md-3 col-lg-2" id="homeCategories">
                 <div class="home-category-panel">
                     <div class="home-category-list" id="homeCategoryList">
-                        <%-- [TCDM01]
-                             . Danh mục bên trái lấy từ landingCategories; số cạnh tên là productCount của nhóm đó. Khi bấm, em
-                               mở /menu kèm category để MenuController.doGet gọi ProductDAO.filterProducts và chỉ hiện món còn
-                               bán của nhóm đã chọn.
-                             ... Nếu xem dữ liệu dựng danh mục ban đầu, đọc index.jsp, tìm [TCDM02]. Khi theo cú bấm tên danh
-                                 mục, đọc MenuController.java trong doGet tại phần nhận category và gọi filterProducts.
+                        <%-- [TCM02]
+                             . Trên trang chủ, em hiển thị các nhóm món từ danh sách danh mục đã đọc. Khi
+                               khách bấm một nhóm, em mở Menu với danh mục đó để họ xem các món cùng nhóm.
+
+                             Kết thúc: chọn nhóm khi menu của danh mục đó được mở.
                         --%>
                         <c:forEach var="cat" items="${landingCategories}">
                             <a class="home-category-link" href="${pageContext.request.contextPath}/menu?category=${cat.id}">
@@ -320,9 +310,7 @@
                             </a>
                         </c:forEach>
                         <c:if test="${empty landingCategories}">
-                            <%-- . Khi chưa có danh mục để dựng các nút, Xem thực đơn mở /menu không kèm bộ lọc.
-                                 MenuController.doGet đọc món đang bán trong danh mục hoạt động rồi hiển thị menu.jsp.
-                            --%>
+
                             <a class="home-category-link" href="${pageContext.request.contextPath}/menu"><img class="home-category-image" src="https://images.unsplash.com/photo-1511920170033-f8396924c348?w=160&amp;h=120&amp;fit=crop" alt="Thực đơn Aura"/><span>Xem thực đơn</span></a>
                         </c:if>
                     </div>
@@ -336,13 +324,7 @@
                                 <span class="eyebrow">${slide.first ? 'Hương vị đặc trưng Aura' : 'Được khách hàng yêu thích'}</span>
                                 <h1>${bannerProduct.name}</h1>
                                 <p>${bannerProduct.description}</p>
-                                <%-- [TCMN01]
-                                     . Nút Khám phá menu mở /menu không kèm bộ lọc. MenuController.doGet đọc danh mục hoạt động và các
-                                       món còn bán rồi đưa về menu.jsp cho khách xem. Nút Xem toàn bộ thực đơn bên dưới và banner mặc
-                                       định dùng cùng đường dẫn.
-                                     ... Yêu cầu /menu không có bộ lọc tới MenuController.doGet. Đọc tại MenuController.java, tìm mã
-                                         MNM02; danh mục hoạt động và các thẻ món hiện xong là kết thúc mở Menu.
-                                --%>
+
                                 <a class="btn btn-light btn-sm fw-bold px-3 py-2" href="${pageContext.request.contextPath}/menu">Khám phá menu</a>
                             </div>
                         </div>
@@ -353,10 +335,11 @@
                         </div>
                     </c:if>
                     <%-- [TCAN01]
-                         . Khi bấm nút trước, sau hoặc chấm chọn trên banner, em gọi show ngay trong index.jsp bằng vị trí
-                           ảnh cần xem. Hàm đổi ảnh và chấm đang sáng, không gửi dữ liệu lên controller. Bộ đếm cũng gọi hàm
-                           này để tự đổi ảnh sau mỗi sáu giây.
-                         ... Đọc tiếp tại index.jsp, tìm [TCAN02].
+                         . Khi bấm nút trước hoặc sau, em gọi show ngay trong index.jsp để chọn ảnh cần
+                           hiện. Hàm này cập nhật ảnh trên trang, không gửi yêu cầu thay đổi dữ liệu sản
+                           phẩm.
+
+                         Tra tiếp: TCAN02.
                     --%>
                     <button class="home-banner-arrow home-banner-prev" type="button" aria-label="Ảnh trước">‹</button>
                     <button class="home-banner-arrow home-banner-next" type="button" aria-label="Ảnh tiếp theo">›</button>
@@ -377,9 +360,7 @@
         <section class="home-products-section" id="homeFeaturedProducts">
             <div class="home-products-heading d-flex flex-column flex-sm-row justify-content-between align-items-sm-end gap-2">
                 <div><div class="text-primary-custom fw-bold text-uppercase mb-1" style="font-size:.72rem;letter-spacing:1.5px">Một chất phin từ Aura</div><h2>Sản phẩm được yêu thích</h2></div>
-                <%-- . Nút Xem toàn bộ thực đơn mở /menu, giống nút Khám phá menu trên banner.
-                     MenuController.doGet đọc danh sách rồi trả về menu.jsp; thao tác này chỉ mở trang xem món.
-                --%>
+
                 <a href="${pageContext.request.contextPath}/menu">Xem toàn bộ thực đơn <span class="material-symbols-outlined align-middle" style="font-size:18px">chevron_right</span></a>
             </div>
             <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-lg-4">
@@ -404,10 +385,11 @@
         });
         const dotButtons = Array.from(dots.querySelectorAll('button'));
         // [TCAN02]
-        // . Trong hàm show của index.jsp, em nhận vị trí ảnh từ nút bấm hoặc bộ đếm, tính vòng lại khi tới đầu
-        //   hoặc cuối danh sách. Em đổi active và aria-hidden của ảnh, đồng thời đổi chấm đang sáng để người
-        //   dùng biết banner nào đang được xem.
-        // ... Kết thúc mỗi lần chuyển ảnh khi banner và chấm active đã đổi sang đúng vị trí vừa chọn.
+        // . Trong hàm show của index.jsp, em chọn vị trí ảnh cần hiển thị rồi cập nhật ảnh cùng trạng
+        //   thái các nút chuyển. Thao tác này đổi phần giới thiệu ngay trên trang, không thay đổi thông
+        //   tin sản phẩm.
+        //
+        // Kết thúc: đổi ảnh trên trang.
         function show(index) {
             current = (index + slides.length) % slides.length;
             slides.forEach((slide, i) => { slide.classList.toggle('active', i === current); slide.setAttribute('aria-hidden', i !== current); });
@@ -423,10 +405,10 @@
     <jsp:include page="/components/footer.jsp" />
 
     <%-- [TCGIO01]
-         . Thanh Xem món lấy số lượng từ sessionScope.cart.totalQuantity. Khi bấm thanh hoặc nút, em gọi
-           openSelectedItemsModal trong product_detail_modal.jsp để đọc giỏ hiện tại và mở hộp danh sách món.
-           Đây là điểm chuyển từ Trang chủ sang phần xem món đang chọn của luồng đặt hàng.
-         ... Đọc tiếp tại product_detail_modal.jsp, tìm [TCGIO02].
+         . Khi người dùng bấm xem các món đang chọn, em gọi openSelectedItemsModal để điền danh sách vào
+           hộp xem lại. Từ đây người dùng có thể đối chiếu lựa chọn trước khi tiếp tục đặt hàng.
+
+         Tra tiếp: product_detail_modal.jsp / TCGIO02.
     --%>
     <!-- Sticky Bottom Selection Bar (Hiện khi đang chọn món - Bấm Xem món ra popup) -->
     <div id="stickyMiniCart" class="sticky-cart-bar ${empty sessionScope.cart || sessionScope.cart.totalQuantity == 0 ? 'd-none' : ''}" onclick="openSelectedItemsModal()"

@@ -1,16 +1,16 @@
 (() => {
     'use strict';
     const controlChars = /[\u0000-\u001f\u007f-\u009f]/;
-    // . validate gọi requiredName để kiểm tra tên ngay trên màn hình. Em nhận nội dung, tên ô và độ dài
-    //   cho phép, rồi trả lời báo nếu trống, quá dài hoặc có ký tự không hỗ trợ; đúng thì trả chuỗi rỗng.
+
+    // Kiểm tra tên theo giới hạn của ô đang nhập.
     const requiredName = (raw, label, max) => {
         const value = String(raw ?? '').trim();
         if (!value) return 'Vui lòng nhập ' + label.toLocaleLowerCase('vi') + '.';
         if (value.length > max) return label + ' tối đa ' + max + ' ký tự.';
         return controlChars.test(value) ? label + ' chứa ký tự không được hỗ trợ.' : '';
     };
-    // . money và quantity gọi decimal để kiểm tra cách viết số, số âm, giới hạn và phần thập phân.
-    //   Em so sánh chính xác cả phần lẻ để không lọt giá trị vượt giới hạn; lời báo trả về có tên ô đang lỗi.
+
+    // Kiểm tra số tiền hoặc định lượng theo giới hạn và số chữ số lẻ của từng loại.
     const decimal = (raw, label, scale, maximum, displayMax, positive = false) => {
         const value = String(raw ?? '').trim();
         if (!value) return 'Vui lòng nhập ' + label.toLocaleLowerCase('vi') + '.';
@@ -31,8 +31,8 @@
     };
     const money = (raw, label) => decimal(raw, label, 2, '9999999999.99', '9.999.999.999,99');
     const quantity = (raw, label) => decimal(raw, label, 3, '999999999.999', '999.999.999,999', true);
-    // . Với ba ô quy tắc tích điểm, validate gọi wholeNumber để chỉ nhận số nguyên trong giới hạn của
-    //   từng ô. Kết quả là lời báo cho ô sai hoặc chuỗi rỗng để form có thể tiếp tục gửi.
+
+    // Kiểm tra số nguyên theo khoảng được phép của quy tắc.
     const wholeNumber = (raw, label, min, max) => {
         const value = String(raw ?? '').trim();
         if (!value) return 'Vui lòng nhập ' + label.toLocaleLowerCase('vi') + '.';
@@ -44,16 +44,14 @@
     globalThis.AuraAdminValidation = {requiredName, money, quantity, wholeNumber};
     if (typeof document === 'undefined') return;
 
-    // . Em tìm các form danh mục, sản phẩm, công thức và quy tắc theo data-admin-form để chọn cách kiểm
-    //   tra phù hợp. Dữ liệu vẫn được kiểm tra lại ở controller khi form gửi đi.
     document.querySelectorAll('form[data-admin-form]').forEach(form => {
         const kind = form.dataset.adminForm;
         const notices = [...document.querySelectorAll(kind === 'loyalty-lookup' ? '[data-lookup-notice]' : '[data-form-notice]')];
         let submitted = notices.some(notice => notice.classList.contains('alert-danger')) || Boolean(form.querySelector('.is-invalid'));
         let serial = 0;
         const field = name => form.elements.namedItem(name);
-        // . Sau khi kiểm tra, em gọi mark bằng ô nhập và lời báo để đặt viền đỏ, hiện lỗi ngay dưới ô.
-        //   Khi ô đã đúng, lời báo và viền lỗi được bỏ đi; hàm này chỉ đổi hiển thị, chưa lưu dữ liệu.
+
+        // Đặt hoặc xóa lời báo ngay dưới đúng ô đang nhập.
         const mark = (input, message) => {
             if (!input) return;
             const wasInvalid = input.classList.contains('is-invalid');
@@ -81,31 +79,29 @@
             const errors = new Map();
             const check = (input, message) => { if (input && message && !errors.has(input)) errors.set(input, message); };
             if (kind === 'category' || kind === 'product') {
-                // [DMKT01]
-                // . Trước khi gửi form danh mục, em dùng validate kiểm tra tên, trạng thái và ảnh ngay trên trang.
-                //   Form sản phẩm cũng dùng chung phần kiểm tra tên và ảnh này. Em giữ lời báo theo đúng ô để mark
-                //   hiện lỗi; đúng hết mới cho form danh mục gửi tới AdminCategoriesController.doPost.
-                // ... validate trả lỗi cho sự kiện submit ở cuối admin-form-validation.js. Có lỗi thì dừng và hiện
-                //     dưới ô. Form danh mục đúng thì theo AdminCategoriesController.java, tìm [DML02]; form sản phẩm
-                //     đúng thì theo AdminProductsController.java, tìm mã SPL03.
+                // [DML02]
+                // . Trước khi gửi form danh mục, em kiểm tra tên, trạng thái và ảnh để báo đúng phần cần
+                //   sửa. Khi thông tin hợp lệ, form gửi tới /admin/categories để doPost trong
+                //   AdminCategoriesController tiếp nhận và xử lý việc lưu.
+                //
+                // Tra tiếp: AdminCategoriesController.java / DML03.
                 check(field('name'), requiredName(field('name')?.value, kind === 'category' ? 'Tên danh mục' : 'Tên món', kind === 'category' ? 100 : 150));
                 if (kind === 'category' && !['ACTIVE', 'INACTIVE'].includes(field('status')?.value))
                     check(field('status'), 'Vui lòng chọn trạng thái Hoạt động hoặc Tạm ẩn.');
                 const image = field('imageFile')?.files?.[0];
                 if (image?.size === 0) check(field('imageFile'), 'Tệp ảnh đã chọn trống. Vui lòng chọn ảnh khác.');
-                // [SUA11-13] Luyện sửa: Đổi giới hạn dung lượng ảnh kiểm tra trước khi gửi.
-                // . Đoạn này dùng chung danh mục và sản phẩm; giữ khớp controller của từng trang cùng lời báo
-                //   và lời nhắc JSP.
                 else if (image?.size > 5 * 1024 * 1024) check(field('imageFile'), 'Ảnh ' + (kind === 'category' ? 'danh mục' : 'sản phẩm') + ' không được lớn hơn 5 MB.');
                 else if (image && !['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(image.type))
                     check(field('imageFile'), 'Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WebP.');
             }
             if (kind === 'product') {
                 // [SPL02]
-                // . Trước khi gửi productForm, em kiểm tra tên, danh mục, giá và từng dòng size, topping. Size phải có
-                //   ít nhất một dòng và có một lựa chọn phụ thu 0. Ô sai được báo ngay bên dưới; đúng hết mới gửi tới
-                //   AdminProductsController.doPost.
-                // ... Đọc tiếp tại AdminProductsController.java, tìm [SPL03].
+                // . Trước khi gửi form sản phẩm, em kiểm tra các ô, ảnh và từng dòng size, topping để báo
+                //   đúng phần nhập sai. Size phải có ít nhất một dòng và một lựa chọn không phụ thu;
+                //   topping có thể để trống. Khi các phần đều đúng, form gửi tới /admin/products để
+                //   doPost trong AdminProductsController xử lý tiếp.
+                //
+                // Tra tiếp: AdminProductsController.java / SPL03.
                 if (!field('categoryId')?.value) check(field('categoryId'), 'Vui lòng chọn danh mục.');
                 check(field('basePrice'), money(field('basePrice')?.value, 'Giá bán cơ bản'));
                 if (field('description')?.value.trim().length > 5000) check(field('description'), 'Mô tả không được dài quá 5000 ký tự.');
@@ -133,23 +129,18 @@
                         check(amount, amountError);
                         if (!amountError && Number(amount.value) === 0) base = true;
                     });
-                    // [SUA11-11] Luyện sửa: Đổi giới hạn số dòng size/topping kiểm tra trước khi gửi form.
-                    // . Số 50 đang dùng chung cả hai loại; đổi cùng MAX_SIZES/MAX_TOPPINGS trong
-                    //   AdminProductsController.
-                    // . Sửa cả vị trí rows[50] dùng gắn lỗi và lời báo; nếu hai loại có giới hạn khác nhau thì
-                    //   chọn theo type.
                     if (rows.length > 50) check(rows[50]?.querySelector('input'), 'Không được thêm quá 50 ' + type + '.');
                     if (type === 'size' && !count) check(document.getElementById('addSize'), 'Sản phẩm cần có ít nhất một size.');
                     else if (type === 'size' && !base && !errors.size) check(rows[0]?.querySelector('[name="sizeDelta"]'), 'Cần có một size phụ thu 0đ để giá mặc định đúng bằng giá bán cơ bản.');
                 }
             }
             if (kind === 'recipe') {
-                // [CTKT01]
-                // . Trước khi gửi công thức, em dùng validate kiểm tra từng dòng nguyên liệu và định lượng. Dòng trống
-                //   hoàn toàn được bỏ qua; dòng thiếu ô, trùng nguyên liệu, lượng sai hoặc quá 100 dòng thì hiện lỗi
-                //   đúng ô. Đúng hết mới gửi form tới AdminRecipeController.doPost để kiểm tra lại và lưu.
-                // ... validate trả lỗi cho sự kiện submit ở cuối file. Có lỗi thì dừng tại form; đúng hết thì gửi
-                //     /admin/recipes. Đọc phần nhận form tại AdminRecipeController.java, tìm [CTL02].
+                // [CTL02]
+                // . Trước khi gửi công thức, em kiểm tra đã có nguyên liệu, không chọn trùng và định
+                //   lượng phải dương. Nếu có lỗi, em báo đúng dòng để Admin sửa. Khi các dòng đều hợp lệ,
+                //   form gửi tới /admin/recipes để doPost trong AdminRecipeController xử lý việc lưu.
+                //
+                // Tra tiếp: AdminRecipeController.java / CTL03.
                 const rows = [...form.querySelectorAll('.ingredient-row')];
                 const seen = new Set();
                 let count = 0;
@@ -165,28 +156,28 @@
                     check(amount, !amount.value.trim() ? label + 'vui lòng nhập định lượng.' : quantity(amount.value, 'Định lượng dòng ' + (index + 1)));
                 });
                 if (!count) check(document.getElementById('addIngredient'), 'Công thức phải có ít nhất một nguyên liệu.');
-                // [SUA11-12] Luyện sửa: Đổi số nguyên liệu tối đa kiểm tra ngay trên form.
-                // . Giới hạn 100 và lời báo phải giống MAX_RECIPE_LINES trong AdminRecipeController; thử trường
-                //   hợp vừa đủ và vượt một dòng.
                 if (rows.length > 100) check(document.getElementById('addIngredient'), 'Không được thêm quá 100 dòng nguyên liệu.');
             }
             if (kind === 'loyalty') {
-                // [TDKT01]
-                // . Trước khi gửi ba ô quy tắc, hàm validate gọi wholeNumber để kiểm tra từng giá trị. Số sai được báo
-                //   ngay dưới ô để người dùng sửa; tiền giảm được phép bằng 0. Đúng cả ba thì form mới gửi tới
-                //   AdminLoyaltyController.doPost để kiểm tra lại và lưu.
-                // ... validate trả lỗi cho sự kiện submit ở cuối admin-form-validation.js. Có lỗi thì hiện dưới ô và
-                //     dừng; đúng cả ba thì gửi form. Đọc phần nhận action=updateRules tại AdminLoyaltyController.java,
-                //     tìm [TDQT02].
+                // [TDQT02]
+                // . Trước khi gửi form Lưu quy tắc, em kiểm tra ba ô là số nguyên và nằm trong giới hạn
+                //   cho phép. Ô nào nhập sai thì được báo để Admin sửa ngay trên trang. Khi cả ba ô đều
+                //   đúng, form gửi tới /admin/loyalty để doPost trong AdminLoyaltyController nhận và xử
+                //   lý bộ quy tắc.
+                //
+                // Tra tiếp: AdminLoyaltyController.java / TDQT03.
 
-                // [SUA12-09] Luyện sửa: Đổi khoảng được nhập trong ba ô quy tắc.
-                // . Đồng bộ từng min/max với AdminLoyaltyController.updateRules và LoyaltyValidation; tiền giảm
-                //   hiện được phép bằng 0.
                 [['pointsEarnUnit', 'Số tiền chi tiêu để nhận 1 điểm', 1, 100000000],
                     ['pointsStep', 'Số điểm cho mỗi lần đổi', 1, 1000000],
                     ['pointsStepValue', 'Số tiền giảm cho mỗi lần đổi', 0, 100000000]]
                     .forEach(([name, label, min, max]) => check(field(name), wholeNumber(field(name)?.value, label, min, max)));
             }
+            // [TDTK02]
+            // . Trước khi gửi yêu cầu tra cứu, em kiểm tra ô điện thoại đã được nhập và đúng định dạng.
+            //   Nếu sai, em báo tại ô để Admin sửa. Nếu đúng, form gửi tới /admin/loyalty để doGet trong
+            //   AdminLoyaltyController nhận số điện thoại và tìm khách.
+            //
+            // Tra tiếp: AdminLoyaltyController.java / TDTK03.
             if (kind === 'loyalty-lookup') {
                 const raw = field('phone')?.value || '';
                 const phone = raw.trim().replace(/[\s.()-]/g, '');
@@ -196,15 +187,20 @@
             form.querySelectorAll('input:not([type="hidden"]),select,textarea,button').forEach(input => mark(input, errors.get(input) || ''));
             return errors;
         };
-        // . Khi người dùng gửi form, em gọi validate để kiểm tra các ô và hiện lỗi qua mark. Còn lỗi thì
-        //   dừng gửi và đưa con trỏ đến ô đầu tiên; không có lỗi thì trình duyệt gửi tới địa chỉ của form.
+        // [QLGUI01]
+        // . Khi Admin bấm gửi form, em chạy phần kiểm tra tương ứng với danh mục, sản phẩm, công thức,
+        //   quy tắc hoặc tra cứu. Có lỗi thì form được giữ lại để sửa; không có lỗi mới gửi thông tin tới
+        //   controller của đúng chức năng.
+        //
+        // Tra cứu: Danh mục kiểm tra tại DML02, sản phẩm SPL02, công thức CTL02, quy tắc TDQT02, tra cứu
+        //          TDTK02. Mỗi phần xong trở về sau validate ở QLGUI01; hợp lệ gửi tới phần nhận ghi ở
+        //          comment của form.
         form.addEventListener('submit', event => {
             submitted = true;
             const errors = validate();
             if (errors.size) { event.preventDefault(); errors.keys().next().value.focus(); }
         });
-        // . Khi sửa ô hoặc thêm/xóa dòng, em ẩn kết quả của lần gửi trước. Nếu đã từng kiểm tra thì kiểm
-        //   tra lại các ô để lời báo hiện tại khớp với dữ liệu vừa sửa, không giữ nguyên lỗi cũ.
+
         const changed = () => {
             notices.forEach(notice => { notice.hidden = true; });
             if (submitted) validate();

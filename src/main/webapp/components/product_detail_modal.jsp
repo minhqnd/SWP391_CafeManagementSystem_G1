@@ -174,11 +174,10 @@
     });
 
     // [TCGIO02]
-    // . Ở openSelectedItemsModal, em đọc components/cart_api.jsp để lấy các dòng, số lượng và tổng tiền
-    //   của giỏ trong session. Em đưa dữ liệu cho renderSelectedItemsModal dựng nội dung rồi Bootstrap mở
-    //   hộp selectedItemsModal. Nếu không đọc được thì chuyển về /cart để xem bằng trang giỏ hàng.
-    // ... Kết thúc mở danh sách món đã chọn khi selectedItemsModal hiện các dòng giỏ, hoặc khi trình duyệt
-    //     chuyển về trang /cart nếu chưa đọc được dữ liệu.
+    // . Trong openSelectedItemsModal, em đọc các món đang được giữ trên giao diện rồi điền vào hộp xem
+    //   lại. Khách có thể đối chiếu các lựa chọn trước khi tiếp tục đặt hàng.
+    //
+    // Kết thúc: mở danh sách món đang chọn.
     function openSelectedItemsModal() {
         fetch('${pageContext.request.contextPath}/components/cart_api.jsp')
             .then(function(res) { return res.json(); })
@@ -345,10 +344,11 @@
     }
 
     // [MNCT02]
-    // . Ở openProductDetailModal, em nhận mã từ nút dấu cộng và đọc /menu?action=detail&id theo mã đó.
-    //   MenuController.doGet gọi handleProductDetailApi để đọc món còn bán rồi trả tên, ảnh, giá và
-    //   variantsConfig. Khi nhận được, em dựng lựa chọn size/topping và mở productDetailModal.
-    // ... Đọc tiếp tại MenuController.java, tìm [MNCT03].
+    // . Trong openProductDetailModal, em gửi mã món tới MenuController để lấy thông tin hiện tại của sản
+    //   phẩm. MenuController xử lý yêu cầu chi tiết rồi trả dữ liệu để em điền tên, giá, ảnh và lựa chọn
+    //   vào hộp đang mở.
+    //
+    // Tra tiếp: MenuController.java / MNCT03.
     function openProductDetailModal(productId) {
         fetch('${pageContext.request.contextPath}/menu?action=detail&id=' + productId)
             .then(function (res) {

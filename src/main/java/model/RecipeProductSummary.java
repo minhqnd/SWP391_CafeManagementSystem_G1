@@ -22,6 +22,7 @@ public class RecipeProductSummary {
     public List<IngredientLine> getIngredientLines() { return ingredientLines; }
     public BigDecimal getRecipeCost() { return recipeCost; }
     public boolean isCostComplete() { return costComplete; }
+
     public boolean isHasRecipe() { return !ingredientLines.isEmpty(); }
 
     public static class IngredientLine {
@@ -37,12 +38,12 @@ public class RecipeProductSummary {
         public String getUnit() { return ingredient.getUnit(); }
         public double getQuantity() { return ingredient.getQuantityRequired(); }
         public boolean isCostAvailable() { return unitCost != null; }
-        // [CTGT03]
-        // . Khi admin-recipes.jsp đọc line.lineCost, hàm getLineCost lấy đơn giá nhân định lượng của nguyên
-        //   liệu mà controller đã đưa vào IngredientLine. Có giá thì trả chi phí để hiện trên thẻ món; thiếu
-        //   đơn giá thì trả null và isCostAvailable giúp trang hiện chưa có giá.
-        // ... Kết thúc phần chi phí dòng khi admin-recipes.jsp nhận giá trị trả về để hiện tiền hoặc thông báo
-        //     thiếu đơn giá trên thẻ món.
+        // [CTG02]
+        // . Em dùng RecipeProductSummary để giữ món, các dòng nguyên liệu và chi phí cho giao diện. Chi phí
+        //   một dòng là lượng dùng nhân đơn giá; thiếu đơn giá thì chưa có chi phí đầy đủ.
+        //
+        // Tra cứu: Các thẻ món tại admin-recipes.jsp / CTM04 đọc thông tin này. Kết thúc tính và hiển thị chi
+        //          phí dòng, không ghi giá bán.
         public BigDecimal getLineCost() {
 
             return unitCost == null

@@ -14,12 +14,11 @@ public class ProductImageController extends HttpServlet {
     private final ProductDAO productDAO = new ProductDAO();
 
     @Override
-    // [SPAN03]
-    // . Khi thẻ img cần ảnh sản phẩm, doGet trong ProductImageController.java nhận mã món. Em gọi
-    //   getProductImage trong ProductDAO.java bằng mã đó để đọc ảnh rồi gửi nội dung về trình duyệt, giúp
-    //   ảnh hiển thị đúng sản phẩm.
-    // ... Kết thúc tải ảnh khi nội dung ảnh được trả về thẻ img của đúng món; nếu ảnh không tải được thì
-    //     cách hiển thị thay thế do trang đang xem quyết định.
+    // [SPAN02]
+    // . Trong doGet của ProductImageController, em nhận mã món rồi gọi getProductImage của ProductDAO để đọc
+    //   ảnh đang lưu. Controller dùng nội dung và loại ảnh nhận được để trả ảnh cho trình duyệt.
+    //
+    // Tra tiếp: ProductDAO.java / SPAN03.
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         int productId;
         try {

@@ -147,12 +147,7 @@
                 </span>
             </c:when>
             <c:otherwise>
-                <%-- [TCVE01]
-                     . Khi bấm logo Aura Café trong header.jsp, em mở đường dẫn Trang chủ. index.jsp đọc danh mục và
-                       món nổi bật để dựng lại màn hình; thao tác này không gửi form đang nhập.
-                     ... Logo mở Trang chủ để index.jsp dựng màn hình. Muốn theo phần lấy món nổi bật, đọc index.jsp,
-                         tìm [TCSP01]; danh mục, banner và các món hiện xong là kết thúc mở trang.
-                --%>
+
                 <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2 me-4"
                    href="${pageContext.request.contextPath}/">
                     ${auraBrandMarkup}
@@ -161,11 +156,12 @@
         </c:choose>
 
         <c:if test="${param.navbarMode != 'barista'}">
-            <%-- [TCTK01]
-                 . Khi bấm kính lúp hoặc nhấn Enter ở ô tìm trên header.jsp, form gửi keyword tới
-                   MenuController.doGet qua /menu. Em dùng từ khóa để tìm món rồi mở Menu với kết quả;
-                   form này không gửi danh mục nên tìm trong các danh mục đang hoạt động.
-                 ... Đọc tiếp tại MenuController.java, tìm [TCTK02].
+            <%-- [MNTK02]
+                 . Khi người dùng gửi từ khóa ở ô tìm trên đầu trang, yêu cầu được đưa tới doGet của
+                   MenuController. Em dùng chung phần tìm món của trang thực đơn để kết quả được hiển thị
+                   theo đúng từ khóa vừa nhập.
+
+                 Tra tiếp: MenuController.java / MNM02.
             --%>
             <form class="aura-home-search" action="${pageContext.request.contextPath}/menu" method="get" role="search">
                 <input type="search" name="keyword" placeholder="Xin chào, bạn cần tìm gì?" aria-label="Tìm món trong thực đơn" />
@@ -173,12 +169,6 @@
             </form>
         </c:if>
 
-        <%-- [MNNAV01]
-             . Khi bấm biểu tượng ba gạch trên màn hình nhỏ, Bootstrap dùng data-bs-target để mở hoặc
-               thu mainNavbar ngay trên trang. Nút chỉ hiện các đường dẫn; bấm một đường dẫn mới chuyển
-               trang, còn mở hoặc thu thanh này không gửi thông tin tới controller.
-             ... Kết thúc thao tác khi mainNavbar đã được mở hoặc thu trên màn hình hiện tại.
-        --%>
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
                 aria-controls="mainNavbar" aria-expanded="false" aria-label="Mở điều hướng">
             <span class="material-symbols-outlined">menu</span>
@@ -216,10 +206,11 @@
 
                 <li class="nav-item">
                     <%-- [MNM01]
-                         . Khi bấm Menu và Đồ uống trong header.jsp, em mở /menu. doGet trong MenuController.java gọi
-                           CategoryDAO và ProductDAO để đọc danh mục hoạt động, món đang bán rồi chuyển dữ liệu về menu.jsp
-                           cho khách xem.
-                         ... Đọc tiếp tại MenuController.java, tìm [MNM02].
+                         . Khi người dùng bấm Menu, trình duyệt gửi yêu cầu tới doGet của MenuController.
+                           Em gọi phần đọc sản phẩm đang bán và danh mục hoạt động, rồi đưa danh sách về
+                           trang thực đơn để khách chọn món.
+
+                         Tra tiếp: MenuController.java / MNM02.
                     --%>
                     <a class="nav-link aura-nav-link ${param.activePage == 'menu' ? 'active-nav' : ''}"
                        href="${pageContext.request.contextPath}/menu">Menu & Đồ uống</a>
@@ -262,13 +253,7 @@
                             </div>
                         </c:when>
                         <c:otherwise>
-                        <%-- [HSTK01]
-                             . Khi đã đăng nhập, nút tài khoản dùng sessionScope.user để hiện tên, vai trò, số điện thoại hoặc
-                               email và số điểm nếu có. Bấm nút thì Bootstrap mở danh sách Hồ sơ, Đăng xuất và các đường dẫn
-                               phù hợp; thao tác mở không đọc lại tài khoản.
-                             ... Mở danh sách xong thì chờ chọn mục: Hồ sơ bắt đầu tại header.jsp, tìm [HSM01]; Đăng xuất bắt
-                                 đầu tại header.jsp, tìm [DNX01]. Chưa tự chạy hai thao tác khi chỉ mở danh sách.
-                        --%>
+
                         <div class="dropdown">
                             <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark header-user" data-bs-toggle="dropdown">
                                 <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
@@ -309,10 +294,12 @@
                                 <li>
 
                                     <%-- [HSM01]
-                                         . Khi bấm Hồ sơ trong header.jsp, em mở /profile để doGet trong ProfileController.java xử lý.
-                                           Controller gọi authorize để đọc lại người đang đăng nhập, rồi renderProfile để đưa thông tin, điểm
-                                           và lịch sử về profile.jsp.
-                                         ... Đọc tiếp tại ProfileController.java, tìm [HSM02].
+                                         . Khi bấm Hồ sơ cá nhân, trình duyệt gửi yêu cầu tới
+                                           ProfileController. Trước khi dựng trang, controller đọc lại tài
+                                           khoản đang đăng nhập để hồ sơ và số điểm hiển thị thuộc đúng
+                                           người đang dùng.
+
+                                         Tra tiếp: ProfileController.java / HSM02.
                                     --%>
                                     <a class="user-item-btn" href="${pageContext.request.contextPath}/profile">
                                         <span class="material-symbols-outlined item-icon">account_circle</span>
@@ -348,9 +335,11 @@
                                 <li>
 
                                     <%-- [DNX01]
-                                         . Khi người dùng bấm Đăng xuất trong header.jsp, em mở /login?action=logout. LoginController.doGet
-                                           nhận yêu cầu này để kết thúc lần đăng nhập hiện tại rồi đưa người dùng về Trang chủ.
-                                         ... Đọc tiếp tại LoginController.java, tìm [DNX02].
+                                         . Khi bấm Đăng xuất, trình duyệt gửi yêu cầu tới LoginController.
+                                           Hàm doGet trong class này sẽ kết thúc lần đăng nhập hiện tại
+                                           rồi đưa người dùng về trang chủ.
+
+                                         Tra tiếp: LoginController.java / DNX02.
                                     --%>
                                     <a class="user-item-btn logout-btn" href="${pageContext.request.contextPath}/login?action=logout">
                                         <span class="material-symbols-outlined item-icon" style="color: #dc2626;">logout</span>
@@ -365,10 +354,11 @@
                     <c:otherwise>
 
                         <%-- [ATM01]
-                             . Khi bấm biểu tượng tài khoản trong header.jsp, Bootstrap mở hộp authModal nằm trong
-                               auth_modal.jsp. Người dùng chọn Đăng nhập hoặc Đăng ký để điền thông tin; dữ liệu chỉ gửi đến
-                               controller tương ứng khi bấm nút gửi của form.
-                             ... Đọc tiếp tại auth_modal.jsp, tìm [ATD02].
+                             . Khi người dùng bấm biểu tượng tài khoản, em mở hộp đăng nhập ngay trên
+                               trang đang xem. Trong hộp này họ có thể chọn đăng nhập, đăng ký hoặc khôi
+                               phục mật khẩu mà chưa phải rời trang.
+
+                             Tra tiếp: auth_modal.jsp / ATM02.
                         --%>
                         <button type="button" class="btn btn-outline-danger rounded-circle p-2 d-flex align-items-center justify-content-center"
                                 style="width: 42px; height: 42px;" data-bs-toggle="modal" data-bs-target="#authModal" title="Đăng nhập / Đăng ký">
@@ -388,37 +378,19 @@
 <c:if test="${param.navbarMode != 'barista'}">
     <nav class="aura-home-secondary" aria-label="Điều hướng cửa hàng">
         <div class="container">
-            <%-- [MNBM01]
-                 . Nút Danh mục sản phẩm ở Trang chủ chuyển tới danh sách homeCategoryList trên cùng trang. Ở Menu, nút
-                   mở bộ chọn menuCategoryDropdown; từ trang khác thì mở Menu và bộ chọn đó.
-                 ... Đọc tiếp tại menu.jsp, tìm [MNBM02].
-            --%>
+
                         <c:choose>
                 <c:when test="${param.activePage == 'home'}"><a class="home-category-static" href="#homeCategoryList"><span class="material-symbols-outlined">grid_view</span> Danh mục sản phẩm</a></c:when>
                 <c:when test="${param.activePage == 'menu'}"><a class="menu-category-toggle" href="#menuCategoryDropdown" aria-controls="menuCategoryDropdown"><span class="material-symbols-outlined">menu</span> Danh mục sản phẩm</a></c:when>
                 <c:otherwise><a href="${pageContext.request.contextPath}/menu#menuCategoryDropdown"><span class="material-symbols-outlined">menu</span> Danh mục sản phẩm</a></c:otherwise>
             </c:choose>
 
-            <%-- [MNCH01]
-                 . Liên kết Menu mở /menu để MenuController.doGet đọc món còn bán; Thành viên Aura mở /profile để
-                   ProfileController.doGet đọc hồ sơ của người đang đăng nhập. Đây là các đường dẫn phụ tới cùng màn
-                   hình với nút Menu và Hồ sơ đã giải thích ở phía trên.
-                 ... Bấm Menu thì đọc MenuController.doGet trong MenuController.java; bấm Thành viên Aura thì đọc
-                     ProfileController.doGet trong ProfileController.java. Kết thúc tại trang mà từng đường dẫn mở
-                     ra.
-            --%>
             <a class="${param.activePage == 'menu' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/menu">Menu &amp; Đồ uống</a>
             <a class="${param.activePage == 'feedback' ? 'active-home-nav' : ''}" href="${pageContext.request.contextPath}/feedback">Liên hệ &amp; Góp ý</a>
             <a href="${pageContext.request.contextPath}/profile"><span class="material-symbols-outlined">stars</span> Thành viên Aura</a>
             <c:if test="${param.activePage == 'menu'}">
                 <div class="menu-category-dropdown" id="menuCategoryDropdown">
-                    <%-- [MNCH02]
-                         . Mỗi danh mục dùng dữ liệu categories do MenuController.doGet đọc từ CategoryDAO. Khi bấm tên, em
-                           gửi category là mã nhóm và giữ currentKeyword nếu có, để ProductDAO.filterProducts tìm đúng món.
-                           Số cạnh tên là số món còn bán của nhóm.
-                         ... MenuController.doGet nhận category và keyword rồi gọi ProductDAO.filterProducts. Đọc tại
-                             ProductDAO.java, tìm mã MNDS02; danh sách trả về menu.jsp là kết thúc lần chọn danh mục.
-                    --%>
+
                     <c:forEach var="cat" items="${categories}">
                         <c:url var="menuCategoryUrl" value="/menu">
                             <c:param name="category" value="${cat.id}" />

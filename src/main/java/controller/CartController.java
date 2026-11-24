@@ -29,6 +29,11 @@ public class CartController extends HttpServlet {
     private final CartService cartService = new CartService();
 
     @Override
+    // [HSGIO02]
+    // . Em đọc giỏ và thông tin điểm của người đang đăng nhập để chuẩn bị trang giỏ hàng.
+    //
+    // Tra cứu: Kết thúc phần chuyển từ hồ sơ sang giỏ; nguồn giỏ dùng chung có thể xem tại cart_api.jsp /
+    //          GHDOC01.
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 

@@ -1,11 +1,16 @@
 package utils;
 
 /** Làm gọn chữ nhập trên form giống String.trim() của JavaScript. */
+// [KTCHU01]
+// . Trước khi kiểm tra và lưu ô nhập, em dùng FormInput để bỏ khoảng trắng thừa ở đầu và cuối theo cùng
+//   một cách. Nội dung ở giữa được giữ nguyên, nên việc làm gọn không thay đổi phần người dùng thực sự
+//   nhập.
+//
+// Tra cứu: Trả chuỗi về ngay sau lời gọi trim tại hàm đang dùng; đây là phần hỗ trợ, không chuyển trang hoặc
+//          ghi dữ liệu.
 public final class FormInput {
     private FormInput() { }
 
-    // . Chỉ bỏ khoảng trắng hai đầu; giữ nguyên chữ và khoảng trắng bên trong.
-    // . Mật khẩu chỉ dùng kết quả này để nhận biết ô toàn khoảng trắng, không thay nội dung đem lưu.
     public static String trim(String raw) {
         if (raw == null) return "";
         int start = 0, end = raw.length();

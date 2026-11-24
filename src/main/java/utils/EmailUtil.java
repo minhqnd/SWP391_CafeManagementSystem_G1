@@ -15,8 +15,6 @@ public class EmailUtil {
     private static final String SENDER_EMAIL = smtpValue("AURA_SMTP_EMAIL", "smtp.email");
     private static final String SMTP_PASSWORD = smtpValue("AURA_SMTP_PASSWORD", "smtp.password");
 
-    // . Trong hàm loadSmtpConfig của EmailUtil.java, em đọc cấu hình gửi thư từ máy. Hàm sendOTP dùng các
-    //   giá trị này để kết nối dịch vụ email và gửi mã tới địa chỉ người dùng nhập.
     private static Properties loadSmtpConfig() {
         Properties config = new Properties();
         String configuredPath = System.getenv("AURA_SMTP_CONFIG");
@@ -83,12 +81,11 @@ public class EmailUtil {
     }
 
     // [OTG05]
-    // . Trong hàm sendOTP của EmailUtil.java, em nhận email và mã sáu số từ PasswordRecoveryService.start.
-    //   Em gửi thư xác minh rồi trả true hoặc false về start; chỉ khi gửi được thì bước tạo mã mới giữ dữ
-    //   liệu để người dùng xác minh.
-    // ... Quay về PasswordRecoveryService.start sau sender.test: gửi được mới giữ State; thất bại thì báo
-    //     lỗi, chưa mở ô OTP. Gửi thành công thì về controller tại ForgotPasswordController.java, tìm mã
-    //     OTG06.
+    // . Hàm sendOTP trong EmailUtil gửi thư chứa mã xác nhận và báo lại việc gửi có thành công không. Khi gửi
+    //   được, start trong PasswordRecoveryService mới giữ mã cùng tài khoản cho bước xác nhận, rồi trả về
+    //   ForgotPasswordController để mở form nhập mã.
+    //
+    // Tra tiếp: ForgotPasswordController.java / OTG06.
     public static boolean sendOTP(String recipientEmail, String otp) {
         if (SENDER_EMAIL == null || SENDER_EMAIL.isBlank() || SMTP_PASSWORD == null || SMTP_PASSWORD.isBlank()) return false;
         Properties properties = new Properties();

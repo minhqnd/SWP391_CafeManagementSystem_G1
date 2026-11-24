@@ -19,17 +19,19 @@ public class ForgotPasswordController extends HttpServlet {
         HttpSession session=request.getSession();
         try{
             // [OTG02]
-            // . Đến doPost trong ForgotPasswordController.java, em gọi start trong PasswordRecoveryService.java.
-            //   Em truyền email cần khôi phục, session để giữ thông tin xác minh của lần này và địa chỉ gửi yêu
-            //   cầu để giới hạn số lần gửi mã. Hàm kiểm tra tài khoản trước rồi mới gửi thư OTP.
-            // ... Đọc tiếp tại PasswordRecoveryService.java, tìm [OTG03].
+            // . Trong doPost của ForgotPasswordController, em nhận email rồi gọi start trong
+            //   PasswordRecoveryService. Em giao việc khôi phục cho class này để quản lý email, mã xác nhận
+            //   và bước người dùng đang làm trong cùng một lần khôi phục.
+            //
+            // Tra tiếp: PasswordRecoveryService.java / OTG03.
 
             recovery.start(session,request.getParameter("email"),request.getRemoteAddr());
 
             // [OTG06]
-            // . Khi gửi mã thành công, chương trình quay về doPost trong ForgotPasswordController.java. Em đặt thông
-            //   báo và mở Trang chủ với tab=otp để auth_modal.jsp hiện bước nhập mã vừa gửi.
-            // ... Đọc tiếp tại auth_modal.jsp, tìm [OTG07].
+            // . Khi start hoàn tất, em quay lại doPost của ForgotPasswordController để đặt thông báo đã gửi
+            //   mã và mở form nhập mã. Người dùng đọc email rồi tiếp tục xác nhận trên form này.
+            //
+            // Kết thúc: gửi mã khi form nhập mã được mở.
             session.setAttribute("successMsg","Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra cả thư rác.");
             response.sendRedirect(request.getContextPath()+"/?tab=otp");
         }catch(IllegalArgumentException e){
