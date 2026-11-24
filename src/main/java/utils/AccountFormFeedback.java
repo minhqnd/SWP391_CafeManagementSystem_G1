@@ -28,11 +28,12 @@ public final class AccountFormFeedback {
     }
 
     // [BMHT01]
-    // . Ở show (hiện lỗi trên trang đang mở) trong AccountFormFeedback.java, em nhận tên form, lỗi và giá
-    //   trị từ ProfileController.java. Em đưa chúng vào accountFeedback của trang đang mở để
+    // . Ở show (hiện lỗi trên trang đang mở) trong AccountFormFeedback.java, em nhận tên form, lỗi và
+    //   giá trị từ ProfileController.java. Em đưa chúng vào accountFeedback của trang đang mở để
     //   account_feedback.jsp và account-validation.js hiện lại thông tin đang sửa cùng lỗi đúng ô.
-    // ... Quay lại ProfileController.java sau AccountFormFeedback.show; renderProfile mở profile.jsp,
-    //     account_feedback.jsp đưa lỗi và các ô sang account-validation.js để hiện lại.
+    // ... Quay về ProfileController sau AccountFormFeedback.show để gọi renderProfile và mở lại trang.
+    //     Đọc account_feedback.jsp, tìm mã BMTV02 để xem account_feedback.jsp đưa các ô và lỗi cho phần
+    //     điền lại form.
     public static void show(HttpServletRequest request, String form, Map<String,String> errors,
                             Map<String,String> values) {
         request.setAttribute("accountFeedback", feedback(form, errors, values));

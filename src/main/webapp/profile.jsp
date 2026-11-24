@@ -243,8 +243,8 @@
                 <%-- [HSM04]
                      . Khi renderProfile trong ProfileController.java chuyển dữ liệu tới profile.jsp, trang dùng
                        session.user cùng lịch sử đã chuẩn bị để hiện hồ sơ của đúng người đang đăng nhập.
-                     ... Kết thúc mở hồ sơ khi trang hiện thông tin và số điểm; tab Lịch sử tích điểm có dữ liệu
-                         hoặc cảnh báo chưa tải được để người dùng xem.
+                     ... Thông tin đã hiện là kết thúc tải hồ sơ. Người dùng bấm Chỉnh sửa thì theo profile.jsp, tìm
+                         [HSS01]; chọn lịch sử điểm thì theo profile.jsp, tìm [HSLS01]. Đây là các lần bấm tiếp theo.
                 --%>
                 <main class="py-5">
                     <div class="container">
@@ -330,6 +330,8 @@
                                quả lưu hồ sơ hay đổi mật khẩu. Với lỗi từng ô, account_feedback.jsp và account-validation.js
                                nhận dữ liệu từ AccountFormFeedback.show để hiện đúng vị trí cần sửa.
                              . Kết thúc lần đổi mật khẩu khi trang hiện kết quả; có lỗi thì người dùng sửa rồi gửi lại.
+                             ... Thông báo đã hiện là kết thúc đổi mật khẩu. Muốn xem cách hiện lỗi từng ô, đọc
+                                 account_feedback.jsp, tìm mã BMTV02. Sửa xong rồi bấm Cập nhật mật khẩu mới gửi lần khác.
                         --%>
                         <c:if test="${not empty successMsg and empty errorMsg}">
                             <div data-account-notice role="status"
@@ -432,11 +434,12 @@
                                             </div>
 
                                             <%-- [HSL07]
-                                                 . Khi profile.jsp được mở, form đọc thông tin từ session.user mà controller
-                                                   đã cập nhật. Người dùng thấy hồ sơ vừa lưu; nếu lần xử lý có lỗi thì
-                                                   account-validation.js dùng các giá trị đã giữ để điền lại phần đang sửa
-                                                   và hiện lời báo.
+                                                 . Khi profile.jsp được mở, form đọc thông tin từ session.user mà controller đã cập nhật. Người
+                                                   dùng thấy hồ sơ vừa lưu; nếu lần xử lý có lỗi thì account-validation.js dùng các giá trị đã giữ
+                                                   để điền lại phần đang sửa và hiện lời báo.
                                                  . Kết thúc lần cập nhật hồ sơ khi trang hiện kết quả và thông tin tương ứng.
+                                                 ... Hồ sơ và kết quả đã hiện là kết thúc cập nhật. Muốn xem cách điền lại ô sau lỗi, đọc
+                                                     account_feedback.jsp, tìm mã BMTV02; muốn sửa tiếp thì người dùng bấm Chỉnh sửa.
                                             --%>
                                             <form id="profileForm"
                                                 action="${pageContext.request.contextPath}/profile?action=update"
@@ -586,11 +589,10 @@
                                             <hr class="my-5 border-secondary-subtle">
 
                                             <%-- [HSMK01]
-                                                 . Khi bấm Bảo mật & Đổi mật khẩu, Bootstrap mở hoặc thu vùng
-                                                   passwordCollapse để hiện ba ô mật khẩu. Đây mới là mở form; chỉ bấm nút
-                                                   đổi mật khẩu mới gửi tới ProfileController.doPost.
-                                                 ... Kết thúc mở hoặc thu khi vùng nhập ba mật khẩu đổi trạng thái hiển thị
-                                                     trên profile.jsp.
+                                                 . Khi bấm Bảo mật & Đổi mật khẩu, Bootstrap mở hoặc thu vùng passwordCollapse để hiện ba ô mật
+                                                   khẩu. Đây mới là mở form; chỉ bấm nút đổi mật khẩu mới gửi tới ProfileController.doPost.
+                                                 ... Mở vùng mật khẩu xong thì chờ người dùng nhập. Khi bấm Cập nhật mật khẩu, theo profile.jsp,
+                                                     tìm [MKL01].
                                             --%>
                                             <div class="d-flex justify-content-between align-items-center mb-0 pb-3 border-bottom cursor-pointer"
                                                 data-bs-toggle="collapse" data-bs-target="#passwordCollapse"
@@ -630,15 +632,12 @@
                                                             <div class="input-group">
 
                                                                 <%-- [MKCU01]
-                                                                     . Ô Mật khẩu hiện tại trong profile.jsp gửi giá trị qua
-                                                                       oldPassword khi bấm đổi mật khẩu.
-                                                                       ProfileController.doPost truyền mật khẩu này cùng mã
-                                                                       tài khoản cho UserDAO.changePasswordById (so mật khẩu
-                                                                       cũ rồi ghi mật khẩu mới) để đối chiếu; chỉ đúng mật
-                                                                       khẩu cũ mới được đổi sang mật khẩu mới.
-                                                                     ... Khi bấm Cập nhật mật khẩu, đọc ProfileController.doPost trong
-                                                                         ProfileController.java, tại lời gọi users.changePasswordById để theo mật
-                                                                         khẩu hiện tại sang UserDAO.java.
+                                                                     . Ô Mật khẩu hiện tại trong profile.jsp gửi giá trị qua oldPassword khi bấm đổi mật khẩu.
+                                                                       ProfileController.doPost truyền mật khẩu này cùng mã tài khoản cho UserDAO.changePasswordById
+                                                                       (so mật khẩu cũ rồi ghi mật khẩu mới) để đối chiếu; chỉ đúng mật khẩu cũ mới được đổi sang mật
+                                                                       khẩu mới.
+                                                                     ... Khi bấm Cập nhật mật khẩu, theo ProfileController.java, tìm mã MKL02 để xem doPost gọi
+                                                                         UserDAO.changePasswordById, truyền mật khẩu hiện tại để kiểm tra trước khi đổi.
                                                                 --%>
                                                                 <input type="password" name="oldPassword" maxlength="255"
                                                                     class="form-control form-control-custom bg-white border-end-0"
@@ -657,16 +656,12 @@
                                                             <div class="input-group">
 
                                                                 <%-- [MKMOI01]
-                                                                     . Ô Mật khẩu mới trong profile.jsp được passwordError
-                                                                       (kiểm tra điều kiện mật khẩu) của
-                                                                       account-validation.js kiểm tra trước khi gửi.
-                                                                       ProfileController.doPost kiểm tra lại rồi truyền
-                                                                       newPassword cho UserDAO.changePasswordById (so mật
-                                                                       khẩu cũ rồi ghi mật khẩu mới) để băm và ghi sau khi
-                                                                       đã đối chiếu đúng mật khẩu hiện tại.
-                                                                     ... Khi bấm Cập nhật mật khẩu, đọc ProfileController.doPost trong
-                                                                         ProfileController.java, tại phần kiểm tra passwordErrors rồi lời gọi
-                                                                         users.changePasswordById.
+                                                                     . Ô Mật khẩu mới trong profile.jsp được passwordError (kiểm tra điều kiện mật khẩu) của
+                                                                       account-validation.js kiểm tra trước khi gửi. ProfileController.doPost kiểm tra lại rồi truyền
+                                                                       newPassword cho UserDAO.changePasswordById (so mật khẩu cũ rồi ghi mật khẩu mới) để băm và ghi
+                                                                       sau khi đã đối chiếu đúng mật khẩu hiện tại.
+                                                                     ... Khi bấm Cập nhật mật khẩu, theo ProfileController.java, tìm mã MKL02; doPost kiểm tra hai ô
+                                                                         mật khẩu mới rồi gọi UserDAO.changePasswordById nếu không còn lỗi.
                                                                 --%>
                                                                 <input type="password" id="newPassword"
                                                                     name="newPassword" maxlength="255"
@@ -690,17 +685,12 @@
                                                             <div class="input-group">
 
                                                                 <%-- [MKXN01]
-                                                                     . Ô Xác nhận mật khẩu trong profile.jsp gửi qua
-                                                                       confirmPassword và được validate (kiểm tra giá trị
-                                                                       của một ô nhập) trong account-validation.js so với
-                                                                       newPassword. Khi gửi đổi mật khẩu,
-                                                                       ProfileController.doPost còn gọi
-                                                                       AccountValidation.passwordErrors (kiểm tra mật khẩu
-                                                                       và xác nhận theo từng ô) để kiểm tra hai ô khớp trước
-                                                                       khi lưu.
-                                                                     ... Khi bấm Cập nhật mật khẩu, đọc ProfileController.doPost trong
-                                                                         ProfileController.java, tại lời gọi AccountValidation.passwordErrors trước
-                                                                         bước ghi mật khẩu mới.
+                                                                     . Ô Xác nhận mật khẩu trong profile.jsp gửi qua confirmPassword và được validate (kiểm tra giá trị
+                                                                       của một ô nhập) trong account-validation.js so với newPassword. Khi gửi đổi mật khẩu,
+                                                                       ProfileController.doPost còn gọi AccountValidation.passwordErrors (kiểm tra mật khẩu và xác nhận
+                                                                       theo từng ô) để kiểm tra hai ô khớp trước khi lưu.
+                                                                     ... Khi bấm Cập nhật mật khẩu, theo ProfileController.java, tìm mã MKL02; doPost gọi
+                                                                         passwordErrors để kiểm tra ô xác nhận trước khi đổi.
                                                                 --%>
                                                                 <input type="password" id="confirmPassword"
                                                                     name="confirmPassword" maxlength="255"
@@ -766,15 +756,13 @@
                                             <c:otherwise>
 
                                                 <%-- [HSLS03]
-                                                     . Mỗi dòng dưới đây lấy một giao dịch trong loyaltyHistory do
-                                                       UserDAO.getLoyaltyHistoryByUserId (đọc lịch sử điểm của người đang
-                                                       đăng nhập) đọc cho người đang đăng nhập. Em dùng createdAt để hiện
-                                                       thời gian, pointsChange để hiện số điểm và màu cộng/trừ, id để hiện
-                                                       mã giao dịch. Nhãn hiện tại dựa vào transactionType và orderId: EARN
-                                                       là tích điểm; loại khác có mã đơn thì hiện dùng điểm cho đơn, không
-                                                       có mã đơn thì hiện đổi ưu đãi.
-                                                     ... Kết thúc xem lịch sử khi bảng đã hiện các giao dịch của chính tài khoản
-                                                         đang đăng nhập.
+                                                     . Mỗi dòng dưới đây lấy một giao dịch trong loyaltyHistory do UserDAO.getLoyaltyHistoryByUserId
+                                                       (đọc lịch sử điểm của người đang đăng nhập) đọc cho người đang đăng nhập. Em dùng createdAt để
+                                                       hiện thời gian, pointsChange để hiện số điểm và màu cộng/trừ, id để hiện mã giao dịch. Nhãn hiện
+                                                       tại dựa vào transactionType và orderId: EARN là tích điểm; loại khác có mã đơn thì hiện dùng
+                                                       điểm cho đơn, không có mã đơn thì hiện đổi ưu đãi.
+                                                     ... Bảng giao dịch của chính tài khoản đã hiện là kết thúc xem lịch sử. Người dùng chọn Thông tin
+                                                         tài khoản để quay lại thì theo profile.jsp, tìm [HSTAB01].
                                                 --%>
                                                 <c:forEach var="txn" items="${loyaltyHistory}" varStatus="loop">
                                                     <div
@@ -842,8 +830,8 @@
                         // . Ở checkFormChanged (kiểm tra hồ sơ có thông tin vừa sửa chưa) trong profile.jsp, em so các ô
                         //   hiện tại với originalValues đã giữ lúc bắt đầu sửa. Sự kiện nhập hoặc đổi ô gọi hàm này để bật
                         //   nút Lưu khi có thay đổi và tắt khi các giá trị vẫn như cũ.
-                        // ... Kết thúc kiểm tra thay đổi khi nút Lưu được bật hoặc tắt theo các ô hiện tại; việc
-                        //     ghi chỉ bắt đầu khi bấm Lưu thay đổi.
+                        // ... Kiểm tra xong thì nút Lưu được bật hoặc tắt, chưa gửi hồ sơ đi. Khi người dùng bấm Lưu thay
+                        //     đổi, theo profile.jsp, tìm [HSL01].
                         function checkFormChanged() {
                             let isChanged = false;
                             profileInputs.forEach(input => {
@@ -889,8 +877,8 @@
                         //   năm đang chọn để tạo lại danh sách ngày hợp lệ, kể cả năm nhuận. Nếu ngày cũ không còn trong
                         //   tháng mới thì bỏ lựa chọn đó, sau đó syncBirthday (ghép ngày, tháng, năm thành ngày sinh) cập
                         //   nhật ngày sẽ gửi khi lưu.
-                        // ... Trong profile.jsp, đọc tiếp syncBirthday ngay sau lời gọi updateDays để ghép lại
-                        //     ngày sẽ gửi; kết quả của lần đổi lựa chọn dừng ở birthdayHidden.
+                        // ... Sau updateDays, sự kiện đổi tháng hoặc năm gọi syncBirthday để ghép ngày sẽ gửi. Đọc tiếp tại
+                        //     profile.jsp, tìm [HSNS03].
                         function updateDays() {
                             const d = birthDay.value;
                             const m = parseInt(birthMonth.value) || 1;
@@ -914,7 +902,8 @@
                         // . Ở syncBirthday (ghép ngày, tháng, năm thành ngày sinh) trong profile.jsp, em đọc ba ô ngày,
                         //   tháng và năm để điền birthdayHidden. Khi bấm lưu, các ô ngày sinh được gửi tới update (kiểm tra
                         //   và cập nhật hồ sơ) trong ProfileController.java để ghép và kiểm tra lại trước khi ghi hồ sơ.
-                        // ... Đọc tiếp tại ProfileController.java, tìm [HSNS04].
+                        // ... Ghép xong birthdayHidden thì chưa lưu. Khi bấm Lưu thay đổi, ngày sinh được kiểm tra lại tại
+                        //     ProfileController.java, tìm [HSNS04].
                         function syncBirthday() {
                             const selected = [birthYear.value, birthMonth.value, birthDay.value].filter(Boolean).length;
                             birthDay.setCustomValidity(selected === 0 || selected === 3 ? '' : 'Vui lòng chọn đủ ngày, tháng và năm sinh.');
@@ -954,8 +943,8 @@
                         //   checkFormChanged (kiểm tra hồ sơ có thông tin vừa sửa chưa) để kiểm tra có cần bật Lưu không.
                         //   Người dùng sửa xong vẫn phải bấm Lưu thay đổi thì form mới đến ProfileController.doPost để cập
                         //   nhật.
-                        // ... Kết thúc mở chế độ sửa khi các ô đã được mở khóa và nút Lưu phản ánh đúng trạng thái
-                        //     thay đổi.
+                        // ... Mở khóa xong, em gọi checkFormChanged để quyết định bật nút Lưu. Đọc tiếp tại profile.jsp, tìm
+                        //     [HSTD01].
                         btnEdit.addEventListener('click', function () {
                             profileInputs.forEach(input => {
                                 if (input.id !== 'birthdayHidden') { // Bỏ qua input ảo
@@ -984,7 +973,8 @@
                         // . Ở sự kiện btnCancel.click trong profile.jsp, em lấy originalValues để phục hồi các ô và ngày
                         //   sinh, bỏ lỗi rồi khóa lại form. Em không gửi dữ liệu tới ProfileController.doPost nên thao tác
                         //   Hủy giữ nguyên hồ sơ đã lưu.
-                        // ... Kết thúc Hủy khi các ô được trả về giá trị trước lúc sửa và form đã khóa lại.
+                        // ... Kết thúc Hủy khi các ô trở về giá trị cũ và form đã khóa. Muốn sửa lại thì bấm Chỉnh sửa, theo
+                        //     profile.jsp, tìm mã HSS01.
                         btnCancel.addEventListener('click', function () {
                             profileInputs.forEach(input => {
                                 if (input.name && originalValues[input.name] !== undefined) {
@@ -1027,8 +1017,8 @@
                     //   navigator.clipboard.writeText để chép. Nếu trình duyệt không dùng được cách này thì em gọi
                     //   fallbackCopy (sao chép bằng cách dự phòng) cùng file. Sau đó showToast (hiện thông báo ngắn trên
                     //   màn hình) báo kết quả để người dùng biết đã sao chép được chưa.
-                    // ... Kết thúc sao chép khi showToast trong profile.jsp hiện kết quả; mã được chép hoặc trình
-                    //     duyệt báo chưa chép được.
+                    // ... Chép xong bằng clipboard hoặc fallbackCopy, em gọi showToast để báo kết quả. Đọc phần thông
+                    //     báo và nút đóng tại profile.jsp, tìm [HSTB01]; tới đó là kết thúc sao chép.
                     function copyMemberId(text) {
                         if (navigator.clipboard && window.isSecureContext) {
                             navigator.clipboard.writeText(text).then(() => {

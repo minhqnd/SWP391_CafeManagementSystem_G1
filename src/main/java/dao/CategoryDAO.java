@@ -78,10 +78,10 @@ public class CategoryDAO extends BaseDAO {
     // [DMDH01]
     // . Trong getOrderedProductCountByCategory (đếm món trong danh mục đã có ở đơn hàng) của
     //   CategoryDAO.java, em nhận mã danh mục từ hàm delete (kiểm tra điều kiện rồi xóa) của
-    //   AdminCategoriesController.java. Em đếm sản phẩm thuộc danh mục đã xuất hiện trong order_items rồi
-    //   trả số về delete, để chặn xóa nếu có lịch sử đơn hàng.
-    // ... Quay lại AdminCategoriesController.java, trong delete sau getOrderedProductCountByCategory; có món đã
-    //     bán thì báo lỗi, đủ điều kiện mới gọi deleteCategoryAndProducts trong CategoryDAO.java.
+    //   AdminCategoriesController.java. Em đếm sản phẩm thuộc danh mục đã xuất hiện trong order_items
+    //   rồi trả số về delete, để chặn xóa nếu có lịch sử đơn hàng.
+    // ... Trả số món đã có trong đơn về AdminCategoriesController.delete. Số lớn hơn 0 thì báo lỗi và
+    //     dừng; bằng 0 mới gọi hàm xóa tại CategoryDAO.java, tìm [DMX03].
     public int getOrderedProductCountByCategory(int categoryId) {
         // [SQL11-04] Nút Xóa danh mục: đếm món đã xuất hiện trong đơn hàng.
         // . Dấu ? từ trái sang phải: 1=mã danh mục.
@@ -102,12 +102,12 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DMTR02]
-    // . Ở categoryNameExists (tìm danh mục khác trùng tên) trong CategoryDAO.java, em nhận tên và mã danh
-    //   mục đang sửa từ AdminCategoriesController.save (kiểm tra và lưu danh mục). Em tìm tên trong
-    //   categories và bỏ qua mã hiện tại, rồi trả đúng hoặc sai để hàm save biết có bị trùng với danh mục
-    //   khác không.
-    // ... Quay lại AdminCategoriesController.java, trong save ngay sau categoryNameExists; tên trùng thì báo lỗi,
-    //     tên hợp lệ mới tiếp tục kiểm tra và gọi saveCategory.
+    // . Ở categoryNameExists (tìm danh mục khác trùng tên) trong CategoryDAO.java, em nhận tên và mã
+    //   danh mục đang sửa từ AdminCategoriesController.save (kiểm tra và lưu danh mục). Em tìm tên trong
+    //   categories và bỏ qua mã hiện tại, rồi trả đúng hoặc sai để hàm save biết có bị trùng với danh
+    //   mục khác không.
+    // ... Quay về AdminCategoriesController.save sau categoryNameExists. Trùng thì báo lỗi; đúng thì
+    //     tiếp tục tới điểm lưu tại AdminCategoriesController.java, tìm mã DML04.
     public boolean categoryNameExists(String name, int exceptId) {
         // [SQL11-05] Ô Tên danh mục: kiểm tra trùng tên, bỏ qua danh mục đang sửa.
         // . Dấu ? từ trái sang phải: 1=tên danh mục; 2=mã danh mục đang sửa; thêm mới dùng 0.
@@ -129,11 +129,14 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DML05]
-    // . AdminCategoriesController.save gọi hàm này để lưu thông tin danh mục và ảnh. Phần lưu thông tin bên
-    //   dưới dùng id để chọn INSERT khi thêm mới hoặc UPDATE khi sửa; ảnh được xử lý trong category_images.
-    // . Cả thông tin và ảnh được lưu trong cùng lần xử lý. Hoàn tất thì trả true về controller; không lưu được
-    //   danh mục thì trả false, còn lỗi phát sinh thì hủy thay đổi và báo lỗi về controller.
-    // ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML06].
+    // . AdminCategoriesController.save gọi hàm này để lưu thông tin danh mục và ảnh. Phần lưu thông tin
+    //   bên dưới dùng id để chọn INSERT khi thêm mới hoặc UPDATE khi sửa; ảnh được xử lý trong
+    //   category_images.
+    // . Cả thông tin và ảnh được lưu trong cùng lần xử lý. Hoàn tất thì trả true về controller; không
+    //   lưu được danh mục thì trả false, còn lỗi phát sinh thì hủy thay đổi và báo lỗi về controller.
+    // ... Ghi thành công thì về controller tại AdminCategoriesController.java, tìm [DML06]. Trả false
+    //     hoặc có lỗi thì doPost giữ form; đọc phần giữ tại AdminCategoriesController.java, tìm mã DML08
+    //     rồi xem thông báo trên trang.
     public boolean saveCategory(Category category, byte[] imageData, String contentType,
                                 String fileName, boolean removeImage)
             throws SQLException, ClassNotFoundException {
@@ -252,11 +255,12 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DMAH03]
-    // . Ở updateCategoryStatus (lưu trạng thái ẩn/hiện danh mục) trong CategoryDAO.java, em nhận mã và trạng
-    //   thái từ AdminCategoriesController.toggle (ẩn hoặc hiện danh mục). Em sửa categories.status theo đúng
-    //   mã rồi trả kết quả về toggle để controller thông báo và mở lại danh sách đã cập nhật.
-    // ... Quay lại AdminCategoriesController.java, trong toggle sau updateCategoryStatus; đặt categoryMessage hoặc
-    //     báo lỗi rồi doPost mở lại admin-categories.jsp để hiện kết quả.
+    // . Ở updateCategoryStatus (lưu trạng thái ẩn/hiện danh mục) trong CategoryDAO.java, em nhận mã và
+    //   trạng thái từ AdminCategoriesController.toggle (ẩn hoặc hiện danh mục). Em sửa categories.status
+    //   theo đúng mã rồi trả kết quả về toggle để controller thông báo và mở lại danh sách đã cập nhật.
+    // ... Trả true thì controller đặt thông báo tại AdminCategoriesController.java, tìm [DMAH04]. Trả
+    //     false hoặc có lỗi thì doPost bắt lỗi và mở lại trang; xem kết quả lỗi tại
+    //     admin-categories.jsp, tìm mã DML07.
     public boolean updateCategoryStatus(int id, String status) throws SQLException, ClassNotFoundException {
 
         // [SQL11-12] Nút Ẩn/Hiện danh mục: đổi trạng thái của đúng nhóm.
@@ -271,11 +275,12 @@ public class CategoryDAO extends BaseDAO {
 
     // [DMX03]
     // . Ở deleteCategoryAndProducts (xóa danh mục cùng sản phẩm đủ điều kiện) trong CategoryDAO.java, em
-    //   nhận mã danh mục từ AdminCategoriesController.delete (kiểm tra điều kiện rồi xóa). Em xóa các sản
-    //   phẩm thuộc nhóm rồi xóa danh mục, hoàn tất cả hai mới xác nhận. Nếu gặp lỗi thì hủy thay đổi và báo
-    //   kết quả về hàm delete.
-    // ... Quay lại AdminCategoriesController.java, trong delete sau deleteCategoryAndProducts; đặt kết quả xóa rồi
-    //     doPost mở lại danh sách trong admin-categories.jsp và hiện thông báo.
+    //   nhận mã danh mục từ AdminCategoriesController.delete (kiểm tra điều kiện rồi xóa). Em xóa các
+    //   sản phẩm thuộc nhóm rồi xóa danh mục, hoàn tất cả hai mới xác nhận. Nếu gặp lỗi thì hủy thay đổi
+    //   và báo kết quả về hàm delete.
+    // ... Xóa thành công thì controller đặt thông báo tại AdminCategoriesController.java, tìm [DMX04].
+    //     Không xóa được hoặc có lỗi thì doPost mở lại trang cùng lỗi tại admin-categories.jsp, tìm mã
+    //     DML07; chưa báo đã xóa.
     public boolean deleteCategoryAndProducts(int id) throws SQLException, ClassNotFoundException {
         if (id <= 0) throw new IllegalArgumentException("Category id must be positive.");
         try (Connection conn = getConnection()) {
@@ -343,11 +348,12 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DMDOC01]
-    // . Hàm getCategoryById (đọc danh mục theo mã) trong CategoryDAO.java nhận mã từ phần sửa, xóa danh mục
-    //   hoặc lưu sản phẩm. Em đọc danh mục cùng ảnh rồi trả Category về controller đang gọi để điền form,
-    //   kiểm tra trước khi xóa hoặc gán sản phẩm vào nhóm.
-    // ... Quay lại lời gọi getCategoryById: trong AdminCategoriesController.java, doGet điền form Sửa hoặc delete
-    //     kiểm tra nhóm cần xóa; trong AdminProductsController.java, save kiểm tra danh mục trước khi gán món.
+    // . Hàm getCategoryById (đọc danh mục theo mã) trong CategoryDAO.java nhận mã từ phần sửa, xóa danh
+    //   mục hoặc lưu sản phẩm. Em đọc danh mục cùng ảnh rồi trả Category về controller đang gọi để điền
+    //   form, kiểm tra trước khi xóa hoặc gán sản phẩm vào nhóm.
+    // ... Quay về đúng lời gọi getCategoryById. Nếu mở Sửa danh mục, xem form tại admin-categories.jsp,
+    //     tìm [DMS03]. Nếu đang xóa, tiếp tục bước đếm đơn tại CategoryDAO.java, tìm [DMDH01]. Với form
+    //     sản phẩm, quay về save sau getCategoryById để kiểm tra nhóm rồi gán vào Product.
     public Category getCategoryById(int id) {
 
         // [SQL11-16] Nút Sửa danh mục hoặc chọn danh mục cho món: đọc đúng một nhóm.

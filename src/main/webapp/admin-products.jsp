@@ -106,11 +106,13 @@
     </header>
 
     <%-- [SPL08]
-         . Khi trang mở lại, admin-products.jsp hiện productMessage hoặc productError để báo kết quả. Với lỗi
-           xảy ra sau khi đọc được form, controller giữ tên, danh mục, giá, mô tả và các dòng size/topping
-           để sửa tiếp, kể cả dòng trùng hoặc giá sai. Ảnh mới phải chọn lại; ô Xóa ảnh hiện tại cần đánh dấu lại.
+         . Khi trang mở lại, admin-products.jsp hiện productMessage hoặc productError để báo kết quả. Với
+           lỗi xảy ra sau khi đọc được form, controller giữ tên, danh mục, giá, mô tả và các dòng
+           size/topping để sửa tiếp, kể cả dòng trùng hoặc giá sai. Ảnh mới phải chọn lại; ô Xóa ảnh hiện
+           tại cần đánh dấu lại.
          . Kết thúc lần lưu khi trang hiện kết quả cùng danh sách và form đã đọc lại.
-         ... Chỉ khi xem cách giữ form sau lỗi, đọc AdminProductsController.java, tìm [SPL09].
+         ... Thông báo và danh sách mới là kết thúc thao tác sản phẩm. Nếu cần xem cách giữ form khi lưu
+             lỗi, đọc AdminProductsController.java, tìm [SPL09]; người dùng sửa rồi bấm Lưu mới gửi lại.
     --%>
     <c:if test="${not empty productMessage and empty productError}"><div data-form-notice class="alert alert-success py-2 mb-0" role="status"><c:out value="${productMessage}" /></div></c:if>
     <c:if test="${not empty productError}"><div data-form-notice class="alert alert-danger py-2 mb-0" role="alert"><c:out value="${productError}" /></div></c:if>
@@ -124,8 +126,8 @@
                      . Khi bấm Lọc trong admin-products.jsp, form gửi từ khóa q và categoryId đến doGet trong
                        AdminProductsController.java. Controller truyền hai điều kiện vào ProductDAO.getProductsForAdmin
                        (đọc danh sách sản phẩm để quản lý) rồi đưa danh sách khớp về trang để hiển thị.
-                     ... Đọc AdminProductsController.java, phần doGet nhận q và categoryId rồi gọi
-                         getProductsForAdmin; kết thúc khi admin-products.jsp hiện bảng khớp bộ lọc.
+                     ... Form gửi q và categoryId tới doGet. Đọc phần nhận hai điều kiện tại
+                         AdminProductsController.java, tìm mã SPM02 rồi theo chỉ dẫn để đọc danh sách và bảng kết quả.
                 --%>
                 <form method="get" action="${ctx}/admin/products" class="row g-2 align-items-center">
                     <div class="col-12 col-lg-5"><input name="q" value="${fn:escapeXml(searchKeyword)}" class="form-control form-control-sm" placeholder="Tìm tên, mã, mô tả..."></div>
@@ -139,10 +141,10 @@
                 </form>
                 <%-- [SPBL01]
                      . Khi bấm Xóa bộ lọc, em mở lại /admin/products không kèm q và categoryId.
-                       AdminProductsController.doGet gọi ProductDAO.getProductsForAdmin (đọc danh sách sản phẩm để quản lý)
-                       không có điều kiện để đọc lại toàn bộ món; thao tác này không xóa sản phẩm nào.
-                     ... Đọc AdminProductsController.java, phần doGet không có q và categoryId; kết thúc khi
-                         admin-products.jsp hiện lại bảng sản phẩm không còn hai bộ lọc.
+                       AdminProductsController.doGet gọi ProductDAO.getProductsForAdmin (đọc danh sách sản phẩm để quản
+                       lý) không có điều kiện để đọc lại toàn bộ món; thao tác này không xóa sản phẩm nào.
+                     ... Mở lại /admin/products không có q và categoryId. Theo doGet tại AdminProductsController.java,
+                         tìm mã SPM02 để đọc lại danh sách; không xóa sản phẩm.
                 --%>
                 <c:if test="${not empty searchKeyword or selectedCategoryId gt 0}"><a class="small d-inline-block mt-2" href="${ctx}/admin/products">Xóa bộ lọc</a></c:if>
             </div>
@@ -233,11 +235,11 @@
 
 
         <%-- [SPS03]
-             . Form trong admin-products.jsp dùng selectedProduct và bản nhập dở từ AdminProductsController.doGet.
-               Có sản phẩm được chọn thì điền form Sửa; không có thì dùng id=0 cho yêu cầu thêm mới. Nếu lưu lỗi
-               thì giữ thông tin để tiếp tục sửa.
-             ... Kết thúc mở form Sửa khi các ô sản phẩm, size và topping đã được điền; bấm Lưu thay đổi mới bắt đầu
-                 ghi dữ liệu.
+             . Form trong admin-products.jsp dùng selectedProduct và bản nhập dở từ
+               AdminProductsController.doGet. Có sản phẩm được chọn thì điền form Sửa; không có thì dùng id=0
+               cho yêu cầu thêm mới. Nếu lưu lỗi thì giữ thông tin để tiếp tục sửa.
+             ... Các ô đã điền xong là kết thúc mở form Sửa. Khi người dùng bấm Lưu thay đổi, theo
+                 admin-products.jsp, tìm [SPL01].
         --%>
         <form id="productForm" data-admin-form="product" method="post" action="${ctx}/admin/products" enctype="multipart/form-data" novalidate>
             <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.productCsrfToken)}"><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="${empty selectedProduct ? 0 : selectedProduct.id}">
@@ -290,32 +292,32 @@
                     <c:choose><c:when test="${selectedProduct.storedImage}"><c:set var="selectedImageSrc" value="${ctx}/product-image?id=${selectedProduct.id}" /></c:when><c:otherwise><c:set var="selectedImageSrc" value="${selectedProduct.imageUrl}" /></c:otherwise></c:choose>
                     <div class="mt-2"><img id="productImagePreview" class="product-image-preview" src="${fn:escapeXml(selectedImageSrc)}" alt="Xem trước ảnh sản phẩm" <c:if test="${not selectedHasImage}">hidden</c:if>><div id="productImagePlaceholder" class="product-image-placeholder" style="width:100%;max-width:250px;height:130px" <c:if test="${selectedHasImage}">hidden</c:if>>Chưa có ảnh</div></div>
                     <%-- [SPXA01]
-                         . Chọn Xóa ảnh hiện tại mới bỏ ảnh ở phần xem trước. Khi bấm Lưu thay đổi, form gửi removeImage tới
-                           AdminProductsController.save (kiểm tra và lưu sản phẩm) rồi ProductDAO.saveProduct (ghi sản phẩm)
-                           để xóa ảnh đang lưu. Nếu chọn ảnh mới thì ưu tiên lưu ảnh mới và bỏ lựa chọn xóa ảnh.
-                         ... Kết thúc chọn xóa ảnh tại removeImage và vùng xem trước; bấm Lưu thay đổi mới gửi lựa
-                             chọn này để cập nhật ảnh.
+                         . Chọn Xóa ảnh hiện tại mới bỏ ảnh ở phần xem trước. Khi bấm Lưu thay đổi, form gửi removeImage
+                           tới AdminProductsController.save (kiểm tra và lưu sản phẩm) rồi ProductDAO.saveProduct (ghi sản
+                           phẩm) để xóa ảnh đang lưu. Nếu chọn ảnh mới thì ưu tiên lưu ảnh mới và bỏ lựa chọn xóa ảnh.
+                         ... Đánh dấu removeImage chỉ đổi lựa chọn trên form. Bấm Lưu thay đổi tại admin-products.jsp, tìm
+                             mã SPL01 thì controller mới nhận yêu cầu xóa ảnh.
                     --%>
                     <c:if test="${selectedHasImage}"><div class="form-check mt-2"><input id="removeImage" name="removeImage" value="true" type="checkbox" class="form-check-input"><label for="removeImage" class="form-check-label small">Xóa ảnh hiện tại</label></div></c:if>
                 </div>
 
                 <%-- [SPSZ01]
                      . Khi bấm Thêm size trong admin-products.jsp, em gọi addVariantRow (tạo một dòng nhập size hoặc
-                       topping) cùng file, truyền vùng size và tên hai ô sizeName, sizeDelta. Hàm tạo dòng tên và phụ thu;
-                       khi lưu, buildVariantsConfig (kiểm tra và ghép size, topping để lưu) trong
+                       topping) cùng file, truyền vùng size và tên hai ô sizeName, sizeDelta. Hàm tạo dòng tên và phụ
+                       thu; khi lưu, buildVariantsConfig (kiểm tra và ghép size, topping để lưu) trong
                        AdminProductsController.java kiểm tra các cặp này để lưu cùng món.
-                     ... Trong admin-products.jsp, tìm định nghĩa function addVariantRow ở phần script để xem cách
-                         tạo dòng; thao tác kết thúc khi dòng size mới đã hiện.
+                     ... Nút gọi addVariantRow cùng file để tạo dòng size. Đọc tại admin-products.jsp, tìm [SPBT01];
+                         thêm xong chưa lưu sản phẩm.
                 --%>
                 <div class="col-12"><div class="variant-editor"><div class="variant-heading"><span>Size &amp; phụ thu</span><button type="button" class="btn btn-sm btn-outline-primary" id="addSize"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm size</button></div><div id="sizesList"></div></div></div>
 
                 <%-- [SPTP01]
                      . Khi bấm Thêm topping trong admin-products.jsp, em gọi addVariantRow (tạo một dòng nhập size hoặc
-                       topping) cùng file, truyền vùng topping và tên hai ô toppingName, toppingPrice. Dòng mới chỉ được
-                       lưu khi gửi form, qua buildVariantsConfig (kiểm tra và ghép size, topping để lưu) trong
+                       topping) cùng file, truyền vùng topping và tên hai ô toppingName, toppingPrice. Dòng mới chỉ
+                       được lưu khi gửi form, qua buildVariantsConfig (kiểm tra và ghép size, topping để lưu) trong
                        AdminProductsController.java để kiểm tra và ghép vào sản phẩm.
-                     ... Trong admin-products.jsp, tìm định nghĩa function addVariantRow ở phần script để xem cách
-                         tạo dòng; thao tác kết thúc khi dòng topping mới đã hiện.
+                     ... Nút gọi addVariantRow cùng file để tạo dòng topping. Đọc tại admin-products.jsp, tìm mã
+                         SPBT01; thêm xong chưa lưu sản phẩm.
                 --%>
                 <div class="col-12"><div class="variant-editor"><div class="variant-heading"><span>Topping &amp; giá</span><button type="button" class="btn btn-sm btn-outline-primary" id="addTopping"><span class="material-symbols-outlined fs-6 align-middle">add</span> Thêm topping</button></div><div id="toppingsList"></div><div class="form-text">Không bắt buộc.</div></div></div>
                 </div>
@@ -336,8 +338,8 @@
                          . Khi bấm Hủy sửa trong admin-products.jsp, em mở lại /admin/products mà không có editId. doGet
                            trong AdminProductsController.java dựng form thêm mới để thoát phần đang sửa; thao tác này không
                            lưu những thay đổi vừa nhập.
-                         ... Kết thúc Hủy sửa khi admin-products.jsp mở lại form thêm mới, không còn sản phẩm đang
-                             chọn sửa.
+                         ... Form thêm mới đã mở lại là kết thúc Hủy sửa. Người dùng nhập món mới rồi bấm Thêm sản phẩm thì
+                             theo admin-products.jsp, tìm mã SPL01.
                     --%>
                     <a href="${ctx}/admin/products" class="btn btn-light">Hủy sửa</a>
                 </c:if>
@@ -361,11 +363,12 @@
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
     // [SPBT01]
-    // . Ở addVariantRow (tạo một dòng nhập size hoặc topping) trong admin-products.jsp, em nhận vùng size
-    //   hoặc topping cùng tên các ô cần tạo. Em thêm cặp ô tên và giá đúng tên gửi, để khi lưu form,
-    //   buildVariantsConfig (kiểm tra và ghép size, topping để lưu) trong AdminProductsController.java đọc
-    //   được từng cặp tương ứng.
-    // ... Khi bấm lưu sản phẩm, đọc tiếp tại AdminProductsController.java, tìm [SPBT02] để theo các dòng vừa tạo.
+    // . Ở addVariantRow (tạo một dòng nhập size hoặc topping) trong admin-products.jsp, em nhận vùng
+    //   size hoặc topping cùng tên các ô cần tạo. Em thêm cặp ô tên và giá đúng tên gửi, để khi lưu
+    //   form, buildVariantsConfig (kiểm tra và ghép size, topping để lưu) trong
+    //   AdminProductsController.java đọc được từng cặp tương ứng.
+    // ... Dòng được gắn vào vùng size hoặc topping là kết thúc Thêm dòng. Người dùng bấm lưu sản phẩm
+    //     thì theo admin-products.jsp, tìm mã SPL01; kiểm tra tên/giá bên controller nằm tại SPBT02.
     const addVariantRow = (container, name, amount, nameField, amountField, namePlaceholder, amountPlaceholder) => {
         const row = document.createElement('div');
         row.className = 'variant-row';
@@ -385,11 +388,11 @@
             '<input class="form-control form-control-sm" name="' + escapeHtml(amountField) + '" type="text" inputmode="decimal" value="' + escapeHtml(amount ?? '') + '" placeholder="' + escapeHtml(amountPlaceholder) + '">' +
             '<button type="button" class="btn btn-sm btn-outline-danger" aria-label="Xóa dòng"><span class="material-symbols-outlined fs-6">delete</span></button>';
         // [SPXR01]
-        // . Nút thùng rác ở mỗi dòng size hoặc topping chỉ gọi row.remove để bỏ đúng dòng khỏi form. Những dòng
-        //   còn lại được gửi khi bấm lưu; controller kiểm tra rồi ProductDAO.saveProduct (ghi sản phẩm) mới ghi
-        //   cấu hình mới. Bấm xóa dòng chưa làm thay đổi sản phẩm đang lưu trong cơ sở dữ liệu.
-        // ... Kết thúc xóa dòng khi đúng dòng size hoặc topping đã biến mất khỏi form; bấm lưu mới ghi cấu hình
-        //     còn lại.
+        // . Nút thùng rác ở mỗi dòng size hoặc topping chỉ gọi row.remove để bỏ đúng dòng khỏi form. Những
+        //   dòng còn lại được gửi khi bấm lưu; controller kiểm tra rồi ProductDAO.saveProduct (ghi sản phẩm)
+        //   mới ghi cấu hình mới. Bấm xóa dòng chưa làm thay đổi sản phẩm đang lưu trong cơ sở dữ liệu.
+        // ... Xóa dòng khỏi form là kết thúc nút thùng rác, chưa đổi sản phẩm đang lưu. Bấm nút lưu tại
+        //     admin-products.jsp, tìm mã SPL01 mới gửi các dòng còn lại.
         row.querySelector('button').addEventListener('click', () => row.remove());
         container.appendChild(row);
     };
@@ -406,12 +409,12 @@
 
     // Việc kiểm tra từng ô, size và topping được thực hiện trong admin-form-validation.js.
     // [SPXTR01]
-    // . Khi chọn ảnh trong admin-products.jsp, sự kiện imageInput.change gọi URL.createObjectURL để đưa tệp
-    //   vào productImagePreview cho người dùng xem trước. Khi bấm lưu, tệp mới tới
-    //   AdminProductsController.save (kiểm tra và lưu sản phẩm) để kiểm tra rồi ProductDAO.saveProduct (ghi
-    //   sản phẩm) để ghi vào cơ sở dữ liệu.
-    // ... Kết thúc xem trước khi ảnh vừa chọn đã hiện ở productImagePreview; bấm lưu mới gửi tệp sang phần kiểm
-    //     tra và ghi ảnh.
+    // . Khi chọn ảnh trong admin-products.jsp, sự kiện imageInput.change gọi URL.createObjectURL để đưa
+    //   tệp vào productImagePreview cho người dùng xem trước. Khi bấm lưu, tệp mới tới
+    //   AdminProductsController.save (kiểm tra và lưu sản phẩm) để kiểm tra rồi ProductDAO.saveProduct
+    //   (ghi sản phẩm) để ghi vào cơ sở dữ liệu.
+    // ... Ảnh đã hiện là kết thúc xem trước. Người dùng bấm Thêm sản phẩm hoặc Lưu thay đổi tại
+    //     admin-products.jsp, tìm mã SPL01 mới gửi ảnh và các ô đi.
     const showPlaceholder = () => { preview.hidden = true; placeholder.hidden = false; };
     if (imageInput && preview && placeholder) {
         preview.addEventListener('error', showPlaceholder);

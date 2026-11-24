@@ -84,11 +84,12 @@ public class EmailUtil {
     }
 
     // [OTG05]
-    // . Trong sendOTP của EmailUtil.java, em nhận email và mã sáu số từ PasswordRecoveryService.start. Em
-    //   gửi thư xác minh rồi trả true hoặc false về start; chỉ khi gửi được thì bước tạo mã mới giữ dữ liệu
-    //   để người dùng xác minh.
-    // ... Quay lại PasswordRecoveryService.java, trong start sau sender.test: gửi được thì giữ State rồi về
-    //     ForgotPasswordController.doPost; gửi thất bại thì báo lỗi và chưa mở bước xác minh.
+    // . Trong sendOTP của EmailUtil.java, em nhận email và mã sáu số từ PasswordRecoveryService.start.
+    //   Em gửi thư xác minh rồi trả true hoặc false về start; chỉ khi gửi được thì bước tạo mã mới giữ
+    //   dữ liệu để người dùng xác minh.
+    // ... Quay về PasswordRecoveryService.start sau sender.test: gửi được mới giữ State; thất bại thì
+    //     báo lỗi, chưa mở ô OTP. Gửi thành công thì về controller tại ForgotPasswordController.java,
+    //     tìm mã OTG06.
     public static boolean sendOTP(String recipientEmail, String otp) {
         if (SENDER_EMAIL == null || SENDER_EMAIL.isBlank() || SMTP_PASSWORD == null || SMTP_PASSWORD.isBlank()) return false;
         Properties properties = new Properties();

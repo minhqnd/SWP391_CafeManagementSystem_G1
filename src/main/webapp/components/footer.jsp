@@ -49,12 +49,12 @@
             <div class="col-lg-3 col-md-6 col-6">
                 <h4 class="aura-footer-heading">Danh mục</h4>
                 <%-- [TCFT02]
-                     . Bấm một danh mục cuối trang mở /menu kèm category để MenuController.doGet lọc món. Tài khoản thành
-                       viên mở /profile, còn Đặt hàng mở Menu; các đường dẫn này dùng chung xử lý với nút tương ứng trên
-                       đầu trang, không tự ghi thêm dữ liệu.
-                     ... Bấm danh mục hoặc Đặt hàng thì đọc MenuController.doGet trong MenuController.java; bấm Tài
-                         khoản thành viên thì đọc ProfileController.doGet trong ProfileController.java. Kết thúc khi
-                         trang tương ứng mở ra.
+                     . Bấm một danh mục cuối trang mở /menu kèm category để MenuController.doGet lọc món. Tài khoản
+                       thành viên mở /profile, còn Đặt hàng mở Menu; các đường dẫn này dùng chung xử lý với nút tương
+                       ứng trên đầu trang, không tự ghi thêm dữ liệu.
+                     ... Bấm danh mục hoặc Đặt hàng thì theo phần nhận Menu tại MenuController.java, tìm mã MNM02. Bấm
+                         Tài khoản thành viên thì theo ProfileController.java, tìm mã HSM02. Trang đã mở là kết thúc
+                         liên kết, chưa gửi đơn hay cập nhật hồ sơ.
                 --%>
                 <ul class="aura-footer-list">
                     <c:forEach var="footerCategory" items="${footerCategories}">

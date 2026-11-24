@@ -338,11 +338,11 @@
                                 <h1>${bannerProduct.name}</h1>
                                 <p>${bannerProduct.description}</p>
                                 <%-- [TCMN01]
-                                     . Nút Khám phá menu mở /menu không kèm bộ lọc. MenuController.doGet đọc danh mục hoạt
-                                       động và các món còn bán rồi đưa về menu.jsp cho khách xem. Nút Xem toàn bộ thực đơn
-                                       bên dưới và banner mặc định dùng cùng đường dẫn.
-                                     ... Đọc MenuController.java, phần doGet nhận yêu cầu /menu không có bộ lọc; kết
-                                         thúc khi menu.jsp hiện danh mục hoạt động và các món đang bán.
+                                     . Nút Khám phá menu mở /menu không kèm bộ lọc. MenuController.doGet đọc danh mục hoạt động và các
+                                       món còn bán rồi đưa về menu.jsp cho khách xem. Nút Xem toàn bộ thực đơn bên dưới và banner mặc
+                                       định dùng cùng đường dẫn.
+                                     ... Yêu cầu /menu không có bộ lọc tới MenuController.doGet. Đọc tại MenuController.java, tìm mã
+                                         MNM02; danh mục hoạt động và các thẻ món hiện xong là kết thúc mở Menu.
                                 --%>
                                 <a class="btn btn-light btn-sm fw-bold px-3 py-2" href="${pageContext.request.contextPath}/menu">Khám phá menu</a>
                             </div>

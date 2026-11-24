@@ -8,11 +8,15 @@ import model.ProductIngredient;
 public class ProductIngredientDAO extends BaseDAO {
 
     // [CTL06]
-    // . AdminRecipeController.doPost gọi saveRecipe trong ProductIngredientDAO.java để lưu công thức của món đã
-    //   chọn. Bảng product_ingredients giữ từng dòng gồm mã món, mã nguyên liệu và lượng cần dùng cho một phần.
-    // . Em kiểm tra nguyên liệu mới còn hoạt động, xóa các dòng công thức cũ rồi thêm danh sách mới của đúng
-    //   món. Ghi đủ mới xác nhận lưu; có lỗi thì hủy thay đổi để giữ công thức cũ và báo về controller.
-    // ... Đọc tiếp tại AdminRecipeController.java, tìm [CTL07].
+    // . AdminRecipeController.doPost gọi saveRecipe trong ProductIngredientDAO.java để lưu công thức của
+    //   món đã chọn. Bảng product_ingredients giữ từng dòng gồm mã món, mã nguyên liệu và lượng cần dùng
+    //   cho một phần.
+    // . Em kiểm tra nguyên liệu mới còn hoạt động, xóa các dòng công thức cũ rồi thêm danh sách mới của
+    //   đúng món. Ghi đủ mới xác nhận lưu; có lỗi thì hủy thay đổi để giữ công thức cũ và báo về
+    //   controller.
+    // ... Lưu đủ công thức thì về controller tại AdminRecipeController.java, tìm [CTL07]. Nếu có lỗi,
+    //     DAO hủy thay đổi; doPost giữ các dòng đang nhập tại AdminRecipeController.java, tìm mã CTL09
+    //     rồi mở lại hộp để sửa.
     public void saveRecipe(int productId, List<ProductIngredient> ingredients) throws Exception {
 
         // [SQL11-36] Nút Lưu công thức: xóa các dòng công thức cũ của món.

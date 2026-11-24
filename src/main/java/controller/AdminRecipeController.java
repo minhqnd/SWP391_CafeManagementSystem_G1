@@ -56,11 +56,12 @@ public class AdminRecipeController extends HttpServlet {
 
     @Override
     // [CTM02]
-    // . Khi mở Quản lý công thức, doGet trong AdminRecipeController.java đọc sản phẩm qua ProductDAO, nguyên
-    //   liệu và giá nhập qua IngredientDAO, công thức qua ProductIngredientDAO. Em đưa các dữ liệu này về
-    //   admin-recipes.jsp để hiện danh sách món, công thức và giá vốn.
-    // ... Trong AdminRecipeController.java, đọc tiếp thân doGet ngay bên dưới: đọc các danh sách, tính chi phí rồi
-    //     đặt dữ liệu trước khi forward tới admin-recipes.jsp.
+    // . Khi mở Quản lý công thức, doGet trong AdminRecipeController.java đọc sản phẩm qua ProductDAO,
+    //   nguyên liệu và giá nhập qua IngredientDAO, công thức qua ProductIngredientDAO. Em đưa các dữ
+    //   liệu này về admin-recipes.jsp để hiện danh sách món, công thức và giá vốn.
+    // ... Sau khi đọc sản phẩm và nguyên liệu, doGet gọi getAllProductIngredientsMap để lấy công thức
+    //     theo mã món. Đọc tại ProductIngredientDAO.java, tìm mã CTM03; sau đó doGet lấy giá nhập để
+    //     tính chi phí.
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         if (!isAdmin(request, response)) return;
@@ -74,11 +75,12 @@ public class AdminRecipeController extends HttpServlet {
 
             List<Ingredient> ingredients = ingredientDAO.getAllIngredients();
             // [CTCH02]
-            // . Ở doGet trong AdminRecipeController.java, em nhận productId của món vừa bấm. Em gọi findProduct (tìm
-            //   đúng món trong danh sách đã đọc) ngay trong controller, truyền danh sách sản phẩm và mã này để chọn
-            //   đúng món rồi điền công thức vào hộp chỉnh sửa.
-            // ... Khi findProduct đã chọn được món, doGet đưa selectedProduct sang admin-recipes.jsp; đọc tiếp tại
-            //     admin-recipes.jsp, tìm [CTCH04] để thấy món của hộp chỉnh sửa.
+            // . Ở doGet trong AdminRecipeController.java, em nhận productId của món vừa bấm. Em gọi findProduct
+            //   (tìm đúng món trong danh sách đã đọc) ngay trong controller, truyền danh sách sản phẩm và mã này
+            //   để chọn đúng món rồi điền công thức vào hộp chỉnh sửa.
+            // ... findProduct chọn món từ danh sách vừa đọc; không có thì đặt lỗi và không mở hộp sửa. Có món
+            //     thì doGet đọc công thức, tính giá rồi đưa selectedProduct sang trang. Xem hộp đã mở tại
+            //     admin-recipes.jsp, tìm [CTCH04].
             int selectedProductId = parseOptionalProductId(request.getParameter("productId"));
             Product selectedProduct = findProduct(products, selectedProductId);
             if (selectedProduct == null) {
@@ -106,11 +108,12 @@ public class AdminRecipeController extends HttpServlet {
             Map<Integer, BigDecimal> ingredientUnitCosts = ingredientDAO.getLatestPurchasePrices();
 
             // [CTTONG03]
-            // . Trong doGet của AdminRecipeController.java, em lấy từng lượng nguyên liệu nhân với giá nhập rồi cộng
-            //   lại thành recipeCost. Em đưa tổng chi phí và danh sách nguyên liệu chưa có giá về admin-recipes.jsp
-            //   để người dùng biết giá vốn đang được tính từ đâu.
-            // ... Trong AdminRecipeController.java, tiếp tục doGet tới chỗ đặt recipeCost, recipeCostComplete và
-            //     missingCostIngredients; admin-recipes.jsp dùng các giá trị này hiện chi phí hoặc phần còn thiếu.
+            // . Trong doGet của AdminRecipeController.java, em lấy từng lượng nguyên liệu nhân với giá nhập rồi
+            //   cộng lại thành recipeCost. Em đưa tổng chi phí và danh sách nguyên liệu chưa có giá về
+            //   admin-recipes.jsp để người dùng biết giá vốn đang được tính từ đâu.
+            // ... Tính giá vốn xong, doGet đặt recipeCost, phần thiếu giá và dữ liệu của trang. Đọc điểm chuyển
+            //     kết quả sang JSP tại AdminRecipeController.java, tìm [CTTS01]; trang dùng các số đó để hiển
+            //     thị.
 
             // [SQL11-44] Giá vốn công thức đang mở: Java cộng giá nhập mới nhất nhân định lượng từng dòng.
             // . Nguồn là getAllProductIngredientsMap và getLatestPurchasePrices; thiếu giá nhập thì đánh dấu
@@ -225,7 +228,8 @@ public class AdminRecipeController extends HttpServlet {
     // . Khi nhận form tại doPost trong AdminRecipeController.java, em lấy mã sản phẩm rồi gọi
     //   ProductDAO.getProductForAdmin để kiểm tra món còn tồn tại. Nếu có món, em tiếp tục kiểm tra từng
     //   dòng công thức; không tìm thấy thì báo lỗi và dừng lưu.
-    // ... Đọc tiếp tại AdminRecipeController.java, tìm [CTL03].
+    // ... doPost gọi getProductForAdmin để kiểm tra món trước khi xét nguyên liệu. Đọc hàm đó tại
+    //     ProductDAO.java, tìm mã CTCH03; kết quả quay về doPost, có món mới tiếp tục parseIngredients.
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         request.setCharacterEncoding("UTF-8");
@@ -310,13 +314,13 @@ public class AdminRecipeController extends HttpServlet {
     }
 
     // [CTL09]
-    // . Khi lưu lỗi và đã có mã món, doPost gọi submittedRows để giữ mã nguyên liệu và định lượng theo đúng
-    //   từng dòng, kể cả dòng trống hoặc bị trùng. Em giữ tối đa 101 dòng trong recipeDraft để người dùng sửa
-    //   tiếp.
+    // . Khi lưu lỗi và đã có mã món, doPost gọi submittedRows để giữ mã nguyên liệu và định lượng theo
+    //   đúng từng dòng, kể cả dòng trống hoặc bị trùng. Em giữ tối đa 101 dòng trong recipeDraft để
+    //   người dùng sửa tiếp.
     // . doGet dùng bản này dựng lại các ô trong hộp sửa công thức. Các dòng nhập dở chưa được ghi vào
     //   product_ingredients, nên công thức đang lưu vẫn được giữ.
-    // ... Quay lại doPost trong AdminRecipeController.java sau submittedRows để giữ recipeDraft và thêm
-    //   productId vào đường dẫn; doGet mở lại hộp sửa để kết thúc lần lưu lỗi.
+    // ... Quay về catch của doPost sau submittedRows để giữ các dòng nhập dở và mở lại đúng productId.
+    //     Xem thông báo tại admin-recipes.jsp, tìm mã CTL08; công thức lỗi chưa được lưu.
     private List<Map<String, String>> submittedRows(String[] ingredientIds, String[] quantities) {
         List<Map<String, String>> rows = new ArrayList<>();
         int length = Math.max(ingredientIds == null ? 0 : ingredientIds.length,
@@ -331,13 +335,15 @@ public class AdminRecipeController extends HttpServlet {
     }
 
     // [CTL04]
-    // . Hàm parseIngredients trong AdminRecipeController.java nhận mã món, các mã nguyên liệu và định lượng. Em
-    //   kiểm tra công thức có nguyên liệu, không quá 100 dòng, các dòng đã nhập phải đủ thông tin và không
-    //   trùng nguyên liệu.
-    // . Với từng định lượng, em gọi MenuValidation.quantity để kiểm tra số dương, tối đa 999.999.999,999 và
-    //   không quá ba chữ số thập phân. Đúng hết thì trả danh sách về doPost để lưu; sai thì báo lỗi để doPost
-    //   giữ form.
-    // ... Đọc tiếp tại AdminRecipeController.java, tìm [CTL05].
+    // . Hàm parseIngredients trong AdminRecipeController.java nhận mã món, các mã nguyên liệu và định
+    //   lượng. Em kiểm tra công thức có nguyên liệu, không quá 100 dòng, các dòng đã nhập phải đủ thông
+    //   tin và không trùng nguyên liệu.
+    // . Với từng định lượng, em gọi MenuValidation.quantity để kiểm tra số dương, tối đa 999.999.999,999
+    //   và không quá ba chữ số thập phân. Đúng hết thì trả danh sách về doPost để lưu; sai thì báo lỗi
+    //   để doPost giữ form.
+    // ... Với từng định lượng, parseIngredients gọi kiểm tra số tại MenuValidation.java, tìm mã CTDL02.
+    //     Đúng hết các dòng thì trả danh sách về doPost để gọi lưu; có lỗi thì doPost giữ dòng và mở lại
+    //     hộp sửa.
     private List<ProductIngredient> parseIngredients(int productId, String[] ingredientIds, String[] quantities) {
 
         List<ProductIngredient> result = new ArrayList<>();

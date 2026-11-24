@@ -21,10 +21,10 @@ public class ResendOtpController extends HttpServlet {
             PasswordRecoveryService.shared().resend(request.getSession(),request.getRemoteAddr());
 
             // [OTGL04]
-            // . Khi gửi lại mã thành công, chương trình quay về doPost trong ResendOtpController.java. Em đặt thông
-            //   báo rồi mở lại tab=otp để người dùng nhập mã mới trong auth_modal.jsp.
-            // ... Kết thúc lần Gửi lại khi auth_modal.jsp mở lại ô OTP cùng thông báo; muốn xác minh mã mới thì
-            //     người dùng bấm Xác nhận OTP.
+            // . Khi gửi lại mã thành công, chương trình quay về doPost trong ResendOtpController.java. Em đặt
+            //   thông báo rồi mở lại tab=otp để người dùng nhập mã mới trong auth_modal.jsp.
+            // ... Ô OTP và thông báo đã hiện là kết thúc Gửi lại. Người dùng nhập mã mới rồi bấm Xác nhận OTP
+            //     thì theo auth_modal.jsp, tìm [OTXM01].
             request.getSession().setAttribute("successMsg","Mã OTP mới đã được gửi đến email của bạn.");
         }catch(IllegalArgumentException e){request.getSession().setAttribute("errorMsg",e.getMessage());}
         // . Em gọi nextTab trong PasswordRecoveryService.java để mở lại bước còn dùng được: gửi thành công

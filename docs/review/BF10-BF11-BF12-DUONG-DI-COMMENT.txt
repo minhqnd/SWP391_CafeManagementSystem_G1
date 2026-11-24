@@ -1,0 +1,179 @@
+ĐƯỜNG ĐI COMMENT BF10 – BF11 – BF12
+
+Mã chỉ dùng để tìm trong code. Dòng ... của comment chỉ chỗ đọc tiếp.
+Khi sang file khác, mở file được ghi rồi tìm mã ở đầu comment.
+Khi tìm toàn dự án, điền src/** ở Files to include để không lẫn mã trong tài liệu này.
+Nếu mã có nhiều kết quả, tìm nguyên [MÃ] và chọn dòng mở đầu // [MÃ] hoặc <%-- [MÃ].
+Quay về sau lời gọi: đọc tiếp bên dưới lời gọi vừa trả kết quả; không chạy lại hàm từ đầu.
+Khi người dùng bấm: đó là thao tác tiếp theo, chưa tự chạy ở bước đang review.
+Các chuỗi dưới đây mô tả nhánh thành công. Nhánh sai/dừng/Hủy được ghi riêng trong comment.
+Hàm dùng chung có thể mang phần chữ khác; đi theo mã đích, không tự đoán số tiếp theo.
+
+BF10
+============================================================
+
+Chỉnh sửa hồ sơ
+HSS01 -> HSS02 -> HSTD01
+Kết thúc mở sửa ở trạng thái nút Lưu. Người dùng bấm Lưu thay đổi mới theo HSL01.
+Bắt đầu: src/main/webapp/profile.jsp
+
+Lưu hồ sơ
+HSL01 -> HSL02 -> HSL03 -> HSL04 -> HSL05 -> HSL06 -> HSL07
+Kết thúc khi hồ sơ và thông báo đã hiện. Nhánh lỗi có hướng dẫn riêng trong HSL03/HSL05.
+Bắt đầu: src/main/webapp/profile.jsp
+
+Hủy sửa hồ sơ
+HSH01 -> HSH02
+Kết thúc khi các ô về giá trị cũ và form khóa lại. Bấm Chỉnh sửa mới bắt đầu HSS01.
+Bắt đầu: src/main/webapp/profile.jsp
+
+Đăng ký
+DKL01 -> DKL02 -> DKL03 -> DKL04 -> DKL05 -> DKL06 -> DKL07 -> DKL08
+Kết thúc tại thông báo. Đăng ký xong chưa tự đăng nhập; bấm Đăng nhập mới theo DNL01.
+Bắt đầu: src/main/webapp/components/auth_modal.jsp
+
+Đăng nhập
+DNL01 -> DNL02 -> DNL03 -> DNL04 -> DNL05 -> DNL06
+Kết thúc khi chuyển tới trang theo tài khoản. Sai tài khoản thì trả form và dừng nhánh lỗi.
+Bắt đầu: src/main/webapp/components/auth_modal.jsp
+
+Mở Quên mật khẩu
+OTM01 -> OTM02
+Kết thúc mở ô email. Bấm Gửi mã OTP mới bắt đầu OTG01.
+Bắt đầu: src/main/webapp/components/auth_modal.jsp
+
+Gửi mã OTP
+OTG01 -> OTG02 -> OTG03 -> OTG04 -> OTG05 -> OTG06 -> OTG07
+Kết thúc khi ô OTP hiện ra. Bấm Xác nhận OTP mới bắt đầu OTXM01.
+Bắt đầu: src/main/webapp/components/auth_modal.jsp
+
+Xác nhận OTP
+OTXM01 -> OTXM02 -> OTXM03 -> OTXM04 -> OTXM05
+Kết thúc khi form mật khẩu mới hiện ra. Bấm Cập nhật mật khẩu mới bắt đầu OTDM01.
+Bắt đầu: src/main/webapp/components/auth_modal.jsp
+
+Gửi lại OTP
+OTGL01 -> OTGL02 -> OTGL03 -> OTGL04
+Kết thúc khi thông báo và ô OTP hiện lại. Bấm Xác nhận OTP mới bắt đầu OTXM01.
+Bắt đầu: src/main/webapp/components/auth_modal.jsp
+
+Lưu mật khẩu khôi phục
+OTDM01 -> OTDM02 -> OTDM03 -> OTDM04 -> OTDM05 -> DNM01
+Kết thúc ở form Đăng nhập. Người dùng nhập rồi bấm Đăng nhập mới theo DNL01.
+Bắt đầu: src/main/webapp/components/auth_modal.jsp
+
+Đổi mật khẩu trong hồ sơ
+MKL01 -> MKL02 -> MKL03 -> MKL04 -> MKL05
+Kết thúc tại thông báo đổi mật khẩu; lỗi thì sửa và gửi lại.
+Bắt đầu: src/main/webapp/profile.jsp
+
+Đăng xuất
+DNX01 -> DNX02
+Kết thúc khi phiên cũ đã hủy và Trang chủ đã mở.
+Bắt đầu: src/main/webapp/components/header.jsp
+
+BF11
+============================================================
+
+Lưu danh mục
+DML01 -> DMKT01 -> DML02 -> DML03 -> DML04 -> DML05 -> DML06 -> DML07
+Kết thúc tại danh sách và thông báo. Nhánh giữ form sau lỗi được chỉ riêng tới DML08.
+Bắt đầu: src/main/webapp/admin-categories.jsp
+
+Mở sửa danh mục
+DMS01 -> DMS02 -> DMDOC01 -> DMS03
+Kết thúc khi form đã điền. Bấm Lưu thay đổi mới bắt đầu DML01.
+Bắt đầu: src/main/webapp/admin-categories.jsp
+
+Ẩn/hiện danh mục
+DMAH01 -> DMAH02 -> DMAH03 -> DMAH04 -> DML07
+Kết thúc tại trạng thái và thông báo mới.
+Bắt đầu: src/main/webapp/admin-categories.jsp
+
+Xóa danh mục
+DMX01 -> DMX02 -> DMDOC01 -> DMDH01 -> DMX03 -> DMX04 -> DML07
+Chuỗi thành công chỉ tiếp tục khi đủ điều kiện xóa; không đủ điều kiện thì báo lỗi và dừng.
+Bắt đầu: src/main/webapp/admin-categories.jsp
+
+Lưu sản phẩm
+SPL01 -> SPL02 -> SPL03 -> SPL04 -> SPBT02 -> SPL05 -> SPL06 -> SPL07 -> SPL08
+SPBT02 là hàm ghép size/topping được SPL04 gọi. Trả về save xong mới theo SPL05. Kết thúc tại danh sách và thông báo.
+Bắt đầu: src/main/webapp/admin-products.jsp
+
+Mở sửa sản phẩm
+SPS01 -> SPS02 -> CTCH03 -> SPS03
+CTCH03 dùng chung cho đọc món. Chọn nhánh Sửa sản phẩm để về SPS03. Bấm Lưu mới theo SPL01.
+Bắt đầu: src/main/webapp/admin-products.jsp
+
+Ngừng/khôi phục bán
+SPAH01 -> SPAH02 -> SPAH03 -> SPAH04 -> SPL08
+Kết thúc tại trạng thái bán và thông báo mới.
+Bắt đầu: src/main/webapp/admin-products.jsp
+
+Xóa sản phẩm
+SPX01 -> SPX02 -> CTCH03 -> SPX03 -> SPX04 -> SPL08
+Tại CTCH03 chọn nhánh Xóa, trở lại delete để kiểm tra điều kiện. Chỉ đủ điều kiện mới tới SPX03.
+Bắt đầu: src/main/webapp/admin-products.jsp
+
+Thêm size
+SPSZ01 -> SPBT01
+Dòng mới đã hiện là kết thúc. Bấm lưu sản phẩm mới bắt đầu SPL01.
+Bắt đầu: src/main/webapp/admin-products.jsp
+
+Thêm topping
+SPTP01 -> SPBT01
+Dùng chung hàm tạo dòng với size. Bấm lưu sản phẩm mới bắt đầu SPL01.
+Bắt đầu: src/main/webapp/admin-products.jsp
+
+Mở công thức
+CTCH01 -> CTCH02 -> CTCH04
+Kết thúc khi món và các dòng đã hiện. Bấm Lưu công thức mới bắt đầu CTL01.
+Bắt đầu: src/main/webapp/admin-recipes.jsp
+
+Thêm nguyên liệu
+CTT01 -> CTT02
+Dòng mới đã hiện là kết thúc. Chọn nguyên liệu hoặc nhập lượng thì input/change gọi CTTONG02.
+Bắt đầu: src/main/webapp/admin-recipes.jsp
+
+Xóa dòng nguyên liệu
+CTX01 -> CTX02 -> CTTONG02 -> CTDG02 -> CTTONG06
+Xóa dòng rồi tính lại chi phí xem trước; chưa lưu công thức.
+Bắt đầu: src/main/webapp/admin-recipes.jsp
+
+Giá vốn xem trước
+CTTONG01 -> CTTONG02 -> CTDG02 -> CTTONG06
+Kết thúc khi tổng và lời nhắc đã hiện. Bấm Lưu công thức mới bắt đầu CTL01.
+Bắt đầu: src/main/webapp/admin-recipes.jsp
+
+Lưu công thức
+CTL01 -> CTKT01 -> CTL02 -> CTCH03 -> CTL03 -> CTL04 -> CTDL02 -> CTL05 -> CTL06 -> CTL07 -> CTL08
+CTCH03 chọn nhánh Lưu công thức. CTDL02 trả lượng về vòng lặp; xét hết dòng mới tới CTL05. Kết thúc tại công thức và thông báo.
+Bắt đầu: src/main/webapp/admin-recipes.jsp
+
+Đóng/Hủy công thức
+CTD01 -> CTD02
+Kết thúc khi hộp đã đóng; chưa gửi form lưu.
+Bắt đầu: src/main/webapp/admin-recipes.jsp
+
+BF12
+============================================================
+
+Lưu quy tắc
+TDQT01 -> TDKT01 -> TDQT02 -> TDQT03 -> TDQT04 -> TDQT05 -> TDQT06 -> TDQT07 -> TDQT08 -> TDQT09
+TDKT01 kiểm tra trên trang; TDQT03 kiểm tra từng số ở phía xử lý. Kết thúc khi ba ô và kết quả đã hiện.
+Bắt đầu: src/main/webapp/admin-loyalty.jsp
+
+Tra cứu SĐT
+TDTK01 -> TDTK02 -> TDTK03 -> TDTK04 -> TDTK05
+Kết thúc khi đúng khách và số dư đã hiện. Bấm Cộng hoặc Trừ mới bắt đầu TDC01/TDT01.
+Bắt đầu: src/main/webapp/admin-loyalty.jsp
+
+Cộng điểm
+TDC01 -> TDDC01 -> TDDC02 -> TDDC03 -> TDDC04 -> TDDC05 -> TDDC06 -> TDQT09 -> TDSD02 -> TDLS01
+TDQT09 đọc kết quả chung; chọn hướng Cộng/Trừ để xem số dư rồi lịch sử. Đủ cả hai phần mới kết thúc đối chiếu.
+Bắt đầu: src/main/webapp/admin-loyalty.jsp
+
+Trừ điểm
+TDT01 -> TDDC01 -> TDDC02 -> TDDC03 -> TDDC04 -> TDDC05 -> TDDC06 -> TDQT09 -> TDSD02 -> TDLS01
+Dùng chung xử lý với Cộng nhưng truyền subtract. Nếu không đủ điểm thì báo lỗi và giữ nguyên số dư/lịch sử.
+Bắt đầu: src/main/webapp/admin-loyalty.jsp

@@ -75,11 +75,12 @@ public class LoginController extends HttpServlet {
         boolean hasRedirect = RedirectUtil.isSafeLocalPath(redirect);
 
         // [DNTK03]
-        // . Trong doPost của LoginController.java, em kiểm tra email hoặc số điện thoại không trống và tối đa
-        //   150 ký tự, mật khẩu không trống và tối đa 255 ký tự. Nếu sai, em gọi AccountFormFeedback.flash (giữ
-        //   lỗi và các ô qua lần chuyển trang) để giữ thông tin cần điền lại rồi mở form Đăng nhập kèm lỗi.
-        // ... Trong LoginController.java, còn lỗi thì doPost mở lại form Đăng nhập kèm lỗi; hết lỗi thì đọc tiếp
-        //     phần gọi userDAO.login ngay bên dưới.
+        // . Trong doPost của LoginController.java, em kiểm tra email hoặc số điện thoại không trống và tối
+        //   đa 150 ký tự, mật khẩu không trống và tối đa 255 ký tự. Nếu sai, em gọi
+        //   AccountFormFeedback.flash (giữ lỗi và các ô qua lần chuyển trang) để giữ thông tin cần điền lại
+        //   rồi mở form Đăng nhập kèm lỗi.
+        // ... Có lỗi thì doPost trả form và dừng đăng nhập. Hai ô đã đúng thì đọc bước gọi userDAO.login tại
+        //     LoginController.java, tìm mã DNL03.
         java.util.Map<String,String> inputErrors = new java.util.LinkedHashMap<>();
         if (userIdentifier == null || userIdentifier.isEmpty()) {
             inputErrors.put("username", "Vui lòng nhập email hoặc số điện thoại.");

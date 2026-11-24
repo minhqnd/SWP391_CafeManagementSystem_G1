@@ -16,13 +16,13 @@ public final class LoyaltyValidation {
     private LoyaltyValidation() { }
 
     // [TDQT03]
-    // . ruleValue trong AdminLoyaltyController.java gọi wholeNumber trong LoyaltyValidation.java, truyền nội
-    //   dung ô, tên ô và mức nhỏ nhất/lớn nhất được phép. Em bỏ khoảng trắng đầu/cuối, kiểm tra số nguyên rồi
-    //   kiểm tra giới hạn.
-    // . Hợp lệ thì trả số về ruleValue; sai thì báo lỗi để ruleValue giữ lời báo của đúng ô. updateRules xét
-    //   lỗi của cả ba ô trước khi cho lưu.
-    // ... Quay lại ruleValue trong AdminLoyaltyController.java ngay sau LoyaltyValidation.wholeNumber;
-    //   ruleValue trả số cho updateRules hoặc giữ lỗi của ô, rồi updateRules xét errors của cả ba ô.
+    // . ruleValue trong AdminLoyaltyController.java gọi wholeNumber trong LoyaltyValidation.java, truyền
+    //   nội dung ô, tên ô và mức nhỏ nhất/lớn nhất được phép. Em bỏ khoảng trắng đầu/cuối, kiểm tra số
+    //   nguyên rồi kiểm tra giới hạn.
+    // . Hợp lệ thì trả số về ruleValue; sai thì báo lỗi để ruleValue giữ lời báo của đúng ô. updateRules
+    //   xét lỗi của cả ba ô trước khi cho lưu.
+    // ... Trả số hoặc lời báo về ruleValue trong controller. Kiểm tra xong cả ba ô, updateRules xét
+    //     errors tại AdminLoyaltyController.java, tìm mã TDQT04 để quyết định lưu hay trả form.
     public static long wholeNumber(String raw, String label, long min, long max) {
         // . Em bỏ khoảng trắng đầu cuối để kiểm tra đúng phần số người dùng nhập.
         String value = FormInput.trim(raw);

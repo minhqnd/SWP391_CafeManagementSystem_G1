@@ -2,11 +2,11 @@
 
 <%
     // [ATCU01]
-    // . login.jsp chuyển người dùng về Trang chủ kèm tab tài khoản để auth_modal.jsp mở đúng form. Đây là
-    //   đường dẫn chuyển tiếp; việc đăng nhập chỉ được xử lý ở LoginController.doPost khi người dùng gửi
-    //   form thực tế.
-    // ... Kết thúc đường dẫn chuyển tiếp khi Trang chủ mở auth_modal.jsp đúng tab tài khoản; nút gửi của form mới
-    //     bắt đầu đăng nhập hoặc đăng ký.
+    // . login.jsp chuyển người dùng về Trang chủ kèm tab tài khoản để auth_modal.jsp mở đúng form. Đây
+    //   là đường dẫn chuyển tiếp; việc đăng nhập chỉ được xử lý ở LoginController.doPost khi người dùng
+    //   gửi form thực tế.
+    // ... Đường dẫn cũ chuyển về Trang chủ để mở hộp tài khoản. Người dùng bấm nút gửi thì theo
+    //     auth_modal.jsp, tìm [DNL01] nếu đăng nhập hoặc auth_modal.jsp, tìm [DKL01] nếu đăng ký.
     String legacyTab = request.getParameter("tab");
     if (!java.util.Set.of("login", "register", "forgot", "otp", "reset_password").contains(legacyTab == null ? "" : legacyTab)) legacyTab = "login";
     response.sendRedirect(request.getContextPath() + "/?tab=" + legacyTab);

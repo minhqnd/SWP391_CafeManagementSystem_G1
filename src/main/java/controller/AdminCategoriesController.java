@@ -163,11 +163,11 @@ public class AdminCategoriesController extends HttpServlet {
     }
 
     // [DML08]
-    // . Nếu lưu danh mục bị lỗi sau khi đọc được form, em gọi preserveDraftAfterSaveError để giữ mã, tên và trạng thái
-    //   đang nhập vào categoryDraft. Khi trang mở lại, doGet đưa bản này về form để sửa tiếp;
-    //   tệp ảnh mới không nằm trong bản giữ lại nên người dùng cần chọn lại nếu muốn gửi lại.
-    // ... Quay lại nhánh catch của doPost trong AdminCategoriesController.java sau preserveDraftAfterSaveError;
-    //     đặt categoryError rồi chuyển trang, doGet đưa categoryDraft về form để kết thúc lần lưu lỗi.
+    // . Nếu lưu danh mục bị lỗi sau khi đọc được form, em gọi preserveDraftAfterSaveError để giữ mã, tên
+    //   và trạng thái đang nhập vào categoryDraft. Khi trang mở lại, doGet đưa bản này về form để sửa
+    //   tiếp; tệp ảnh mới không nằm trong bản giữ lại nên người dùng cần chọn lại nếu muốn gửi lại.
+    // ... Quay về catch của doPost sau preserveDraftAfterSaveError. Controller giữ lỗi rồi chuyển trang;
+    //     doGet đưa bản nhập dở về form. Xem kết quả hiển thị tại admin-categories.jsp, tìm mã DML07.
     private void preserveDraftAfterSaveError(String action, HttpServletRequest request, HttpSession session) {
         if (!"save".equals(action)) return;
         int id;
@@ -205,12 +205,15 @@ public class AdminCategoriesController extends HttpServlet {
         name = MenuValidation.requiredName(name, "Tên danh mục", 100);
         // [DMAN02]
         // . AdminCategoriesController.save nhận tệp imageFile từ form. Em kiểm tra dung lượng, gọi
-        //   normalizeImageType để nhận loại ảnh rồi dùng matchesImageSignature để kiểm tra dữ liệu tệp có đúng
-        //   loại đó không.
+        //   normalizeImageType để nhận loại ảnh rồi dùng matchesImageSignature để kiểm tra dữ liệu tệp có
+        //   đúng loại đó không.
         // . Ảnh hợp lệ được chuyển cùng thông tin danh mục tới CategoryDAO.saveCategory để lưu. Em chỉ nhận
         //   JPG, PNG, GIF hoặc WebP tối đa 5 MB; sai thì báo lỗi và dừng lưu.
-        // .. Trường hợp chưa đọc được cả form đã được AdminFormFeedback.readMultipart xử lý trước khi vào save.
-        // ... Nếu cần xem cách nhận biểu mẫu trước khi vào save, đọc AdminFormFeedback.java, tìm [DMAN04].
+        // .. Trường hợp chưa đọc được cả form đã được AdminFormFeedback.readMultipart xử lý trước khi vào
+        //    save.
+        // ... Ảnh hợp lệ được giữ cùng thông tin danh mục để ghi một lần. Đọc điểm gọi
+        //     CategoryDAO.saveCategory tại AdminCategoriesController.java, tìm mã DML04; ảnh sai thì dừng và
+        //     doPost trả form lỗi.
         if (imagePart != null && imagePart.getSize() == 0
                 && trimToNull(imagePart.getSubmittedFileName()) != null) {
             throw new IllegalArgumentException("Tệp ảnh đã chọn trống. Vui lòng chọn ảnh khác.");
@@ -234,10 +237,10 @@ public class AdminCategoriesController extends HttpServlet {
 
         // [DMTT02]
         // . Trong hàm save (kiểm tra và lưu danh mục) của AdminCategoriesController.java, em lấy status từ ô
-        //   Trạng thái. Em chỉ chấp nhận ACTIVE hoặc INACTIVE vì đây là hai trạng thái danh mục đang dùng; giá
-        //   trị khác sẽ bị báo lỗi trước khi lưu.
-        // ... Trong AdminCategoriesController.java, tiếp tục save ngay dưới bước kiểm tra status; tạo Category rồi
-        //     gọi categoryDAO.saveCategory nếu các phần đều hợp lệ.
+        //   Trạng thái. Em chỉ chấp nhận ACTIVE hoặc INACTIVE vì đây là hai trạng thái danh mục đang dùng;
+        //   giá trị khác sẽ bị báo lỗi trước khi lưu.
+        // ... status đúng thì save ghép Category và gọi DAO. Đọc điểm gọi ghi tại
+        //     AdminCategoriesController.java, tìm mã DML04; status sai thì doPost trả form cùng lỗi.
         if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) throw new IllegalArgumentException("Vui lòng chọn trạng thái Hoạt động hoặc Tạm ẩn.");
 
         // [DMTR01]
@@ -278,15 +281,22 @@ public class AdminCategoriesController extends HttpServlet {
         String status = request.getParameter("status");
         if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) throw new IllegalArgumentException("Trạng thái không hợp lệ.");
         if (!categoryDAO.updateCategoryStatus(id, status)) throw new IllegalArgumentException("Không tìm thấy danh mục.");
+        // [DMAH04]
+        // . updateCategoryStatus trả thành công thì toggle đặt categoryMessage rồi trở về doPost. doPost
+        //   chuyển lại trang để doGet đọc danh sách mới.
+        // ... Xem thông báo tại admin-categories.jsp, tìm mã DML07; trạng thái mới và thông báo đã hiện là
+        //     kết thúc đổi trạng thái.
         session.setAttribute("categoryMessage", "Đã cập nhật trạng thái danh mục.");
     }
 
     // [DMX02]
-    // . Trong AdminCategoriesController.delete, em nhận mã danh mục cần xóa. Em gọi CategoryDAO.getCategoryById
-    //   để đọc đúng nhóm, rồi getOrderedProductCountByCategory để đếm món của nhóm đã xuất hiện trong đơn hàng.
-    // . Có món nằm trong đơn thì báo lỗi và dừng. Đủ điều kiện mới gọi CategoryDAO.deleteCategoryAndProducts để
-    //   xóa danh mục cùng các món thuộc nhóm.
-    // ... Đọc tiếp tại CategoryDAO.java, tìm [DMDH01].
+    // . Trong AdminCategoriesController.delete, em nhận mã danh mục cần xóa. Em gọi
+    //   CategoryDAO.getCategoryById để đọc đúng nhóm, rồi getOrderedProductCountByCategory để đếm món
+    //   của nhóm đã xuất hiện trong đơn hàng.
+    // . Có món nằm trong đơn thì báo lỗi và dừng. Đủ điều kiện mới gọi
+    //   CategoryDAO.deleteCategoryAndProducts để xóa danh mục cùng các món thuộc nhóm.
+    // ... delete gọi getCategoryById để kiểm tra nhóm cần xóa. Đọc hàm đó tại CategoryDAO.java, tìm mã
+    //     DMDOC01; kết quả quay về delete, có danh mục mới tiếp tục đếm món đã nằm trong đơn.
     private void delete(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
         int id = parseId(request.getParameter("id"), false);
         Category category = categoryDAO.getCategoryById(id);
@@ -295,6 +305,11 @@ public class AdminCategoriesController extends HttpServlet {
             throw new IllegalArgumentException("Không thể xóa vì danh mục có sản phẩm đã xuất hiện trong lịch sử đơn hàng.");
         }
         if (!categoryDAO.deleteCategoryAndProducts(id)) throw new IllegalArgumentException("Không thể xóa danh mục.");
+        // [DMX04]
+        // . deleteCategoryAndProducts trả thành công thì delete đặt categoryMessage rồi trở về doPost để
+        //   chuyển trang. doGet đọc danh sách không còn danh mục và các món vừa xóa.
+        // ... Xem kết quả tại admin-categories.jsp, tìm mã DML07; thông báo và danh sách mới là kết thúc
+        //     xóa. Có lỗi trước đó thì doPost hiện categoryError, không báo đã xóa.
         session.setAttribute("categoryMessage", "Đã xóa danh mục '" + category.getName() + "' và các sản phẩm thuộc danh mục.");
     }
 

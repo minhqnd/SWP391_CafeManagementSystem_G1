@@ -97,11 +97,12 @@ public final class PasswordRecoveryService {
     }
 
     // [OTGH01]
-    // . Trong start (tạo và gửi mã OTP) của PasswordRecoveryService.java, em gọi reserve (kiểm tra giới hạn
-    //   số lần gửi OTP) cùng file để kiểm tra giới hạn gửi mã. Em truyền email, nguồn yêu cầu và thời gian
-    //   hiện tại; nếu gửi quá nhiều thì hàm báo phải chờ, còn trong giới hạn thì tiếp tục gửi OTP.
-    // ... Quay lại PasswordRecoveryService.java, trong start sau reserve; đủ điều kiện mới tạo mã và gọi
-    //     sender.test, còn vượt giới hạn thì báo lỗi về controller đang gửi mã.
+    // . Trong start (tạo và gửi mã OTP) của PasswordRecoveryService.java, em gọi reserve (kiểm tra giới
+    //   hạn số lần gửi OTP) cùng file để kiểm tra giới hạn gửi mã. Em truyền email, nguồn yêu cầu và
+    //   thời gian hiện tại; nếu gửi quá nhiều thì hàm báo phải chờ, còn trong giới hạn thì tiếp tục gửi
+    //   OTP.
+    // ... Quay về PasswordRecoveryService.start sau reserve. Vượt giới hạn thì dừng và báo lỗi; được
+    //     phép thì tìm tài khoản tại UserDAO.java, tìm mã OTG04, rồi mới tạo mã và gửi thư.
     private synchronized void reserve(String email,String source,long now){
         emailSends.entrySet().removeIf(e->now-e.getValue()>=COOLDOWN);
         sourceSends.entrySet().removeIf(e->now-e.getValue().start()>=600000L);
@@ -130,8 +131,9 @@ public final class PasswordRecoveryService {
             // . Ở verify (xác minh mã OTP) trong PasswordRecoveryService.java, em so sáu chữ số vừa nhập với OTP
             //   đang giữ của lần yêu cầu này. Sai thì tăng số lần thử và báo lỗi; đủ năm lần sai thì hủy lần xác
             //   minh. Đúng thì bỏ OTP, giữ thời điểm xác minh để controller mở bước nhập mật khẩu mới.
-            // ... Quay lại VerifyOtpController.java sau service.verify: xác minh được thì mở tab reset_password;
-            //     sai hoặc hết hạn thì nhánh catch báo lỗi và chọn màn hình tiếp tục.
+            // ... verify trả về VerifyOtpController.doPost: đúng thì mở bước đặt mật khẩu, sai thì catch hiện
+            //     lỗi. Đọc điểm nhận kết quả tại VerifyOtpController.java, tìm mã OTXM04; nhánh lỗi nằm trong
+            //     catch bên dưới.
 
             // [SQL10-17] Nút Xác minh OTP: Java đối chiếu mã và trạng thái khôi phục giữ trong phiên đăng nhập.
             // . Không có câu SELECT OTP trong MySQL; hạn dùng và số lần nhập sai cũng được kiểm tra trong dịch
@@ -176,13 +178,13 @@ public final class PasswordRecoveryService {
             State state=state(session);long now=clock.getAsLong();
             if(state.verifiedAt==null || now-state.verifiedAt>=TTL){clear(session);throw expired();}
             // [OTMK02]
-            // . Sau khi kiểm tra lần xác minh còn hiệu lực, trong reset (đặt lại mật khẩu sau khi xác minh OTP) của
-            //   PasswordRecoveryService.java em gọi AccountValidation.passwordError (kiểm tra điều kiện mật khẩu)
-            //   bằng mật khẩu mới và xác nhận. Hàm kiểm tra 8–255 ký tự, có chữ và số, không có ký tự điều khiển,
-            //   hai ô phải khớp. Có lỗi thì dừng trước khi gọi users.resetPasswordById (ghi mật khẩu mới cho tài
-            //   khoản đã xác minh) để ghi mật khẩu mới.
-            // ... Trong PasswordRecoveryService.java, đọc tiếp reset ngay dưới bước kiểm tra: có error thì trả
-            //     lỗi, không có thì gọi users.resetPasswordById để ghi mật khẩu mới.
+            // . Sau khi kiểm tra lần xác minh còn hiệu lực, trong reset (đặt lại mật khẩu sau khi xác minh OTP)
+            //   của PasswordRecoveryService.java em gọi AccountValidation.passwordError (kiểm tra điều kiện mật
+            //   khẩu) bằng mật khẩu mới và xác nhận. Hàm kiểm tra 8–255 ký tự, có chữ và số, không có ký tự điều
+            //   khiển, hai ô phải khớp. Có lỗi thì dừng trước khi gọi users.resetPasswordById (ghi mật khẩu mới
+            //   cho tài khoản đã xác minh) để ghi mật khẩu mới.
+            // ... reset nhận kết quả passwordError; có lỗi thì dừng, đúng mới gọi UserDAO.resetPasswordById. Đọc
+            //     bước ghi mật khẩu tại UserDAO.java, tìm mã OTDM04.
             String error=AccountValidation.passwordError(password,confirmation);if(error!=null)throw new IllegalArgumentException(error);
             boolean updated;
             try {

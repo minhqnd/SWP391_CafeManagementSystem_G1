@@ -120,11 +120,12 @@
             };
 
             // [BMKT01]
-            // . Ở validate (kiểm tra giá trị của một ô nhập) trong account-validation.js, em nhận ô đang nhập hoặc
-            //   sắp gửi, đọc tên ô để chọn cách kiểm tra phù hợp. Em trả lời báo cho feedback (hiển thị lời báo tại
-            //   ô nhập) để hiện đúng vị trí; nếu đang gửi form mà còn lỗi thì bước gửi sẽ dừng lại.
-            // ... Quay lại sự kiện input hoặc submit trong account-validation.js sau validate; feedback hiện lời
-            //     báo và phần submit quyết định dừng hay gửi form.
+            // . Ở validate (kiểm tra giá trị của một ô nhập) trong account-validation.js, em nhận ô đang nhập
+            //   hoặc sắp gửi, đọc tên ô để chọn cách kiểm tra phù hợp. Em trả lời báo cho feedback (hiển thị lời
+            //   báo tại ô nhập) để hiện đúng vị trí; nếu đang gửi form mà còn lỗi thì bước gửi sẽ dừng lại.
+            // ... validate trả lời báo về input hoặc submit đang gọi. Nếu theo form Đăng ký, quay lại
+            //     account-validation.js, tìm mã DKL02 và đọc tiếp sau refresh để xem phần dừng/gửi. Form khác
+            //     dùng cùng sự kiện nhưng gửi tới action của chính form đó.
             const validate = field => {
                 if (field.disabled || field.readOnly || ['submit', 'button'].includes(field.type)) return '';
                 const name = field.name || field.id;
@@ -212,12 +213,12 @@
                 if ((name === 'password' && key !== 'login') || name === 'newPassword') return passwordError(raw);
 
                 // [DKXN02]
-                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em lấy mật khẩu của cùng
-                //   form để so với ô xác nhận. Nếu không khớp thì báo lỗi ngay tại ô này. Khi gửi đăng ký,
-                //   RegisterController.doPost nhận cả hai và gọi AccountValidation.passwordErrors (kiểm tra mật khẩu và
-                //   xác nhận theo từng ô) để so lại trước khi lưu.
-                // ... Trong account-validation.js, trả lời báo về phần submit đang gọi validate; lỗi thì dừng tại
-                //     ô xác nhận, hết lỗi mới gửi form Đăng ký tới RegisterController.doPost.
+                // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em lấy mật khẩu của
+                //   cùng form để so với ô xác nhận. Nếu không khớp thì báo lỗi ngay tại ô này. Khi gửi đăng ký,
+                //   RegisterController.doPost nhận cả hai và gọi AccountValidation.passwordErrors (kiểm tra mật khẩu
+                //   và xác nhận theo từng ô) để so lại trước khi lưu.
+                // ... validate trả lời báo về phần submit dùng chung. Đọc tại account-validation.js, tìm mã DKL02:
+                //     còn lỗi thì dừng ở ô xác nhận, hết lỗi mới gửi Đăng ký.
                 if (name === 'confirm_password' || name === 'confirmPassword') {
                     if (!value) return 'Vui lòng nhập mật khẩu xác nhận.';
                     const password = find(key === 'profile-password' ? 'newPassword' : 'password');

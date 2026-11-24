@@ -46,10 +46,12 @@ public class RegisterController extends HttpServlet {
         String redirect = request.getParameter("redirect");
         String backPath = RedirectUtil.isSafeLocalPath(redirect) ? redirect : "/";
         // [DKL04]
-        // . Ở bước kiểm tra, em gom lời báo của từng ô vào errors, gồm lỗi định dạng và lỗi email, số điện thoại
-        //   đã được dùng. Nếu còn lỗi thì trả form để sửa; chỉ khi errors rỗng em mới chuẩn bị tài khoản mới.
-        // ... Đọc tiếp trong RegisterController.java, tìm [DKL05] khi errors rỗng; nhánh còn lỗi giữ form và mở
-        //     lại tab Đăng ký.
+        // . Ở bước kiểm tra, em gom lời báo của từng ô vào errors, gồm lỗi định dạng và lỗi email, số điện
+        //   thoại đã được dùng. Nếu còn lỗi thì trả form để sửa; chỉ khi errors rỗng em mới chuẩn bị tài
+        //   khoản mới.
+        // ... Còn lỗi thì doPost giữ các ô và chuyển lại form; đọc nhánh đó tại RegisterController.java, tìm
+        //     [DKLOI01]. Nếu errors rỗng, đọc bước tạo User và gọi ghi tại RegisterController.java, tìm
+        //     [DKL05].
         java.util.Map<String,String> errors = new java.util.LinkedHashMap<>();
 
         // [DKHT03]
@@ -85,11 +87,12 @@ public class RegisterController extends HttpServlet {
 
         // [DKTR01]
         // . Sau khi số điện thoại và email đúng định dạng, ở doPost trong RegisterController.java em gọi
-        //   checkPhoneExists (tìm số điện thoại đã được dùng) và checkEmailExists (tìm email đã được dùng) trong
-        //   UserDAO.java. Em truyền từng liên hệ để tìm tài khoản đã dùng; nếu trùng thì báo tại ô tương ứng và
-        //   chưa tạo tài khoản.
-        // ... Trong RegisterController.java, đọc tiếp hai lời gọi checkPhoneExists và checkEmailExists bên dưới;
-        //     kết quả được thêm vào errors rồi xét trước khi tạo User.
+        //   checkPhoneExists (tìm số điện thoại đã được dùng) và checkEmailExists (tìm email đã được dùng)
+        //   trong UserDAO.java. Em truyền từng liên hệ để tìm tài khoản đã dùng; nếu trùng thì báo tại ô
+        //   tương ứng và chưa tạo tài khoản.
+        // ... Xem hàm tra email tại UserDAO.java, tìm [DKEM04], hàm tra số điện thoại tại UserDAO.java, tìm
+        //     [DKDT04]. Hai kết quả được thêm vào errors; cả hai trả về xong thì doPost xét errors trước khi
+        //     tạo User.
         boolean lookupFailed = false;
         try {
             if (phoneError == null && userDAO.checkPhoneExists(phone)) errors.put("phone", "Số điện thoại đã tồn tại trong hệ thống.");
@@ -99,12 +102,12 @@ public class RegisterController extends HttpServlet {
         }
 
         // [DKLOI01]
-        // . Khi đăng ký có lỗi, ở doPost trong RegisterController.java em gọi flash (giữ lỗi và các ô qua lần
-        //   chuyển trang) trong AccountFormFeedback.java, truyền lỗi cùng họ tên, số điện thoại và email. Dữ
-        //   liệu được giữ qua lần mở lại trang để account_feedback.jsp và account-validation.js điền lại ô, hiện
-        //   lỗi cho người dùng sửa.
-        // ... Trong RegisterController.java, đọc tiếp sendRedirect ngay dưới phần flash: trình duyệt mở lại tab
-        //     Đăng ký, hiện lỗi và dừng lần gửi này.
+        // . Khi đăng ký có lỗi, ở doPost trong RegisterController.java em gọi flash (giữ lỗi và các ô qua
+        //   lần chuyển trang) trong AccountFormFeedback.java, truyền lỗi cùng họ tên, số điện thoại và
+        //   email. Dữ liệu được giữ qua lần mở lại trang để account_feedback.jsp và account-validation.js
+        //   điền lại ô, hiện lỗi cho người dùng sửa.
+        // ... doPost giữ lỗi và các ô rồi chuyển về tab Đăng ký. Đọc phần nhận dữ liệu để điền lại form tại
+        //     account_feedback.jsp, tìm mã BMTV02; hiện xong là kết thúc lần gửi lỗi.
         if (!errors.isEmpty() || lookupFailed) {
 
             utils.AccountFormFeedback.flash(request, "register", errors,

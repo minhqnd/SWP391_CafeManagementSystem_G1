@@ -148,9 +148,10 @@
             </c:when>
             <c:otherwise>
                 <%-- [TCVE01]
-                     . Khi bấm logo Aura Café trong header.jsp, em mở đường dẫn Trang chủ. index.jsp đọc
-                       danh mục và món nổi bật để dựng lại màn hình; thao tác này không gửi form đang nhập.
-                     ... Kết thúc về Trang chủ khi index.jsp đã dựng xong danh mục, banner và các món nổi bật.
+                     . Khi bấm logo Aura Café trong header.jsp, em mở đường dẫn Trang chủ. index.jsp đọc danh mục và
+                       món nổi bật để dựng lại màn hình; thao tác này không gửi form đang nhập.
+                     ... Logo mở Trang chủ để index.jsp dựng màn hình. Muốn theo phần lấy món nổi bật, đọc index.jsp,
+                         tìm [TCSP01]; danh mục, banner và các món hiện xong là kết thúc mở trang.
                 --%>
                 <a class="navbar-brand fw-bold text-danger d-flex align-items-center gap-2 me-4"
                    href="${pageContext.request.contextPath}/">
@@ -262,11 +263,11 @@
                         </c:when>
                         <c:otherwise>
                         <%-- [HSTK01]
-                             . Khi đã đăng nhập, nút tài khoản dùng sessionScope.user để hiện tên, vai trò, số điện thoại
-                               hoặc email và số điểm nếu có. Bấm nút thì Bootstrap mở danh sách Hồ sơ, Đăng xuất và các
-                               đường dẫn phù hợp; thao tác mở không đọc lại tài khoản.
-                             ... Kết thúc mở danh sách tài khoản khi các lựa chọn Hồ sơ, Đăng xuất và các đường dẫn
-                                 tương ứng đã hiện.
+                             . Khi đã đăng nhập, nút tài khoản dùng sessionScope.user để hiện tên, vai trò, số điện thoại hoặc
+                               email và số điểm nếu có. Bấm nút thì Bootstrap mở danh sách Hồ sơ, Đăng xuất và các đường dẫn
+                               phù hợp; thao tác mở không đọc lại tài khoản.
+                             ... Mở danh sách xong thì chờ chọn mục: Hồ sơ bắt đầu tại header.jsp, tìm [HSM01]; Đăng xuất bắt
+                                 đầu tại header.jsp, tìm [DNX01]. Chưa tự chạy hai thao tác khi chỉ mở danh sách.
                         --%>
                         <div class="dropdown">
                             <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark header-user" data-bs-toggle="dropdown">
@@ -418,8 +419,8 @@
                          . Mỗi danh mục dùng dữ liệu categories do MenuController.doGet đọc từ CategoryDAO. Khi bấm tên, em
                            gửi category là mã nhóm và giữ currentKeyword nếu có, để ProductDAO.filterProducts (lọc món còn
                            bán theo danh mục và từ khóa) tìm đúng món. Số cạnh tên là số món còn bán của nhóm.
-                         ... Đọc MenuController.java, phần doGet nhận category và keyword trước
-                             productDAO.filterProducts; kết thúc khi menu.jsp hiện các món của điều kiện vừa chọn.
+                         ... MenuController.doGet nhận category và keyword rồi gọi ProductDAO.filterProducts. Đọc tại
+                             ProductDAO.java, tìm mã MNDS02; danh sách trả về menu.jsp là kết thúc lần chọn danh mục.
                     --%>
                     <c:forEach var="cat" items="${categories}">
                         <c:url var="menuCategoryUrl" value="/menu">

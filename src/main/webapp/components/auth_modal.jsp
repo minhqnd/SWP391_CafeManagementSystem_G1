@@ -176,10 +176,12 @@
                                 %>
 
                                 <%-- [DKL08]
-                                     . Khi trang mở lại, auth_modal.jsp nhận successMsg hoặc errorMsg mà controller đã giữ
-                                       để hiện kết quả đăng ký, đăng nhập hoặc khôi phục mật khẩu. Hiện xong em xóa bản
-                                       thông báo đã dùng để lần mở sau không lặp lại kết quả cũ.
+                                     . Khi trang mở lại, auth_modal.jsp nhận successMsg hoặc errorMsg mà controller đã giữ để hiện kết
+                                       quả đăng ký, đăng nhập hoặc khôi phục mật khẩu. Hiện xong em xóa bản thông báo đã dùng để lần mở
+                                       sau không lặp lại kết quả cũ.
                                      . Kết thúc lần đăng ký tại thông báo kết quả; đăng ký thành công chưa tự đăng nhập.
+                                     ... Thông báo đã hiện là kết thúc đăng ký. Thành công thì người dùng đăng nhập tại auth_modal.jsp,
+                                         tìm mã DNL01; có lỗi thì sửa ô rồi gửi lại bằng nút tại auth_modal.jsp, tìm mã DKL01.
                                 --%>
                                 <% if (displayError !=null) { %>
                                     <div data-account-notice role="alert" class="alert alert-danger p-2 mb-3 text-center" style="font-size: 0.875rem;">
@@ -199,13 +201,11 @@
                                                     <li class="nav-item">
 
                                                         <%-- [DNM01]
-                                                             . Khi chọn tab Đăng nhập trong auth_modal.jsp, thao tác đổi tab
-                                                               và showLoginSubView (hiện lại form Đăng nhập) hiện form đăng
-                                                               nhập. Người dùng nhập email hoặc số điện thoại, mật khẩu; các
-                                                               giá trị chỉ được gửi tới LoginController.doPost khi bấm Đăng
-                                                               nhập.
-                                                             ... Kết thúc đổi tab khi form Đăng nhập đã hiện; nút Đăng nhập trong form bắt
-                                                                 đầu bước đối chiếu tài khoản.
+                                                             . Khi chọn tab Đăng nhập trong auth_modal.jsp, thao tác đổi tab và showLoginSubView (hiện lại form
+                                                               Đăng nhập) hiện form đăng nhập. Người dùng nhập email hoặc số điện thoại, mật khẩu; các giá trị
+                                                               chỉ được gửi tới LoginController.doPost khi bấm Đăng nhập.
+                                                             ... Tab Đăng nhập hiện xong thì chờ nhập tài khoản. Khi bấm nút Đăng nhập của form, theo
+                                                                 auth_modal.jsp, tìm mã DNL01.
                                                         --%>
                                                         <button class="nav-link <%= isLoginTab ? " active" : "" %>"
                                                             data-bs-toggle="pill"
@@ -216,12 +216,11 @@
                                                     <li class="nav-item">
 
                                                         <%-- [DKM01]
-                                                             . Khi chọn tab Đăng ký trong auth_modal.jsp, thao tác đổi tab
-                                                               hiện vùng modal-register-pane để nhập thông tin. Khi bấm Tạo
-                                                               tài khoản, form gửi đến RegisterController.doPost qua
-                                                               /register để kiểm tra và ghi tài khoản khách hàng mới.
-                                                             ... Kết thúc đổi tab khi form Đăng ký đã hiện; nút Tạo tài khoản mới bắt đầu
-                                                                 bước kiểm tra và lưu tài khoản.
+                                                             . Khi chọn tab Đăng ký trong auth_modal.jsp, thao tác đổi tab hiện vùng modal-register-pane để
+                                                               nhập thông tin. Khi bấm Tạo tài khoản, form gửi đến RegisterController.doPost qua /register để
+                                                               kiểm tra và ghi tài khoản khách hàng mới.
+                                                             ... Tab Đăng ký hiện xong thì chờ nhập thông tin. Khi bấm Tạo tài khoản, theo auth_modal.jsp, tìm
+                                                                 mã DKL01.
                                                         --%>
                                                         <button class="nav-link <%= isRegisterTab ? " active" : "" %>"
                                                             data-bs-toggle="pill"
@@ -234,14 +233,11 @@
                                                 <div class="tab-content">
 
                                                     <%-- [DNM02]
-                                                         . Form Đăng nhập trong auth_modal.jsp được tab Đăng nhập hoặc
-                                                           showLoginSubView (hiện lại form Đăng nhập) mở ra. Form gom
-                                                           username và password; khi người dùng bấm Đăng nhập, hai giá trị
-                                                           được gửi qua /login tới doPost trong LoginController.java để đối
-                                                           chiếu.
-                                                         ... Trong auth_modal.jsp, đọc tiếp nút gửi của chính form Đăng nhập; khi bấm,
-                                                             phần submit trong account-validation.js kiểm tra rồi mới gửi tới
-                                                             LoginController.doPost.
+                                                         . Form Đăng nhập trong auth_modal.jsp được tab Đăng nhập hoặc showLoginSubView (hiện lại form Đăng
+                                                           nhập) mở ra. Form gom username và password; khi người dùng bấm Đăng nhập, hai giá trị được gửi
+                                                           qua /login tới doPost trong LoginController.java để đối chiếu.
+                                                         ... Khi người dùng bấm nút gửi của form Đăng nhập, theo auth_modal.jsp, tìm mã DNL01 để xem kiểm
+                                                             tra và đối chiếu tài khoản.
                                                     --%>
                                                     <div class="tab-pane fade <%= isLoginTab ? " show active" : "" %>"
 
@@ -283,16 +279,12 @@
                                                                     <label class="form-label fw-medium" style="font-size: 0.85rem;">Mật khẩu</label>
 
                                                                     <%-- [DNMK01]
-                                                                         . Ô Mật khẩu trong auth_modal.jsp gửi password cùng
-                                                                           username khi bấm Đăng nhập. Sau bước kiểm tra
-                                                                           trong account-validation.js,
-                                                                           LoginController.doPost gọi UserDAO.login (đối
-                                                                           chiếu tài khoản để đăng nhập) rồi
-                                                                           PasswordHasher.verify (so mật khẩu nhập với giá
-                                                                           trị đã lưu) để so với mật khẩu đang lưu và quyết
-                                                                           định cho đăng nhập.
-                                                                         ... Khi bấm Đăng nhập, đọc tiếp nút gửi trong auth_modal.jsp rồi lời gọi
-                                                                             userDAO.login ở LoginController.doPost để xem kết quả đối chiếu hai ô.
+                                                                         . Ô Mật khẩu trong auth_modal.jsp gửi password cùng username khi bấm Đăng nhập. Sau bước kiểm tra
+                                                                           trong account-validation.js, LoginController.doPost gọi UserDAO.login (đối chiếu tài khoản để
+                                                                           đăng nhập) rồi PasswordHasher.verify (so mật khẩu nhập với giá trị đã lưu) để so với mật khẩu
+                                                                           đang lưu và quyết định cho đăng nhập.
+                                                                         ... Mật khẩu chỉ được gửi khi bấm Đăng nhập. Theo auth_modal.jsp, tìm mã DNL01; controller dùng cả
+                                                                             định danh lẫn mật khẩu để đối chiếu.
                                                                     --%>
                                                                     <input type="password"
                                                                         class="form-control bg-light border-0 p-2"
@@ -345,14 +337,10 @@
                                                                     <label class="form-label fw-medium" style="font-size: 0.85rem;">Email đã liên kết</label>
 
                                                                     <%-- [OTEM01]
-                                                                         . Ô Email khôi phục trong auth_modal.jsp gửi địa chỉ
-                                                                           đến ForgotPasswordController.doPost qua
-                                                                           /forgot-password khi bấm Gửi mã. Controller gọi
-                                                                           start (tạo và gửi mã OTP) trong
-                                                                           PasswordRecoveryService.java để kiểm tra tài khoản
-                                                                           gắn với email và gửi mã xác minh.
-                                                                         ... Trong auth_modal.jsp, đọc tiếp nút Gửi mã OTP của cùng form; nút này gửi
-                                                                             email tới ForgotPasswordController.doPost để bắt đầu yêu cầu khôi phục.
+                                                                         . Ô Email khôi phục trong auth_modal.jsp gửi địa chỉ đến ForgotPasswordController.doPost qua
+                                                                           /forgot-password khi bấm Gửi mã. Controller gọi start (tạo và gửi mã OTP) trong
+                                                                           PasswordRecoveryService.java để kiểm tra tài khoản gắn với email và gửi mã xác minh.
+                                                                         ... Nhập email chưa gửi mã. Khi bấm Gửi mã OTP của form này, theo auth_modal.jsp, tìm [OTG01].
                                                                     --%>
                                                                     <input type="email" name="email" maxlength="150"
                                                                         class="form-control bg-light border-0 p-2"
@@ -401,13 +389,11 @@
                                                     </div>
 
                                                     <%-- [DKM02]
-                                                         . Form Đăng ký trong auth_modal.jsp gom họ tên, số điện thoại,
-                                                           email, mật khẩu và xác nhận qua các ô fullname, phone, email,
-                                                           password, confirm_password. Khi bấm Tạo tài khoản, các giá trị
-                                                           đến RegisterController.doPost qua /register để kiểm tra rồi tạo
-                                                           tài khoản.
-                                                         ... Trong auth_modal.jsp, đọc tiếp nút Tạo tài khoản mới ở cuối chính form này
-                                                             để bắt đầu chuỗi gửi dữ liệu đăng ký.
+                                                         . Form Đăng ký trong auth_modal.jsp gom họ tên, số điện thoại, email, mật khẩu và xác nhận qua các
+                                                           ô fullname, phone, email, password, confirm_password. Khi bấm Tạo tài khoản, các giá trị đến
+                                                           RegisterController.doPost qua /register để kiểm tra rồi tạo tài khoản.
+                                                         ... Khi người dùng bấm Tạo tài khoản ở cuối form, theo auth_modal.jsp, tìm mã DKL01 để xem kiểm
+                                                             tra và lưu tài khoản.
                                                     --%>
                                                     <div class="tab-pane fade <%= isRegisterTab ? " show active" : "" %>" id="modal-register-pane">
                                                         <div class="mb-3">
@@ -520,12 +506,11 @@
                                                         </div>
 
                                                         <%-- [OTG07]
-                                                             . Khi auth_modal.jsp nhận tab=otp, em hiện ô Mã xác thực và
-                                                               form /verify-otp. Người dùng lấy sáu chữ số trong email rồi
-                                                               bấm xác nhận để gửi tới VerifyOtpController.doPost, kiểm tra
-                                                               trước khi được nhập mật khẩu mới.
-                                                             ... Kết thúc yêu cầu Gửi mã khi ô OTP và thông báo đã hiện; bấm Xác nhận OTP
-                                                                 mới bắt đầu bước kiểm tra mã.
+                                                             . Khi auth_modal.jsp nhận tab=otp, em hiện ô Mã xác thực và form /verify-otp. Người dùng lấy sáu
+                                                               chữ số trong email rồi bấm xác nhận để gửi tới VerifyOtpController.doPost, kiểm tra trước khi
+                                                               được nhập mật khẩu mới.
+                                                             ... Ô OTP đã hiện là kết thúc Gửi mã. Người dùng nhập mã rồi bấm Xác nhận OTP thì theo
+                                                                 auth_modal.jsp, tìm mã OTXM01; chưa tự xác minh khi chỉ mở form.
                                                         --%>
                                                         <form action="${pageContext.request.contextPath}/verify-otp" method="POST">
                                                             <input type="hidden" name="csrfToken" value="<%= accountCsrf %>">
@@ -572,12 +557,10 @@
                                                             </button>
                                                             <div class="d-flex justify-content-between align-items-center mt-3">
                                                                 <%-- [OTQEM01]
-                                                                     . Khi bấm Quay lại ở bước OTP, em mở Trang chủ với
-                                                                       tab=forgot để auth_modal.jsp hiện lại ô email khôi
-                                                                       phục. Đây là quay về bước nhập email; chỉ bấm Gửi mã
-                                                                       mới tạo yêu cầu xác minh tiếp theo.
-                                                                     ... Kết thúc thao tác Quay lại khi auth_modal.jsp hiện lại ô email khôi phục
-                                                                         để người dùng nhập yêu cầu mới.
+                                                                     . Khi bấm Quay lại ở bước OTP, em mở Trang chủ với tab=forgot để auth_modal.jsp hiện lại ô email
+                                                                       khôi phục. Đây là quay về bước nhập email; chỉ bấm Gửi mã mới tạo yêu cầu xác minh tiếp theo.
+                                                                     ... Ô email khôi phục hiện lại là kết thúc Quay lại. Muốn gửi yêu cầu mới, nhập email rồi bấm Gửi
+                                                                         mã OTP tại auth_modal.jsp, tìm mã OTG01.
                                                                 --%>
                                                                 <a href="${pageContext.request.contextPath}/?tab=forgot"
                                                                     class="text-decoration-none text-muted d-inline-flex align-items-center gap-1"
@@ -588,18 +571,14 @@
                                                                 <div>
                                                                     <span id="modal-resend-timer" class="<%= otpRemainingTime > 0 ? "" : "d-none" %>" style="font-size: 0.85rem; color: var(--secondary);">
                                                                         <%-- [OTTG02]
-                                                                             . Số giây ở modal-countdown-sec trong auth_modal.jsp
-                                                                               được tính từ lần gửi mã. Bộ đếm setInterval cập
-                                                                               nhật số đang hiện và mở nút Gửi lại khi hết chờ.
-                                                                               Khi bấm gửi lại, PasswordRecoveryService.resend
-                                                                               (kiểm tra thời gian chờ rồi gửi lại OTP) vẫn kiểm
-                                                                               tra thời gian thực tế để quyết định có gửi mã mới
-                                                                               không.
-                                                                             .. Phía xử lý vẫn yêu cầu đủ 60 giây giữa hai lần
-                                                                                gửi, kể cả khi con số chờ trên màn hình bị thay
+                                                                             . Số giây ở modal-countdown-sec trong auth_modal.jsp được tính từ lần gửi mã. Bộ đếm setInterval
+                                                                               cập nhật số đang hiện và mở nút Gửi lại khi hết chờ. Khi bấm gửi lại,
+                                                                               PasswordRecoveryService.resend (kiểm tra thời gian chờ rồi gửi lại OTP) vẫn kiểm tra thời gian
+                                                                               thực tế để quyết định có gửi mã mới không.
+                                                                             .. Phía xử lý vẫn yêu cầu đủ 60 giây giữa hai lần gửi, kể cả khi con số chờ trên màn hình bị thay
                                                                                 đổi.
-                                                                             ... Kết thúc mỗi lần cập nhật khi số giây chờ đã đổi trên màn hình; hết chờ
-                                                                                 thì nút Gửi lại được hiện để người dùng chọn.
+                                                                             ... Hết chờ thì nút Gửi lại hiện ra, chưa tự gửi thư. Khi bấm nút đó, theo auth_modal.jsp, tìm
+                                                                                 [OTGL01].
                                                                         --%>
                                                                         Gửi lại sau <strong id="modal-countdown-sec"><%= otpRemainingTime %></strong>s
                                                                     </span>
@@ -632,12 +611,11 @@
                                                         </div>
 
                                                         <%-- [OTXM05]
-                                                             . Khi nhận tab=reset_password, auth_modal.jsp hiện hai ô mật
-                                                               khẩu mới và xác nhận. Khi bấm Cập nhật mật khẩu, form gửi hai
-                                                               giá trị tới ResetPasswordController.doPost qua
-                                                               /reset-password để đổi cho tài khoản đã xác minh.
-                                                             ... Kết thúc xác minh OTP thành công khi hai ô mật khẩu mới đã hiện; bấm Cập
-                                                                 nhật mật khẩu mới bắt đầu bước ghi mật khẩu.
+                                                             . Khi nhận tab=reset_password, auth_modal.jsp hiện hai ô mật khẩu mới và xác nhận. Khi bấm Cập
+                                                               nhật mật khẩu, form gửi hai giá trị tới ResetPasswordController.doPost qua /reset-password để
+                                                               đổi cho tài khoản đã xác minh.
+                                                             ... Hai ô mật khẩu mới đã hiện là kết thúc xác minh OTP. Người dùng nhập rồi bấm Cập nhật mật khẩu
+                                                                 thì theo auth_modal.jsp, tìm [OTDM01].
                                                         --%>
 
                                                         <form action="${pageContext.request.contextPath}/reset-password" method="POST">
@@ -712,10 +690,11 @@
             data-otp-remaining="<%= otpRemainingTime %>">
 
             // [OTQL02]
-            // . Ở showLoginSubView (hiện lại form Đăng nhập) trong auth_modal.jsp, em bỏ d-none ở subview-login và
-            //   thêm d-none vào subview-forgot. Vì vậy nút Quay lại đăng nhập và tab Đăng nhập cùng hiện lại đúng
-            //   form, không gọi controller hay lưu thông tin ở bước này.
-            // ... Kết thúc thao tác tại form Đăng nhập vừa được hiện lại trong auth_modal.jsp.
+            // . Ở showLoginSubView (hiện lại form Đăng nhập) trong auth_modal.jsp, em bỏ d-none ở subview-login
+            //   và thêm d-none vào subview-forgot. Vì vậy nút Quay lại đăng nhập và tab Đăng nhập cùng hiện lại
+            //   đúng form, không gọi controller hay lưu thông tin ở bước này.
+            // ... Form Đăng nhập hiện lại là kết thúc Quay lại. Nếu người dùng bấm Đăng nhập, theo
+            //     auth_modal.jsp, tìm mã DNL01.
             function showLoginSubView() {
                 document.querySelectorAll('#authModal [data-account-notice]').forEach(notice => notice.classList.add('d-none'));
                 var loginView = document.getElementById('subview-login');
@@ -725,10 +704,11 @@
             }
 
             // [OTM02]
-            // . Ở showForgotSubView (hiện ô email khôi phục mật khẩu) trong auth_modal.jsp, em xử lý nút Quên mật
-            //   khẩu bằng cách ẩn subview-login và hiện subview-forgot. Người dùng nhập email ở form này; chỉ khi
-            //   bấm Gửi mã thì dữ liệu mới đến ForgotPasswordController.doPost để xử lý.
-            // ... Kết thúc thao tác mở Quên mật khẩu khi ô email khôi phục đã hiện trong auth_modal.jsp.
+            // . Ở showForgotSubView (hiện ô email khôi phục mật khẩu) trong auth_modal.jsp, em xử lý nút Quên
+            //   mật khẩu bằng cách ẩn subview-login và hiện subview-forgot. Người dùng nhập email ở form này;
+            //   chỉ khi bấm Gửi mã thì dữ liệu mới đến ForgotPasswordController.doPost để xử lý.
+            // ... Ô email khôi phục hiện xong thì chờ người dùng nhập. Khi bấm Gửi mã OTP, theo auth_modal.jsp,
+            //     tìm mã OTG01.
             function showForgotSubView() {
                 document.querySelectorAll('#authModal [data-account-notice]').forEach(notice => notice.classList.add('d-none'));
                 var loginView = document.getElementById('subview-login');
@@ -764,11 +744,12 @@
                 const resendBtn = document.getElementById("modal-resend-btn");
 
                 // [OTTG01]
-                // . Bộ đếm setInterval trong auth_modal.jsp đọc số giây còn phải chờ, cập nhật countdown rồi hiện nút
-                //   Gửi lại khi hết thời gian. Nếu người dùng bấm nút, form tới ResendOtpController.doPost để gọi
-                //   PasswordRecoveryService.resend (kiểm tra thời gian chờ rồi gửi lại OTP) kiểm tra lại và gửi mã.
-                // ... Kết thúc phần đếm chờ tại con số và trạng thái nút Gửi lại trên màn hình; yêu cầu gửi lại
-                //     chỉ bắt đầu khi người dùng bấm nút.
+                // . Bộ đếm setInterval trong auth_modal.jsp đọc số giây còn phải chờ, cập nhật countdown rồi hiện
+                //   nút Gửi lại khi hết thời gian. Nếu người dùng bấm nút, form tới ResendOtpController.doPost để
+                //   gọi PasswordRecoveryService.resend (kiểm tra thời gian chờ rồi gửi lại OTP) kiểm tra lại và gửi
+                //   mã.
+                // ... Bộ đếm chỉ thay số giây và trạng thái nút, chưa gửi lại mã. Khi người dùng bấm Gửi lại mã OTP,
+                //     theo auth_modal.jsp, tìm mã OTGL01.
                 const interval = setInterval(() => {
                     modalRemaining--;
                     if (modalRemaining <= 0) {

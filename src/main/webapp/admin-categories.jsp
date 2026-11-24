@@ -96,11 +96,13 @@
     </header>
 
     <%-- [DML07]
-         . Khi trang mở lại, admin-categories.jsp nhận categoryMessage hoặc categoryError từ controller để báo
-           kết quả. Với lỗi xảy ra sau khi đọc được form, tên và trạng thái được giữ để sửa tiếp. Tệp ảnh mới
-           cần chọn lại; ô Xóa ảnh hiện tại cũng cần đánh dấu lại nếu vẫn muốn xóa ảnh.
+         . Khi trang mở lại, admin-categories.jsp nhận categoryMessage hoặc categoryError từ controller để
+           báo kết quả. Với lỗi xảy ra sau khi đọc được form, tên và trạng thái được giữ để sửa tiếp. Tệp
+           ảnh mới cần chọn lại; ô Xóa ảnh hiện tại cũng cần đánh dấu lại nếu vẫn muốn xóa ảnh.
          . Kết thúc lần lưu khi trang hiện kết quả cùng danh sách và form đã đọc lại.
-         ... Chỉ khi xem cách giữ form sau lỗi, đọc AdminCategoriesController.java, tìm [DML08].
+         ... Thông báo và danh sách mới là kết thúc thao tác danh mục. Nếu cần xem cách giữ form khi lưu
+             lỗi, đọc AdminCategoriesController.java, tìm [DML08]; người dùng sửa xong mới bấm Lưu để gửi
+             lại.
     --%>
     <c:if test="${not empty categoryMessage and empty categoryError}"><div data-form-notice class="alert alert-success py-2 mb-0" role="status"><c:out value="${categoryMessage}" /></div></c:if>
     <c:if test="${not empty categoryError}"><div data-form-notice class="alert alert-danger py-2 mb-0" role="alert"><c:out value="${categoryError}" /></div></c:if>
@@ -193,10 +195,10 @@
 
                 <%-- [DMS03]
                      . Form trong admin-categories.jsp dùng selectedCategory từ AdminCategoriesController.doGet để biết
-                       đang thêm hay sửa. Nếu đang sửa thì hiện thông tin danh mục đã chọn; nếu lần lưu trước bị lỗi thì
-                       dùng bản nhập dở để người dùng tiếp tục sửa.
-                     ... Kết thúc mở form khi thông tin danh mục đã điền trên admin-categories.jsp; việc ghi chỉ bắt
-                         đầu khi bấm Tạo danh mục hoặc Lưu thay đổi.
+                       đang thêm hay sửa. Nếu đang sửa thì hiện thông tin danh mục đã chọn; nếu lần lưu trước bị lỗi
+                       thì dùng bản nhập dở để người dùng tiếp tục sửa.
+                     ... Form Sửa đã hiện là kết thúc mở sửa, chưa ghi dữ liệu. Khi người dùng bấm Lưu thay đổi, theo
+                         admin-categories.jsp, tìm [DML01].
                 --%>
                 <form data-admin-form="category" method="post" action="${ctx}/admin/categories" enctype="multipart/form-data" novalidate>
                     <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.categoryCsrfToken)}"><input type="hidden" name="action" value="save">
@@ -232,10 +234,10 @@
                     <%-- [DMXA01]
                          . Chọn Xóa ảnh hiện tại mới bỏ ảnh ở vùng xem trước. Khi bấm lưu, removeImage tới
                            AdminCategoriesController.save (kiểm tra và lưu danh mục) rồi CategoryDAO.saveCategory (ghi danh
-                           mục) để xóa ảnh của danh mục. Nếu có ảnh mới thì ưu tiên lưu ảnh mới và bỏ lựa chọn xóa; chưa bấm
-                           lưu thì ảnh cũ vẫn còn.
-                         ... Kết thúc chọn xóa ảnh tại lựa chọn removeImage và vùng xem trước; muốn ghi lựa chọn này
-                             thì bấm nút lưu của form danh mục.
+                           mục) để xóa ảnh của danh mục. Nếu có ảnh mới thì ưu tiên lưu ảnh mới và bỏ lựa chọn xóa; chưa
+                           bấm lưu thì ảnh cũ vẫn còn.
+                         ... Đánh dấu xóa ảnh chỉ thay lựa chọn trên form. Muốn lưu lựa chọn đó, người dùng bấm nút lưu tại
+                             admin-categories.jsp, tìm mã DML01.
                     --%>
                     <c:if test="${selectedHasImage}"><div class="form-check mt-2 mb-3"><input id="removeImage" name="removeImage" value="true" type="checkbox" class="form-check-input"><label for="removeImage" class="form-check-label small">Xóa ảnh hiện tại</label></div></c:if>
 
@@ -251,19 +253,21 @@
                     </select></div>
 
                     <%-- [DML01]
-                         . Từ nút Tạo danh mục hoặc Lưu thay đổi trong admin-categories.jsp,
-                           admin-form-validation.js kiểm tra tên, trạng thái và ảnh. Hợp lệ thì form gửi các ô
-                           đến AdminCategoriesController.doPost qua /admin/categories.
-                         . Ô ẩn id gửi 0 khi tạo mới hoặc mã danh mục đang chọn khi sửa. Controller nhận mã này
-                           cùng các ô để xử lý đúng danh mục.
-                         ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML02].
+                         . Từ nút Tạo danh mục hoặc Lưu thay đổi trong admin-categories.jsp, admin-form-validation.js kiểm
+                           tra tên, trạng thái và ảnh. Hợp lệ thì form gửi các ô đến AdminCategoriesController.doPost qua
+                           /admin/categories.
+                         . Ô ẩn id gửi 0 khi tạo mới hoặc mã danh mục đang chọn khi sửa. Controller nhận mã này cùng các ô
+                           để xử lý đúng danh mục.
+                         ... Trước khi gửi form, đọc phần kiểm tra trên trang tại admin-form-validation.js, tìm mã DMKT01.
+                             Các ô đúng mới tới AdminCategoriesController.doPost.
                     --%>
                     <button type="submit" class="btn btn-aura fw-bold w-100"><span class="material-symbols-outlined fs-6 align-middle">check</span> <c:choose><c:when test="${selectedCategory.id gt 0}">Lưu thay đổi</c:when><c:otherwise>Tạo danh mục</c:otherwise></c:choose></button>
                     <%-- [DMH01]
                          . Khi bấm Hủy sửa trong admin-categories.jsp, em mở lại /admin/categories mà không kèm editId.
-                           doGet trong AdminCategoriesController.java dựng lại form thêm mới, nên phần đang sửa được đóng mà
-                           không lưu thay đổi.
-                         ... Kết thúc Hủy sửa khi admin-categories.jsp mở lại form thêm mới.
+                           doGet trong AdminCategoriesController.java dựng lại form thêm mới, nên phần đang sửa được đóng
+                           mà không lưu thay đổi.
+                         ... Form thêm mới đã mở lại là kết thúc Hủy sửa. Muốn tạo danh mục, người dùng nhập rồi bấm nút
+                             tại admin-categories.jsp, tìm mã DML01.
                     --%>
                     <c:if test="${not empty selectedCategory}"><a href="${ctx}/admin/categories" class="btn btn-light w-100 mt-2">Hủy sửa</a></c:if>
                 </form>
@@ -283,11 +287,11 @@
     const remove = document.getElementById('removeImage');
     if (!input || !preview || !placeholder) return;
     // [DMXTR01]
-    // . Khi chọn ảnh trong admin-categories.jsp, sự kiện change gọi URL.createObjectURL để hiện tệp vừa chọn
-    //   ở vùng xem trước. Khi chọn xóa ảnh thì vùng này bỏ ảnh. Đây mới là xem trước; ảnh chỉ được gửi đến
-    //   AdminCategoriesController.save (kiểm tra và lưu danh mục) khi bấm lưu.
-    // ... Kết thúc xem trước tại ảnh vừa chọn hoặc vùng ảnh trống trên admin-categories.jsp; chưa thực hiện bước
-    //     ghi ảnh.
+    // . Khi chọn ảnh trong admin-categories.jsp, sự kiện change gọi URL.createObjectURL để hiện tệp vừa
+    //   chọn ở vùng xem trước. Khi chọn xóa ảnh thì vùng này bỏ ảnh. Đây mới là xem trước; ảnh chỉ được
+    //   gửi đến AdminCategoriesController.save (kiểm tra và lưu danh mục) khi bấm lưu.
+    // ... Xem trước xong thì chưa ghi ảnh. Người dùng bấm Tạo danh mục hoặc Lưu thay đổi tại
+    //     admin-categories.jsp, tìm mã DML01 mới gửi ảnh và các ô đi.
     const showPlaceholder = () => { preview.hidden = true; placeholder.hidden = false; };
     preview.addEventListener('error', showPlaceholder);
     input.addEventListener('change', () => {

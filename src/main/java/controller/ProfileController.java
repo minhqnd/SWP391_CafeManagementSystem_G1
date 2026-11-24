@@ -111,32 +111,34 @@ public class ProfileController extends HttpServlet {
     private void update(HttpServletRequest request,User user){
 
         // [HSHT02]
-        // . Trong update của ProfileController.java, em lấy fullName rồi gọi AccountValidation.text để bỏ khoảng
-        //   trắng đầu cuối. Em dùng tên đã làm gọn để kiểm tra và lưu, tránh giữ khoảng trắng thừa theo họ tên.
-        // ... Trong ProfileController.java, đọc tiếp phần nhận số điện thoại, email và ngày sinh của update; tên
-        //     được kiểm tra cùng các ô trong errors trước khi lưu.
+        // . Trong update của ProfileController.java, em lấy fullName rồi gọi AccountValidation.text để bỏ
+        //   khoảng trắng đầu cuối. Em dùng tên đã làm gọn để kiểm tra và lưu, tránh giữ khoảng trắng thừa
+        //   theo họ tên.
+        // ... Nhận tên xong, update gọi AccountValidation.nameError. Đọc tại AccountValidation.java, tìm mã
+        //     KTHT01; kết quả quay về errors trong update.
         String name=AccountValidation.text(request.getParameter("fullName"));
 
         // [HSDT02]
         // . Tiếp theo trong update, em lấy phone rồi gọi AccountValidation.phone để chuẩn hóa số điện thoại
         //   trước khi kiểm tra. Nếu form không gửi ô này, em dùng số hiện tại của tài khoản để không làm mất
         //   liên hệ đang lưu.
-        // ... Trong ProfileController.java, tiếp tục update tới phần gọi AccountValidation.phoneError để kiểm tra
-        //     số vừa chuẩn hóa, rồi xét lỗi trước khi lưu hồ sơ.
+        // ... Làm gọn số xong, update gọi AccountValidation.phoneError. Đọc tại AccountValidation.java, tìm
+        //     mã KTDT01; lỗi được giữ trong errors, số đúng mới được chuẩn bị lưu.
         String phone=AccountValidation.phone(request.getParameter("phone")==null?user.getPhone():request.getParameter("phone"));
 
         // [HSEM02]
-        // . Với email trong update, em gọi AccountValidation.email để bỏ khoảng trắng đầu cuối và chuyển về chữ
-        //   thường. Em dùng cùng dạng địa chỉ này cho bước kiểm tra định dạng, tìm trùng và lưu hồ sơ.
-        // ... Trong ProfileController.java, tiếp tục update tới AccountValidation.emailError; email hợp lệ mới
-        //     được chuyển cho users.updateUserProfile để tìm trùng và lưu.
+        // . Với email trong update, em gọi AccountValidation.email để bỏ khoảng trắng đầu cuối và chuyển về
+        //   chữ thường. Em dùng cùng dạng địa chỉ này cho bước kiểm tra định dạng, tìm trùng và lưu hồ sơ.
+        // ... Làm gọn email xong, update gọi AccountValidation.emailError. Đọc tại AccountValidation.java,
+        //     tìm mã KTEM01; kết quả quay về errors trước khi ghi hồ sơ.
         String email=AccountValidation.email(request.getParameter("email")==null?user.getEmail():request.getParameter("email"));
         // [HSNS04]
-        // . Trong update (kiểm tra và cập nhật hồ sơ) của ProfileController.java, em nhận ngày, tháng và năm từ
-        //   ba ô của profile.jsp rồi ghép thành ngày sinh. Em đưa ngày này cho AccountValidation.birthdayError
-        //   (kiểm tra ngày sinh hợp lệ) để kiểm tra ngày có thật và nằm trong khoảng cho phép trước khi lưu.
-        // ... Trong ProfileController.java, đọc tiếp phần ghép ba ô ngay dưới comment này rồi
-        //     AccountValidation.birthdayError trong update; sai thì hiện lỗi tại ô ngày sinh.
+        // . Trong update (kiểm tra và cập nhật hồ sơ) của ProfileController.java, em nhận ngày, tháng và năm
+        //   từ ba ô của profile.jsp rồi ghép thành ngày sinh. Em đưa ngày này cho
+        //   AccountValidation.birthdayError (kiểm tra ngày sinh hợp lệ) để kiểm tra ngày có thật và nằm
+        //   trong khoảng cho phép trước khi lưu.
+        // ... Ghép ba ô xong, update gọi AccountValidation.birthdayError. Đọc phần kiểm tra ngày sinh tại
+        //     AccountValidation.java, tìm mã KTNS01.
         String birthday=AccountValidation.text(request.getParameter("birthday"));
 
         String day=request.getParameter("birthDay");
@@ -154,18 +156,20 @@ public class ProfileController extends HttpServlet {
 
         // [HSDC03]
         // . Trong update (kiểm tra và cập nhật hồ sơ) của ProfileController.java, em nhận address rồi gọi
-        //   AccountValidation.text để bỏ khoảng trắng đầu cuối. Em kiểm tra ký tự và độ dài trước khi truyền địa
-        //   chỉ cùng các thông tin khác cho UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ mới) để
-        //   lưu.
-        // ... Trong ProfileController.java, tiếp tục update tới AccountValidation.addressError và giới hạn 500 ký
-        //     tự; errors rỗng mới gọi users.updateUserProfile.
+        //   AccountValidation.text để bỏ khoảng trắng đầu cuối. Em kiểm tra ký tự và độ dài trước khi truyền
+        //   địa chỉ cùng các thông tin khác cho UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ
+        //   mới) để lưu.
+        // ... update gọi AccountValidation.addressError. Đọc tại AccountValidation.java, tìm mã KTDC01; sau
+        //     đó update còn kiểm tra độ dài và xét errors.
         String address=AccountValidation.text(request.getParameter("address"));
         java.util.Map<String,String> errors=new java.util.LinkedHashMap<>();
         // [HSL03]
-        // . Trong ProfileController.update, em gọi AccountValidation để kiểm tra họ tên, số điện thoại, email,
-        //   ngày sinh và địa chỉ. Lỗi của ô nào được giữ cùng tên ô đó trong errors để hiện đúng vị trí. Còn
-        //   lỗi thì hiện lại form; không còn lỗi mới chuyển sang lưu.
-        // ... Đọc tiếp tại ProfileController.java, tìm [HSL04].
+        // . Trong ProfileController.update, em gọi AccountValidation để kiểm tra họ tên, số điện thoại,
+        //   email, ngày sinh và địa chỉ. Lỗi của ô nào được giữ cùng tên ô đó trong errors để hiện đúng vị
+        //   trí. Còn lỗi thì hiện lại form; không còn lỗi mới chuyển sang lưu.
+        // ... Còn errors thì update mở lại hồ sơ và đưa lỗi về từng ô; xem cách nhận tại
+        //     account_feedback.jsp, tìm mã BMTV02. Nếu không còn lỗi, đọc điểm gọi lưu tại
+        //     ProfileController.java, tìm [HSL04].
         if(AccountValidation.nameError(name)!=null)errors.put("fullName",AccountValidation.nameError(name));
         if(AccountValidation.phoneError(phone)!=null)errors.put("phone",AccountValidation.phoneError(phone));
         if(AccountValidation.emailError(email)!=null)errors.put("email",AccountValidation.emailError(email));
