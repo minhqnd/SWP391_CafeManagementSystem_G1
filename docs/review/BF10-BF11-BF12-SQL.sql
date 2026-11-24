@@ -701,7 +701,7 @@ WHERE id = @ingredient_id;
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 
 -- [SQL11-49] Giá vốn xem trước khi sửa công thức: trình duyệt nhân lượng đang nhập với giá đã tải rồi cộng lại.
--- Source: src/main/webapp/admin-recipes.jsp:416 | Hàm: recalculateCost
+-- Source: src/main/webapp/admin-recipes.jsp:420 | Hàm: recalculateCost
 -- Chưa bấm Lưu thì chưa thay database; Java vẫn đọc và tính lại giá vốn khi tải trang sau khi lưu.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 

@@ -345,6 +345,10 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-3">
+                        <%-- . Nút Hủy dùng chung closeRecipeModal với nút X ở đầu hộp. Hàm ở cuối file
+                             đóng hộp, bỏ thông báo lỗi và trả đường dẫn về danh sách; không gửi form để lưu.
+                             ... Đọc hàm closeRecipeModal trong admin-recipes.jsp để xem điểm kết thúc thao tác.
+                        --%>
                         <a href="${ctx}/admin/recipes" class="btn btn-light recipe-modal-cancel"
                         onclick="document.getElementById('recipeFormError')?.remove(); document.querySelector('.recipe-modal-backdrop')?.remove(); return false;">Hủy</a>
                         <%-- [CTL01]

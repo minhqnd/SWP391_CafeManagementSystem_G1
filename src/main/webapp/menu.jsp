@@ -441,6 +441,9 @@
                                         </a>
                                     </c:when>
                                     <c:otherwise>
+                                        <%-- . Nút mũi tên gửi form tìm kiếm ngay phía trên tới MenuController.doGet qua /menu.
+                                             Controller lọc theo keyword và category đang chọn rồi trả danh sách về menu.jsp.
+                                        --%>
                                         <button type="submit" class="menu-search-btn-submit" title="Tìm kiếm">
                                             <span class="material-symbols-outlined fs-5">arrow_forward</span>
                                         </button>

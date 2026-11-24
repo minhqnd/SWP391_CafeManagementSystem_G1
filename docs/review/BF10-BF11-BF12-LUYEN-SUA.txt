@@ -116,7 +116,7 @@ Tìm dòng: BigDecimal productCost = BigDecimal.ZERO;
 - Giữ giống recipeCost của công thức đang mở và phần xem trước; vẫn phân biệt món chưa có công thức hoặc thiếu giá nhập.
 
 [SUA11-10] Đổi cách tính giá vốn xem trước khi nhập định lượng.
-Vị trí: src/main/webapp/admin-recipes.jsp:457
+Vị trí: src/main/webapp/admin-recipes.jsp:461
 Tìm dòng: const lineCost = amount * unitCost;
 - lineCost là tiền của một dòng; tổng các dòng nằm trong total. Phí bao bì cho cả phần phải cộng sau vòng lặp.
 - Sửa tương ứng phần tính trong AdminRecipeController; số xem trước trên trình duyệt chưa phải dữ liệu đã lưu.

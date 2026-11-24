@@ -321,6 +321,9 @@
                             </a>
                         </c:forEach>
                         <c:if test="${empty landingCategories}">
+                            <%-- . Khi chưa có danh mục để dựng các nút, Xem thực đơn mở /menu không kèm bộ lọc.
+                                 MenuController.doGet đọc món đang bán trong danh mục hoạt động rồi hiển thị menu.jsp.
+                            --%>
                             <a class="home-category-link" href="${pageContext.request.contextPath}/menu"><img class="home-category-image" src="https://images.unsplash.com/photo-1511920170033-f8396924c348?w=160&amp;h=120&amp;fit=crop" alt="Thực đơn Aura"/><span>Xem thực đơn</span></a>
                         </c:if>
                     </div>
@@ -375,6 +378,9 @@
         <section class="home-products-section" id="homeFeaturedProducts">
             <div class="home-products-heading d-flex flex-column flex-sm-row justify-content-between align-items-sm-end gap-2">
                 <div><div class="text-primary-custom fw-bold text-uppercase mb-1" style="font-size:.72rem;letter-spacing:1.5px">Một chất phin từ Aura</div><h2>Sản phẩm được yêu thích</h2></div>
+                <%-- . Nút Xem toàn bộ thực đơn mở /menu, giống nút Khám phá menu trên banner.
+                     MenuController.doGet đọc danh sách rồi trả về menu.jsp; thao tác này chỉ mở trang xem món.
+                --%>
                 <a href="${pageContext.request.contextPath}/menu">Xem toàn bộ thực đơn <span class="material-symbols-outlined align-middle" style="font-size:18px">chevron_right</span></a>
             </div>
             <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-lg-4">

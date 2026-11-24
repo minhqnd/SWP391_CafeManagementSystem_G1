@@ -186,9 +186,9 @@
             <div class="save-row">
 
                 <%-- [TDQT01]
-         . Em bắt đầu từ nút Lưu quy tắc trong admin-loyalty.jsp. Khi bấm, admin-form-validation.js kiểm tra
-           ba ô ngay trên trang. Đúng thì form gửi tiền chi tiêu nhận một điểm, mốc đổi và tiền giảm tới
-           AdminLoyaltyController.doPost qua /admin/loyalty, kèm action=updateRules để chọn thao tác lưu.
+                     . Em bắt đầu từ nút Lưu quy tắc trong admin-loyalty.jsp. Khi bấm, admin-form-validation.js kiểm tra
+                       ba ô ngay trên trang. Đúng thì form gửi tiền chi tiêu nhận một điểm, mốc đổi và tiền giảm tới
+                       AdminLoyaltyController.doPost qua /admin/loyalty, kèm action=updateRules để chọn thao tác lưu.
                      ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDQT02].
                 --%>
                 <button class="save-btn" type="submit"><span class="material-symbols-outlined" style="font-size:15px">save</span>Lưu quy tắc</button>
@@ -257,17 +257,15 @@
                          . Khi bấm Cộng điểm trong admin-loyalty.jsp, em gọi submitAdjustment ngay trong file và truyền add
                            để nhập rồi gửi số điểm cần cộng. Hàm này dùng chung với nút Trừ điểm; loại thao tác quyết định
                            sẽ cộng hay trừ cho khách đang xem.
-                         ... Trong admin-loyalty.jsp, đọc phần định nghĩa submitAdjustment ở cuối file; add quyết
-                             định cộng điểm, rồi form adjustPointsForm được gửi tới AdminLoyaltyController.doPost.
+                         ... Đọc tiếp ngay trong admin-loyalty.jsp, tìm [TDDC01] tại hàm submitAdjustment.
                     --%>
                     <button class="adjust-btn adjust-add" type="button" onclick="submitAdjustment('add')">Cộng điểm</button>
                     <%-- [TDT01]
                          . Khi bấm Trừ điểm trong admin-loyalty.jsp, em gọi submitAdjustment ngay trong file và truyền
                            subtract để nhập rồi gửi số điểm cần trừ. Hàm dùng cùng mã khách đang xem; phía xử lý sẽ kiểm tra
                            số dư trước khi cho phép trừ.
-                         ... Trong admin-loyalty.jsp, đọc phần định nghĩa submitAdjustment ở cuối file; subtract
-                             quyết định trừ điểm, rồi form adjustPointsForm được gửi tới
-                             AdminLoyaltyController.doPost.
+                         ... Đọc hàm submitAdjustment ở cuối admin-loyalty.jsp, dùng chung với nút Cộng điểm.
+                             subtract chọn thao tác trừ; hàm này sẽ gửi form tới AdminLoyaltyController.doPost.
                     --%>
                     <button class="adjust-btn adjust-subtract" type="button" onclick="submitAdjustment('subtract')">Trừ điểm</button>
                 </div>
@@ -364,6 +362,8 @@
     // . Trong submitAdjustment của admin-loyalty.jsp, em nhận add hoặc subtract rồi mở hộp hỏi số điểm. Bấm
     //   Hủy thì dừng; nhập số nguyên từ 1 đến 1.000.000 thì em điền mã khách, điểm và loại thao tác vào
     //   form, gửi đến AdminLoyaltyController.doPost để kiểm tra và cập nhật.
+    // .. Nếu bỏ trống, nhập chữ, số lẻ hoặc ngoài giới hạn thì báo lỗi và dừng ngay tại hộp nhập;
+    //    chưa gửi form nên số dư và lịch sử của khách chưa thay đổi.
     // ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDDC02].
     function submitAdjustment(type) {
 

@@ -603,6 +603,13 @@
                                                                         --%>
                                                                         Gửi lại sau <strong id="modal-countdown-sec"><%= otpRemainingTime %></strong>s
                                                                     </span>
+                                                                    <%-- [OTGL01]
+                                                                         . Khi bấm Gửi lại mã OTP, nút gửi resendOtpForm nằm bên dưới tới
+                                                                           ResendOtpController.doPost qua /resend-otp. Controller gọi resend
+                                                                           trong PasswordRecoveryService.java để kiểm tra thời gian chờ
+                                                                           rồi gửi mã mới cho email đã giữ.
+                                                                         ... Đọc tiếp tại ResendOtpController.java, tìm [OTGL02].
+                                                                    --%>
                                                                     <button type="submit" form="resendOtpForm"
                                                                         id="modal-resend-btn"
                                                                         class="btn btn-link p-0 text-decoration-none fw-semibold <%= otpRemainingTime > 0 ? "d-none" : "" %>"
@@ -614,13 +621,6 @@
                                                         </form>
                                                     </div>
 
-                                                    <%-- [OTGL01]
-                                                         . Khi bấm Gửi lại mã trong auth_modal.jsp, resendOtpForm gửi tới
-                                                           ResendOtpController.doPost qua /resend-otp. Controller gọi resend
-                                                           trong PasswordRecoveryService.java để kiểm tra thời gian chờ rồi
-                                                           gửi mã mới cho email đã giữ.
-                                                         ... Đọc tiếp tại ResendOtpController.java, tìm [OTGL02].
-                                                    --%>
                                                     <form id="resendOtpForm" action="${pageContext.request.contextPath}/resend-otp" method="POST">
                                                         <input type="hidden" name="csrfToken" value="<%= accountCsrf %>">
                                                     </form>
