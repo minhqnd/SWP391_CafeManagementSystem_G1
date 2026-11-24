@@ -55,7 +55,7 @@
                 <%-- [DMM01]
                      . Khi bấm Quản lý danh mục trong admin-sidebar.jsp, em mở /admin/categories. Yêu cầu tới doGet trong
                        AdminCategoriesController.java để đọc danh mục và thống kê, rồi chuyển dữ liệu về
-                       admin-categories.jsp dựng màn hình quản lý.
+                       admin-categories.jsp hiển thị màn hình quản lý.
                      ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMM02].
                 --%>
                 <a href="${ctx}/admin/categories" class="nav-link ${param.activeMenu == 'categories' ? 'active' : ''}">

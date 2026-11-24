@@ -10,13 +10,13 @@ public final class MenuValidation {
     private MenuValidation() { }
 
     // [DMT03]
-    // . Trong requiredName của MenuValidation.java, em nhận tên vừa nhập, tên ô và giới hạn từ hàm save
-    //   của controller danh mục hoặc sản phẩm. Em bỏ khoảng trắng hai đầu, kiểm tra tên trống, quá dài
-    //   hoặc có ký tự không hỗ trợ. Đúng thì trả tên đã làm gọn về save; sai thì báo rõ ô cần sửa và
+    // . Trong hàm requiredName của MenuValidation.java, em nhận tên vừa nhập, tên ô và giới hạn từ hàm
+    //   save của controller danh mục hoặc sản phẩm. Em bỏ khoảng trắng hai đầu, kiểm tra tên trống, quá
+    //   dài hoặc có ký tự không hỗ trợ. Đúng thì trả tên đã làm gọn về save; sai thì báo rõ ô cần sửa và
     //   chưa lưu.
     // ... Quay về save ngay sau requiredName. Tên đúng mới kiểm tra trùng: danh mục đọc
-    //     AdminCategoriesController.java, tìm [DMTR01], sản phẩm đọc AdminProductsController.java, tìm
-    //     mã SPTR01. Tên sai thì doPost giữ form và hiện lỗi, chưa gọi ghi.
+    //     AdminCategoriesController.java, tìm [DMTR01], sản phẩm đọc AdminProductsController.java, tìm mã
+    //     SPTR01. Tên sai thì doPost giữ form và hiện lỗi, chưa gọi ghi.
     public static String requiredName(String raw, String label, int max) {
         String value = FormInput.trim(raw);
         if (value.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập " + label.toLowerCase(java.util.Locale.ROOT) + ".");

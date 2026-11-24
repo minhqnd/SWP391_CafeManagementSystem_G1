@@ -79,13 +79,13 @@ public class ShopSettingDAO extends BaseDAO {
      * (Khung giờ ca theo tuần nằm ở bảng work_shifts - xem WorkShiftDAO.)
      */
     // [TDQT07]
-    // . Khi trang mở lại, AdminLoyaltyController.doGet gọi getSettingsStrict trong ShopSettingDAO.java.
-    //   Em đọc tên và giá trị từ shop_settings, gọi applyValue để đặt từng giá trị vào ShopSettings rồi
-    //   trả bộ này về doGet để điền form và tính tiền quy đổi.
+    // . Trong ShopSettingDAO.getSettingsStrict, em đọc các tên và giá trị trong shop_settings. Em gọi
+    //   applyValue để đưa từng giá trị vào ShopSettings rồi trả bộ này về AdminLoyaltyController.doGet,
+    //   dùng để điền form và tính tiền có thể đổi từ điểm.
     // .. Khóa chưa có hoặc giá trị không đổi được sang số thì giữ mặc định của khóa đó. Lỗi kết nối hay
     //    câu lệnh đọc được báo về controller.
-    // ... getSettingsStrict trả bộ quy tắc về doGet. Khi các phần dữ liệu khác cũng đã chuẩn bị xong,
-    //     đọc điểm chuyển sang trang tại AdminLoyaltyController.java, tìm [TDQT08].
+    // ... getSettingsStrict trả bộ quy tắc về doGet. Khi các phần dữ liệu khác cũng đã chuẩn bị xong, đọc
+    //     điểm chuyển sang trang tại AdminLoyaltyController.java, tìm [TDQT08].
     public ShopSettings getSettingsStrict() {
 
         ShopSettings settings = new ShopSettings();
@@ -114,18 +114,15 @@ public class ShopSettingDAO extends BaseDAO {
     }
 
     // [TDQT05]
-    // . AdminLoyaltyController.updateRules gọi saveLoyaltyRules trong ShopSettingDAO.java, truyền ba số
-    //   đã kiểm tra. Em thêm hoặc cập nhật ba quy tắc trong shop_settings và chỉ xác nhận khi ghi được
-    //   cả bộ.
-    // . Lưu xong thì trả true về updateRules. Nếu ghi lỗi thì hủy thay đổi và trả false; updateRules
-    //   nhận false sẽ báo chưa lưu được về doPost để hiện lỗi.
+    // . Trong ShopSettingDAO.saveLoyaltyRules, em nhận ba số đã kiểm tra từ
+    //   AdminLoyaltyController.updateRules và ghi vào shop_settings. Ghi đủ cả ba mới xác nhận và trả
+    //   true. Nếu ghi lỗi thì hủy thay đổi, trả false để updateRules báo chưa lưu được về doPost.
     // ... Ghi đủ ba quy tắc thì conn.commit và trả true về updateRules; doPost tiếp tục tại
-    //     AdminLoyaltyController.java, tìm mã TDQT06. Ghi lỗi thì hủy thay đổi, trả false; doPost hiện
-    //     lỗi tại admin-loyalty.jsp, tìm mã TDQT09, không báo lưu thành công.
+    //     AdminLoyaltyController.java, tìm mã TDQT06. Ghi lỗi thì hủy thay đổi, trả false; doPost hiện lỗi
+    //     tại admin-loyalty.jsp, tìm mã TDQT09, không báo lưu thành công.
     public boolean saveLoyaltyRules(long earnUnit, int pointsStep, long stepValue) {
-        // . Trước khi ghi quy tắc, trong ShopSettingDAO.saveLoyaltyRules (ghi cả ba quy tắc vào cơ sở dữ liệu)
-        //   em gọi LoyaltyValidation.requireRange (kiểm tra số nằm trong khoảng cho phép) để kiểm tra lại cả ba
-        //   giới hạn. Em chỉ ghi khi các số đều trong khoảng cho phép.
+        // . Trước khi ghi quy tắc, trong ShopSettingDAO.saveLoyaltyRules em gọi LoyaltyValidation.requireRange
+        //   để kiểm tra lại cả ba giới hạn. Em chỉ ghi khi các số đều trong khoảng cho phép.
         LoyaltyValidation.requireRange(earnUnit, "Số tiền chi tiêu", 1, LoyaltyValidation.MAX_RULE_MONEY);
         LoyaltyValidation.requireRange(pointsStep, "Mốc đổi điểm", 1, LoyaltyValidation.MAX_POINTS);
         LoyaltyValidation.requireRange(stepValue, "Tiền giảm", 0, LoyaltyValidation.MAX_RULE_MONEY);
@@ -138,26 +135,23 @@ public class ShopSettingDAO extends BaseDAO {
             boolean autoCommit = conn.getAutoCommit();
             conn.setAutoCommit(false);
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                // . Trong ShopSettingDAO.saveLoyaltyRules (ghi cả ba quy tắc vào cơ sở dữ liệu), em gọi addValue (đưa
-                //   tên và giá trị quy tắc vào lệnh lưu) cùng file để đưa tên và giá trị của từng quy tắc vào danh sách
-                //   câu lệnh. Em gọi executeBatch (thực hiện cả nhóm lệnh đã chuẩn bị) để ghi cả ba trong cùng lần lưu.
+                // . Trong ShopSettingDAO.saveLoyaltyRules, em gọi addValue cùng file để đưa tên và giá trị của từng
+                //   quy tắc vào danh sách câu lệnh. Em gọi executeBatch để ghi cả ba trong cùng lần lưu.
                 addValue(ps, ShopSettings.KEY_POINTS_EARN_UNIT, earnUnit);
                 addValue(ps, ShopSettings.KEY_POINTS_STEP, pointsStep);
                 addValue(ps, ShopSettings.KEY_POINTS_STEP_VALUE, stepValue);
                 ps.executeBatch();
-                // . Khi cả ba quy tắc đều ghi được, trong ShopSettingDAO.saveLoyaltyRules (ghi cả ba quy tắc vào cơ sở
-                //   dữ liệu) em gọi conn.commit (xác nhận lưu toàn bộ thay đổi) để xác nhận bộ mới. Em chỉ trả thành
-                //   công sau bước này để controller không thông báo khi dữ liệu còn chưa lưu xong.
+                // . Khi cả ba quy tắc đều ghi được, trong ShopSettingDAO.saveLoyaltyRules em gọi conn.commit để xác
+                //   nhận bộ mới. Em chỉ trả thành công sau bước này để controller không thông báo khi dữ liệu còn chưa
+                //   lưu xong.
                 conn.commit();
-                // . Hàm ShopSettingDAO.saveLoyaltyRules (ghi cả ba quy tắc vào cơ sở dữ liệu) trả true về updateRules
-                //   (kiểm tra và lưu quy tắc tích/đổi điểm) trong AdminLoyaltyController.java khi ghi xong cả bộ. Sau đó
-                //   chương trình quay về doPost để đặt loyaltyMessage báo lưu thành công.
+                // . Hàm ShopSettingDAO.saveLoyaltyRules trả true về updateRules trong AdminLoyaltyController.java khi
+                //   ghi xong cả bộ. Sau đó chương trình quay về doPost để đặt loyaltyMessage báo lưu thành công.
                 // ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDQT06].
                 return true;
             } catch (SQLException e) {
-                // . Nếu một quy tắc ghi lỗi, trong ShopSettingDAO.saveLoyaltyRules (ghi cả ba quy tắc vào cơ sở dữ liệu)
-                //   em gọi conn.rollback (hủy các thay đổi của lần lưu) để hủy cả bộ thay đổi rồi trả thất bại. Nhờ vậy
-                //   không xảy ra trường hợp chỉ một hoặc hai quy tắc được đổi.
+                // . Nếu một quy tắc ghi lỗi, trong ShopSettingDAO.saveLoyaltyRules em gọi conn.rollback để hủy cả bộ
+                //   thay đổi rồi trả thất bại. Nhờ vậy không xảy ra trường hợp chỉ một hoặc hai quy tắc được đổi.
                 conn.rollback();
                 throw e;
             } finally {
@@ -208,9 +202,8 @@ public class ShopSettingDAO extends BaseDAO {
         }
     }
 
-    // . Ở addValue (đưa tên và giá trị quy tắc vào lệnh lưu) trong ShopSettingDAO.java, em nhận tên và số từ
-    //   saveLoyaltyRules (ghi cả ba quy tắc vào cơ sở dữ liệu) rồi điền vào câu lệnh chờ ghi. Em quay lại
-    //   hàm gọi để ghép các giá trị còn lại trước khi ghi cả bộ cùng nhau.
+    // . Trong hàm addValue của ShopSettingDAO.java, em nhận tên và số từ saveLoyaltyRules rồi điền vào câu
+    //   lệnh chờ ghi. Em quay lại hàm gọi để ghép các giá trị còn lại trước khi ghi cả bộ cùng nhau.
     private void addValue(PreparedStatement ps, String key, long value) throws SQLException {
         ps.setString(1, key);
         ps.setString(2, String.valueOf(value));
@@ -218,10 +211,10 @@ public class ShopSettingDAO extends BaseDAO {
         ps.addBatch();
     }
 
-    // . Khi đọc quy tắc trong ShopSettingDAO.getSettingsStrict (đọc các thiết lập đang lưu), em gọi applyValue
-    //   (điền giá trị vào đúng thiết lập) cùng file bằng tên quy tắc và giá trị đọc được để điền vào
-    //   ShopSettings. Nếu không đổi được giá trị sang số thì ghi lỗi vào nhật ký và giữ mặc định của khóa đó;
-    //   sau đó tiếp tục đọc các dòng còn lại, rồi trả bộ settings về controller để hiển thị.
+    // . Khi đọc quy tắc trong ShopSettingDAO.getSettingsStrict, em gọi applyValue cùng file bằng tên quy
+    //   tắc và giá trị đọc được để điền vào ShopSettings. Nếu không đổi được giá trị sang số thì ghi lỗi
+    //   vào nhật ký và giữ mặc định của khóa đó; sau đó tiếp tục đọc các dòng còn lại, rồi trả bộ settings
+    //   về controller để hiển thị.
     private void applyValue(ShopSettings settings, String key, String value) {
         try {
             switch (key) {

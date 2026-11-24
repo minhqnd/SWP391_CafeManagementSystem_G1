@@ -76,9 +76,9 @@ public class AdminProductsController extends HttpServlet {
 
     @Override
     // [SPM02]
-    // . Khi mở Quản lý sản phẩm, doGet trong AdminProductsController.java nhận danh mục và từ khóa đang lọc.
-    //   Em truyền hai giá trị vào getProductsForAdmin (đọc danh sách sản phẩm để quản lý) trong
-    //   ProductDAO.java để lấy danh sách phù hợp, rồi đưa về admin-products.jsp để hiển thị.
+    // . Khi mở Quản lý sản phẩm, doGet trong AdminProductsController.java nhận danh mục và từ khóa đang
+    //   lọc. Em truyền hai giá trị vào getProductsForAdmin trong ProductDAO.java để lấy danh sách phù hợp,
+    //   rồi đưa về admin-products.jsp để hiển thị.
     // ... Đọc tiếp tại ProductDAO.java, tìm [SPM03].
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (!isAdmin(request, response)) return;
@@ -99,9 +99,8 @@ public class AdminProductsController extends HttpServlet {
             request.setAttribute("products", products);
             // [SPTS02]
             // . Để hiện ba thẻ thống kê, ở doGet trong AdminProductsController.java em gọi
-            //   ProductDAO.getProductAdminStats (đọc tổng món và số đang bán) để lấy tổng món và số đang bán. Em
-            //   tính số tạm ngừng từ hai số đó, rồi đưa productTotal, productAvailable và productPaused về
-            //   admin-products.jsp.
+            //   ProductDAO.getProductAdminStats để lấy tổng món và số đang bán. Em tính số tạm ngừng từ hai số đó,
+            //   rồi đưa productTotal, productAvailable và productPaused về admin-products.jsp.
             // ... Đọc tiếp tại admin-products.jsp, tìm [SPM04].
 
             request.setAttribute("productTotal", stats[0]);
@@ -114,9 +113,9 @@ public class AdminProductsController extends HttpServlet {
 
             ProductDraft draft = (ProductDraft) session.getAttribute("productDraft");
             if (draft != null) {
-                // . Nếu lần lưu sản phẩm trước bị lỗi, em lấy productDraft mà preserveDraftAfterSaveError (giữ form đang
-                //   nhập khi lưu lỗi) đã giữ để doGet điền lại thông tin, size và topping vào admin-products.jsp. Người
-                //   dùng có thể sửa tiếp thay vì nhập lại từ đầu.
+                // . Nếu lần lưu sản phẩm trước bị lỗi, em lấy productDraft mà preserveDraftAfterSaveError đã giữ để
+                //   doGet điền lại thông tin, size và topping vào admin-products.jsp. Người dùng có thể sửa tiếp thay
+                //   vì nhập lại từ đầu.
                 session.removeAttribute("productDraft");
                 Product selected = draft.id > 0 ? productDAO.getProductForAdmin(draft.id) : new Product();
                 if (selected == null) selected = new Product();
@@ -131,9 +130,9 @@ public class AdminProductsController extends HttpServlet {
             } else {
 
                 // [SPS02]
-                // . Ở doGet trong AdminProductsController.java, em lấy editId từ nút Sửa rồi gọi getProductForAdmin
-                //   (đọc một sản phẩm để quản lý) trong ProductDAO.java bằng mã đó. Hàm trả về sản phẩm để em điền
-                //   tên, giá, danh mục, size và topping vào form Sửa trong admin-products.jsp.
+                // . Trong hàm doGet của AdminProductsController.java, em lấy editId từ nút Sửa rồi truyền mã đó cho
+                //   getProductForAdmin trong ProductDAO.java. Hàm trả sản phẩm về để em điền tên, giá, danh mục, size
+                //   và topping vào form Sửa của admin-products.jsp.
                 // ... doGet gọi ProductDAO.getProductForAdmin để đọc món trước khi điền form. Đọc hàm đó tại
                 //     ProductDAO.java, tìm mã CTCH03; kết quả quay về doGet rồi mới mở form Sửa.
                 String editId = request.getParameter("editId");
@@ -164,8 +163,9 @@ public class AdminProductsController extends HttpServlet {
 
     @Override
     // [SPL03]
-    // . doPost trong AdminProductsController.java nhận action=save từ nút Thêm sản phẩm hoặc Lưu thay đổi. Em
-    //   gọi save trong cùng file, truyền request và session để đọc thông tin sản phẩm, kiểm tra rồi lưu.
+    // . Đến doPost trong AdminProductsController.java, em nhận action=save từ nút Thêm sản phẩm hoặc Lưu
+    //   thay đổi. Em gọi save ngay trong controller để nhận các ô và ảnh, kiểm tra rồi thực hiện thêm mới
+    //   hoặc sửa sản phẩm.
     // ... Đọc tiếp tại AdminProductsController.java, tìm [SPL04].
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
@@ -251,10 +251,10 @@ public class AdminProductsController extends HttpServlet {
     }
 
     // [SPL04]
-    // . Trong AdminProductsController.save, em đọc id cùng thông tin món, ảnh, size và topping từ form.
-    //   id=0 là thêm mới; id lớn hơn 0 là sửa sản phẩm có mã đó.
-    // . Em kiểm tra các ô rồi đặt dữ liệu vào Product, gồm cả id để DAO chọn thêm hay sửa. Món mới được
-    //   đặt đang bán; món đang sửa giữ trạng thái hiện tại.
+    // . Trong save, em nhận mã sản phẩm, tên, danh mục, giá, mô tả, ảnh và các dòng size, topping. Em kiểm
+    //   tra từng phần rồi đặt thông tin vào Product để chuẩn bị lưu. Món mới được đặt đang bán; món đang
+    //   sửa giữ trạng thái bán hiện tại. Size và topping được ghép bằng buildVariantsConfig trước khi gọi
+    //   DAO.
     // ... Kiểm tra các ô xong, save gọi buildVariantsConfig để ghép size và topping. Đọc tại
     //     AdminProductsController.java, tìm [SPBT02]; hàm trả cấu hình về Product trước khi gọi ghi sản
     //     phẩm.
@@ -279,28 +279,26 @@ public class AdminProductsController extends HttpServlet {
         String recipeInstructions = null;
         boolean available = true;
         // [SPT02]
-        // . Trong save (kiểm tra và lưu sản phẩm) của AdminProductsController.java, em nhận tên món từ name.
-        //   Em kiểm tra tên không trống, không quá 150 ký tự và không chứa ký tự điều khiển bằng
-        //   MenuValidation.requiredName (kiểm tra tên bắt buộc, độ dài và ký tự). Tên đúng mới được dùng để
-        //   tìm trùng trước khi lưu.
+        // . Trong hàm save của AdminProductsController.java, em nhận tên món từ name. Em kiểm tra tên không
+        //   trống, không quá 150 ký tự và không chứa ký tự điều khiển bằng MenuValidation.requiredName. Tên
+        //   đúng mới được dùng để tìm trùng trước khi lưu.
         // ... save nhận tên xong thì kiểm tra tên trùng. Đọc điểm gọi productNameExists tại
         //     AdminProductsController.java, tìm [SPTR01]; tên đúng mới tiếp tục tạo Product.
         name = MenuValidation.requiredName(name, "Tên món", 150);
         // [SPMT02]
-        // . Trong save (kiểm tra và lưu sản phẩm) của AdminProductsController.java, em nhận mô tả từ
-        //   description và kiểm tra tối đa 5.000 ký tự. Nếu quá dài thì báo lỗi về doPost để giữ lại form
-        //   đang nhập; nếu hợp lệ thì đưa mô tả vào sản phẩm để lưu.
+        // . Trong hàm save của AdminProductsController.java, em nhận mô tả từ description và kiểm tra tối đa
+        //   5.000 ký tự. Nếu quá dài thì báo lỗi về doPost để giữ lại form đang nhập; nếu hợp lệ thì đưa mô tả
+        //   vào sản phẩm để lưu.
         // ... Mô tả hợp lệ thì save gán vào Product rồi tiếp tục các phần còn lại. Đọc điểm ghi sản phẩm tại
         //     AdminProductsController.java, tìm [SPL05]; mô tả sai thì doPost báo lỗi, chưa ghi.
         if (description != null && description.length() > 5000) {
             throw new IllegalArgumentException("Mô tả không được dài quá 5000 ký tự.");
         }
         // [SPAN02]
-        // . AdminProductsController.save nhận tệp imageFile và lựa chọn removeImage từ form. Em kiểm tra
-        //   dung lượng, gọi normalizeImageType để nhận loại ảnh và matchesImageSignature để kiểm tra dữ liệu
-        //   tệp có đúng loại đó không.
-        // . Tệp hợp lệ được chuyển tới ProductDAO.saveProduct để lưu cùng món. Ảnh chỉ nhận JPG, PNG, GIF
-        //   hoặc WebP tối đa 5 MB; sai thì báo lỗi để người dùng sửa form.
+        // . Trong AdminProductsController.save, em nhận ảnh từ imageFile cùng lựa chọn removeImage. Em kiểm
+        //   tra dung lượng, loại ảnh và dấu hiệu nhận dạng ở đầu tệp bằng normalizeImageType và
+        //   matchesImageSignature. Ảnh JPG, PNG, GIF hoặc WebP tối đa 5 MB mới được chuyển cho
+        //   ProductDAO.saveProduct để lưu cùng món; ảnh sai thì báo lỗi.
         // ... Kiểm tra ảnh xong, save tiếp tục kiểm tra các ô và ghép Product. Đọc điểm gọi ghi món cùng ảnh
         //     tại AdminProductsController.java, tìm mã SPL05; ảnh sai thì dừng và doPost báo lỗi, chưa ghi.
         if (imagePart != null && imagePart.getSize() == 0
@@ -323,10 +321,9 @@ public class AdminProductsController extends HttpServlet {
         }
 
         // [SPDM02]
-        // . Để biết món được gán vào danh mục hợp lệ, ở save (kiểm tra và lưu sản phẩm) trong
-        //   AdminProductsController.java em truyền categoryId vào getCategoryById (đọc danh mục theo mã)
-        //   trong CategoryDAO.java. Em chỉ tiếp tục lưu khi danh mục còn tồn tại và đang hoạt động; trường
-        //   hợp khác sẽ báo lỗi.
+        // . Để biết món được gán vào danh mục hợp lệ, ở save trong AdminProductsController.java em truyền
+        //   categoryId vào getCategoryById trong CategoryDAO.java. Em chỉ tiếp tục lưu khi danh mục còn tồn
+        //   tại và đang hoạt động; trường hợp khác sẽ báo lỗi.
         // ... Danh mục hợp lệ thì save gán categoryId vào Product, tiếp tục ghép các ô và size/topping. Đọc
         //     điểm ghi sau đó tại AdminProductsController.java, tìm mã SPL05; danh mục không hợp lệ thì trả
         //     form lỗi.
@@ -343,19 +340,19 @@ public class AdminProductsController extends HttpServlet {
         }
 
         // [SPTR01]
-        // . Để tránh trùng tên món, ở save (kiểm tra và lưu sản phẩm) trong AdminProductsController.java em gọi
-        //   productNameExists (tìm sản phẩm khác trùng tên) trong ProductDAO.java. Em truyền tên và mã sản phẩm
-        //   đang sửa để tìm món khác cùng tên. Nếu có thì dừng lưu và báo lỗi tên sản phẩm.
+        // . Để tránh trùng tên món, ở save trong AdminProductsController.java em gọi productNameExists trong
+        //   ProductDAO.java. Em truyền tên và mã sản phẩm đang sửa để tìm món khác cùng tên. Nếu có thì dừng
+        //   lưu và báo lỗi tên sản phẩm.
         // ... Đọc tiếp tại ProductDAO.java, tìm [SPTR02].
         if (productDAO.productNameExists(name, id)) {
             throw new IllegalArgumentException("Tên sản phẩm đã tồn tại trong hệ thống.");
         }
 
         // [SPG02]
-    // . Trong save của AdminProductsController.java, em nhận basePrice rồi gọi money trong
-    //   MenuValidation.java để kiểm tra giá. Em truyền cả tên ô để nếu sai thì báo đúng Giá bán cơ bản;
-    //   số không âm, tối đa hai số thập phân và 9.999.999.999,99 mới được đưa vào sản phẩm để lưu.
-    // ... Đọc tiếp tại MenuValidation.java, tìm [SPG03].
+        // . Trong hàm save của AdminProductsController.java, em nhận basePrice rồi gọi money trong
+        //   MenuValidation.java để kiểm tra giá. Em truyền cả tên ô để nếu sai thì báo đúng Giá bán cơ bản; số
+        //   không âm, tối đa hai số thập phân và 9.999.999.999,99 mới được đưa vào sản phẩm để lưu.
+        // ... Đọc tiếp tại MenuValidation.java, tìm [SPG03].
 
         // [SUA11-02] Luyện sửa: Nhập giá sản phẩm 10000đ, khi lưu cộng thêm 20000đ.
         // . Đây là giá cơ bản được gán vào Product và lưu database; sửa ở đây sẽ ảnh hưởng các nơi đọc giá món.
@@ -375,33 +372,32 @@ public class AdminProductsController extends HttpServlet {
 
         product.setVariantsConfig(buildVariantsConfig(request, recipeInstructions));
         // [SPL05]
-        // . Kiểm tra xong, em gọi saveProduct trong ProductDAO.java, truyền Product, dữ liệu ảnh và lựa chọn
-        //   xóa ảnh. Hàm này lưu thông tin món cùng ảnh, rồi trả kết quả về AdminProductsController.save để báo
-        //   đã lưu hay chưa lưu được.
+        // . Sau khi ghép xong Product, em gọi saveProduct trong ProductDAO.java. Em truyền sản phẩm, dữ liệu
+        //   ảnh và lựa chọn xóa ảnh để lưu thông tin món cùng ảnh trong một lần, rồi trả kết quả về save trong
+        //   controller.
         // ... Đọc tiếp tại ProductDAO.java, tìm [SPL06].
         if (!productDAO.saveProduct(product, imageData, imageType, imageName, removeImage)) {
             throw new IllegalArgumentException("Không tìm thấy sản phẩm cần cập nhật.");
         }
 
         // [SPL07]
-        // . Khi ProductDAO.saveProduct trả thành công, AdminProductsController.save xóa bản nhập dở và đặt
-        //   productMessage. doPost mở lại trang quản lý; doGet đọc danh sách mới rồi chuyển sang
-        //   admin-products.jsp để hiện thông báo và sản phẩm vừa lưu.
+        // . Khi ProductDAO.saveProduct trả thành công, em quay lại save trong AdminProductsController.java để
+        //   xóa bản nhập dở và đặt productMessage. doPost mở lại trang quản lý; doGet đọc danh sách mới rồi
+        //   đưa về admin-products.jsp để hiện món vừa lưu cùng thông báo.
         // ... Đọc tiếp tại admin-products.jsp, tìm [SPL08].
         session.removeAttribute("productDraft");
         session.setAttribute("productMessage", id > 0 ? "Đã cập nhật món '" + name + "'." : "Đã thêm món '" + name + "'.");
     }
 
     // [SPBT02]
-    // . Trong save (kiểm tra và lưu sản phẩm) của AdminProductsController.java, em gọi
-    //   buildVariantsConfig (kiểm tra và ghép size, topping để lưu) để xử lý size và topping. Hàm đọc
-    //   từng cặp tên, giá từ sizeName/sizeDelta và toppingName/toppingPrice, kiểm tra rồi ghép thành
-    //   thông tin lựa chọn để lưu cùng sản phẩm.
+    // . Hàm buildVariantsConfig nhận từng cặp tên và tiền của size, topping từ form. Em kiểm tra các dòng
+    //   rồi ghép tên và giá thành chuỗi variantsConfig để đặt vào Product và lưu cùng món. Khi hàm trả về,
+    //   save mới có đủ thông tin sản phẩm để gọi phần ghi database.
     // .. Em yêu cầu có ít nhất một size và một size phụ thu 0 để có lựa chọn theo giá cơ bản. Trong mỗi
     //    loại, tên không được trùng, giá không âm và tối đa 50 dòng; topping được phép không thêm.
     // ... Xét hết size và topping, buildVariantsConfig trả cấu hình về save ở product.setVariantsConfig.
-    //     Đọc điểm gọi DAO sau đó tại AdminProductsController.java, tìm mã SPL05. Có dòng sai thì báo
-    //     lỗi về doPost, chưa ghi sản phẩm.
+    //     Đọc điểm gọi DAO sau đó tại AdminProductsController.java, tìm mã SPL05. Có dòng sai thì báo lỗi
+    //     về doPost, chưa ghi sản phẩm.
     private String buildVariantsConfig(HttpServletRequest request, String recipeInstructions) {
 
         String[] names = request.getParameterValues("sizeName");
@@ -469,23 +465,21 @@ public class AdminProductsController extends HttpServlet {
     }
 
     // [SPTIEN02]
-    // . Trong parseNonNegative (kiểm tra và đọc số tiền không âm) của AdminProductsController.java, em
-    //   nhận tiền từ từng dòng size hoặc topping do buildVariantsConfig (kiểm tra và ghép size, topping
-    //   để lưu) truyền vào. Em gọi MenuValidation.money trong MenuValidation.java, kèm tên ô và số dòng
-    //   để kiểm tra số tiền. Số hợp lệ trả về buildVariantsConfig để ghép cùng tên size/topping; sai thì
-    //   chưa lưu.
-    // ... Quay về buildVariantsConfig ngay sau parseNonNegative để ghép tiền với tên của chính dòng đó
-    //     và xét các dòng còn lại. Đọc điểm trả cấu hình về save tại AdminProductsController.java, tìm
-    //     mã SPBT02, phần return ở cuối hàm.
+    // . Trong hàm parseNonNegative của AdminProductsController.java, em nhận tiền từ từng dòng size hoặc
+    //   topping do buildVariantsConfig truyền vào. Em gọi MenuValidation.money trong MenuValidation.java,
+    //   kèm tên ô và số dòng để kiểm tra số tiền. Số hợp lệ trả về buildVariantsConfig để ghép cùng tên
+    //   size/topping; sai thì chưa lưu.
+    // ... Quay về buildVariantsConfig ngay sau parseNonNegative để ghép tiền với tên của chính dòng đó và
+    //     xét các dòng còn lại. Đọc điểm trả cấu hình về save tại AdminProductsController.java, tìm mã
+    //     SPBT02, phần return ở cuối hàm.
     private BigDecimal parseNonNegative(String value, String label) {
         return MenuValidation.money(value, label);
     }
 
     // [SPTEN02]
-    // . Sau bước kiểm tra độ dài, buildVariantsConfig (kiểm tra và ghép size, topping để lưu) gọi
-    //   validateVariantName (kiểm tra ký tự trong tên size/topping) cùng file, truyền tên size hoặc
-    //   topping và tên ô. Em loại ký tự điều khiển, dấu nháy và các ký tự đặc biệt bị cấm trong tên; nếu
-    //   sai thì báo lỗi trước khi kiểm tra tên trùng, ghép cấu hình và lưu sản phẩm.
+    // . Sau bước kiểm tra độ dài, buildVariantsConfig gọi validateVariantName cùng file, truyền tên size
+    //   hoặc topping và tên ô. Em loại ký tự điều khiển, dấu nháy và các ký tự đặc biệt bị cấm trong tên;
+    //   nếu sai thì báo lỗi trước khi kiểm tra tên trùng, ghép cấu hình và lưu sản phẩm.
     // ... Quay về buildVariantsConfig sau validateVariantName để xét trùng tên, nhận tiền và ghép dòng.
     //     Xét hết dòng thì đọc phần return tại AdminProductsController.java, tìm mã SPBT02; sau đó save
     //     mới gọi DAO.
@@ -511,10 +505,9 @@ public class AdminProductsController extends HttpServlet {
     }
 
     // [SPAH02]
-    // . Từ doPost, em gọi toggle (đổi trạng thái bán của sản phẩm) trong AdminProductsController.java để
-    //   nhận mã món và trạng thái available mới. Em truyền hai giá trị vào updateProductAvailability (lưu
-    //   trạng thái đang bán/tạm ngừng) trong ProductDAO.java để đổi trạng thái của đúng món, rồi nhận kết
-    //   quả để báo lại trên trang.
+    // . Từ doPost, em gọi toggle trong AdminProductsController.java để nhận mã món và trạng thái available
+    //   mới. Em truyền hai giá trị vào updateProductAvailability trong ProductDAO.java để đổi trạng thái
+    //   của đúng món, rồi nhận kết quả để báo lại trên trang.
     // ... Đọc tiếp tại ProductDAO.java, tìm [SPAH03].
     private void toggle(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
 
@@ -526,8 +519,9 @@ public class AdminProductsController extends HttpServlet {
         boolean available = Boolean.parseBoolean(rawAvailable);
         if (!productDAO.updateProductAvailability(id, available)) throw new IllegalArgumentException("Không tìm thấy sản phẩm.");
         // [SPAH04]
-        // . updateProductAvailability trả thành công thì toggle đặt productMessage rồi trở về doPost. doPost
-        //   chuyển trang để doGet đọc trạng thái mới.
+        // . Khi ProductDAO.updateProductAvailability báo đã cập nhật, em quay lại toggle trong
+        //   AdminProductsController.java để đặt productMessage. Hàm trở về doPost, rồi em mở lại trang để
+        //   doGet đọc trạng thái bán mới và hiện kết quả.
         // ... Xem kết quả tại admin-products.jsp, tìm mã SPL08; thông báo và trạng thái mới đã hiện là kết
         //     thúc đổi trạng thái bán.
         session.setAttribute("productMessage", "Đã cập nhật trạng thái bán sản phẩm.");
@@ -549,10 +543,11 @@ public class AdminProductsController extends HttpServlet {
             throw new IllegalArgumentException("Chưa xóa được sản phẩm: sản phẩm có thể đã thay đổi hoặc đã xuất hiện trong đơn hàng. Vui lòng tải lại danh sách; lịch sử đơn hàng được giữ nguyên.");
         }
         // [SPX04]
-        // . deleteProduct trả thành công thì delete đặt productMessage rồi trở về doPost để chuyển trang.
-        //   doGet đọc danh sách mới; lỗi trước đó đi vào catch và không báo đã xóa.
-        // ... Xem kết quả tại admin-products.jsp, tìm mã SPL08; thông báo cùng danh sách không còn món vừa
-        //     xóa là kết thúc xóa sản phẩm.
+        // . Khi ProductDAO.deleteProduct báo đã xóa, em quay lại delete trong AdminProductsController.java để
+        //   đặt productMessage. Sau đó, doPost mở lại trang và doGet đọc danh sách mới. Nếu có lỗi trước bước
+        //   này thì phần catch báo lỗi thay cho thông báo đã xóa.
+        // ... Xem kết quả tại admin-products.jsp, tìm mã SPL08; thông báo cùng danh sách không còn món vừa xóa
+        //     là kết thúc xóa sản phẩm.
         session.setAttribute("productMessage", "Đã xóa sản phẩm khỏi danh sách.");
     }
 
@@ -608,11 +603,11 @@ public class AdminProductsController extends HttpServlet {
     }
 
     // [SPQ01]
-    // . Trước khi mở hoặc xử lý sản phẩm, doGet và doPost gọi isAdmin (kiểm tra tài khoản Admin còn hoạt
-    //   động) trong AdminProductsController.java. Hàm kiểm tra tài khoản phải là Admin còn hoạt động; đúng
-    //   thì tiếp tục, sai thì trả lỗi và dừng yêu cầu.
-    // ... Quay lại đầu doGet hoặc doPost trong AdminProductsController.java sau isAdmin; đúng thì tiếp tục phần
-    //     sản phẩm, sai thì đã trả lỗi và kết thúc yêu cầu.
+    // . Trước khi mở hoặc xử lý sản phẩm, doGet và doPost gọi isAdmin trong AdminProductsController.java.
+    //   Hàm kiểm tra tài khoản phải là Admin còn hoạt động; đúng thì tiếp tục, sai thì trả lỗi và dừng yêu
+    //   cầu.
+    // ... Quay lại đầu doGet hoặc doPost trong AdminProductsController.java sau isAdmin; đúng thì tiếp tục
+    //     phần sản phẩm, sai thì đã trả lỗi và kết thúc yêu cầu.
     private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");

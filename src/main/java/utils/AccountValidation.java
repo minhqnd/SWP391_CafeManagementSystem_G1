@@ -50,12 +50,12 @@ public final class AccountValidation {
     }
 
     // [KTDT01]
-    // . Ở phoneError (kiểm tra định dạng số điện thoại) trong AccountValidation.java, em nhận số điện thoại
-    //   từ controller tài khoản. Em yêu cầu đúng 10 chữ số và bắt đầu bằng 0, rồi trả null nếu hợp lệ hoặc
-    //   lời báo nếu sai để controller chưa tìm trùng hay lưu số không đúng.
-    // ... Quay lại lời gọi AccountValidation.phoneError trong RegisterController.java, ProfileController.java,
-    //     AccountAvailabilityController.java hoặc AdminLoyaltyController.java; số sai thì báo lỗi, số đúng mới tìm
-    //     trùng hoặc tra khách.
+    // . Trong hàm phoneError của AccountValidation.java, em nhận số điện thoại từ controller tài khoản. Em
+    //   yêu cầu đúng 10 chữ số và bắt đầu bằng 0, rồi trả null nếu hợp lệ hoặc lời báo nếu sai để
+    //   controller chưa tìm trùng hay lưu số không đúng.
+    // ... Quay lại lời gọi AccountValidation.phoneError trong RegisterController.java,
+    //     ProfileController.java, AccountAvailabilityController.java hoặc AdminLoyaltyController.java; số
+    //     sai thì báo lỗi, số đúng mới tìm trùng hoặc tra khách.
     public static String phoneError(String phone) {
         if (phone == null || phone.isEmpty()) return "Vui lòng nhập số điện thoại.";
         return phone != null && phone.matches("0[0-9]{9}") ? null : "Số điện thoại sai định dạng.";
@@ -113,10 +113,9 @@ public final class AccountValidation {
     }
 
     // [KTNS01]
-    // . Ở birthdayError (kiểm tra ngày sinh hợp lệ) trong AccountValidation.java, em nhận ngày sinh đã
-    //   ghép từ ProfileController.update (kiểm tra và cập nhật hồ sơ). Nếu để trống thì được phép; nếu
-    //   nhập thì phải là ngày có thật, từ năm 1900 đến hôm nay. Em trả kết quả về update để báo đúng ô
-    //   khi sai.
+    // . Trong hàm birthdayError của AccountValidation.java, em nhận ngày sinh đã ghép từ
+    //   ProfileController.update. Nếu để trống thì được phép; nếu nhập thì phải là ngày có thật, từ năm
+    //   1900 đến hôm nay. Em trả kết quả về update để báo đúng ô khi sai.
     // ... Quay về ProfileController.update sau birthdayError để đưa lỗi vào ô ngày sinh. Đọc bước xét
     //     errors tại ProfileController.java, tìm mã HSL03; không còn lỗi mới cho cập nhật.
     public static String birthdayError(String birthday) {
@@ -130,10 +129,9 @@ public final class AccountValidation {
     }
 
     // [KTDC01]
-    // . Ở addressError (kiểm tra ký tự địa chỉ) trong AccountValidation.java, em nhận địa chỉ từ
-    //   ProfileController.update (kiểm tra và cập nhật hồ sơ) và kiểm tra ký tự điều khiển. Nếu có thì
-    //   em trả lời báo về update để hiện tại ô Địa chỉ. Giới hạn 500 ký tự được hàm update kiểm tra
-    //   riêng trước khi lưu.
+    // . Trong hàm addressError của AccountValidation.java, em nhận địa chỉ từ ProfileController.update và
+    //   kiểm tra ký tự điều khiển. Nếu có thì em trả lời báo về update để hiện tại ô Địa chỉ. Giới hạn 500
+    //   ký tự được hàm update kiểm tra riêng trước khi lưu.
     // ... Quay về ProfileController.update sau addressError, kiểm tra thêm độ dài rồi xét errors tại
     //     ProfileController.java, tìm mã HSL03. Có lỗi thì mở lại form, đúng hết mới lưu.
     public static String addressError(String address) {

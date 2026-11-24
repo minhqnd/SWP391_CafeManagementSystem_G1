@@ -174,12 +174,11 @@
     });
 
     // [TCGIO02]
-    // . Ở openSelectedItemsModal (đọc giỏ rồi mở danh sách món đã chọn), em đọc components/cart_api.jsp để
-    //   lấy các dòng, số lượng và tổng tiền của giỏ trong session. Em đưa dữ liệu cho
-    //   renderSelectedItemsModal (đưa các món trong giỏ lên hộp danh sách) dựng nội dung rồi Bootstrap mở
+    // . Ở openSelectedItemsModal, em đọc components/cart_api.jsp để lấy các dòng, số lượng và tổng tiền
+    //   của giỏ trong session. Em đưa dữ liệu cho renderSelectedItemsModal dựng nội dung rồi Bootstrap mở
     //   hộp selectedItemsModal. Nếu không đọc được thì chuyển về /cart để xem bằng trang giỏ hàng.
-    // ... Kết thúc mở danh sách món đã chọn khi selectedItemsModal hiện các dòng giỏ, hoặc khi trình duyệt chuyển
-    //     về trang /cart nếu chưa đọc được dữ liệu.
+    // ... Kết thúc mở danh sách món đã chọn khi selectedItemsModal hiện các dòng giỏ, hoặc khi trình duyệt
+    //     chuyển về trang /cart nếu chưa đọc được dữ liệu.
     function openSelectedItemsModal() {
         fetch('${pageContext.request.contextPath}/components/cart_api.jsp')
             .then(function(res) { return res.json(); })
@@ -346,10 +345,9 @@
     }
 
     // [MNCT02]
-    // . Ở openProductDetailModal (đọc thông tin rồi mở hộp lựa chọn món), em nhận mã từ nút dấu cộng và đọc
-    //   /menu?action=detail&id theo mã đó. MenuController.doGet gọi handleProductDetailApi (đọc và trả thông
-    //   tin món cho hộp lựa chọn) để đọc món còn bán rồi trả tên, ảnh, giá và variantsConfig. Khi nhận được,
-    //   em dựng lựa chọn size/topping và mở productDetailModal.
+    // . Ở openProductDetailModal, em nhận mã từ nút dấu cộng và đọc /menu?action=detail&id theo mã đó.
+    //   MenuController.doGet gọi handleProductDetailApi để đọc món còn bán rồi trả tên, ảnh, giá và
+    //   variantsConfig. Khi nhận được, em dựng lựa chọn size/topping và mở productDetailModal.
     // ... Đọc tiếp tại MenuController.java, tìm [MNCT03].
     function openProductDetailModal(productId) {
         fetch('${pageContext.request.contextPath}/menu?action=detail&id=' + productId)

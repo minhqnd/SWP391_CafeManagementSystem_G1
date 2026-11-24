@@ -82,9 +82,9 @@
             const check = (input, message) => { if (input && message && !errors.has(input)) errors.set(input, message); };
             if (kind === 'category' || kind === 'product') {
                 // [DMKT01]
-                // . Khi form danh mục gửi, validate đọc tên, trạng thái và ảnh để kiểm tra ngay trên trang; form sản
-                //   phẩm dùng chung phần tên và ảnh. Lời báo được giữ theo đúng ô để mark hiển thị. Có lỗi thì chặn
-                //   gửi; đúng thì form danh mục đến AdminCategoriesController.doPost để lưu.
+                // . Trước khi gửi form danh mục, em dùng validate kiểm tra tên, trạng thái và ảnh ngay trên trang.
+                //   Form sản phẩm cũng dùng chung phần kiểm tra tên và ảnh này. Em giữ lời báo theo đúng ô để mark
+                //   hiện lỗi; đúng hết mới cho form danh mục gửi tới AdminCategoriesController.doPost.
                 // ... validate trả lỗi cho sự kiện submit ở cuối admin-form-validation.js. Có lỗi thì dừng và hiện
                 //     dưới ô. Form danh mục đúng thì theo AdminCategoriesController.java, tìm [DML02]; form sản phẩm
                 //     đúng thì theo AdminProductsController.java, tìm mã SPL03.
@@ -102,9 +102,9 @@
             }
             if (kind === 'product') {
                 // [SPL02]
-                // . Từ productForm trong admin-products.jsp, em kiểm tra tên, danh mục, giá và từng dòng size,
-                //   topping trước khi gửi. Size phải có ít nhất một dòng và một phụ thu 0. Ô sai hiện lỗi ngay
-                //   bên dưới; hợp lệ thì form mới đến doPost của AdminProductsController.java để kiểm tra lại và lưu.
+                // . Trước khi gửi productForm, em kiểm tra tên, danh mục, giá và từng dòng size, topping. Size phải có
+                //   ít nhất một dòng và có một lựa chọn phụ thu 0. Ô sai được báo ngay bên dưới; đúng hết mới gửi tới
+                //   AdminProductsController.doPost.
                 // ... Đọc tiếp tại AdminProductsController.java, tìm [SPL03].
                 if (!field('categoryId')?.value) check(field('categoryId'), 'Vui lòng chọn danh mục.');
                 check(field('basePrice'), money(field('basePrice')?.value, 'Giá bán cơ bản'));
@@ -145,10 +145,9 @@
             }
             if (kind === 'recipe') {
                 // [CTKT01]
-                // . Khi bấm Lưu công thức, validate kiểm tra từng cặp nguyên liệu, định lượng trên form. Em bỏ qua
-                //   dòng trống hoàn toàn, chặn dòng nhập thiếu, nguyên liệu trùng, định lượng sai và quá 100 dòng;
-                //   lời báo gắn đúng ô. Qua kiểm tra, form mới gửi đến AdminRecipeController.doPost để kiểm tra lại
-                //   và lưu.
+                // . Trước khi gửi công thức, em dùng validate kiểm tra từng dòng nguyên liệu và định lượng. Dòng trống
+                //   hoàn toàn được bỏ qua; dòng thiếu ô, trùng nguyên liệu, lượng sai hoặc quá 100 dòng thì hiện lỗi
+                //   đúng ô. Đúng hết mới gửi form tới AdminRecipeController.doPost để kiểm tra lại và lưu.
                 // ... validate trả lỗi cho sự kiện submit ở cuối file. Có lỗi thì dừng tại form; đúng hết thì gửi
                 //     /admin/recipes. Đọc phần nhận form tại AdminRecipeController.java, tìm [CTL02].
                 const rows = [...form.querySelectorAll('.ingredient-row')];
@@ -173,12 +172,12 @@
             }
             if (kind === 'loyalty') {
                 // [TDKT01]
-                // . Khi bấm Lưu quy tắc, validate gọi wholeNumber ở đầu file cho từng ô tiền tích điểm, mốc đổi và
-                //   tiền giảm. Số sai được báo ngay dưới ô; tiền giảm được phép bằng 0. Đúng cả ba thì form đến
-                //   AdminLoyaltyController.doPost, nơi updateRules kiểm tra lại rồi lưu.
+                // . Trước khi gửi ba ô quy tắc, hàm validate gọi wholeNumber để kiểm tra từng giá trị. Số sai được báo
+                //   ngay dưới ô để người dùng sửa; tiền giảm được phép bằng 0. Đúng cả ba thì form mới gửi tới
+                //   AdminLoyaltyController.doPost để kiểm tra lại và lưu.
                 // ... validate trả lỗi cho sự kiện submit ở cuối admin-form-validation.js. Có lỗi thì hiện dưới ô và
-                //     dừng; đúng cả ba thì gửi form. Đọc phần nhận action=updateRules tại
-                //     AdminLoyaltyController.java, tìm [TDQT02].
+                //     dừng; đúng cả ba thì gửi form. Đọc phần nhận action=updateRules tại AdminLoyaltyController.java,
+                //     tìm [TDQT02].
 
                 // [SUA12-09] Luyện sửa: Đổi khoảng được nhập trong ba ô quy tắc.
                 // . Đồng bộ từng min/max với AdminLoyaltyController.updateRules và LoyaltyValidation; tiền giảm

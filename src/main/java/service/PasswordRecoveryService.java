@@ -42,7 +42,7 @@ public final class PasswordRecoveryService {
     private void clear(HttpSession session){session.removeAttribute(KEY);session.removeAttribute("canResetPassword");session.removeAttribute("forgotOtp");session.removeAttribute("forgotEmail");}
 
     // [OTG03]
-    // . Trong start của PasswordRecoveryService.java, em kiểm tra email và giới hạn gửi, rồi gọi
+    // . Trong hàm start của PasswordRecoveryService.java, em kiểm tra email và giới hạn gửi, rồi gọi
     //   UserDAO.findActiveAccountByEmail để tìm tài khoản phù hợp. Tìm được thì tạo mã sáu chữ số và gọi
     //   EmailUtil.sendOTP để gửi; gửi được mới giữ thông tin cho bước xác minh.
     // .. Mã dùng trong 5 phút, mỗi lần gửi cách nhau ít nhất 60 giây. Em chỉ giữ mã sau khi gửi thư thành
@@ -65,23 +65,22 @@ public final class PasswordRecoveryService {
             if(user==null)throw new utils.RecoveryFailure("email","Không tìm thấy tài khoản sử dụng email này. Vui lòng nhập đúng email đã liên kết với tài khoản.");
 
             String code=String.format("%06d",RANDOM.nextInt(1000000));
-            // . Trong PasswordRecoveryService.start (tạo và gửi mã OTP), em gọi EmailUtil.sendOTP (gửi email chứa mã
-            //   xác minh) qua sender, truyền email và mã sáu số để gửi thư xác minh. Em nhận sent để chỉ giữ mã cho
-            //   bước xác minh khi thư đã gửi được.
+            // . Trong PasswordRecoveryService.start, em gọi EmailUtil.sendOTP qua sender, truyền email và mã sáu
+            //   số để gửi thư xác minh. Em nhận sent để chỉ giữ mã cho bước xác minh khi thư đã gửi được.
             // ... Đọc tiếp tại EmailUtil.java, tìm [OTG05].
             boolean sent;try{sent=sender.test(email,code);}catch(RuntimeException e){sent=false;}
             if(!sent)throw new utils.RecoveryFailure(null,"Không gửi được email OTP lúc này. Vui lòng thử lại sau 60 giây.");
             session.setAttribute(KEY,new State(user,code,now));
-            // . Khi tạo và gửi mã xong, start (tạo và gửi mã OTP) trong PasswordRecoveryService.java quay về
-            //   ForgotPasswordController.doPost để mở ô OTP. Nếu được gọi từ resend (kiểm tra thời gian chờ rồi gửi
-            //   lại OTP) thì kết quả quay về ResendOtpController.doPost để báo đã gửi lại mã.
+            // . Khi tạo và gửi mã xong, start trong PasswordRecoveryService.java quay về
+            //   ForgotPasswordController.doPost để mở ô OTP. Nếu được gọi từ resend thì kết quả quay về
+            //   ResendOtpController.doPost để báo đã gửi lại mã.
             // ... Đọc tiếp tại ForgotPasswordController.java, tìm [OTG06].
         }
     }
 
     // [OTGL03]
-    // . Trong resend của PasswordRecoveryService.java, em đọc lần gửi trước và kiểm tra thời gian chờ. Nếu
-    //   được gửi lại, em gọi start cùng file bằng email đã giữ để tạo mã mới; gửi xong thì quay về
+    // . Trong hàm resend của PasswordRecoveryService.java, em đọc lần gửi trước và kiểm tra thời gian chờ.
+    //   Nếu được gửi lại, em gọi start cùng file bằng email đã giữ để tạo mã mới; gửi xong thì quay về
     //   ResendOtpController.doPost.
     // ... Đọc tiếp tại ResendOtpController.java, tìm [OTGL04].
     public void resend(HttpSession session,String source){
@@ -97,12 +96,11 @@ public final class PasswordRecoveryService {
     }
 
     // [OTGH01]
-    // . Trong start (tạo và gửi mã OTP) của PasswordRecoveryService.java, em gọi reserve (kiểm tra giới
-    //   hạn số lần gửi OTP) cùng file để kiểm tra giới hạn gửi mã. Em truyền email, nguồn yêu cầu và
-    //   thời gian hiện tại; nếu gửi quá nhiều thì hàm báo phải chờ, còn trong giới hạn thì tiếp tục gửi
-    //   OTP.
-    // ... Quay về PasswordRecoveryService.start sau reserve. Vượt giới hạn thì dừng và báo lỗi; được
-    //     phép thì tìm tài khoản tại UserDAO.java, tìm mã OTG04, rồi mới tạo mã và gửi thư.
+    // . Trong hàm start của PasswordRecoveryService.java, em gọi reserve cùng file để kiểm tra giới hạn
+    //   gửi mã. Em truyền email, nguồn yêu cầu và thời gian hiện tại; nếu gửi quá nhiều thì hàm báo phải
+    //   chờ, còn trong giới hạn thì tiếp tục gửi OTP.
+    // ... Quay về PasswordRecoveryService.start sau reserve. Vượt giới hạn thì dừng và báo lỗi; được phép
+    //     thì tìm tài khoản tại UserDAO.java, tìm mã OTG04, rồi mới tạo mã và gửi thư.
     private synchronized void reserve(String email,String source,long now){
         emailSends.entrySet().removeIf(e->now-e.getValue()>=COOLDOWN);
         sourceSends.entrySet().removeIf(e->now-e.getValue().start()>=600000L);
@@ -113,11 +111,11 @@ public final class PasswordRecoveryService {
     }
 
     // [OTXM03]
-    // . Trong verify của PasswordRecoveryService.java, em đọc dữ liệu lần gửi rồi kiểm tra OTP, thời hạn và
-    //   số lần sai. Mã đúng thì ghi nhận thời điểm đã xác minh để controller mở bước mật khẩu mới; mã sai
-    //   hoặc hết hạn thì báo lỗi và chưa cho đổi mật khẩu.
-    // .. Mã hết hạn sau 5 phút. Nội dung không đủ sáu chữ số bị báo sai định dạng và chưa tính là một lần thử
-    //    mã. Đủ năm lần nhập mã sai thì hủy lần xác minh; mã đúng mới cho phép đặt lại mật khẩu.
+    // . Trong hàm verify của PasswordRecoveryService.java, em đọc dữ liệu lần gửi rồi kiểm tra OTP, thời
+    //   hạn và số lần sai. Mã đúng thì ghi nhận thời điểm đã xác minh để controller mở bước mật khẩu mới;
+    //   mã sai hoặc hết hạn thì báo lỗi và chưa cho đổi mật khẩu.
+    // .. Mã hết hạn sau 5 phút. Nội dung không đủ sáu chữ số bị báo sai định dạng và chưa tính là một lần
+    //    thử mã. Đủ năm lần nhập mã sai thì hủy lần xác minh; mã đúng mới cho phép đặt lại mật khẩu.
     // ... Đọc tiếp tại VerifyOtpController.java, tìm [OTXM04].
     public void verify(HttpSession session,String input){
         synchronized(session){
@@ -128,12 +126,12 @@ public final class PasswordRecoveryService {
             if (!input.matches("[0-9]{6}"))
                 throw new utils.RecoveryFailure("otp", "Mã OTP phải gồm đúng 6 chữ số.");
             // [OTN03]
-            // . Ở verify (xác minh mã OTP) trong PasswordRecoveryService.java, em so sáu chữ số vừa nhập với OTP
-            //   đang giữ của lần yêu cầu này. Sai thì tăng số lần thử và báo lỗi; đủ năm lần sai thì hủy lần xác
-            //   minh. Đúng thì bỏ OTP, giữ thời điểm xác minh để controller mở bước nhập mật khẩu mới.
-            // ... verify trả về VerifyOtpController.doPost: đúng thì mở bước đặt mật khẩu, sai thì catch hiện
-            //     lỗi. Đọc điểm nhận kết quả tại VerifyOtpController.java, tìm mã OTXM04; nhánh lỗi nằm trong
-            //     catch bên dưới.
+            // . Trong hàm verify của PasswordRecoveryService.java, em so sáu chữ số vừa nhập với OTP đang giữ của
+            //   lần yêu cầu này. Sai thì tăng số lần thử và báo lỗi; đủ năm lần sai thì hủy lần xác minh. Đúng thì
+            //   bỏ OTP, giữ thời điểm xác minh để controller mở bước nhập mật khẩu mới.
+            // ... verify trả về VerifyOtpController.doPost: đúng thì mở bước đặt mật khẩu, sai thì catch hiện lỗi.
+            //     Đọc điểm nhận kết quả tại VerifyOtpController.java, tìm mã OTXM04; nhánh lỗi nằm trong catch bên
+            //     dưới.
 
             // [SQL10-17] Nút Xác minh OTP: Java đối chiếu mã và trạng thái khôi phục giữ trong phiên đăng nhập.
             // . Không có câu SELECT OTP trong MySQL; hạn dùng và số lần nhập sai cũng được kiểm tra trong dịch
@@ -167,10 +165,10 @@ public final class PasswordRecoveryService {
     }
 
     // [OTDM03]
-    // . Trong reset của PasswordRecoveryService.java, em kiểm tra lần xác minh còn hiệu lực và hai ô mật
-    //   khẩu hợp lệ. Sau đó em gọi UserDAO.resetPasswordById bằng mã tài khoản, email đã xác minh và mật
-    //   khẩu mới. Ghi được hoặc tài khoản không còn khớp thì xóa dữ liệu xác minh rồi quay về controller;
-    //   riêng lỗi kết nối khi ghi sẽ giữ lần xác minh còn hạn để người dùng thử lại.
+    // . Trong hàm reset của PasswordRecoveryService.java, em kiểm tra lần xác minh còn hiệu lực và hai ô
+    //   mật khẩu hợp lệ. Sau đó em gọi UserDAO.resetPasswordById bằng mã tài khoản, email đã xác minh và
+    //   mật khẩu mới. Ghi được hoặc tài khoản không còn khớp thì xóa dữ liệu xác minh rồi quay về
+    //   controller; riêng lỗi kết nối khi ghi sẽ giữ lần xác minh còn hạn để người dùng thử lại.
     // .. Lần xác minh phải còn trong thời hạn 5 phút trước khi được đặt lại mật khẩu.
     // ... Đọc tiếp tại UserDAO.java, tìm [OTDM04].
     public void reset(HttpSession session,String password,String confirmation){
@@ -178,11 +176,10 @@ public final class PasswordRecoveryService {
             State state=state(session);long now=clock.getAsLong();
             if(state.verifiedAt==null || now-state.verifiedAt>=TTL){clear(session);throw expired();}
             // [OTMK02]
-            // . Sau khi kiểm tra lần xác minh còn hiệu lực, trong reset (đặt lại mật khẩu sau khi xác minh OTP)
-            //   của PasswordRecoveryService.java em gọi AccountValidation.passwordError (kiểm tra điều kiện mật
-            //   khẩu) bằng mật khẩu mới và xác nhận. Hàm kiểm tra 8–255 ký tự, có chữ và số, không có ký tự điều
-            //   khiển, hai ô phải khớp. Có lỗi thì dừng trước khi gọi users.resetPasswordById (ghi mật khẩu mới
-            //   cho tài khoản đã xác minh) để ghi mật khẩu mới.
+            // . Sau khi kiểm tra lần xác minh còn hiệu lực, trong reset của PasswordRecoveryService.java em gọi
+            //   AccountValidation.passwordError bằng mật khẩu mới và xác nhận. Hàm kiểm tra 8–255 ký tự, có chữ và
+            //   số, không có ký tự điều khiển, hai ô phải khớp. Có lỗi thì dừng trước khi gọi
+            //   users.resetPasswordById để ghi mật khẩu mới.
             // ... reset nhận kết quả passwordError; có lỗi thì dừng, đúng mới gọi UserDAO.resetPasswordById. Đọc
             //     bước ghi mật khẩu tại UserDAO.java, tìm mã OTDM04.
             String error=AccountValidation.passwordError(password,confirmation);if(error!=null)throw new IllegalArgumentException(error);

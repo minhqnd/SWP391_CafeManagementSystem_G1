@@ -8,15 +8,12 @@ import model.ProductIngredient;
 public class ProductIngredientDAO extends BaseDAO {
 
     // [CTL06]
-    // . AdminRecipeController.doPost gọi saveRecipe trong ProductIngredientDAO.java để lưu công thức của
-    //   món đã chọn. Bảng product_ingredients giữ từng dòng gồm mã món, mã nguyên liệu và lượng cần dùng
-    //   cho một phần.
-    // . Em kiểm tra nguyên liệu mới còn hoạt động, xóa các dòng công thức cũ rồi thêm danh sách mới của
-    //   đúng món. Ghi đủ mới xác nhận lưu; có lỗi thì hủy thay đổi để giữ công thức cũ và báo về
-    //   controller.
-    // ... Lưu đủ công thức thì về controller tại AdminRecipeController.java, tìm [CTL07]. Nếu có lỗi,
-    //     DAO hủy thay đổi; doPost giữ các dòng đang nhập tại AdminRecipeController.java, tìm mã CTL09
-    //     rồi mở lại hộp để sửa.
+    // . Trong ProductIngredientDAO.saveRecipe, em nhận mã món cùng công thức mới. Em kiểm tra nguyên liệu
+    //   mới còn hoạt động rồi thay các dòng cũ trong product_ingredients bằng danh sách mới. Ghi đủ mới
+    //   xác nhận; có lỗi thì hủy thay đổi để giữ công thức cũ và báo về controller.
+    // ... Lưu đủ công thức thì về controller tại AdminRecipeController.java, tìm [CTL07]. Nếu có lỗi, DAO
+    //     hủy thay đổi; doPost giữ các dòng đang nhập tại AdminRecipeController.java, tìm mã CTL09 rồi mở
+    //     lại hộp để sửa.
     public void saveRecipe(int productId, List<ProductIngredient> ingredients) throws Exception {
 
         // [SQL11-36] Nút Lưu công thức: xóa các dòng công thức cũ của món.
@@ -47,25 +44,24 @@ public class ProductIngredientDAO extends BaseDAO {
                         while (rs.next()) oldIds.add(rs.getInt("ingredient_id"));
                     }
                 }
-                // . Trước khi thay công thức, trong ProductIngredientDAO.saveRecipe (lưu công thức của sản phẩm) em gọi
-                //   IngredientDAO.requireActive (kiểm tra nguyên liệu còn hoạt động) bằng kết nối và mã từng nguyên liệu
-                //   mới. Em kiểm tra nguyên liệu còn dùng được; nguyên liệu đã có trong công thức cũ thì được phép giữ
-                //   lại.
+                // . Trước khi thay công thức, trong ProductIngredientDAO.saveRecipe em gọi IngredientDAO.requireActive
+                //   bằng kết nối và mã từng nguyên liệu mới. Em kiểm tra nguyên liệu còn dùng được; nguyên liệu đã có
+                //   trong công thức cũ thì được phép giữ lại.
                 if (ingredients != null) {
                     for (ProductIngredient line : ingredients) {
                         if (!oldIds.contains(line.getIngredientId())) IngredientDAO.requireActive(conn, line.getIngredientId());
                     }
                 }
 
-                // . Trong ProductIngredientDAO.saveRecipe (lưu công thức của sản phẩm), em dùng mã sản phẩm để xóa các
-                //   dòng công thức cũ, chuẩn bị ghi danh sách mới. Bước này chưa được xác nhận riêng; phải ghi đủ công
-                //   thức mới thì thay đổi mới có hiệu lực.
+                // . Trong ProductIngredientDAO.saveRecipe, em dùng mã sản phẩm để xóa các dòng công thức cũ, chuẩn bị
+                //   ghi danh sách mới. Bước này chưa được xác nhận riêng; phải ghi đủ công thức mới thì thay đổi mới
+                //   có hiệu lực.
                 psDelete.setInt(1, productId);
                 psDelete.executeUpdate();
 
-                // . Sau khi xóa các dòng cũ, trong ProductIngredientDAO.saveRecipe (lưu công thức của sản phẩm) em đưa
-                //   mã sản phẩm, mã nguyên liệu và định lượng của từng dòng vào INSERT product_ingredients. Em ghi cả
-                //   danh sách để thay công thức cho đúng món đang sửa.
+                // . Sau khi xóa các dòng cũ, trong ProductIngredientDAO.saveRecipe em đưa mã sản phẩm, mã nguyên liệu
+                //   và định lượng của từng dòng vào INSERT product_ingredients. Em ghi cả danh sách để thay công thức
+                //   cho đúng món đang sửa.
                 if (ingredients != null && !ingredients.isEmpty()) {
                     for (ProductIngredient pi : ingredients) {
                         psInsert.setInt(1, productId);
@@ -76,14 +72,14 @@ public class ProductIngredientDAO extends BaseDAO {
                     psInsert.executeBatch();
                 }
 
-                // . Khi tất cả dòng công thức đều ghi được, trong ProductIngredientDAO.saveRecipe (lưu công thức của sản
-                //   phẩm) em gọi conn.commit (xác nhận lưu toàn bộ thay đổi) để xác nhận. Hàm kết thúc và chương trình
-                //   trở về AdminRecipeController.doPost để đặt thông báo đã lưu công thức.
+                // . Khi tất cả dòng công thức đều ghi được, trong ProductIngredientDAO.saveRecipe em gọi conn.commit
+                //   để xác nhận. Hàm kết thúc và chương trình trở về AdminRecipeController.doPost để đặt thông báo đã
+                //   lưu công thức.
                 conn.commit();
             } catch (Exception e) {
-                // . Nếu có lỗi khi ghi công thức, trong ProductIngredientDAO.saveRecipe (lưu công thức của sản phẩm) em
-                //   gọi conn.rollback (hủy các thay đổi của lần lưu) để khôi phục công thức cũ rồi báo lỗi về
-                //   AdminRecipeController.doPost. Controller giữ bản nhập dở và mở lại form để người dùng sửa tiếp.
+                // . Nếu có lỗi khi ghi công thức, trong ProductIngredientDAO.saveRecipe em gọi conn.rollback để khôi
+                //   phục công thức cũ rồi báo lỗi về AdminRecipeController.doPost. Controller giữ bản nhập dở và mở
+                //   lại form để người dùng sửa tiếp.
                 conn.rollback();
                 throw e;
             } finally {
@@ -123,10 +119,9 @@ public class ProductIngredientDAO extends BaseDAO {
     }
 
     // [CTM03]
-    // . Ở getAllProductIngredientsMap (đọc công thức và nhóm theo mã sản phẩm) trong
-    //   ProductIngredientDAO.java, em đọc các dòng công thức kèm tên và đơn vị nguyên liệu, rồi nhóm theo mã
-    //   món. Em trả dữ liệu về AdminRecipeController.doGet để mở đúng công thức, tính giá vốn và thống kê
-    //   món đã có định mức.
+    // . Trong hàm getAllProductIngredientsMap của ProductIngredientDAO.java, em đọc các dòng công thức kèm
+    //   tên và đơn vị nguyên liệu, rồi nhóm theo mã món. Em trả dữ liệu về AdminRecipeController.doGet để
+    //   mở đúng công thức, tính giá vốn và thống kê món đã có định mức.
     // ... Quay lại doGet trong AdminRecipeController.java để dùng công thức theo mã món; đọc tiếp tại
     //     AdminRecipeController.java, tìm [CTTONG04] ở bước lấy đơn giá nguyên liệu.
     public java.util.Map<Integer, List<ProductIngredient>> getAllProductIngredientsMap() {

@@ -392,12 +392,10 @@
                                     </c:otherwise>
                                 </c:choose>
                                 <%-- [MNSO01]
-                                     . Số món cạnh tiêu đề là products.size của danh sách sau khi lọc, do
-                                       MenuController.doGet đọc qua ProductDAO.filterProducts (lọc món còn bán theo danh mục
-                                       và từ khóa). Vì vậy số này thay đổi theo danh mục và từ khóa, không phải tổng mọi sản
-                                       phẩm trong bảng.
-                                     ... Kết thúc phần số kết quả tại tổng số món của danh sách đang hiển thị trên
-                                         menu.jsp.
+                                     . Số món cạnh tiêu đề là products.size của danh sách sau khi lọc, do MenuController.doGet đọc qua
+                                       ProductDAO.filterProducts. Vì vậy số này thay đổi theo danh mục và từ khóa, không phải tổng mọi
+                                       sản phẩm trong bảng.
+                                     ... Kết thúc phần số kết quả tại tổng số món của danh sách đang hiển thị trên menu.jsp.
                                 --%>
                                 <span class="text-muted fs-6 fw-normal ms-2">(${products.size()} món)</span>
                             </h1>
@@ -410,11 +408,10 @@
 
                             <%-- [MNTK01]
                                  . Khi tìm kiếm trên menu.jsp, form gửi keyword và category đến MenuController.doGet qua /menu.
-                                   Controller truyền hai giá trị vào ProductDAO.filterProducts (lọc món còn bán theo danh mục và từ
-                                   khóa) để đọc món khớp điều kiện rồi đưa danh sách về menu.jsp để hiển thị.
-                                 ... Form gửi keyword và category tới MenuController.doGet. Controller gọi
-                                     ProductDAO.filterProducts; đọc tại ProductDAO.java, tìm mã MNDS02 rồi xem danh sách trả về
-                                     menu.jsp.
+                                   Controller truyền hai giá trị vào ProductDAO.filterProducts để đọc món khớp điều kiện rồi đưa danh
+                                   sách về menu.jsp để hiển thị.
+                                 ... Form gửi keyword và category tới MenuController.doGet. Controller gọi ProductDAO.filterProducts;
+                                     đọc tại ProductDAO.java, tìm mã MNDS02 rồi xem danh sách trả về menu.jsp.
                             --%>
                             <form action="${pageContext.request.contextPath}/menu" method="GET"
                                 class="position-relative w-100">
@@ -494,10 +491,10 @@
                             </c:if>
                             <%-- [MNX04]
                                  . Xóa tất cả bỏ cả từ khóa lẫn danh mục bằng cách mở /menu không có tham số. MenuController.doGet
-                                   gọi ProductDAO.filterProducts (lọc món còn bán theo danh mục và từ khóa) không kèm điều kiện để
-                                   hiện lại toàn bộ món còn bán trong danh mục hoạt động.
-                                 ... Yêu cầu /menu không còn category và keyword. Đọc hàm lọc tại ProductDAO.java, tìm mã MNDS02;
-                                     kết quả về MenuController rồi menu.jsp hiện toàn bộ món được phép bán.
+                                   gọi ProductDAO.filterProducts không kèm điều kiện để hiện lại toàn bộ món còn bán trong danh mục
+                                   hoạt động.
+                                 ... Yêu cầu /menu không còn category và keyword. Đọc hàm lọc tại ProductDAO.java, tìm mã MNDS02; kết
+                                     quả về MenuController rồi menu.jsp hiện toàn bộ món được phép bán.
                             --%>
                             <a href="${pageContext.request.contextPath}/menu"
                                 class="btn btn-sm btn-link text-danger text-decoration-none p-0 ms-2 small fw-semibold">
@@ -512,10 +509,9 @@
                             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="productsGrid">
 
                                 <%-- [MNDS01]
-                                     . Danh sách món trong menu.jsp lấy từ products do MenuController.doGet đưa sang sau khi
-                                       gọi ProductDAO.filterProducts (lọc món còn bán theo danh mục và từ khóa). Em lặp từng
-                                       sản phẩm và đưa vào product_card.jsp để dựng thẻ món đã thỏa điều kiện bán cùng bộ
-                                       lọc đang chọn.
+                                     . Danh sách món trong menu.jsp lấy từ products do MenuController.doGet đưa sang sau khi gọi
+                                       ProductDAO.filterProducts. Em lặp từng sản phẩm và đưa vào product_card.jsp để dựng thẻ món đã
+                                       thỏa điều kiện bán cùng bộ lọc đang chọn.
                                      ... Để xem truy vấn đã chuẩn bị danh sách này, đọc ProductDAO.java, tìm [MNDS02].
                                 --%>
                                 <c:forEach var="p" items="${products}">

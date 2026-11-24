@@ -14,9 +14,9 @@ public final class PasswordHasher {
     private PasswordHasher() {}
     public static boolean encoded(String stored) { return stored != null && stored.startsWith("pbkdf2_sha256$"); }
     // [BMKB01]
-    // . Ở hash (tạo chuỗi băm mật khẩu để lưu) trong PasswordHasher.java, em nhận mật khẩu từ các hàm
-    //   tạo hoặc đổi tài khoản của UserDAO.java. Em tạo chuỗi băm có phần ngẫu nhiên rồi trả lại hàm
-    //   đang lưu để ghi password_hash, thay vì ghi nguyên mật khẩu người dùng nhập.
+    // . Trong hàm hash của PasswordHasher.java, em nhận mật khẩu từ các hàm tạo hoặc đổi tài khoản của
+    //   UserDAO.java. Em tạo chuỗi băm có phần ngẫu nhiên rồi trả lại hàm đang lưu để ghi password_hash,
+    //   thay vì ghi nguyên mật khẩu người dùng nhập.
     // ... Trả chuỗi băm về đúng lời gọi PasswordHasher.hash trong UserDAO rồi thực hiện lệnh ghi. Sau đó
     //     theo kết quả tạo tài khoản tại RegisterController.java, tìm mã DKL07, đổi mật khẩu tại
     //     ProfileController.java, tìm mã MKL04 hoặc khôi phục tại ResetPasswordController.java, tìm mã
@@ -27,13 +27,12 @@ public final class PasswordHasher {
                 + Base64.getEncoder().encodeToString(derive(password, salt, ITERATIONS));
     }
     // [BMKXM01]
-    // . Ở verify (so mật khẩu nhập với giá trị đã lưu) trong PasswordHasher.java, em nhận mật khẩu vừa
-    //   nhập và giá trị đang lưu từ UserDAO.login (đối chiếu tài khoản để đăng nhập) hoặc
-    //   changePasswordById (so mật khẩu cũ rồi ghi mật khẩu mới). Em đối chiếu rồi trả đúng hoặc sai để
-    //   hàm gọi quyết định cho đăng nhập hoặc cho đổi mật khẩu.
-    // ... Trả đúng/sai về UserDAO sau verify. Với đăng nhập, UserDAO trả User hoặc null về controller
-    //     tại LoginController.java, tìm mã DNL05. Với đổi mật khẩu, sai thì trả false; đúng mới ghi rồi
-    //     trả kết quả về ProfileController.java, tìm mã MKL04.
+    // . Trong hàm verify của PasswordHasher.java, em nhận mật khẩu vừa nhập và giá trị đang lưu từ
+    //   UserDAO.login hoặc changePasswordById. Em đối chiếu rồi trả đúng hoặc sai để hàm gọi quyết định
+    //   cho đăng nhập hoặc cho đổi mật khẩu.
+    // ... Trả đúng/sai về UserDAO sau verify. Với đăng nhập, UserDAO trả User hoặc null về controller tại
+    //     LoginController.java, tìm mã DNL05. Với đổi mật khẩu, sai thì trả false; đúng mới ghi rồi trả
+    //     kết quả về ProfileController.java, tìm mã MKL04.
     public static boolean verify(String password, String stored) {
         if (password == null || password.isBlank() || password.length() > 255 || stored == null || stored.matches("[A-Za-z]+_hash")) return false;
         if (!encoded(stored)) {

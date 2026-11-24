@@ -16,10 +16,9 @@ public class ProfileController extends HttpServlet {
     ProfileController(UserDAO users){this.users=users;}
 
     // [HSM02]
-    // . Khi mở hoặc gửi form hồ sơ, doGet và doPost trong ProfileController.java gọi authorize (đọc và kiểm
-    //   tra người đang đăng nhập) để đọc lại người đang đăng nhập. Trong đó em gọi UserDAO.getActiveUserById
-    //   (đọc tài khoản còn hoạt động theo mã) bằng mã tài khoản, lấy thông tin và điểm mới nhất trước khi
-    //   dựng trang.
+    // . Khi mở hoặc gửi form hồ sơ, doGet và doPost trong ProfileController.java gọi authorize để đọc lại
+    //   người đang đăng nhập. Trong đó em gọi UserDAO.getActiveUserById bằng mã tài khoản, lấy thông tin
+    //   và điểm mới nhất trước khi dựng trang.
     // ... Đọc tiếp tại UserDAO.java, tìm [HSM03].
     private User authorize(HttpServletRequest request,HttpServletResponse response)throws IOException {
         HttpSession session=request.getSession(false);
@@ -36,13 +35,13 @@ public class ProfileController extends HttpServlet {
             response.sendRedirect(request.getContextPath()+"/?tab=login");return null;
         }
         // [HSTV01]
-        // . Khi UserDAO.getActiveUserById (đọc tài khoản còn hoạt động theo mã) trả về tài khoản, trong
-        //   authorize (đọc và kiểm tra người đang đăng nhập) của ProfileController.java em cập nhật lại
-        //   session.user. Vì profile.jsp đọc thông tin từ đây nên trang sẽ dùng tên, liên hệ và số điểm mới nhất
-        //   của người đang đăng nhập.
-        // ... Khi theo luồng mở hồ sơ, quay về doGet sau authorize rồi đọc tiếp tại ProfileController.java, tìm [HSXEM01].
-        // ... Nếu đang gửi form, quay về doPost sau authorize để đọc action rồi gọi update khi lưu hồ sơ,
-        //     hoặc xử lý nhánh changePassword khi đổi mật khẩu.
+        // . Khi UserDAO.getActiveUserById trả về tài khoản, trong authorize của ProfileController.java em cập
+        //   nhật lại session.user. Vì profile.jsp đọc thông tin từ đây nên trang sẽ dùng tên, liên hệ và số
+        //   điểm mới nhất của người đang đăng nhập.
+        // ... Khi theo luồng mở hồ sơ, quay về doGet sau authorize rồi đọc tiếp tại ProfileController.java,
+        //     tìm [HSXEM01].
+        // ... Nếu đang gửi form, quay về doPost sau authorize để đọc action rồi gọi update khi lưu hồ sơ, hoặc
+        //     xử lý nhánh changePassword khi đổi mật khẩu.
 
         session.setAttribute("user",current);return current;
     }
@@ -58,15 +57,14 @@ public class ProfileController extends HttpServlet {
         utils.AccountFormFeedback.clear(request);
         User user=authorize(request,response);if(user==null)return;
         String action=request.getParameter("action");
-        // . Với action=update, doPost trong ProfileController.java gọi hàm update (kiểm tra và cập nhật hồ sơ)
-        //   ngay cùng file. Em truyền request và tài khoản đang đăng nhập để hàm nhận các ô hồ sơ, kiểm tra rồi
-        //   lưu đúng người.
+        // . Với action=update, doPost trong ProfileController.java gọi hàm update ngay cùng file. Em truyền
+        //   request và tài khoản đang đăng nhập để hàm nhận các ô hồ sơ, kiểm tra rồi lưu đúng người.
         if("update".equals(action))update(request,user);
 
         // [MKL02]
-        // . Khi nhận yêu cầu đổi mật khẩu trong doPost của ProfileController.java, em kiểm tra các ô trước. Nếu
-        //   hợp lệ, em gọi changePasswordById trong UserDAO.java, truyền mã tài khoản, mật khẩu hiện tại và mật
-        //   khẩu mới để đối chiếu rồi ghi đúng người.
+        // . Đến doPost trong ProfileController.java, em kiểm tra các ô mật khẩu một lần nữa. Đúng thì gọi
+        //   changePasswordById trong UserDAO.java, truyền mã tài khoản, mật khẩu hiện tại và mật khẩu mới để
+        //   kiểm tra người đổi có nhập đúng mật khẩu cũ không rồi mới ghi mật khẩu mới.
         // ... Đọc tiếp tại UserDAO.java, tìm [MKL03].
         else if("changePassword".equals(action)){
             String password=request.getParameter("newPassword");
@@ -75,8 +73,8 @@ public class ProfileController extends HttpServlet {
             if(current==null || current.isEmpty()) errors.put("oldPassword","Vui lòng nhập mật khẩu hiện tại.");
             else if(current.length()>255) errors.put("oldPassword","Mật khẩu hiện tại tối đa 255 ký tự.");
             // . Khi các ô đổi mật khẩu đều hợp lệ, ở doPost trong ProfileController.java em gọi changePasswordById
-            //   (so mật khẩu cũ rồi ghi mật khẩu mới) trong UserDAO.java. Em truyền mã tài khoản, mật khẩu hiện tại
-            //   và mật khẩu mới để đối chiếu rồi ghi nếu đúng mật khẩu cũ.
+            //   trong UserDAO.java. Em truyền mã tài khoản, mật khẩu hiện tại và mật khẩu mới để đối chiếu rồi ghi
+            //   nếu đúng mật khẩu cũ.
             boolean passwordSystemError = false;
             try {
                 if(errors.isEmpty() && !users.changePasswordById(user.getId(),current,password))
@@ -86,9 +84,9 @@ public class ProfileController extends HttpServlet {
             }
 
             // [MKL04]
-            // . Khi nhận kết quả đổi mật khẩu, em quay lại doPost trong ProfileController.java. Đổi được thì đặt
-            //   successMsg; nhập sai thì đưa lỗi về đúng ô. Nếu không lưu được do lỗi hệ thống, em hiện thông báo
-            //   chung và giữ phần đổi mật khẩu mở để thử lại. Sau đó renderProfile hiện kết quả trên profile.jsp.
+            // . Kết quả quay về doPost trong ProfileController.java. Đổi được thì em đặt successMsg; ô nhập sai
+            //   thì trả lời báo về ô đó. Nếu gặp lỗi hệ thống, em hiện thông báo chung và giữ phần đổi mật khẩu mở
+            //   để thử lại. Cuối cùng, renderProfile đưa kết quả về profile.jsp.
             // ... Đọc tiếp tại profile.jsp, tìm [MKL05].
             if(passwordSystemError) {
                 utils.AccountFormFeedback.show(request,"profile-password",java.util.Map.of(),java.util.Map.of());
@@ -104,26 +102,26 @@ public class ProfileController extends HttpServlet {
     }
 
     // [HSL02]
-    // . Khi nhận form tại doPost trong ProfileController.java, em đọc action=update rồi gọi update ngay
-    //   trong controller để kiểm tra và lưu hồ sơ. Em truyền dữ liệu form cùng người đang đăng nhập để cập
-    //   nhật đúng tài khoản đó.
+    // . Đến doPost trong ProfileController.java, em nhận form Hồ sơ và đọc action=update để biết người
+    //   dùng vừa bấm Lưu thay đổi. Em gọi hàm update ngay trong file này, truyền thông tin vừa nhập cùng
+    //   tài khoản đang đăng nhập để cập nhật đúng người.
     // ... Đọc tiếp tại ProfileController.java, tìm [HSL03].
     private void update(HttpServletRequest request,User user){
 
         // [HSHT02]
-        // . Trong update của ProfileController.java, em lấy fullName rồi gọi AccountValidation.text để bỏ
-        //   khoảng trắng đầu cuối. Em dùng tên đã làm gọn để kiểm tra và lưu, tránh giữ khoảng trắng thừa
-        //   theo họ tên.
+        // . Trong hàm update của ProfileController.java, em lấy fullName rồi gọi AccountValidation.text để bỏ
+        //   khoảng trắng đầu cuối. Em dùng tên đã làm gọn để kiểm tra và lưu, tránh giữ khoảng trắng thừa theo
+        //   họ tên.
         // ... Nhận tên xong, update gọi AccountValidation.nameError. Đọc tại AccountValidation.java, tìm mã
         //     KTHT01; kết quả quay về errors trong update.
         String name=AccountValidation.text(request.getParameter("fullName"));
 
         // [HSDT02]
-        // . Tiếp theo trong update, em lấy phone rồi gọi AccountValidation.phone để chuẩn hóa số điện thoại
-        //   trước khi kiểm tra. Nếu form không gửi ô này, em dùng số hiện tại của tài khoản để không làm mất
-        //   liên hệ đang lưu.
-        // ... Làm gọn số xong, update gọi AccountValidation.phoneError. Đọc tại AccountValidation.java, tìm
-        //     mã KTDT01; lỗi được giữ trong errors, số đúng mới được chuẩn bị lưu.
+        // . Trong update, em lấy phone rồi dùng AccountValidation.phone để bỏ các dấu phân cách được hỗ trợ
+        //   trước khi kiểm tra số. Nếu form không gửi ô này, em lấy số điện thoại hiện tại của tài khoản để
+        //   giữ liên hệ đang lưu.
+        // ... Làm gọn số xong, update gọi AccountValidation.phoneError. Đọc tại AccountValidation.java, tìm mã
+        //     KTDT01; lỗi được giữ trong errors, số đúng mới được chuẩn bị lưu.
         String phone=AccountValidation.phone(request.getParameter("phone")==null?user.getPhone():request.getParameter("phone"));
 
         // [HSEM02]
@@ -133,10 +131,9 @@ public class ProfileController extends HttpServlet {
         //     tìm mã KTEM01; kết quả quay về errors trước khi ghi hồ sơ.
         String email=AccountValidation.email(request.getParameter("email")==null?user.getEmail():request.getParameter("email"));
         // [HSNS04]
-        // . Trong update (kiểm tra và cập nhật hồ sơ) của ProfileController.java, em nhận ngày, tháng và năm
-        //   từ ba ô của profile.jsp rồi ghép thành ngày sinh. Em đưa ngày này cho
-        //   AccountValidation.birthdayError (kiểm tra ngày sinh hợp lệ) để kiểm tra ngày có thật và nằm
-        //   trong khoảng cho phép trước khi lưu.
+        // . Trong hàm update của ProfileController.java, em nhận ngày, tháng và năm từ ba ô của profile.jsp
+        //   rồi ghép thành ngày sinh. Em đưa ngày này cho AccountValidation.birthdayError để kiểm tra ngày có
+        //   thật và nằm trong khoảng cho phép trước khi lưu.
         // ... Ghép ba ô xong, update gọi AccountValidation.birthdayError. Đọc phần kiểm tra ngày sinh tại
         //     AccountValidation.java, tìm mã KTNS01.
         String birthday=AccountValidation.text(request.getParameter("birthday"));
@@ -155,43 +152,41 @@ public class ProfileController extends HttpServlet {
         }else if(hasBirthdayParts && birthdayParts==0){birthday="";}
 
         // [HSDC03]
-        // . Trong update (kiểm tra và cập nhật hồ sơ) của ProfileController.java, em nhận address rồi gọi
-        //   AccountValidation.text để bỏ khoảng trắng đầu cuối. Em kiểm tra ký tự và độ dài trước khi truyền
-        //   địa chỉ cùng các thông tin khác cho UserDAO.updateUserProfile (kiểm tra liên hệ rồi ghi hồ sơ
-        //   mới) để lưu.
-        // ... update gọi AccountValidation.addressError. Đọc tại AccountValidation.java, tìm mã KTDC01; sau
-        //     đó update còn kiểm tra độ dài và xét errors.
+        // . Trong hàm update của ProfileController.java, em nhận address rồi gọi AccountValidation.text để bỏ
+        //   khoảng trắng đầu cuối. Em kiểm tra ký tự và độ dài trước khi truyền địa chỉ cùng các thông tin
+        //   khác cho UserDAO.updateUserProfile để lưu.
+        // ... update gọi AccountValidation.addressError. Đọc tại AccountValidation.java, tìm mã KTDC01; sau đó
+        //     update còn kiểm tra độ dài và xét errors.
         String address=AccountValidation.text(request.getParameter("address"));
         java.util.Map<String,String> errors=new java.util.LinkedHashMap<>();
         // [HSL03]
-        // . Trong ProfileController.update, em gọi AccountValidation để kiểm tra họ tên, số điện thoại,
-        //   email, ngày sinh và địa chỉ. Lỗi của ô nào được giữ cùng tên ô đó trong errors để hiện đúng vị
-        //   trí. Còn lỗi thì hiện lại form; không còn lỗi mới chuyển sang lưu.
-        // ... Còn errors thì update mở lại hồ sơ và đưa lỗi về từng ô; xem cách nhận tại
-        //     account_feedback.jsp, tìm mã BMTV02. Nếu không còn lỗi, đọc điểm gọi lưu tại
-        //     ProfileController.java, tìm [HSL04].
+        // . Trong update, em gọi các hàm của AccountValidation để kiểm tra từng ô hồ sơ. Ô nào sai thì em giữ
+        //   lời báo theo đúng tên ô đó trong errors để hiện lại cho người dùng sửa. Chỉ khi tất cả các ô đều
+        //   đúng, em mới chuyển sang phần ghi hồ sơ.
+        // ... Còn errors thì update mở lại hồ sơ và đưa lỗi về từng ô; xem cách nhận tại account_feedback.jsp,
+        //     tìm mã BMTV02. Nếu không còn lỗi, đọc điểm gọi lưu tại ProfileController.java, tìm [HSL04].
         if(AccountValidation.nameError(name)!=null)errors.put("fullName",AccountValidation.nameError(name));
         if(AccountValidation.phoneError(phone)!=null)errors.put("phone",AccountValidation.phoneError(phone));
         if(AccountValidation.emailError(email)!=null)errors.put("email",AccountValidation.emailError(email));
         if(hasBirthdayParts && birthdayParts!=0 && birthdayParts!=3)
             errors.put("birthDay","Vui lòng chọn đủ ngày, tháng và năm sinh hoặc để trống cả ba.");
-        // . Để kiểm tra ngày sinh trước khi lưu hồ sơ, trong ProfileController.update (kiểm tra và cập nhật hồ
-        //   sơ) em gọi birthdayError (kiểm tra ngày sinh hợp lệ) của AccountValidation.java bằng ngày vừa ghép.
-        //   Em nhận lời báo nếu ngày không có thật hoặc ngoài khoảng cho phép.
+        // . Để kiểm tra ngày sinh trước khi lưu hồ sơ, trong ProfileController.update em gọi birthdayError của
+        //   AccountValidation.java bằng ngày vừa ghép. Em nhận lời báo nếu ngày không có thật hoặc ngoài
+        //   khoảng cho phép.
         // ... Đọc tiếp tại AccountValidation.java, tìm [KTNS01].
         else if(AccountValidation.birthdayError(birthday)!=null)errors.put("birthDay",AccountValidation.birthdayError(birthday));
-        // . Để kiểm tra địa chỉ, trong ProfileController.update (kiểm tra và cập nhật hồ sơ) em truyền address
-        //   vào addressError (kiểm tra ký tự địa chỉ) của AccountValidation.java. Em giữ lời báo vào
-        //   errors.address nếu có ký tự không hợp lệ, rồi kiểm tra thêm độ dài ở đoạn tiếp theo.
+        // . Để kiểm tra địa chỉ, trong ProfileController.update em truyền address vào addressError của
+        //   AccountValidation.java. Em giữ lời báo vào errors.address nếu có ký tự không hợp lệ, rồi kiểm tra
+        //   thêm độ dài ở đoạn tiếp theo.
         // ... Đọc tiếp tại AccountValidation.java, tìm [KTDC01].
         if(AccountValidation.addressError(address)!=null)errors.put("address",AccountValidation.addressError(address));
         if(address.length()>500)errors.put("address","Địa chỉ tối đa 500 ký tự.");
         if(errors.isEmpty()){
 
             // [HSL04]
-            // . Khi các ô đều hợp lệ, em gọi updateUserProfile trong UserDAO.java để ghi hồ sơ. Em truyền mã người
-            //   đang đăng nhập cùng tên, số điện thoại, email, ngày sinh và địa chỉ, rồi nhận kết quả để biết đã lưu
-            //   được hay cần báo lỗi.
+            // . Các ô đã đúng thì em gọi updateUserProfile trong UserDAO.java. Em truyền mã người đang đăng nhập
+            //   cùng họ tên, số điện thoại, email, ngày sinh và địa chỉ để hàm ghi đúng dòng tài khoản đó trong
+            //   database, rồi trả kết quả về đây.
             // ... Đọc tiếp tại UserDAO.java, tìm [HSL05].
             String result=users.updateUserProfile(user.getId(),name,phone,email,birthday,address);
             if(!"success".equals(result)){
@@ -204,10 +199,9 @@ public class ProfileController extends HttpServlet {
             }
         }
 
-        // . Nếu còn lỗi trong ProfileController.update (kiểm tra và cập nhật hồ sơ), em gọi
-        //   AccountFormFeedback.show (hiện lỗi trên trang đang mở) bằng lỗi và các ô đang nhập. Sau đó
-        //   renderProfile (chuẩn bị dữ liệu và mở trang hồ sơ) mở lại profile.jsp để người dùng thấy lỗi đúng ô
-        //   và giữ được thông tin cần sửa.
+        // . Nếu còn lỗi trong ProfileController.update, em gọi AccountFormFeedback.show bằng lỗi và các ô đang
+        //   nhập. Sau đó renderProfile mở lại profile.jsp để người dùng thấy lỗi đúng ô và giữ được thông tin
+        //   cần sửa.
         if(!errors.isEmpty()){
             java.util.Map<String,String> values=new java.util.LinkedHashMap<>(java.util.Map.of("fullName",name,"phone",phone,"email",email,"address",address));
             for(String part:new String[]{"birthDay","birthMonth","birthYear"})
@@ -217,9 +211,9 @@ public class ProfileController extends HttpServlet {
         }
 
         // [HSL06]
-        // . Khi UserDAO.updateUserProfile báo lưu được, em quay lại update trong ProfileController.java để cập
-        //   nhật session.user và đặt thông báo thành công. Sau đó doPost gọi renderProfile để chuẩn bị dữ liệu
-        //   và đưa thông tin mới về trang hồ sơ.
+        // . Khi nhận success từ UserDAO, em quay lại update trong ProfileController.java để cập nhật thông tin
+        //   đang giữ trong session.user và đặt thông báo thành công. Sau đó, doPost gọi renderProfile để lấy
+        //   dữ liệu cho trang hồ sơ và hiện thông tin mới.
         // ... Đọc tiếp tại profile.jsp, tìm [HSL07].
         user.setFullName(name);user.setPhone(phone);user.setEmail(email);user.setBirthday(birthday);user.setAddress(address);
         request.getSession().setAttribute("user",user);request.setAttribute("successMsg","Cập nhật thông tin thành công!");
@@ -235,14 +229,13 @@ public class ProfileController extends HttpServlet {
     }
 
     // [HSXEM01]
-    // . Từ doGet hoặc doPost trong ProfileController.java, em gọi renderProfile (chuẩn bị dữ liệu và mở
-    //   trang hồ sơ) để chuẩn bị trang hồ sơ. Em truyền tài khoản hiện tại, gọi
-    //   UserDAO.getLoyaltyHistoryByUserId (đọc lịch sử điểm của người đang đăng nhập) để đọc lịch sử của
-    //   người đó và ShopSettingDAO.getSettings (đọc các thiết lập đang lưu) để đọc quy tắc, rồi đưa dữ liệu
-    //   về profile.jsp. Nếu lịch sử điểm chưa tải được, em đưa loyaltyHistoryError sang trang để báo rõ phần
-    //   đang lỗi; thông tin hồ sơ vẫn được hiển thị.
-    // ... Sau khi renderProfile đặt dữ liệu và forward, đọc tiếp tại profile.jsp, tìm [HSM04] ở đầu phần hồ sơ để
-    //     thấy điểm kết thúc hiển thị.
+    // . Từ doGet hoặc doPost trong ProfileController.java, em gọi renderProfile để chuẩn bị trang hồ sơ.
+    //   Em truyền tài khoản hiện tại, gọi UserDAO.getLoyaltyHistoryByUserId để đọc lịch sử của người đó và
+    //   ShopSettingDAO.getSettings để đọc quy tắc, rồi đưa dữ liệu về profile.jsp. Nếu lịch sử điểm chưa
+    //   tải được, em đưa loyaltyHistoryError sang trang để báo rõ phần đang lỗi; thông tin hồ sơ vẫn được
+    //   hiển thị.
+    // ... Sau khi renderProfile đặt dữ liệu và forward, đọc tiếp tại profile.jsp, tìm [HSM04] ở đầu phần
+    //     hồ sơ để thấy điểm kết thúc hiển thị.
     protected void renderProfile(HttpServletRequest request,HttpServletResponse response,User user)throws ServletException,IOException{
         try {
             request.setAttribute("loyaltyHistory",users.getLoyaltyHistoryByUserId(user.getId()));

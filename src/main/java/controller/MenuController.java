@@ -23,12 +23,11 @@ public class MenuController extends HttpServlet {
 
     @Override
     // [MNM02]
-    // . Khi mở Menu, doGet trong MenuController.java gọi CategoryDAO.getAllActiveCategoriesWithCount (đọc
-    //   danh mục hoạt động kèm số món đang bán) để đọc danh mục hoạt động và ProductDAO.filterProducts (lọc
-    //   món còn bán theo danh mục và từ khóa) để lấy món theo danh mục, từ khóa. Em đưa kết quả về menu.jsp
-    //   để hiện những món khách được chọn mua.
-    // ... Trong MenuController.java, tiếp tục doGet tới productDAO.filterProducts rồi forward menu.jsp; kết thúc
-    //     mở Menu khi danh mục và các thẻ món đã hiện.
+    // . Khi mở Menu, doGet trong MenuController.java gọi CategoryDAO.getAllActiveCategoriesWithCount để
+    //   đọc danh mục hoạt động và ProductDAO.filterProducts để lấy món theo danh mục, từ khóa. Em đưa kết
+    //   quả về menu.jsp để hiện những món khách được chọn mua.
+    // ... Trong MenuController.java, tiếp tục doGet tới productDAO.filterProducts rồi forward menu.jsp;
+    //     kết thúc mở Menu khi danh mục và các thẻ món đã hiện.
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -79,14 +78,13 @@ public class MenuController extends HttpServlet {
     }
 
     // [MNCT03]
-    // . Từ doGet với action=detail, em gọi handleProductDetailApi (đọc và trả thông tin món cho hộp lựa
-    //   chọn) ngay trong MenuController.java để nhận id và gọi ProductDAO.getAvailableProductById (đọc món
-    //   còn bán theo mã) đọc món còn bán. Em trả thông tin cùng cấu hình size/topping cho
-    //   openProductDetailModal (đọc thông tin rồi mở hộp lựa chọn món); mã sai, món không còn bán hoặc đọc
-    //   lỗi thì trả lỗi để trang báo không tải được món, không mở hộp với dữ liệu sản phẩm không hợp lệ.
+    // . Từ doGet với action=detail, em gọi handleProductDetailApi ngay trong MenuController.java để nhận
+    //   id và gọi ProductDAO.getAvailableProductById đọc món còn bán. Em trả thông tin cùng cấu hình
+    //   size/topping cho openProductDetailModal; mã sai, món không còn bán hoặc đọc lỗi thì trả lỗi để
+    //   trang báo không tải được món, không mở hộp với dữ liệu sản phẩm không hợp lệ.
     // ... Quay lại product_detail_modal.jsp, trong openProductDetailModal sau khi nhận dữ liệu từ
-    //     /menu?action=detail; dựng lựa chọn rồi mở hộp món, hoặc hiện thông báo không tải được để kết thúc lần
-    //     mở.
+    //     /menu?action=detail; dựng lựa chọn rồi mở hộp món, hoặc hiện thông báo không tải được để kết
+    //     thúc lần mở.
     private void handleProductDetailApi(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 

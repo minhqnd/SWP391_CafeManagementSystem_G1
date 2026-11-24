@@ -19,9 +19,9 @@ public class ForgotPasswordController extends HttpServlet {
         HttpSession session=request.getSession();
         try{
             // [OTG02]
-            // . Khi nhận email tại doPost trong ForgotPasswordController.java, em gọi start trong
-            //   PasswordRecoveryService.java để tạo và gửi OTP. Em truyền session, email và địa chỉ gửi yêu cầu để
-            //   kiểm tra tài khoản cùng giới hạn gửi mã trước khi gửi thư.
+            // . Đến doPost trong ForgotPasswordController.java, em gọi start trong PasswordRecoveryService.java.
+            //   Em truyền email cần khôi phục, session để giữ thông tin xác minh của lần này và địa chỉ gửi yêu
+            //   cầu để giới hạn số lần gửi mã. Hàm kiểm tra tài khoản trước rồi mới gửi thư OTP.
             // ... Đọc tiếp tại PasswordRecoveryService.java, tìm [OTG03].
 
             recovery.start(session,request.getParameter("email"),request.getRemoteAddr());

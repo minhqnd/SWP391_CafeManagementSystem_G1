@@ -29,9 +29,8 @@ public class LoginController extends HttpServlet {
 
         String action = request.getParameter("action");
         // [DNX02]
-        // . Khi bấm Đăng xuất, yêu cầu /login?action=logout đến doGet trong LoginController.java. Em gọi
-        //   session.invalidate (kết thúc lần đăng nhập hiện tại) để xóa thông tin phiên đăng nhập rồi
-        //   sendRedirect (chuyển sang đường dẫn khác) về Trang chủ, kết thúc lần dùng tài khoản hiện tại.
+        // . Đến doGet trong LoginController.java với action=logout, em gọi session.invalidate để xóa thông tin
+        //   của lần đăng nhập hiện tại. Sau đó, em chuyển về Trang chủ để kết thúc Đăng xuất.
         // ... Kết thúc Đăng xuất khi trình duyệt mở Trang chủ và phiên đăng nhập cũ đã bị hủy.
         if ("logout".equals(action)) {
 
@@ -61,10 +60,11 @@ public class LoginController extends HttpServlet {
         utils.AccountFormFeedback.clear(request);
 
         // [DNL02]
-        // . doPost trong LoginController.java nhận email hoặc số điện thoại cùng mật khẩu từ form. Em bỏ khoảng
-        //   trắng đầu/cuối của ô tài khoản và kiểm tra hai ô đã nhập, độ dài hợp lệ rồi mới gọi tìm tài khoản.
+        // . Đến doPost trong LoginController.java, em nhận email hoặc số điện thoại cùng mật khẩu. Em bỏ
+        //   khoảng trắng đầu và cuối của ô tài khoản, kiểm tra hai ô đã nhập và độ dài cho phép rồi mới gọi
+        //   phần tìm tài khoản.
         // ... Đọc tiếp trong LoginController.java, tìm [DNL03] sau phần kiểm tra hai ô để xem cách đối chiếu
-        //   tài khoản.
+        //     tài khoản.
         String userIdentifier = request.getParameter("username");
         if (userIdentifier != null) {
             userIdentifier = utils.AccountValidation.text(userIdentifier);
@@ -75,10 +75,9 @@ public class LoginController extends HttpServlet {
         boolean hasRedirect = RedirectUtil.isSafeLocalPath(redirect);
 
         // [DNTK03]
-        // . Trong doPost của LoginController.java, em kiểm tra email hoặc số điện thoại không trống và tối
-        //   đa 150 ký tự, mật khẩu không trống và tối đa 255 ký tự. Nếu sai, em gọi
-        //   AccountFormFeedback.flash (giữ lỗi và các ô qua lần chuyển trang) để giữ thông tin cần điền lại
-        //   rồi mở form Đăng nhập kèm lỗi.
+        // . Trong hàm doPost của LoginController.java, em kiểm tra email hoặc số điện thoại không trống và tối
+        //   đa 150 ký tự, mật khẩu không trống và tối đa 255 ký tự. Nếu sai, em gọi AccountFormFeedback.flash
+        //   để giữ thông tin cần điền lại rồi mở form Đăng nhập kèm lỗi.
         // ... Có lỗi thì doPost trả form và dừng đăng nhập. Hai ô đã đúng thì đọc bước gọi userDAO.login tại
         //     LoginController.java, tìm mã DNL03.
         java.util.Map<String,String> inputErrors = new java.util.LinkedHashMap<>();
@@ -100,9 +99,9 @@ public class LoginController extends HttpServlet {
         }
 
         // [DNL03]
-        // . Kiểm tra hai ô xong, em gọi login trong UserDAO.java để đối chiếu tài khoản. Em truyền email hoặc số
-    //   điện thoại cùng mật khẩu; hàm trả User nếu đúng hoặc null nếu thông tin không khớp. Nếu việc đọc dữ
-    //   liệu bị lỗi, em giữ ô tài khoản và báo lỗi hệ thống, không báo rằng người dùng nhập sai mật khẩu.
+        // . Hai ô đã đúng thì em gọi login trong UserDAO.java, truyền email hoặc số điện thoại cùng mật khẩu.
+        //   Hàm trả User khi thông tin khớp, trả null khi không khớp. Nếu lỗi đọc dữ liệu, em giữ ô tài khoản
+        //   và báo lỗi hệ thống để người dùng thử lại.
         // ... Đọc tiếp tại UserDAO.java, tìm [DNL04].
         User loginUser;
         try {
@@ -116,8 +115,8 @@ public class LoginController extends HttpServlet {
 
         // [DNL05]
         // . Khi UserDAO.login trả về tài khoản hợp lệ, em quay lại doPost trong LoginController.java để tạo
-        //   phiên đăng nhập mới và đặt session.user, đồng thời giữ giỏ hàng. Sau đó em dùng đường dẫn quay lại
-        //   hợp lệ hoặc gọi redirectByUser để chọn trang phù hợp với tài khoản.
+        //   lần đăng nhập mới và lưu tài khoản vào session.user, đồng thời giữ giỏ hàng. Sau đó, em dùng đường
+        //   dẫn quay lại hợp lệ hoặc gọi redirectByUser để mở trang phù hợp.
         // ... Đọc tiếp tại LoginController.java, tìm [DNL06].
         if (loginUser != null) {
             HttpSession oldSession = request.getSession(false);
@@ -154,10 +153,9 @@ public class LoginController extends HttpServlet {
     }
 
     // [DNL06]
-    // . Nếu cần chọn trang theo tài khoản, em gọi redirectByUser ngay trong LoginController.java. Hàm xem
-    //   vai trò và vị trí của User vừa đăng nhập rồi chuyển tới màn hình dành cho quản trị, nhân viên hoặc
-    //   khách hàng.
-    // . Kết thúc nhánh đăng nhập này khi chuyển tới đường dẫn phù hợp với tài khoản vừa đăng nhập.
+    // . Hàm redirectByUser xem vai trò và vị trí của tài khoản vừa đăng nhập. Từ đó, em chuyển người dùng
+    //   tới màn hình dành cho quản trị, nhân viên hoặc khách hàng. Trang tương ứng đã mở là kết thúc đăng
+    //   nhập thành công.
     private void redirectByUser(User user, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String role = user.getRole();
         String position = user.getPosition();

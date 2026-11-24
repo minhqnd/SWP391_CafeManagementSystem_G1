@@ -1,6 +1,7 @@
 ĐƯỜNG ĐI COMMENT BF10 – BF11 – BF12
 
 Mã chỉ dùng để tìm trong code. Dòng ... của comment chỉ chỗ đọc tiếp.
+Phần . và .. là lời giải thích để luyện nói; phần ... chỉ dẫn cách tìm, không cần đọc mã khi trình bày.
 Khi sang file khác, mở file được ghi rồi tìm mã ở đầu comment.
 Khi tìm toàn dự án, điền src/** ở Files to include để không lẫn mã trong tài liệu này.
 Nếu mã có nhiều kết quả, tìm nguyên [MÃ] và chọn dòng mở đầu // [MÃ] hoặc <%-- [MÃ].

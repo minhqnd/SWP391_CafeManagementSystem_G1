@@ -16,10 +16,10 @@ public class CategoryImageController extends HttpServlet {
     @Override
     // [DMAN03]
     // . Để hiện ảnh danh mục, thẻ img gửi mã danh mục tới doGet trong CategoryImageController.java. Em
-    //   truyền mã này vào CategoryDAO.getCategoryImage (đọc ảnh đang lưu của danh mục) để đọc ảnh, rồi gửi
-    //   nội dung ảnh về trình duyệt cho đúng hàng danh mục.
-    // ... Kết thúc tải ảnh khi nội dung ảnh được trả về thẻ img trên trang; không có ảnh thì thẻ dùng phần hiển
-    //     thị thay thế của trang.
+    //   truyền mã này vào CategoryDAO.getCategoryImage để đọc ảnh, rồi gửi nội dung ảnh về trình duyệt cho
+    //   đúng hàng danh mục.
+    // ... Kết thúc tải ảnh khi nội dung ảnh được trả về thẻ img trên trang; không có ảnh thì thẻ dùng phần
+    //     hiển thị thay thế của trang.
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         int categoryId;
         try {

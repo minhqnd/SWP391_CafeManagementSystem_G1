@@ -24,8 +24,8 @@ public class ProductDetailController extends HttpServlet {
     @Override
     // [MNTHE02]
     // . Khi bấm một món, doGet trong ProductDetailController.java nhận mã sản phẩm. Em truyền mã vào
-    //   getAvailableProductById (đọc món còn bán theo mã) trong ProductDAO.java để đọc lại món còn bán, rồi
-    //   đưa sản phẩm về product-detail.jsp để hiện chi tiết.
+    //   getAvailableProductById trong ProductDAO.java để đọc lại món còn bán, rồi đưa sản phẩm về
+    //   product-detail.jsp để hiện chi tiết.
     // ... Đọc tiếp tại ProductDAO.java, tìm [MNTHE03].
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

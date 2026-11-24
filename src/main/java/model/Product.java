@@ -126,12 +126,11 @@ public class Product implements Serializable {
     }
 
     // [SPHA02]
-    // . Khi product_card.jsp đọc displayImageUrl, getDisplayImageUrl (chọn đường dẫn ảnh để hiển thị) trong
-    //   Product.java xem storedImage. Có ảnh trong cơ sở dữ liệu thì trả đường dẫn product-image kèm mã để
-    //   ProductImageController.doGet đọc ảnh bằng ProductDAO.getProductImage (đọc ảnh đang lưu của sản
-    //   phẩm); không có ảnh lưu thì trả imageUrl đang gắn với món.
-    // ... Nếu đường dẫn là product-image, đọc tiếp tại ProductImageController.java, tìm [SPAN03]; nếu là imageUrl
-    //     thì trình duyệt tải trực tiếp và kết thúc tại ảnh của thẻ món.
+    // . Khi product_card.jsp đọc displayImageUrl, getDisplayImageUrl trong Product.java xem storedImage.
+    //   Có ảnh trong cơ sở dữ liệu thì trả đường dẫn product-image kèm mã để ProductImageController.doGet
+    //   đọc ảnh bằng ProductDAO.getProductImage; không có ảnh lưu thì trả imageUrl đang gắn với món.
+    // ... Nếu đường dẫn là product-image, đọc tiếp tại ProductImageController.java, tìm [SPAN03]; nếu là
+    //     imageUrl thì trình duyệt tải trực tiếp và kết thúc tại ảnh của thẻ món.
     public String getDisplayImageUrl() {
         return storedImage ? "product-image?id=" + id : imageUrl;
     }
@@ -175,12 +174,11 @@ public class Product implements Serializable {
      * Định dạng giá tiền dạng 45.000đ
      */
     // [SPDINH02]
-    // . Khi các trang đọc formattedPrice, getFormattedPrice (định dạng giá tiền để hiển thị) trong
-    //   Product.java dùng basePrice của món, đặt dấu chấm phân cách hàng nghìn rồi thêm đ, ví dụ 45.000đ.
-    //   Mẫu này hiện giá tới đơn vị đồng, làm tròn phần lẻ nếu có; kết quả chỉ là chuỗi hiển thị, basePrice
-    //   vẫn giữ nguyên để xử lý số.
-    // ... Kết thúc định dạng khi chuỗi giá được trả về đúng vị trí đọc formattedPrice trên JSP và hiện thành giá
-    //     bán của món.
+    // . Khi các trang đọc formattedPrice, getFormattedPrice trong Product.java dùng basePrice của món, đặt
+    //   dấu chấm phân cách hàng nghìn rồi thêm đ, ví dụ 45.000đ. Mẫu này hiện giá tới đơn vị đồng, làm
+    //   tròn phần lẻ nếu có; kết quả chỉ là chuỗi hiển thị, basePrice vẫn giữ nguyên để xử lý số.
+    // ... Kết thúc định dạng khi chuỗi giá được trả về đúng vị trí đọc formattedPrice trên JSP và hiện
+    //     thành giá bán của món.
     public String getFormattedPrice() {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.getDefault());
         symbols.setGroupingSeparator('.');

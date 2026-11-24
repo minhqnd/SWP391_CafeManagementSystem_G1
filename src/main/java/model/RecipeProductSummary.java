@@ -38,10 +38,9 @@ public class RecipeProductSummary {
         public double getQuantity() { return ingredient.getQuantityRequired(); }
         public boolean isCostAvailable() { return unitCost != null; }
         // [CTGT03]
-        // . Khi admin-recipes.jsp đọc line.lineCost, hàm getLineCost (tính chi phí của một dòng nguyên liệu) lấy
-        //   đơn giá nhân định lượng của nguyên liệu mà controller đã đưa vào IngredientLine. Có giá thì trả chi
-        //   phí để hiện trên thẻ món; thiếu đơn giá thì trả null và isCostAvailable (kiểm tra nguyên liệu đã có
-        //   đơn giá chưa) giúp trang hiện chưa có giá.
+        // . Khi admin-recipes.jsp đọc line.lineCost, hàm getLineCost lấy đơn giá nhân định lượng của nguyên
+        //   liệu mà controller đã đưa vào IngredientLine. Có giá thì trả chi phí để hiện trên thẻ món; thiếu
+        //   đơn giá thì trả null và isCostAvailable giúp trang hiện chưa có giá.
         // ... Kết thúc phần chi phí dòng khi admin-recipes.jsp nhận giá trị trả về để hiện tiền hoặc thông báo
         //     thiếu đơn giá trên thẻ món.
         public BigDecimal getLineCost() {

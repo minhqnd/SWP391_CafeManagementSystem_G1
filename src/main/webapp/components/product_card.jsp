@@ -15,9 +15,9 @@
         <!-- Image Box -->
         <div class="product-img-box">
             <%-- [SPHA01]
-                 . Ảnh thẻ món lấy đường dẫn từ p.displayImageUrl. Product.getDisplayImageUrl (chọn đường dẫn ảnh để
-                   hiển thị) chọn ảnh đang lưu trong cơ sở dữ liệu hoặc imageUrl của món; nếu trình duyệt tải ảnh lỗi,
-                   onerror đổi sang ảnh mặc định để thẻ vẫn có hình đại diện.
+                 . Ảnh thẻ món lấy đường dẫn từ p.displayImageUrl. Product.getDisplayImageUrl chọn ảnh đang lưu trong
+                   cơ sở dữ liệu hoặc imageUrl của món; nếu trình duyệt tải ảnh lỗi, onerror đổi sang ảnh mặc định để
+                   thẻ vẫn có hình đại diện.
                  ... Đọc tiếp tại Product.java, tìm [SPHA02].
             --%>
             <img src="${p.displayImageUrl}" alt="${p.name}" loading="lazy"
@@ -44,9 +44,9 @@
             <div class="product-card-footer">
                 <span class="product-price">${p.formattedPrice}</span>
                 <%-- [MNCT01]
-                     . Nút dấu cộng trên thẻ gọi openProductDetailModal (đọc thông tin rồi mở hộp lựa chọn món) trong
-                       product_detail_modal.jsp, truyền mã món để đọc thông tin, size và topping rồi mở hộp lựa chọn. Khác
-                       thao tác bấm tên mở trang chi tiết, nút này mở hộp ngay trên trang và chưa thêm món vào giỏ.
+                     . Nút dấu cộng trên thẻ gọi openProductDetailModal trong product_detail_modal.jsp, truyền mã món để
+                       đọc thông tin, size và topping rồi mở hộp lựa chọn. Khác thao tác bấm tên mở trang chi tiết, nút
+                       này mở hộp ngay trên trang và chưa thêm món vào giỏ.
                      ... Đọc tiếp tại product_detail_modal.jsp, tìm [MNCT02].
                 --%>
                 <button type="button" class="btn-add-circle"

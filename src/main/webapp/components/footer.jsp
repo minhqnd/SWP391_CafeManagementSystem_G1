@@ -5,8 +5,8 @@
 <%
     // [TCFT01]
     // . Phần cuối trang dùng danh mục đã đọc ở Trang chủ hoặc Menu; nếu chưa có thì gọi CategoryDAO để đọc
-    //   các nhóm hoạt động. Tương tự, em dùng homeSettings hoặc ShopSettingDAO.getSettings (đọc các thiết
-    //   lập đang lưu) để hiện phí giao hàng, thời gian và quy tắc đổi điểm từ thiết lập đang lưu.
+    //   các nhóm hoạt động. Tương tự, em dùng homeSettings hoặc ShopSettingDAO.getSettings để hiện phí
+    //   giao hàng, thời gian và quy tắc đổi điểm từ thiết lập đang lưu.
     // ... Kết thúc dựng cuối trang khi danh mục và các thiết lập đã được hiển thị trong footer.jsp.
     List<Category> footerCategories = (List<Category>) request.getAttribute("landingCategories");
     if (footerCategories == null) footerCategories = (List<Category>) request.getAttribute("categories");
@@ -75,8 +75,8 @@
                 <h4 class="aura-footer-heading">Tích điểm Aura</h4>
                 <%-- [TCFT03]
                      . Dòng Mỗi bao nhiêu điểm đổi bao nhiêu tiền lấy pointsStep và pointsStepValue từ footerSettings.
-                       ShopSettingDAO.getSettings (đọc các thiết lập đang lưu) đọc các quy tắc đang lưu, nên sau khi Admin
-                       lưu bộ mới và tải lại trang, phần này hiển thị mức đổi mới.
+                       ShopSettingDAO.getSettings đọc các quy tắc đang lưu, nên sau khi Admin lưu bộ mới và tải lại
+                       trang, phần này hiển thị mức đổi mới.
                      ... Kết thúc phần quy đổi tại số điểm và tiền giảm đang hiển thị ở footer.jsp.
                 --%>
                 <p class="small mb-0">Mỗi ${footerSettings.pointsStep} điểm đổi <strong class="text-white"><fmt:formatNumber value="${footerSettings.pointsStepValue}" pattern="#,##0"/>đ</strong>.</p>

@@ -18,10 +18,9 @@ public class AccountAvailabilityController extends HttpServlet {
     AccountAvailabilityController(UserDAO users) { this.users = users; }
 
     // [BMLH02]
-    // . Ở doPost trong AccountAvailabilityController.java, em nhận thông tin ô email hoặc số điện thoại mà
-    //   checkContact (kiểm tra liên hệ trùng ngay trên form) gửi từ account-validation.js. Em gọi
-    //   UserDAO.contactExists (tìm email hoặc số điện thoại trùng), truyền loại ô, giá trị và mã tài khoản
-    //   cần bỏ qua, để tìm xem liên hệ này đã được người khác dùng chưa.
+    // . Trong hàm doPost của AccountAvailabilityController.java, em nhận thông tin ô email hoặc số điện
+    //   thoại mà checkContact gửi từ account-validation.js. Em gọi UserDAO.contactExists, truyền loại ô,
+    //   giá trị và mã tài khoản cần bỏ qua, để tìm xem liên hệ này đã được người khác dùng chưa.
     // ... Đọc tiếp tại UserDAO.java, tìm [BMLH03].
     @Override protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");

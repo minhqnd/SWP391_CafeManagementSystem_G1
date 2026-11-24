@@ -19,9 +19,9 @@ public class ProductDAO extends BaseDAO {
 
     /** All products for the admin catalog, including temporarily unavailable items. */
     // [SPM03]
-    // . Ở getProductsForAdmin (đọc danh sách sản phẩm để quản lý) trong ProductDAO.java, em nhận mã danh mục
-    //   và từ khóa từ AdminProductsController.doGet. Em đọc các món khớp bộ lọc, gồm cả món tạm ngừng, rồi
-    //   trả danh sách về controller để dựng bảng quản lý.
+    // . Trong hàm getProductsForAdmin của ProductDAO.java, em nhận mã danh mục và từ khóa từ
+    //   AdminProductsController.doGet. Em đọc các món khớp bộ lọc, gồm cả món tạm ngừng, rồi trả danh sách
+    //   về controller để hiển thị bảng quản lý.
     // ... Quay qua doGet trong AdminProductsController.java để đặt products; xem bảng trả về tại
     //     admin-products.jsp, tìm [SPD01].
     public List<Product> getProductsForAdmin(Integer categoryId, String keyword) throws SQLException, ClassNotFoundException {
@@ -60,9 +60,9 @@ public class ProductDAO extends BaseDAO {
     }
 
     // [SPTS01]
-    // . Trong getProductAdminStats (đọc tổng món và số đang bán) của ProductDAO.java, em đọc tổng sản phẩm
-    //   và số đang bán từ bảng products. Em trả hai số về AdminProductsController.doGet để tính thêm số tạm
-    //   ngừng rồi đưa lên ba thẻ thống kê.
+    // . Trong hàm getProductAdminStats của ProductDAO.java, em đọc tổng sản phẩm và số đang bán từ bảng
+    //   products. Em trả hai số về AdminProductsController.doGet để tính thêm số tạm ngừng rồi đưa lên ba
+    //   thẻ thống kê.
     // ... Đọc tiếp tại AdminProductsController.java, tìm [SPTS02].
     public int[] getProductAdminStats() throws SQLException, ClassNotFoundException {
         // [SQL11-19] Ba thẻ sản phẩm: SQL trả tổng món và số đang bán.
@@ -76,12 +76,12 @@ public class ProductDAO extends BaseDAO {
     }
 
     // [CTCH03]
-    // . Hàm getProductForAdmin (đọc một sản phẩm để quản lý) trong ProductDAO.java nhận mã sản phẩm để
-    //   đọc món kèm danh mục và thông tin ảnh. Em trả kết quả về AdminProductsController.doGet để điền
-    //   form Sửa, hoặc AdminRecipeController.doPost để kiểm tra món vẫn tồn tại trước khi lưu công thức.
+    // . Hàm getProductForAdmin trong ProductDAO.java nhận mã món để đọc thông tin sản phẩm, danh mục và
+    //   ảnh. Em trả sản phẩm về nơi đã gọi: AdminProductsController dùng khi mở Sửa hoặc kiểm tra trước
+    //   khi Xóa; AdminRecipeController.doPost dùng để xác nhận món còn tồn tại trước khi lưu công thức.
     // ... Trả món về đúng lời gọi getProductForAdmin. Với nút Sửa sản phẩm, xem form tại
-    //     admin-products.jsp, tìm [SPS03]. Với nút Xóa, quay về AdminProductsController.delete để kiểm
-    //     tra món đã ngừng bán rồi theo ProductDAO.java, tìm [SPX03]. Với Lưu công thức, quay về
+    //     admin-products.jsp, tìm [SPS03]. Với nút Xóa, quay về AdminProductsController.delete để kiểm tra
+    //     món đã ngừng bán rồi theo ProductDAO.java, tìm [SPX03]. Với Lưu công thức, quay về
     //     AdminRecipeController.doPost rồi theo AdminRecipeController.java, tìm [CTL03].
     public Product getProductForAdmin(int id) throws SQLException, ClassNotFoundException {
 
@@ -98,11 +98,11 @@ public class ProductDAO extends BaseDAO {
 
     /** Checks product-name uniqueness while allowing the current product during an edit. */
     // [SPTR02]
-    // . Ở productNameExists (tìm sản phẩm khác trùng tên) trong ProductDAO.java, em nhận tên món và mã
-    //   đang sửa từ AdminProductsController.save (kiểm tra và lưu sản phẩm). Em tìm sản phẩm khác cùng
-    //   tên trong products rồi trả đúng hoặc sai, để controller chặn tên trùng trước khi lưu.
-    // ... Quay về AdminProductsController.save sau productNameExists. Tên trùng thì báo lỗi; tên đúng
-    //     mới tiếp tục ghép Product rồi tới điểm ghi tại AdminProductsController.java, tìm mã SPL05.
+    // . Trong hàm productNameExists của ProductDAO.java, em nhận tên món và mã đang sửa từ
+    //   AdminProductsController.save. Em tìm sản phẩm khác cùng tên trong products rồi trả đúng hoặc sai,
+    //   để controller chặn tên trùng trước khi lưu.
+    // ... Quay về AdminProductsController.save sau productNameExists. Tên trùng thì báo lỗi; tên đúng mới
+    //     tiếp tục ghép Product rồi tới điểm ghi tại AdminProductsController.java, tìm mã SPL05.
     public boolean productNameExists(String name, int excludedId) throws SQLException, ClassNotFoundException {
         // [SQL11-21] Ô Tên sản phẩm: tìm tên trùng, bỏ qua món đang sửa.
         // . Dấu ? từ trái sang phải: 1=tên sản phẩm; 2=mã sản phẩm đang sửa; thêm mới dùng 0.
@@ -121,15 +121,12 @@ public class ProductDAO extends BaseDAO {
     }
 
     // [SPL06]
-    // . AdminProductsController.save truyền Product và ảnh đến hàm saveProduct này. Em gọi
-    //   saveProduct(conn, product) cùng file để ghi bảng products: id=0 dùng INSERT, id lớn hơn 0 dùng
-    //   UPDATE.
-    // . Sau đó em thêm, thay hoặc xóa ảnh trong product_images theo lựa chọn. Hoàn tất mới xác nhận lưu
-    //   và trả true; không ghi được món thì hủy và trả false, còn lỗi phát sinh thì hủy rồi báo về
-    //   controller.
+    // . Trong ProductDAO.saveProduct, em dựa vào id để thêm hoặc sửa bảng products, rồi thêm, thay hoặc
+    //   xóa ảnh trong product_images theo lựa chọn. Ghi đủ mới xác nhận và trả true. Không ghi được món
+    //   thì hủy và trả false; có lỗi thì hủy thay đổi rồi báo về controller.
     // ... Ghi thành công thì về controller tại AdminProductsController.java, tìm [SPL07]. Trả false hoặc
-    //     có lỗi thì doPost giữ form; đọc phần giữ tại AdminProductsController.java, tìm mã SPL09 rồi
-    //     xem thông báo trên trang.
+    //     có lỗi thì doPost giữ form; đọc phần giữ tại AdminProductsController.java, tìm mã SPL09 rồi xem
+    //     thông báo trên trang.
     public boolean saveProduct(Product product, byte[] imageData, String contentType,
                                String fileName, boolean removeImage)
             throws SQLException, ClassNotFoundException {
@@ -251,13 +248,12 @@ public class ProductDAO extends BaseDAO {
     }
 
     // [SPAH03]
-    // . Ở updateProductAvailability (lưu trạng thái đang bán/tạm ngừng) trong ProductDAO.java, em nhận
-    //   mã món và trạng thái từ AdminProductsController.toggle (đổi trạng thái bán của sản phẩm). Em sửa
-    //   products.is_available theo mã đó rồi trả kết quả về toggle để controller thông báo và tải lại
-    //   danh sách.
-    // ... Trả true thì controller đặt thông báo tại AdminProductsController.java, tìm [SPAH04]. Trả
-    //     false hoặc có lỗi thì doPost mở lại trang cùng lỗi tại admin-products.jsp, tìm mã SPL08, chưa
-    //     báo cập nhật thành công.
+    // . Trong hàm updateProductAvailability của ProductDAO.java, em nhận mã món và trạng thái từ
+    //   AdminProductsController.toggle. Em sửa products.is_available theo mã đó rồi trả kết quả về toggle
+    //   để controller thông báo và tải lại danh sách.
+    // ... Trả true thì controller đặt thông báo tại AdminProductsController.java, tìm [SPAH04]. Trả false
+    //     hoặc có lỗi thì doPost mở lại trang cùng lỗi tại admin-products.jsp, tìm mã SPL08, chưa báo cập
+    //     nhật thành công.
     public boolean updateProductAvailability(int id, boolean available) throws SQLException, ClassNotFoundException {
 
         // [SQL11-28] Nút Đang bán/Tạm ngừng: đổi trạng thái bán của món.
@@ -270,13 +266,12 @@ public class ProductDAO extends BaseDAO {
     }
 
     // [SPX03]
-    // . Ở deleteProduct (kiểm tra điều kiện rồi xóa sản phẩm) trong ProductDAO.java, em nhận mã món từ
-    //   AdminProductsController.delete (kiểm tra điều kiện rồi xóa). Em chỉ xóa khi món đã ngừng bán và
-    //   chưa có trong order_items. Kết quả trả về cho controller biết đã xóa được hay phải báo chưa đủ
-    //   điều kiện.
-    // ... Xóa thành công thì controller đặt thông báo tại AdminProductsController.java, tìm [SPX04].
-    //     Không xóa được hoặc có lỗi thì doPost mở lại trang cùng lỗi tại admin-products.jsp, tìm mã
-    //     SPL08; chưa báo đã xóa.
+    // . Trong hàm deleteProduct của ProductDAO.java, em nhận mã món từ AdminProductsController.delete. Em
+    //   chỉ xóa khi món đã ngừng bán và chưa có trong order_items. Kết quả trả về cho controller biết đã
+    //   xóa được hay phải báo chưa đủ điều kiện.
+    // ... Xóa thành công thì controller đặt thông báo tại AdminProductsController.java, tìm [SPX04]. Không
+    //     xóa được hoặc có lỗi thì doPost mở lại trang cùng lỗi tại admin-products.jsp, tìm mã SPL08; chưa
+    //     báo đã xóa.
     public boolean deleteProduct(int id) throws SQLException, ClassNotFoundException {
         // [SQL11-29] Nút Xóa sản phẩm: chỉ xóa món tạm ngừng và chưa có trong order_items.
         // . Dấu ? từ trái sang phải: 1=mã sản phẩm cần xóa; 2=cùng mã sản phẩm để kiểm tra lịch sử.
@@ -437,11 +432,11 @@ public class ProductDAO extends BaseDAO {
     }
 
     // [MNDS02]
-    // . Ở filterProducts (lọc món còn bán theo danh mục và từ khóa) trong ProductDAO.java, em nhận danh mục
-    //   và từ khóa từ MenuController.doGet. Em chỉ đọc món đang bán thuộc danh mục ACTIVE và khớp bộ lọc,
-    //   rồi trả danh sách về controller để đưa lên menu.jsp.
-    // ... Quay lại MenuController.java sau productDAO.filterProducts; doGet đặt products và mở menu.jsp, nơi bảng
-    //     thẻ món cùng số kết quả được hiện để kết thúc lần lọc.
+    // . Trong hàm filterProducts của ProductDAO.java, em nhận danh mục và từ khóa từ MenuController.doGet.
+    //   Em chỉ đọc món đang bán thuộc danh mục ACTIVE và khớp bộ lọc, rồi trả danh sách về controller để
+    //   đưa lên menu.jsp.
+    // ... Quay lại MenuController.java sau productDAO.filterProducts; doGet đặt products và mở menu.jsp,
+    //     nơi bảng thẻ món cùng số kết quả được hiện để kết thúc lần lọc.
     public List<Product> filterProducts(Integer categoryId, String keyword) {
 
         List<Product> list = new ArrayList<>();
@@ -513,9 +508,9 @@ public class ProductDAO extends BaseDAO {
 
     /** Public product lookup: only an available product in an active category is exposed. */
     // [MNTHE03]
-    // . Ở getAvailableProductById (đọc món còn bán theo mã) trong ProductDAO.java, em nhận mã món từ
-    //   ProductDetailController.doGet. Em chỉ trả sản phẩm còn được bán để controller mở product-detail.jsp;
-    //   nếu không tìm được thì controller đưa người dùng về Menu.
+    // . Trong hàm getAvailableProductById của ProductDAO.java, em nhận mã món từ
+    //   ProductDetailController.doGet. Em chỉ trả sản phẩm còn được bán để controller mở
+    //   product-detail.jsp; nếu không tìm được thì controller đưa người dùng về Menu.
     // ... Đọc tiếp tại product-detail.jsp, tìm [MNTHE04].
 
     public Product getAvailableProductById(int id) {
@@ -584,11 +579,11 @@ public class ProductDAO extends BaseDAO {
     }
 
     // [MNBC01]
-    // . Ở getBestSellingProducts (đọc các món nổi bật theo lượng bán) trong ProductDAO.java, em nhận giới
-    //   hạn 4 từ index.jsp. Em chọn các món còn bán theo lượng bán rồi trả danh sách về Trang chủ để hiện
-    //   banner và phần sản phẩm yêu thích.
-    // ... Quay lại index.jsp ngay sau getBestSellingProducts để dùng danh sách dựng banner và phần sản phẩm yêu
-    //     thích; kết thúc đọc món nổi bật khi hai vùng này hiển thị.
+    // . Trong hàm getBestSellingProducts của ProductDAO.java, em nhận giới hạn 4 từ index.jsp. Em chọn các
+    //   món còn bán theo lượng bán rồi trả danh sách về Trang chủ để hiện banner và phần sản phẩm yêu
+    //   thích.
+    // ... Quay lại index.jsp ngay sau getBestSellingProducts để dùng danh sách dựng banner và phần sản
+    //     phẩm yêu thích; kết thúc đọc món nổi bật khi hai vùng này hiển thị.
     public List<Product> getBestSellingProducts(int limit) {
 
         List<Product> list = new ArrayList<>();

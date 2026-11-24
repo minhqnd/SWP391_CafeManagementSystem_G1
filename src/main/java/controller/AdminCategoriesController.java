@@ -38,8 +38,8 @@ public class AdminCategoriesController extends HttpServlet {
     @Override
     // [DMM02]
     // . Khi mở Quản lý danh mục, doGet trong AdminCategoriesController.java nhận yêu cầu. Em gọi
-    //   getAllCategoriesWithCount (đọc danh mục kèm số sản phẩm) trong CategoryDAO.java để đọc danh mục kèm
-    //   số sản phẩm, rồi đưa danh sách về admin-categories.jsp để hiển thị.
+    //   getAllCategoriesWithCount trong CategoryDAO.java để đọc danh mục kèm số sản phẩm, rồi đưa danh
+    //   sách về admin-categories.jsp để hiển thị.
     // ... Đọc tiếp tại CategoryDAO.java, tìm [DMM03].
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -56,8 +56,8 @@ public class AdminCategoriesController extends HttpServlet {
             request.setAttribute("categories", categories);
             // [DMTS02]
             // . Để hiện bốn thẻ thống kê, ở doGet trong AdminCategoriesController.java em đếm các danh mục vừa đọc
-            //   và gọi CategoryDAO.getProductCount (đếm toàn bộ sản phẩm) để lấy tổng sản phẩm. Em đưa các số này về
-            //   admin-categories.jsp qua categoryTotal, categoryActive, categoryInactive và productTotal.
+            //   và gọi CategoryDAO.getProductCount để lấy tổng sản phẩm. Em đưa các số này về admin-categories.jsp
+            //   qua categoryTotal, categoryActive, categoryInactive và productTotal.
             // ... Đọc tiếp tại admin-categories.jsp, tìm [DMM04].
 
             // [SQL11-47] Thẻ Tổng/Hoạt động/Tạm ẩn danh mục: Java đếm từ danh sách categories đã đọc.
@@ -70,9 +70,9 @@ public class AdminCategoriesController extends HttpServlet {
 
             Category draft = (Category) session.getAttribute("categoryDraft");
             if (draft != null) {
-                // . Nếu lần lưu danh mục trước bị lỗi, em lấy categoryDraft mà preserveDraftAfterSaveError (giữ form
-                //   đang nhập khi lưu lỗi) đã giữ để doGet điền lại form trong admin-categories.jsp. Nhờ vậy người dùng
-                //   sửa tiếp mà không phải nhập lại tên và trạng thái.
+                // . Nếu lần lưu danh mục trước bị lỗi, em lấy categoryDraft mà preserveDraftAfterSaveError đã giữ để
+                //   doGet điền lại form trong admin-categories.jsp. Nhờ vậy người dùng sửa tiếp mà không phải nhập lại
+                //   tên và trạng thái.
                 session.removeAttribute("categoryDraft");
                 if (draft.getId() > 0) {
                     Category existing = categoryDAO.getCategoryById(draft.getId());
@@ -86,9 +86,9 @@ public class AdminCategoriesController extends HttpServlet {
             } else {
 
                 // [DMS02]
-                // . Ở doGet trong AdminCategoriesController.java, em lấy editId của hàng vừa bấm Sửa. Em truyền mã này
-                //   vào getCategoryById (đọc danh mục theo mã) trong CategoryDAO.java để đọc đúng danh mục, rồi đưa
-                //   thông tin về form Sửa trong admin-categories.jsp.
+                // . Trong hàm doGet của AdminCategoriesController.java, em lấy editId từ hàng vừa bấm Sửa rồi truyền
+                //   cho getCategoryById trong CategoryDAO.java. Hàm đọc đúng danh mục theo mã đó và trả thông tin về
+                //   để em điền form Sửa trong admin-categories.jsp.
                 // ... Đọc tiếp tại CategoryDAO.java, tìm [DMDOC01].
                 String editId = request.getParameter("editId");
                 if (editId != null && !editId.isBlank()) {
@@ -111,8 +111,9 @@ public class AdminCategoriesController extends HttpServlet {
 
     @Override
     // [DML02]
-    // . doPost trong AdminCategoriesController.java nhận action=save từ form Tạo hoặc Sửa danh mục. Em gọi save
-    //   trong cùng file, truyền request và session để đọc các ô, kiểm tra rồi lưu danh mục.
+    // . Đến doPost trong AdminCategoriesController.java, em đọc action=save để biết đây là yêu cầu lưu
+    //   danh mục. Em gọi save ngay trong file này để nhận tên, trạng thái và ảnh từ form, kiểm tra rồi lưu
+    //   vào đúng danh mục.
     // ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML03].
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -178,9 +179,9 @@ public class AdminCategoriesController extends HttpServlet {
     }
 
     // [DML03]
-    // . Trong AdminCategoriesController.save, em đọc id, tên, trạng thái và ảnh từ form. id=0 là tạo danh mục
-    //   mới; id lớn hơn 0 là sửa danh mục có mã đó. Em kiểm tra tên, tên trùng, trạng thái và ảnh trước khi gọi
-    //   CategoryDAO.saveCategory.
+    // . Trong save, em nhận id, tên, trạng thái và ảnh. id=0 thì tạo danh mục mới; có mã lớn hơn 0 thì sửa
+    //   danh mục đó. Em kiểm tra tên, tên trùng, trạng thái và ảnh trước khi chuyển các thông tin hợp lệ
+    //   cho CategoryDAO.saveCategory.
     // ... Đọc tiếp tại AdminCategoriesController.java, tìm [DML04].
     private void save(HttpServletRequest request, HttpSession session)
             throws SQLException, ClassNotFoundException, ServletException, IOException {
@@ -197,18 +198,17 @@ public class AdminCategoriesController extends HttpServlet {
         String imageName = null;
 
         // [DMT02]
-        // . Trong hàm save (kiểm tra và lưu danh mục) của AdminCategoriesController.java, em nhận tên từ ô name
-        //   rồi gọi requiredName trong MenuValidation.java để làm gọn và kiểm tra tên bắt buộc, tối đa 100 ký tự,
-        //   không có ký tự không hỗ trợ. Đúng mới tìm tên trùng và lưu; sai thì doPost giữ tên, trạng thái
-        //   và chuyển lời báo về phần thông báo trên form để người dùng sửa tiếp.
+        // . Trong hàm save của AdminCategoriesController.java, em nhận tên từ ô name rồi gọi requiredName
+        //   trong MenuValidation.java để làm gọn và kiểm tra tên bắt buộc, tối đa 100 ký tự, không có ký tự
+        //   không hỗ trợ. Đúng mới tìm tên trùng và lưu; sai thì doPost giữ tên, trạng thái và chuyển lời báo
+        //   về phần thông báo trên form để người dùng sửa tiếp.
         // ... Đọc tiếp tại MenuValidation.java, tìm [DMT03].
         name = MenuValidation.requiredName(name, "Tên danh mục", 100);
         // [DMAN02]
-        // . AdminCategoriesController.save nhận tệp imageFile từ form. Em kiểm tra dung lượng, gọi
-        //   normalizeImageType để nhận loại ảnh rồi dùng matchesImageSignature để kiểm tra dữ liệu tệp có
-        //   đúng loại đó không.
-        // . Ảnh hợp lệ được chuyển cùng thông tin danh mục tới CategoryDAO.saveCategory để lưu. Em chỉ nhận
-        //   JPG, PNG, GIF hoặc WebP tối đa 5 MB; sai thì báo lỗi và dừng lưu.
+        // . Trong AdminCategoriesController.save, em nhận ảnh từ imageFile rồi kiểm tra dung lượng, loại ảnh
+        //   và dấu hiệu nhận dạng ở đầu tệp bằng normalizeImageType và matchesImageSignature. Em chỉ nhận JPG,
+        //   PNG, GIF hoặc WebP tối đa 5 MB. Đúng thì chuyển ảnh cùng danh mục cho CategoryDAO.saveCategory;
+        //   sai thì báo lỗi và dừng lưu.
         // .. Trường hợp chưa đọc được cả form đã được AdminFormFeedback.readMultipart xử lý trước khi vào
         //    save.
         // ... Ảnh hợp lệ được giữ cùng thông tin danh mục để ghi một lần. Đọc điểm gọi
@@ -236,44 +236,42 @@ public class AdminCategoriesController extends HttpServlet {
         }
 
         // [DMTT02]
-        // . Trong hàm save (kiểm tra và lưu danh mục) của AdminCategoriesController.java, em lấy status từ ô
-        //   Trạng thái. Em chỉ chấp nhận ACTIVE hoặc INACTIVE vì đây là hai trạng thái danh mục đang dùng;
-        //   giá trị khác sẽ bị báo lỗi trước khi lưu.
+        // . Trong hàm save của AdminCategoriesController.java, em lấy status từ ô Trạng thái. Em chỉ chấp nhận
+        //   ACTIVE hoặc INACTIVE vì đây là hai trạng thái danh mục đang dùng; giá trị khác sẽ bị báo lỗi trước
+        //   khi lưu.
         // ... status đúng thì save ghép Category và gọi DAO. Đọc điểm gọi ghi tại
         //     AdminCategoriesController.java, tìm mã DML04; status sai thì doPost trả form cùng lỗi.
         if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) throw new IllegalArgumentException("Vui lòng chọn trạng thái Hoạt động hoặc Tạm ẩn.");
 
         // [DMTR01]
-        // . Để tránh trùng tên danh mục, ở hàm save (kiểm tra và lưu danh mục) trong
-        //   AdminCategoriesController.java em gọi categoryNameExists (tìm danh mục khác trùng tên) trong
-        //   CategoryDAO.java. Em truyền tên và mã danh mục đang sửa để tìm danh mục khác cùng tên, không tính
-        //   chính danh mục đó là trùng.
+        // . Để tránh trùng tên danh mục, ở hàm save trong AdminCategoriesController.java em gọi
+        //   categoryNameExists trong CategoryDAO.java. Em truyền tên và mã danh mục đang sửa để tìm danh mục
+        //   khác cùng tên, không tính chính danh mục đó là trùng.
         // ... Đọc tiếp tại CategoryDAO.java, tìm [DMTR02].
         if (categoryDAO.categoryNameExists(name, id)) throw new IllegalArgumentException("Tên danh mục đã tồn tại.");
 
         Category category = new Category(id, name, status, null, 0);
         // [DML04]
-        // . Kiểm tra xong, em gọi saveCategory trong CategoryDAO.java để ghi danh mục cùng ảnh. Em truyền thông
-        //   tin danh mục, dữ liệu ảnh và lựa chọn xóa ảnh, rồi nhận kết quả để biết lưu được hay cần báo lỗi.
+        // . Kiểm tra xong, em gọi saveCategory trong CategoryDAO.java. Em truyền thông tin danh mục, dữ liệu
+        //   ảnh và lựa chọn xóa ảnh để lưu chúng cùng nhau, rồi nhận kết quả xem đã lưu được hay chưa.
         // ... Đọc tiếp tại CategoryDAO.java, tìm [DML05].
         if (!categoryDAO.saveCategory(category, imageData, imageType, imageName, removeImage)) {
             throw new IllegalArgumentException("Không tìm thấy danh mục cần cập nhật.");
         }
 
         // [DML06]
-        // . Khi CategoryDAO.saveCategory trả thành công, em quay lại save trong AdminCategoriesController.java
-        //   để xóa bản nhập dở và đặt categoryMessage. Sau đó doPost mở lại trang để doGet đọc danh sách mới,
-        //   đưa về admin-categories.jsp hiển thị kết quả.
+        // . Khi CategoryDAO.saveCategory báo lưu được, em quay lại save trong AdminCategoriesController.java
+        //   để xóa bản nhập dở và đặt categoryMessage. Sau đó, doPost mở lại trang; doGet đọc danh sách mới
+        //   rồi đưa về admin-categories.jsp để hiện kết quả.
         // ... Đọc tiếp tại admin-categories.jsp, tìm [DML07].
         session.removeAttribute("categoryDraft");
         session.setAttribute("categoryMessage", id > 0 ? "Đã cập nhật danh mục '" + name + "'." : "Đã tạo danh mục '" + name + "'.");
     }
 
     // [DMAH02]
-    // . Khi doPost gọi toggle (ẩn hoặc hiện danh mục) trong AdminCategoriesController.java, em lấy mã danh
-    //   mục và trạng thái mới từ form. Em truyền hai giá trị vào updateCategoryStatus (lưu trạng thái
-    //   ẩn/hiện danh mục) trong CategoryDAO.java để đổi đúng danh mục vừa bấm, rồi dùng kết quả để thông báo
-    //   trên trang.
+    // . Khi doPost gọi toggle trong AdminCategoriesController.java, em lấy mã danh mục và trạng thái mới
+    //   từ form. Em truyền hai giá trị vào updateCategoryStatus trong CategoryDAO.java để đổi đúng danh
+    //   mục vừa bấm, rồi dùng kết quả để thông báo trên trang.
     // ... Đọc tiếp tại CategoryDAO.java, tìm [DMAH03].
     private void toggle(HttpServletRequest request, HttpSession session) throws SQLException, ClassNotFoundException {
 
@@ -282,10 +280,11 @@ public class AdminCategoriesController extends HttpServlet {
         if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) throw new IllegalArgumentException("Trạng thái không hợp lệ.");
         if (!categoryDAO.updateCategoryStatus(id, status)) throw new IllegalArgumentException("Không tìm thấy danh mục.");
         // [DMAH04]
-        // . updateCategoryStatus trả thành công thì toggle đặt categoryMessage rồi trở về doPost. doPost
-        //   chuyển lại trang để doGet đọc danh sách mới.
-        // ... Xem thông báo tại admin-categories.jsp, tìm mã DML07; trạng thái mới và thông báo đã hiện là
-        //     kết thúc đổi trạng thái.
+        // . Khi CategoryDAO.updateCategoryStatus báo đã đổi trạng thái, em quay lại toggle trong
+        //   AdminCategoriesController.java để đặt categoryMessage. Hàm trở về doPost, rồi em mở lại trang để
+        //   doGet đọc danh sách mới và hiện trạng thái vừa đổi.
+        // ... Xem thông báo tại admin-categories.jsp, tìm mã DML07; trạng thái mới và thông báo đã hiện là kết
+        //     thúc đổi trạng thái.
         session.setAttribute("categoryMessage", "Đã cập nhật trạng thái danh mục.");
     }
 
@@ -306,10 +305,11 @@ public class AdminCategoriesController extends HttpServlet {
         }
         if (!categoryDAO.deleteCategoryAndProducts(id)) throw new IllegalArgumentException("Không thể xóa danh mục.");
         // [DMX04]
-        // . deleteCategoryAndProducts trả thành công thì delete đặt categoryMessage rồi trở về doPost để
-        //   chuyển trang. doGet đọc danh sách không còn danh mục và các món vừa xóa.
-        // ... Xem kết quả tại admin-categories.jsp, tìm mã DML07; thông báo và danh sách mới là kết thúc
-        //     xóa. Có lỗi trước đó thì doPost hiện categoryError, không báo đã xóa.
+        // . Khi CategoryDAO.deleteCategoryAndProducts báo đã xóa, em quay lại delete trong
+        //   AdminCategoriesController.java để đặt categoryMessage. Sau đó, doPost mở lại trang để doGet đọc
+        //   danh sách không còn danh mục và các sản phẩm vừa xóa.
+        // ... Xem kết quả tại admin-categories.jsp, tìm mã DML07; thông báo và danh sách mới là kết thúc xóa.
+        //     Có lỗi trước đó thì doPost hiện categoryError, không báo đã xóa.
         session.setAttribute("categoryMessage", "Đã xóa danh mục '" + category.getName() + "' và các sản phẩm thuộc danh mục.");
     }
 
@@ -363,11 +363,11 @@ public class AdminCategoriesController extends HttpServlet {
     }
 
     // [DMQ01]
-    // . Trước khi mở hoặc xử lý danh mục, doGet và doPost gọi isAdmin (kiểm tra tài khoản Admin còn hoạt
-    //   động) trong AdminCategoriesController.java. Hàm kiểm tra tài khoản đang dùng có phải Admin còn hoạt
-    //   động không; đúng thì tiếp tục, sai thì trả lỗi và dừng yêu cầu.
-    // ... Quay lại đầu doGet hoặc doPost trong AdminCategoriesController.java sau isAdmin; đúng thì đọc hoặc xử lý
-    //     danh mục, sai thì đã trả lỗi và kết thúc yêu cầu.
+    // . Trước khi mở hoặc xử lý danh mục, doGet và doPost gọi isAdmin trong
+    //   AdminCategoriesController.java. Hàm kiểm tra tài khoản đang dùng có phải Admin còn hoạt động
+    //   không; đúng thì tiếp tục, sai thì trả lỗi và dừng yêu cầu.
+    // ... Quay lại đầu doGet hoặc doPost trong AdminCategoriesController.java sau isAdmin; đúng thì đọc
+    //     hoặc xử lý danh mục, sai thì đã trả lỗi và kết thúc yêu cầu.
     private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");

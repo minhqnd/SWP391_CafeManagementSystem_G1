@@ -194,19 +194,18 @@
                         </div>
                         <div class="recipe-card-footer">
                             <%-- [CTNHAN01]
-                                 . Nhãn có hoặc chưa có công thức đọc summary.hasRecipe, gọi RecipeProductSummary.isHasRecipe (kiểm
-                                   tra sản phẩm đã có dòng công thức chưa) để xem danh sách nguyên liệu có dòng nào không. Có dòng
-                                   thì hiện Đã có công thức và nút Sửa định mức; rỗng thì hiện Chưa có công thức và nút Thêm định
-                                   mức.
-                                 ... Nhãn và tên nút hiện xong là kết thúc phần tình trạng. Người dùng bấm Thêm hoặc Sửa định mức
-                                     thì theo admin-recipes.jsp, tìm [CTCH01].
+                                 . Nhãn có hoặc chưa có công thức đọc summary.hasRecipe, gọi RecipeProductSummary.isHasRecipe để xem
+                                   danh sách nguyên liệu có dòng nào không. Có dòng thì hiện Đã có công thức và nút Sửa định mức;
+                                   rỗng thì hiện Chưa có công thức và nút Thêm định mức.
+                                 ... Nhãn và tên nút hiện xong là kết thúc phần tình trạng. Người dùng bấm Thêm hoặc Sửa định mức thì
+                                     theo admin-recipes.jsp, tìm [CTCH01].
                             --%>
                             <c:choose><c:when test="${summary.hasRecipe}"><span class="recipe-badge has">Đã có công thức</span></c:when><c:otherwise><span class="recipe-badge empty">Chưa có công thức</span></c:otherwise></c:choose>
 
                             <%-- [CTCH01]
-                                 . Khi bấm Thêm hoặc Sửa định mức trong admin-recipes.jsp, em mở /admin/recipes kèm
-                                   productId của món đó. Yêu cầu tới doGet trong AdminRecipeController.java để chọn sản phẩm
-                                   và đọc công thức, rồi đưa dữ liệu về hộp chỉnh sửa.
+                                 . Khi người dùng bấm Thêm định mức hoặc Sửa định mức trong admin-recipes.jsp, em mở /admin/recipes
+                                   kèm productId của món đó. AdminRecipeController.doGet chọn đúng món, đọc công thức và giá nhập rồi
+                                   đưa dữ liệu về hộp chỉnh sửa.
                                  ... Đọc tiếp tại AdminRecipeController.java, tìm [CTCH02].
                             --%>
                             <a class="recipe-edit" href="${ctx}/admin/recipes?productId=${product.id}"><span class="material-symbols-outlined" style="font-size:16px">edit</span><c:choose><c:when test="${summary.hasRecipe}">Sửa định mức</c:when><c:otherwise>Thêm định mức</c:otherwise></c:choose></a>
@@ -224,9 +223,9 @@
             <header class="recipe-modal-head">
                 <h2 id="recipeModalTitle">Định mức: <c:out value="${selectedProduct.name}" /></h2>
                 <%-- [CTD01]
-                     . Khi bấm X hoặc Hủy trong admin-recipes.jsp, đoạn onclick và closeRecipeModal (đóng hộp chỉnh sửa
-                       công thức) ngay trong file đóng hộp chỉnh sửa, bỏ thông báo lỗi trên hộp. Thao tác này không gửi
-                       form tới AdminRecipeController.doPost nên không lưu công thức đang nhập.
+                     . Khi người dùng bấm X hoặc Hủy trong hộp công thức, em gọi phần đóng hộp ngay trong
+                       admin-recipes.jsp. Phần onclick và closeRecipeModal bỏ thông báo lỗi, đóng hộp và đưa đường dẫn về
+                       danh sách; công thức đang nhập được bỏ mà chưa gửi đi để lưu.
                      ... Đọc tiếp ngay trong admin-recipes.jsp, tìm [CTD02] để xem phần đóng hộp và trở về danh sách.
                 --%>
                 <a href="${ctx}/admin/recipes" class="btn-close recipe-modal-close" aria-label="Đóng"
@@ -261,11 +260,11 @@
                         <div><h3 class="h6 fw-bold mb-1">Nguyên liệu cho một phần</h3><div class="text-muted" style="font-size:.68rem">Nhập định lượng lớn hơn 0, tối đa 3 số thập phân; dùng dấu chấm cho phần thập phân.</div></div>
 
                         <%-- [CTT01]
-                             . Khi bấm Thêm nguyên liệu trong admin-recipes.jsp, sự kiện addIngredient.click sao chép
-                               ingredientRowTemplate để thêm cặp ô nguyên liệu và định lượng. Dòng mới sẽ được gửi tới
-                               AdminRecipeController.doPost cùng các dòng khác khi bấm Lưu công thức.
-                             ... Đọc tiếp ngay trong admin-recipes.jsp, tìm [CTT02] để xem cách thêm dòng chọn nguyên
-                                 liệu và định lượng.
+                             . Khi người dùng bấm Thêm nguyên liệu trong admin-recipes.jsp, em chạy phần xử lý của addIngredient
+                               ngay trong file. Em sao chép mẫu ingredientRowTemplate để thêm một dòng chọn nguyên liệu và nhập
+                               định lượng. Bấm Lưu công thức sau đó mới gửi dòng này cùng các dòng khác.
+                             ... Đọc tiếp ngay trong admin-recipes.jsp, tìm [CTT02] để xem cách thêm dòng chọn nguyên liệu và
+                                 định lượng.
                         --%>
                         <button type="button" class="btn btn-sm btn-outline-danger" id="addIngredient" <c:if test="${empty ingredients}">disabled</c:if>>+ Thêm nguyên liệu</button>
                     </div>
@@ -281,19 +280,16 @@
                                             <div class="ingredient-row">
                                                 <%-- [CTNL01]
                                                      . Ô Nguyên liệu trong admin-recipes.jsp gửi mã qua ingredientId, đi cùng quantity của dòng đó. Khi
-                                                       lưu, AdminRecipeController.doPost chuyển hai danh sách cho parseIngredients (kiểm tra và ghép
-                                                       từng dòng công thức) kiểm tra từng cặp rồi gọi ProductIngredientDAO.saveRecipe (lưu công thức
-                                                       của sản phẩm) để ghi công thức hợp lệ.
+                                                       lưu, AdminRecipeController.doPost chuyển hai danh sách cho parseIngredients kiểm tra từng cặp rồi
+                                                       gọi ProductIngredientDAO.saveRecipe để ghi công thức hợp lệ.
                                                      ... Khi bấm Lưu công thức, parseIngredients kiểm tra từng mã nguyên liệu. Đọc tại
                                                          AdminRecipeController.java, tìm mã CTL04; đúng hết mới trả danh sách để lưu.
                                                 --%>
                                                 <div><select class="form-select" name="ingredientId" aria-label="Nguyên liệu"><option value="">Chọn nguyên liệu</option><c:forEach items="${ingredients}" var="ingredient"><c:if test="${ingredient.active or ingredient.id eq recipeIngredient.ingredientId}"><option value="${ingredient.id}" data-unit="${fn:escapeXml(ingredient.unit)}" data-unit-cost="${ingredientUnitCosts[ingredient.id]}" ${ingredient.id eq recipeIngredient.ingredientId ? 'selected' : ''}><c:out value="${ingredient.name}" /> (<c:out value="${ingredient.unit}" />)<c:if test="${not ingredient.active}"> · Ngừng sử dụng (dòng cũ)</c:if></option></c:if></c:forEach></select><div class="ingredient-unit-cost"></div></div>
                                                 <%-- [CTDL01]
-                                                     . Ô Định lượng trong admin-recipes.jsp gửi giá trị qua quantity, đi
-                                                       cùng mã ingredientId của cùng dòng. Khi lưu,
-                                                       AdminRecipeController.doPost gọi parseIngredients (kiểm tra và ghép
-                                                       từng dòng công thức), rồi gọi MenuValidation.quantity trong
-                                                       MenuValidation.java để kiểm tra số trước khi ghép với nguyên liệu.
+                                                     . Ô Định lượng trong admin-recipes.jsp gửi giá trị qua quantity, đi cùng mã ingredientId của cùng
+                                                       dòng. Khi lưu, AdminRecipeController.doPost gọi parseIngredients, rồi gọi MenuValidation.quantity
+                                                       trong MenuValidation.java để kiểm tra số trước khi ghép với nguyên liệu.
                                                      ... Đọc tiếp tại MenuValidation.java, tìm [CTDL02].
                                                 --%>
                                                 <div class="ingredient-quantity"><input class="form-control" type="text" inputmode="decimal" name="quantity" value="${fn:escapeXml(recipeIngredient.quantity)}" placeholder="0.001" aria-label="Định lượng"><div class="quantity-unit"></div></div>
@@ -306,13 +302,10 @@
                                                 --%>
                                                 <div class="ingredient-line-cost">—</div>
                                                 <%-- [CTX01]
-                                                     . Khi bấm dấu x ở một dòng nguyên liệu trong admin-recipes.jsp, sự kiện
-                                                       rows.click tìm rồi bỏ dòng đó. Em gọi recalculateCost (tính lại chi
-                                                       phí nguyên liệu trên form) ngay trong file để tính lại giá vốn xem
-                                                       trước theo các dòng còn lại; dữ liệu đã lưu chỉ đổi khi bấm Lưu công
-                                                       thức.
-                                                     ... Đọc tiếp ngay trong admin-recipes.jsp, tìm [CTX02] để xem cách bỏ dòng và
-                                                         tính lại chi phí.
+                                                     . Khi người dùng bấm dấu x ở một dòng nguyên liệu, em tìm dòng chứa nút đó rồi bỏ khỏi form. Sau đó,
+                                                       em gọi recalculateCost ngay trong admin-recipes.jsp để tính lại giá vốn xem trước theo các dòng
+                                                       còn lại.
+                                                     ... Đọc tiếp ngay trong admin-recipes.jsp, tìm [CTX02] để xem cách bỏ dòng và tính lại chi phí.
                                                 --%>
                                                 <button type="button" class="btn btn-sm btn-light text-danger remove-ingredient" aria-label="Xóa nguyên liệu">×</button>
                                             </div>
@@ -335,13 +328,12 @@
 
                     <div class="recipe-cost-card" id="recipeCostCard">
                             <%-- [CTTONG01]
-                                 . Giá vốn hiện trong admin-recipes.jsp lấy từ recipeCost do AdminRecipeController.doGet tính bằng
-                                   định lượng nhân giá nhập từ IngredientDAO.getLatestPurchasePrices (đọc giá nhập đã nhận gần
-                                   nhất). Khi người dùng sửa các dòng, recalculateCost (tính lại chi phí nguyên liệu trên form)
-                                   ngay trên trang tính lại số xem trước để thấy chi phí thay đổi.
-                                 ... Theo tính ngay trên form thì đọc recalculateCost tại admin-recipes.jsp, tìm [CTTONG02]. Theo
-                                     giá vốn đã lưu khi tải trang thì đọc controller tại AdminRecipeController.java, tìm mã
-                                     CTTONG03; hai phần đều kết thúc tại số tiền hiển thị.
+                                 . Giá vốn đang hiện được AdminRecipeController.doGet tính bằng định lượng nhân với giá nhập gần nhất
+                                   do IngredientDAO.getLatestPurchasePrices đọc được. Khi người dùng sửa các dòng trên form, em gọi
+                                   recalculateCost ngay trong admin-recipes.jsp để tính lại số xem trước theo phần đang nhập.
+                                 ... Theo tính ngay trên form thì đọc recalculateCost tại admin-recipes.jsp, tìm [CTTONG02]. Theo giá
+                                     vốn đã lưu khi tải trang thì đọc controller tại AdminRecipeController.java, tìm mã CTTONG03; hai
+                                     phần đều kết thúc tại số tiền hiển thị.
                             --%>
                             <div><span class="text-muted small fw-bold">GIÁ VỐN NGUYÊN LIỆU / PHẦN</span><strong id="recipeCostValue"><c:choose><c:when test="${recipeCostComplete}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ</c:when><c:when test="${recipeHasIngredients}"><fmt:formatNumber value="${recipeCost}" pattern="#,##0.##" />đ · thiếu giá</c:when><c:otherwise>Chưa có định lượng</c:otherwise></c:choose></strong><small id="recipeCostNote"><c:choose><c:when test="${not empty missingCostIngredients}">Chưa có giá nhập đã nhận: <c:forEach items="${missingCostIngredients}" var="missingName" varStatus="loop"><c:if test="${loop.index gt 0}">, </c:if><c:out value="${missingName}" /></c:forEach>.</c:when><c:otherwise>Đơn giá của lần nhập đã nhận gần nhất; chưa gồm bao bì, nhân công, hao hụt.</c:otherwise></c:choose></small></div>
                     </div>
@@ -355,8 +347,8 @@
                         onclick="document.getElementById('recipeFormError')?.remove(); document.querySelector('.recipe-modal-backdrop')?.remove(); return false;">Hủy</a>
                         <%-- [CTL01]
                              . Em bắt đầu từ nút Lưu công thức trong admin-recipes.jsp. Khi bấm, admin-form-validation.js kiểm
-                               tra các dòng ngay trên trang. Hợp lệ thì form gửi mã món, mã nguyên liệu và định lượng tới
-                               doPost trong AdminRecipeController.java qua /admin/recipes để kiểm tra lại và lưu.
+                               tra các dòng trên trang. Đúng thì form gửi mã món cùng danh sách nguyên liệu và định lượng tới
+                               /admin/recipes để AdminRecipeController.doPost kiểm tra lại và lưu cho đúng sản phẩm.
                              ... Trước khi gửi công thức, admin-form-validation.js kiểm tra từng dòng trên trang. Đọc tại
                                  admin-form-validation.js, tìm mã CTKT01; đúng hết mới gửi tới AdminRecipeController.doPost.
                         --%>
@@ -376,9 +368,9 @@
 (() => {
     const filter = document.getElementById('recipeFilter');
     // [CTLOC02]
-    // . Ở sự kiện filter.change trong admin-recipes.jsp, em đọc lựa chọn all, with hoặc without rồi so với
-    //   data-has-recipe của từng thẻ món. Em đổi hidden để chỉ hiện nhóm phù hợp; thao tác này chỉ lọc danh
-    //   sách đang xem, không thay đổi công thức.
+    // . Khi người dùng đổi bộ lọc trong admin-recipes.jsp, em đọc lựa chọn all, with hoặc without để biết
+    //   cần hiện tất cả món, món có công thức hay món chưa có công thức. Em so với data-has-recipe của
+    //   từng thẻ và đổi hidden để ẩn hoặc hiện thẻ phù hợp.
     // ... Kết thúc lọc khi những thẻ phù hợp đang hiện trên admin-recipes.jsp.
 
     filter?.addEventListener('change', () => {
@@ -390,9 +382,9 @@
 
     const recipeBackdrop = document.querySelector('.recipe-modal-backdrop');
     // [CTD02]
-    // . Ở closeRecipeModal (đóng hộp chỉnh sửa công thức) trong admin-recipes.jsp, em xử lý nút đóng
-    //   hoặc Hủy bằng cách bỏ recipeFormError, đóng hộp và đưa đường dẫn về danh sách. Các ô đang nhập
-    //   không được gửi đi nên công thức đã lưu vẫn giữ nguyên.
+    // . Hàm closeRecipeModal xử lý việc đóng hoặc Hủy hộp công thức trong admin-recipes.jsp. Em bỏ
+    //   recipeFormError, đóng hộp và đưa đường dẫn về danh sách. Các ô đang nhập chưa được gửi đi, nên
+    //   công thức đã lưu vẫn được giữ nguyên.
     // ... Hộp đã đóng và đường dẫn về danh sách là kết thúc Hủy hoặc X. Muốn mở lại, người dùng bấm
     //     Thêm/Sửa định mức tại admin-recipes.jsp, tìm mã CTCH01.
     const closeRecipeModal = event => {
@@ -412,13 +404,12 @@
     const money = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
 
     // [CTTONG02]
-    // . Ở recalculateCost (tính lại chi phí nguyên liệu trên form) trong admin-recipes.jsp, em đọc định
-    //   lượng và giá của từng nguyên liệu đang chọn, nhân rồi cộng lại để hiện tổng xem trước. Hàm được
-    //   gọi khi sửa hoặc xóa dòng; khi mở lại trang, AdminRecipeController.doGet vẫn đọc giá và tính lại
-    //   từ dữ liệu đã lưu.
-    // ... Trong vòng lặp recalculateCost, đọc bước lấy giá và tính từng dòng tại admin-recipes.jsp, tìm
-    //     mã CTDG02. Xét hết dòng thì đọc bước hiện tổng tại admin-recipes.jsp, tìm [CTTONG06]; đây vẫn
-    //     là số xem trước.
+    // . Hàm recalculateCost đọc lượng và đơn giá của từng nguyên liệu đang chọn, nhân để tính tiền từng
+    //   dòng rồi cộng lại thành tổng xem trước. Hàm chạy khi người dùng sửa hoặc xóa dòng. Khi mở lại
+    //   trang sau khi lưu, AdminRecipeController.doGet vẫn đọc dữ liệu đã lưu và tính giá vốn lại.
+    // ... Trong vòng lặp recalculateCost, đọc bước lấy giá và tính từng dòng tại admin-recipes.jsp, tìm mã
+    //     CTDG02. Xét hết dòng thì đọc bước hiện tổng tại admin-recipes.jsp, tìm [CTTONG06]; đây vẫn là số
+    //     xem trước.
     function recalculateCost() {
 
         if (!rows || !costValue) return;
@@ -437,10 +428,9 @@
             const rawQuantity = quantityInput?.value.trim() || '';
             const amount = Number(rawQuantity);
             // [CTDG02]
-            // . Trong recalculateCost, em lấy giá và đơn vị từ lựa chọn nguyên liệu do
-            //   AdminRecipeController.doGet chuẩn bị bằng IngredientDAO.getLatestPurchasePrices. Em hiện đơn vị,
-            //   giá nhập rồi lấy định lượng nhân giá để tính chi phí dòng. Các điều kiện phía dưới quyết định
-            //   hiện số tiền hay lời nhắc nhập lượng, thiếu giá.
+            // . Trong recalculateCost, em lấy đơn vị và giá nhập từ nguyên liệu đang chọn rồi hiện chúng ở chính
+            //   dòng đó. Em lấy định lượng nhân với đơn giá để tính tiền của dòng. Dòng nhập sai, trùng nguyên
+            //   liệu hoặc chưa có giá thì hiện lời nhắc tương ứng; các dòng hợp lệ mới được cộng vào tổng.
             // .. Giá trống được coi là thiếu giá; giá 0 vẫn là giá nhập hợp lệ.
             // ... Xử lý hết các dòng, recalculateCost dùng total và complete để hiện tổng và lời nhắc. Đọc tại
             //     admin-recipes.jsp, tìm mã CTTONG06.
@@ -473,8 +463,9 @@
             if (lineCostLabel) lineCostLabel.textContent = money.format(lineCost) + 'đ';
         });
         // [CTTONG06]
-        // . Xét hết các dòng, recalculateCost hiện tổng total và lời nhắc theo complete. Không có dòng thì
-        //   hiện Chưa có định lượng; có dòng sai hoặc thiếu giá thì báo tổng chưa tính đủ.
+        // . Sau khi xét hết các dòng, em lấy total để hiện tổng chi phí và dùng complete để chọn lời nhắc.
+        //   Không có nguyên liệu thì hiện Chưa có định lượng. Có dòng sai hoặc thiếu đơn giá thì hiện tổng
+        //   chưa tính đủ để người dùng biết còn phần cần kiểm tra.
         // ... Đây là điểm kết thúc tính xem trước. Hàm trả về sự kiện input/change hoặc click đang gọi, chưa
         //     ghi công thức. Người dùng bấm Lưu công thức thì theo admin-recipes.jsp, tìm mã CTL01.
         if (!hasLine) {
@@ -487,9 +478,8 @@
     }
 
     // [CTT02]
-    // . Ở sự kiện addIngredient.click trong admin-recipes.jsp, em sao chép ingredientRowTemplate vào
-    //   rows để tạo thêm một dòng chọn nguyên liệu và nhập định lượng. Đây mới là thêm ô trên màn hình;
-    //   dòng chỉ được gửi đến AdminRecipeController.doPost khi bấm Lưu công thức.
+    // . Đến phần xử lý addIngredient, em sao chép ingredientRowTemplate rồi thêm vào vùng rows. Người dùng
+    //   có thêm một dòng để chọn nguyên liệu và nhập lượng; dữ liệu ở bước này vẫn đang nằm trên form.
     // ... Dòng mới đã hiện là kết thúc Thêm dòng. Khi người dùng chọn nguyên liệu hoặc nhập lượng,
     //     change/input gọi recalculateCost tại admin-recipes.jsp, tìm mã CTTONG02. Bấm Lưu công thức mới
     //     gửi các dòng đi.
@@ -497,11 +487,11 @@
     rows?.addEventListener('input', recalculateCost);
     rows?.addEventListener('change', recalculateCost);
     // [CTX02]
-    // . Ở sự kiện rows.click trong admin-recipes.jsp, em tìm nút remove-ingredient vừa bấm và xóa dòng
-    //   chứa nút đó. Sau đó em gọi recalculateCost (tính lại chi phí nguyên liệu trên form) cùng file để
-    //   giá vốn xem trước khớp với những dòng nguyên liệu còn lại.
-    // ... Bỏ dòng xong, sự kiện click gọi recalculateCost để tính tổng còn lại. Đọc tại
-    //     admin-recipes.jsp, tìm mã CTTONG02; tính xong mới kết thúc lần xóa dòng trên form.
+    // . Ở phần xử lý cú bấm trong vùng rows, em kiểm tra nút vừa bấm có phải remove-ingredient không. Đúng
+    //   thì xóa dòng chứa nút đó và gọi recalculateCost để tổng chi phí khớp với các nguyên liệu còn trên
+    //   form.
+    // ... Bỏ dòng xong, sự kiện click gọi recalculateCost để tính tổng còn lại. Đọc tại admin-recipes.jsp,
+    //     tìm mã CTTONG02; tính xong mới kết thúc lần xóa dòng trên form.
     rows?.addEventListener('click', event => {
         const button = event.target.closest('.remove-ingredient');
         if (button) { button.closest('.ingredient-row')?.remove(); recalculateCost(); }

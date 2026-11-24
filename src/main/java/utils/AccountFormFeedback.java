@@ -16,33 +16,31 @@ public final class AccountFormFeedback {
     }
 
     // [BMGC01]
-    // . Ở flash (giữ lỗi và các ô qua lần chuyển trang) trong AccountFormFeedback.java, em nhận tên form,
-    //   lỗi và các giá trị được phép giữ từ controller. Em lưu accountFeedback qua lần chuyển trang để
-    //   account_feedback.jsp và account-validation.js khôi phục đúng form, điền lại ô và hiển thị lỗi cho
-    //   người dùng sửa.
-    // ... Controller chuyển trang rồi account_feedback.jsp nhận dữ liệu đã giữ; đọc tiếp tại account_feedback.jsp,
-    //     tìm [BMTV02].
+    // . Trong hàm flash của AccountFormFeedback.java, em nhận tên form, lỗi và các giá trị được phép giữ
+    //   từ controller. Em lưu accountFeedback qua lần chuyển trang để account_feedback.jsp và
+    //   account-validation.js khôi phục đúng form, điền lại ô và hiển thị lỗi cho người dùng sửa.
+    // ... Controller chuyển trang rồi account_feedback.jsp nhận dữ liệu đã giữ; đọc tiếp tại
+    //     account_feedback.jsp, tìm [BMTV02].
     public static void flash(HttpServletRequest request, String form, Map<String,String> errors,
                              Map<String,String> values) {
         request.getSession().setAttribute("accountFeedback", feedback(form, errors, values));
     }
 
     // [BMHT01]
-    // . Ở show (hiện lỗi trên trang đang mở) trong AccountFormFeedback.java, em nhận tên form, lỗi và
-    //   giá trị từ ProfileController.java. Em đưa chúng vào accountFeedback của trang đang mở để
-    //   account_feedback.jsp và account-validation.js hiện lại thông tin đang sửa cùng lỗi đúng ô.
-    // ... Quay về ProfileController sau AccountFormFeedback.show để gọi renderProfile và mở lại trang.
-    //     Đọc account_feedback.jsp, tìm mã BMTV02 để xem account_feedback.jsp đưa các ô và lỗi cho phần
-    //     điền lại form.
+    // . Trong hàm show của AccountFormFeedback.java, em nhận tên form, lỗi và giá trị từ
+    //   ProfileController.java. Em đưa chúng vào accountFeedback của trang đang mở để account_feedback.jsp
+    //   và account-validation.js hiện lại thông tin đang sửa cùng lỗi đúng ô.
+    // ... Quay về ProfileController sau AccountFormFeedback.show để gọi renderProfile và mở lại trang. Đọc
+    //     account_feedback.jsp, tìm mã BMTV02 để xem account_feedback.jsp đưa các ô và lỗi cho phần điền
+    //     lại form.
     public static void show(HttpServletRequest request, String form, Map<String,String> errors,
                             Map<String,String> values) {
         request.setAttribute("accountFeedback", feedback(form, errors, values));
     }
 
-    // . Ở feedback (chuẩn bị lỗi và dữ liệu để điền lại form) trong AccountFormFeedback.java, em nhận tên
-    //   form, lỗi và giá trị từ flash (giữ lỗi và các ô qua lần chuyển trang) hoặc show (hiện lỗi trên trang
-    //   đang mở). Em chỉ giữ các ô được phép rồi trả dữ liệu để account_feedback.jsp và
-    //   account-validation.js khôi phục form sau lỗi.
+    // . Trong hàm feedback của AccountFormFeedback.java, em nhận tên form, lỗi và giá trị từ flash hoặc
+    //   show. Em chỉ giữ các ô được phép rồi trả dữ liệu để account_feedback.jsp và account-validation.js
+    //   khôi phục form sau lỗi.
     private static Map<String,Object> feedback(String form, Map<String,String> errors, Map<String,String> values) {
         Map<String,String> safeValues = new LinkedHashMap<>();
         for (String key : new String[]{"username", "fullname", "fullName", "phone", "email", "address", "birthDay", "birthMonth", "birthYear"}) {

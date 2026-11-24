@@ -15,9 +15,9 @@ import java.util.List;
 public class CategoryDAO extends BaseDAO {
 
     // [DMM03]
-    // . Hàm getAllCategoriesWithCount (đọc danh mục kèm số sản phẩm) trong CategoryDAO.java được doGet của
-    //   AdminCategoriesController.java gọi để lấy danh sách danh mục. Em đọc categories kèm số sản phẩm từng
-    //   nhóm rồi trả danh sách về doGet để đưa lên bảng trong admin-categories.jsp.
+    // . Hàm getAllCategoriesWithCount trong CategoryDAO.java được doGet của AdminCategoriesController.java
+    //   gọi để lấy danh sách danh mục. Em đọc categories kèm số sản phẩm từng nhóm rồi trả danh sách về
+    //   doGet để đưa lên bảng trong admin-categories.jsp.
     // ... Quay qua doGet trong AdminCategoriesController.java để đặt categories; xem bảng trả về tại
     //     admin-categories.jsp, tìm [DMD01].
     public List<Category> getAllCategoriesWithCount() {
@@ -44,9 +44,9 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DMTS01]
-    // . Trong getProductCount (đếm toàn bộ sản phẩm) của CategoryDAO.java, em đếm toàn bộ sản phẩm để trả về
-    //   doGet của AdminCategoriesController.java. Controller đặt số này vào productTotal rồi đưa sang thẻ
-    //   Tổng sản phẩm trên trang quản lý danh mục.
+    // . Trong hàm getProductCount của CategoryDAO.java, em đếm toàn bộ sản phẩm để trả về doGet của
+    //   AdminCategoriesController.java. Controller đặt số này vào productTotal rồi đưa sang thẻ Tổng sản
+    //   phẩm trên trang quản lý danh mục.
     // ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMTS02].
 
     public int getProductCount() {
@@ -76,9 +76,8 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DMDH01]
-    // . Trong getOrderedProductCountByCategory (đếm món trong danh mục đã có ở đơn hàng) của
-    //   CategoryDAO.java, em nhận mã danh mục từ hàm delete (kiểm tra điều kiện rồi xóa) của
-    //   AdminCategoriesController.java. Em đếm sản phẩm thuộc danh mục đã xuất hiện trong order_items
+    // . Trong hàm getOrderedProductCountByCategory của CategoryDAO.java, em nhận mã danh mục từ hàm delete
+    //   của AdminCategoriesController.java. Em đếm sản phẩm thuộc danh mục đã xuất hiện trong order_items
     //   rồi trả số về delete, để chặn xóa nếu có lịch sử đơn hàng.
     // ... Trả số món đã có trong đơn về AdminCategoriesController.delete. Số lớn hơn 0 thì báo lỗi và
     //     dừng; bằng 0 mới gọi hàm xóa tại CategoryDAO.java, tìm [DMX03].
@@ -102,12 +101,11 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DMTR02]
-    // . Ở categoryNameExists (tìm danh mục khác trùng tên) trong CategoryDAO.java, em nhận tên và mã
-    //   danh mục đang sửa từ AdminCategoriesController.save (kiểm tra và lưu danh mục). Em tìm tên trong
-    //   categories và bỏ qua mã hiện tại, rồi trả đúng hoặc sai để hàm save biết có bị trùng với danh
-    //   mục khác không.
-    // ... Quay về AdminCategoriesController.save sau categoryNameExists. Trùng thì báo lỗi; đúng thì
-    //     tiếp tục tới điểm lưu tại AdminCategoriesController.java, tìm mã DML04.
+    // . Trong hàm categoryNameExists của CategoryDAO.java, em nhận tên và mã danh mục đang sửa từ
+    //   AdminCategoriesController.save. Em tìm tên trong categories và bỏ qua mã hiện tại, rồi trả đúng
+    //   hoặc sai để hàm save biết có bị trùng với danh mục khác không.
+    // ... Quay về AdminCategoriesController.save sau categoryNameExists. Trùng thì báo lỗi; đúng thì tiếp
+    //     tục tới điểm lưu tại AdminCategoriesController.java, tìm mã DML04.
     public boolean categoryNameExists(String name, int exceptId) {
         // [SQL11-05] Ô Tên danh mục: kiểm tra trùng tên, bỏ qua danh mục đang sửa.
         // . Dấu ? từ trái sang phải: 1=tên danh mục; 2=mã danh mục đang sửa; thêm mới dùng 0.
@@ -129,14 +127,12 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DML05]
-    // . AdminCategoriesController.save gọi hàm này để lưu thông tin danh mục và ảnh. Phần lưu thông tin
-    //   bên dưới dùng id để chọn INSERT khi thêm mới hoặc UPDATE khi sửa; ảnh được xử lý trong
-    //   category_images.
-    // . Cả thông tin và ảnh được lưu trong cùng lần xử lý. Hoàn tất thì trả true về controller; không
-    //   lưu được danh mục thì trả false, còn lỗi phát sinh thì hủy thay đổi và báo lỗi về controller.
-    // ... Ghi thành công thì về controller tại AdminCategoriesController.java, tìm [DML06]. Trả false
-    //     hoặc có lỗi thì doPost giữ form; đọc phần giữ tại AdminCategoriesController.java, tìm mã DML08
-    //     rồi xem thông báo trên trang.
+    // . Trong CategoryDAO.saveCategory, em dựa vào id để thêm danh mục mới hoặc sửa danh mục đã có trong
+    //   bảng categories, đồng thời xử lý ảnh trong category_images. Ghi đủ cả thông tin lẫn ảnh mới xác
+    //   nhận và trả true. Không lưu được thì trả false; có lỗi thì hủy thay đổi và báo về controller.
+    // ... Ghi thành công thì về controller tại AdminCategoriesController.java, tìm [DML06]. Trả false hoặc
+    //     có lỗi thì doPost giữ form; đọc phần giữ tại AdminCategoriesController.java, tìm mã DML08 rồi
+    //     xem thông báo trên trang.
     public boolean saveCategory(Category category, byte[] imageData, String contentType,
                                 String fileName, boolean removeImage)
             throws SQLException, ClassNotFoundException {
@@ -255,12 +251,12 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DMAH03]
-    // . Ở updateCategoryStatus (lưu trạng thái ẩn/hiện danh mục) trong CategoryDAO.java, em nhận mã và
-    //   trạng thái từ AdminCategoriesController.toggle (ẩn hoặc hiện danh mục). Em sửa categories.status
-    //   theo đúng mã rồi trả kết quả về toggle để controller thông báo và mở lại danh sách đã cập nhật.
+    // . Trong hàm updateCategoryStatus của CategoryDAO.java, em nhận mã và trạng thái từ
+    //   AdminCategoriesController.toggle. Em sửa categories.status theo đúng mã rồi trả kết quả về toggle
+    //   để controller thông báo và mở lại danh sách đã cập nhật.
     // ... Trả true thì controller đặt thông báo tại AdminCategoriesController.java, tìm [DMAH04]. Trả
-    //     false hoặc có lỗi thì doPost bắt lỗi và mở lại trang; xem kết quả lỗi tại
-    //     admin-categories.jsp, tìm mã DML07.
+    //     false hoặc có lỗi thì doPost bắt lỗi và mở lại trang; xem kết quả lỗi tại admin-categories.jsp,
+    //     tìm mã DML07.
     public boolean updateCategoryStatus(int id, String status) throws SQLException, ClassNotFoundException {
 
         // [SQL11-12] Nút Ẩn/Hiện danh mục: đổi trạng thái của đúng nhóm.
@@ -274,10 +270,9 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DMX03]
-    // . Ở deleteCategoryAndProducts (xóa danh mục cùng sản phẩm đủ điều kiện) trong CategoryDAO.java, em
-    //   nhận mã danh mục từ AdminCategoriesController.delete (kiểm tra điều kiện rồi xóa). Em xóa các
-    //   sản phẩm thuộc nhóm rồi xóa danh mục, hoàn tất cả hai mới xác nhận. Nếu gặp lỗi thì hủy thay đổi
-    //   và báo kết quả về hàm delete.
+    // . Trong hàm deleteCategoryAndProducts của CategoryDAO.java, em nhận mã danh mục từ
+    //   AdminCategoriesController.delete. Em xóa các sản phẩm thuộc nhóm rồi xóa danh mục, hoàn tất cả hai
+    //   mới xác nhận. Nếu gặp lỗi thì hủy thay đổi và báo kết quả về hàm delete.
     // ... Xóa thành công thì controller đặt thông báo tại AdminCategoriesController.java, tìm [DMX04].
     //     Không xóa được hoặc có lỗi thì doPost mở lại trang cùng lỗi tại admin-categories.jsp, tìm mã
     //     DML07; chưa báo đã xóa.
@@ -314,12 +309,13 @@ public class CategoryDAO extends BaseDAO {
 
     // [MNDM01]
     // . MenuController.doGet, index.jsp và footer.jsp gọi getAllActiveCategoriesWithCount trong
-    //   CategoryDAO.java để đọc danh mục cho khách xem. Em lấy nhóm ACTIVE kèm số món đang bán của từng nhóm.
-    // . Nếu MenuController gọi thì danh sách được đưa sang menu.jsp. Nếu index.jsp hoặc footer.jsp gọi thì danh
-    //   sách được dùng ngay để dựng các mục danh mục trên trang đó.
-    // ... Nếu MenuController.doGet gọi thì quay lại MenuController.java sau getAllActiveCategoriesWithCount để
-    //   chuẩn bị menu.jsp; nếu index.jsp hoặc footer.jsp gọi thì quay đúng lời gọi này để dựng danh mục ngay
-    //   trên trang.
+    //   CategoryDAO.java để đọc danh mục cho khách xem. Em lấy nhóm ACTIVE kèm số món đang bán của từng
+    //   nhóm.
+    // . Nếu MenuController gọi thì danh sách được đưa sang menu.jsp. Nếu index.jsp hoặc footer.jsp gọi thì
+    //   danh sách được dùng ngay để hiện các danh mục trên trang đó.
+    // ... Nếu MenuController.doGet gọi thì quay lại MenuController.java sau
+    //     getAllActiveCategoriesWithCount để chuẩn bị menu.jsp; nếu index.jsp hoặc footer.jsp gọi thì quay
+    //     đúng lời gọi này để dựng danh mục ngay trên trang.
     public List<Category> getAllActiveCategoriesWithCount() {
 
         List<Category> list = new ArrayList<>();
@@ -348,9 +344,9 @@ public class CategoryDAO extends BaseDAO {
     }
 
     // [DMDOC01]
-    // . Hàm getCategoryById (đọc danh mục theo mã) trong CategoryDAO.java nhận mã từ phần sửa, xóa danh
-    //   mục hoặc lưu sản phẩm. Em đọc danh mục cùng ảnh rồi trả Category về controller đang gọi để điền
-    //   form, kiểm tra trước khi xóa hoặc gán sản phẩm vào nhóm.
+    // . Hàm getCategoryById trong CategoryDAO.java nhận mã từ phần sửa, xóa danh mục hoặc lưu sản phẩm. Em
+    //   đọc danh mục cùng ảnh rồi trả Category về controller đang gọi để điền form, kiểm tra trước khi xóa
+    //   hoặc gán sản phẩm vào nhóm.
     // ... Quay về đúng lời gọi getCategoryById. Nếu mở Sửa danh mục, xem form tại admin-categories.jsp,
     //     tìm [DMS03]. Nếu đang xóa, tiếp tục bước đếm đơn tại CategoryDAO.java, tìm [DMDH01]. Với form
     //     sản phẩm, quay về save sau getCategoryById để kiểm tra nhóm rồi gán vào Product.

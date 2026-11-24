@@ -309,10 +309,9 @@
                                 <li>
 
                                     <%-- [HSM01]
-                                         . Khi bấm Hồ sơ trong header.jsp, em mở /profile để doGet trong
-                                           ProfileController.java xử lý. Controller gọi authorize (đọc và kiểm tra người
-                                           đang đăng nhập) để đọc lại người đang đăng nhập, rồi renderProfile (chuẩn bị dữ
-                                           liệu và mở trang hồ sơ) để đưa thông tin, điểm và lịch sử về profile.jsp.
+                                         . Khi bấm Hồ sơ trong header.jsp, em mở /profile để doGet trong ProfileController.java xử lý.
+                                           Controller gọi authorize để đọc lại người đang đăng nhập, rồi renderProfile để đưa thông tin, điểm
+                                           và lịch sử về profile.jsp.
                                          ... Đọc tiếp tại ProfileController.java, tìm [HSM02].
                                     --%>
                                     <a class="user-item-btn" href="${pageContext.request.contextPath}/profile">
@@ -349,10 +348,8 @@
                                 <li>
 
                                     <%-- [DNX01]
-                                         . Khi bấm Đăng xuất trong header.jsp, em mở /login?action=logout. doGet trong
-                                           LoginController.java gọi session.invalidate (kết thúc lần đăng nhập hiện tại) để
-                                           hủy phiên đăng nhập rồi sendRedirect (chuyển sang đường dẫn khác) về Trang chủ,
-                                           kết thúc việc dùng tài khoản hiện tại.
+                                         . Khi người dùng bấm Đăng xuất trong header.jsp, em mở /login?action=logout. LoginController.doGet
+                                           nhận yêu cầu này để kết thúc lần đăng nhập hiện tại rồi đưa người dùng về Trang chủ.
                                          ... Đọc tiếp tại LoginController.java, tìm [DNX02].
                                     --%>
                                     <a class="user-item-btn logout-btn" href="${pageContext.request.contextPath}/login?action=logout">
@@ -417,8 +414,8 @@
                 <div class="menu-category-dropdown" id="menuCategoryDropdown">
                     <%-- [MNCH02]
                          . Mỗi danh mục dùng dữ liệu categories do MenuController.doGet đọc từ CategoryDAO. Khi bấm tên, em
-                           gửi category là mã nhóm và giữ currentKeyword nếu có, để ProductDAO.filterProducts (lọc món còn
-                           bán theo danh mục và từ khóa) tìm đúng món. Số cạnh tên là số món còn bán của nhóm.
+                           gửi category là mã nhóm và giữ currentKeyword nếu có, để ProductDAO.filterProducts tìm đúng món.
+                           Số cạnh tên là số món còn bán của nhóm.
                          ... MenuController.doGet nhận category và keyword rồi gọi ProductDAO.filterProducts. Đọc tại
                              ProductDAO.java, tìm mã MNDS02; danh sách trả về menu.jsp là kết thúc lần chọn danh mục.
                     --%>
