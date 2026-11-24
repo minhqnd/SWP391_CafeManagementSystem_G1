@@ -390,7 +390,11 @@ public class UserDAO extends BaseDAO {
             int updated = ps.executeUpdate();
             return updated > 0 ? "success" : "Không cập nhật được hồ sơ. Tài khoản không còn tồn tại hoặc đã ngừng hoạt động.";
         } catch (java.sql.SQLIntegrityConstraintViolationException e) {
-            return "Thông tin liên hệ vừa được tài khoản khác sử dụng. Vui lòng kiểm tra lại email và số điện thoại.";
+            if (e.getErrorCode() == 1062)
+                return "Thông tin liên hệ vừa được tài khoản khác sử dụng. Vui lòng kiểm tra lại email và số điện thoại.";
+            java.util.logging.Logger.getLogger(UserDAO.class.getName()).log(java.util.logging.Level.WARNING,
+                    "Profile update constraint failed", e);
+            return "Không thể lưu hồ sơ. Vui lòng thử lại sau.";
         } catch (Exception e) {
             e.printStackTrace();
             return "Không thể lưu hồ sơ. Vui lòng thử lại sau.";

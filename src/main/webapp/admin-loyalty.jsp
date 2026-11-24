@@ -47,8 +47,9 @@
         .rule-example { margin:13px 0 0; color:#78716c; font-size:10px; }
         .save-row { display:flex; justify-content:flex-end; margin-top:14px; }
         .save-btn { display:flex; align-items:center; gap:6px; padding:9px 16px; border:0; border-radius:11px; background:#a51225; color:#fff; font-size:10px; font-weight:800; }
-        .search-form { display:flex; gap:7px; }
-        .search-form .loyalty-input { flex:1; margin:0; font-family:ui-monospace,monospace; }
+        .search-form { display:flex; flex-wrap:wrap; gap:7px; }
+        .search-form .loyalty-input { flex:1; min-width:0; margin:0; font-family:ui-monospace,monospace; }
+        .search-form .invalid-feedback { flex-basis:100%; order:1; }
         .search-btn { padding:0 13px; border:0; border-radius:10px; background:#1c1917; color:#fff; font-size:10px; font-weight:800; }
         .customer-box { padding:13px; margin-top:12px; border:1px solid #e7e5e4; border-radius:11px; background:rgba(250,250,249,.7); }
         .customer-box h3 { margin:0; font-size:12px; font-weight:800; }
@@ -198,10 +199,11 @@
             <h2 class="section-title">Tra cứu &amp; điều chỉnh điểm</h2>
 
 
-            <form class="search-form" method="get" action="${ctx}/admin/loyalty" novalidate>
+            <form data-admin-form="loyalty-lookup" class="search-form" method="get" action="${ctx}/admin/loyalty" novalidate>
 
                 <%-- [TDSDT01]
-                     . Ô Số điện thoại gửi phone khi bấm Tra cứu. AdminLoyaltyController.doGet bỏ các dấu phân cách được hỗ
+                     . Ô Số điện thoại được admin-form-validation.js kiểm tra trước khi gửi phone khi bấm Tra cứu.
+                       AdminLoyaltyController.doGet kiểm tra lại: bỏ các dấu phân cách được hỗ
                        trợ rồi kiểm tra đủ 10 chữ số, bắt đầu bằng 0. Số đúng mới dùng để tìm khách; sai thì hiện
                        lookupError và không chọn nhầm khách mặc định.
                      ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDSDT02].
@@ -216,7 +218,7 @@
                 --%>
                 <button class="search-btn" type="submit">Tra cứu</button>
             </form>
-            <c:if test="${not empty lookupError}"><div class="alert alert-warning py-2 px-3 mt-2 mb-0 small"><c:out value="${lookupError}" /></div></c:if>
+            <c:if test="${not empty lookupError}"><div data-lookup-notice class="alert alert-warning py-2 px-3 mt-2 mb-0 small" role="alert"><c:out value="${lookupError}" /></div></c:if>
             <c:if test="${not empty activeCustomer}">
               <div class="customer-box">
 
@@ -368,6 +370,10 @@
         const label = type === 'add' ? 'cộng' : 'trừ';
         const raw = window.prompt('Nhập số điểm muốn ' + label + ':', '10');
         if (raw === null) return;
+        if (!raw.trim()) {
+            window.alert('Vui lòng nhập số điểm điều chỉnh.');
+            return;
+        }
         const points = Number(raw);
         if (!/^[0-9]+$/.test(raw.trim()) || raw.trim().length > 19
                 // [SUA12-08] Luyện sửa: Đổi điểm tối đa được nhập khi bấm Cộng/Trừ điểm.

@@ -84,6 +84,15 @@ class PasswordRecoveryServiceTest {
         service.verify(mock.session,delivered);
         assertEquals("reset_password",service.nextTab(mock.session));
     }
+    @Test void missingOtpIsRequiredAndDoesNotConsumeAttempts(){
+        start();
+        for (String value : new String[]{null, "", "   "}) {
+            assertEquals("Vui lòng nhập mã OTP.", assertThrows(IllegalArgumentException.class,
+                    () -> service.verify(mock.session, value)).getMessage());
+        }
+        service.verify(mock.session, delivered);
+        assertEquals("reset_password", service.nextTab(mock.session));
+    }
     @Test void expiredOtpReturnsToEmailEntryAndAllowsANewRequest(){
         start();now.addAndGet(PasswordRecoveryService.TTL);
         assertEquals("forgot",service.nextTab(mock.session));

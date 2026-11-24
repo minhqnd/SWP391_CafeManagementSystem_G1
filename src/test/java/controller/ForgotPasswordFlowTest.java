@@ -31,7 +31,7 @@ class ForgotPasswordFlowTest {
             ServletMocks mock=form();
             PasswordRecoveryService recovery=new PasswordRecoveryService(new UserDAO(){
                 @Override public User findActiveAccountByEmail(String email){
-                    if(databaseFailure)throw new RecoveryFailure(null,"Không tra cứu được dữ liệu tài khoản.");
+                    if(databaseFailure)throw new utils.AccountDataException(new Exception("private database details"));
                     return null;
                 }
             },(email,otp)->{fail("No resolved account must not send mail");return false;},()->1000000L);
@@ -39,6 +39,11 @@ class ForgotPasswordFlowTest {
             java.util.Map<?,?> feedback=(java.util.Map<?,?>)mock.sessionValues.get("accountFeedback");
             java.util.Map<?,?> errors=(java.util.Map<?,?>)feedback.get("errors");
             assertEquals(!databaseFailure,errors.containsKey("email"));assertEquals("/cafe/?tab=forgot",mock.redirect);
+            if (databaseFailure) {
+                assertTrue(mock.sessionValues.get("errorMsg").toString().contains("Chưa gửi OTP"));
+                assertFalse(mock.sessionValues.get("errorMsg").toString().contains("private"));
+                assertEquals("nguyen.nguyenquoc2004@gmail.com", ((java.util.Map<?,?>)feedback.get("values")).get("email"));
+            }
         }
     }
     @Test void smtpFailureDoesNotClaimTheRegisteredEmailIsInvalid()throws Exception{

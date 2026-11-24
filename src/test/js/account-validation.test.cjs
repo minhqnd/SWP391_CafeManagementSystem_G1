@@ -156,7 +156,9 @@ test('register and recovery reject mistyped Gmail domains; uppercase Gmail remai
             for (const [form, key] of [[register, 'register'], [forgot, 'forgot-password']]) {
                 await form.locator('[name=email]').fill(value);
                 await form.locator('button[type=submit]').click();
-                assert.match(await page.locator(`#account-${key}-email-error`).textContent(), /Sai định dạng email\./);
+                await page.waitForFunction(key => document.getElementById(`account-${key}-email-error`)?.textContent === 'Sai định dạng email.', key);
+                assert.match(await page.locator(`#account-${key}-email-error`).textContent(), /Sai định dạng email\./,
+                    `${key}: ${value}; current input=${await form.locator('[name=email]').inputValue()}`);
                 assert.equal(counts().registrations, 0);
             }
         }
@@ -164,5 +166,53 @@ test('register and recovery reject mistyped Gmail domains; uppercase Gmail remai
         await forgot.locator('button[type=submit]').click();
         await page.waitForURL('**/forgot-password');
         assert.equal(counts().registrations, 1);
+    });
+});
+
+test('login and current-password length errors match the server messages', async () => {
+    await fixture(async ({page, counts}) => {
+        const login = page.locator('form[action="/cafe/login"]');
+        const change = page.locator('#passwordForm');
+        await login.locator('[name=username]').fill('qa@gmail.com');
+        await change.locator('[name=newPassword]').fill('Secret123');
+        await change.locator('[name=confirmPassword]').fill('Secret123');
+        for (const [form, name, key, expected] of [
+            [login, 'password', 'login', 'Mật khẩu không được vượt quá 255 ký tự.'],
+            [change, 'oldPassword', 'profile-password', 'Mật khẩu hiện tại tối đa 255 ký tự.']
+        ]) {
+            await form.locator(`[name=${name}]`).evaluate(field => { field.value = 'x'.repeat(256); });
+            await form.locator('button[type=submit]').click();
+            assert.equal(await page.locator(`#account-${key}-${name}-error`).textContent(), expected);
+        }
+        assert.equal(counts().registrations, 0);
+    });
+});
+
+test('empty OTP and malformed OTP have different messages and never submit', async () => {
+    await fixture(async ({page, counts}) => {
+        const form = page.locator('form[action="/cafe/verify-otp"]');
+        for (const [value, expected] of [['', 'Vui lòng nhập mã OTP.'], ['   ', 'Vui lòng nhập mã OTP.'], ['12a456', 'Mã OTP phải gồm đúng 6 chữ số.']]) {
+            await form.locator('[name=otp]').fill(value);
+            await form.locator('button[type=submit]:not([form])').click();
+            assert.equal(await page.locator('#account-verify-otp-otp-error').textContent(), expected);
+        }
+        assert.equal(counts().registrations, 0);
+    });
+});
+
+test('changing password clears an obsolete confirmation error returned from the server', async () => {
+    await fixture(async ({page, register}) => {
+        await page.evaluate(() => {
+            const form = document.querySelector('form[action="/cafe/register"]');
+            const api = form.accountFeedback;
+            form.elements.password.value = 'OldSecret123';
+            form.elements.confirm_password.value = 'NewSecret123';
+            api.serverErrors.set('confirm_password', 'Mật khẩu xác nhận không khớp.');
+            api.markSubmitted(); api.refresh();
+        });
+        assert.equal(await register.locator('[name=confirm_password]').getAttribute('aria-invalid'), 'true');
+        await register.locator('[name=password]').fill('NewSecret123');
+        assert.equal(await register.locator('[name=confirm_password]').getAttribute('aria-invalid'), 'false');
+        assert.equal(await page.locator('#account-register-confirm_password-error').textContent(), '');
     });
 });

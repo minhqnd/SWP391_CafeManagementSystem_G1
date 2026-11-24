@@ -13,6 +13,7 @@ class Bf10UserDAOTest {
     private final List<String> writes=new ArrayList<>();
     private String stored=PasswordHasher.hash("oldSecret123");
     private boolean duplicate=false;private int accountRows=1,commits,rollbacks;
+    private SQLException writeFailure;
     private UserDAO dao(){return new UserDAO(){
         @Override protected Connection getConnection(){return ServletMocks.proxy(Connection.class,(p,m,a)->{
             if(m.getName().equals("commit")){commits++;return null;}
@@ -21,7 +22,7 @@ class Bf10UserDAOTest {
             String sql=(String)a[0];Map<Integer,Object> args=new HashMap<>();bindings.put(sql,args);
             return ServletMocks.proxy(PreparedStatement.class,(sp,sm,sa)->{
                 if(sm.getName().startsWith("set") && sa!=null && sa.length>=2){args.put((Integer)sa[0],sa[1]);return null;}
-                if(sm.getName().equals("executeUpdate")){writes.add(sql);return 1;}
+                if(sm.getName().equals("executeUpdate")){if(writeFailure!=null)throw writeFailure;writes.add(sql);return 1;}
                 if(sm.getName().equals("executeQuery")){
                     int[] cursor={0};int rows=sql.contains("id<>?")?(duplicate?1:0):accountRows;
                     return ServletMocks.proxy(ResultSet.class,(rp,rm,ra)->switch(rm.getName()){
@@ -77,6 +78,19 @@ class Bf10UserDAOTest {
         }finally{logger.removeHandler(capture);logger.setUseParentHandlers(parents);}
     }
     @Test void duplicateProfileEmailDoesNotWrite(){duplicate=true;assertNotEquals("success",dao().updateUserProfile(7,"QA","0987111222","other@example.com","",""));assertTrue(writes.isEmpty());}
+    @Test void profileOnlyReportsDuplicateContactForAnActualDuplicateKey(){
+        java.util.logging.Logger logger=java.util.logging.Logger.getLogger(UserDAO.class.getName());
+        boolean parents=logger.getUseParentHandlers();logger.setUseParentHandlers(false);
+        try {
+            writeFailure=new SQLIntegrityConstraintViolationException("private SQL", "23000", 1062);
+            assertTrue(dao().updateUserProfile(7,"QA","0987111222","qa@gmail.com","","").contains("Thông tin liên hệ"));
+            for(int code:new int[]{1048,1452}) {
+                writeFailure=new SQLIntegrityConstraintViolationException("private SQL", "23000", code);
+                assertEquals("Không thể lưu hồ sơ. Vui lòng thử lại sau.",dao().updateUserProfile(7,"QA","0987111222","qa@gmail.com","",""));
+            }
+            assertTrue(writes.isEmpty());
+        } finally {logger.setUseParentHandlers(parents);}
+    }
     @Test void passwordChangeVerifiesAndLocksCurrentUserBeforeWriting(){
         assertTrue(dao().changePasswordById(7,"oldSecret123","newSecret123"));assertEquals(1,commits);
         assertTrue(bindings.keySet().stream().anyMatch(s->s.contains("FOR UPDATE")));

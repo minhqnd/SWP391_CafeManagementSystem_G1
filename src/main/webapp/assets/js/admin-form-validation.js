@@ -47,8 +47,8 @@
     //   tra phù hợp. Dữ liệu vẫn được kiểm tra lại ở controller khi form gửi đi.
     document.querySelectorAll('form[data-admin-form]').forEach(form => {
         const kind = form.dataset.adminForm;
-        const notices = [...document.querySelectorAll('[data-form-notice]')];
-        let submitted = notices.some(notice => notice.classList.contains('alert-danger'));
+        const notices = [...document.querySelectorAll(kind === 'loyalty-lookup' ? '[data-lookup-notice]' : '[data-form-notice]')];
+        let submitted = notices.some(notice => notice.classList.contains('alert-danger')) || Boolean(form.querySelector('.is-invalid'));
         let serial = 0;
         const field = name => form.elements.namedItem(name);
         // . Sau khi kiểm tra, em gọi mark bằng ô nhập và lời báo để đặt viền đỏ, hiện lỗi ngay dưới ô.
@@ -91,10 +91,11 @@
                 if (kind === 'category' && !['ACTIVE', 'INACTIVE'].includes(field('status')?.value))
                     check(field('status'), 'Vui lòng chọn trạng thái Hoạt động hoặc Tạm ẩn.');
                 const image = field('imageFile')?.files?.[0];
+                if (image?.size === 0) check(field('imageFile'), 'Tệp ảnh đã chọn trống. Vui lòng chọn ảnh khác.');
                 // [SUA11-13] Luyện sửa: Đổi giới hạn dung lượng ảnh kiểm tra trước khi gửi.
                 // . Đoạn này dùng chung danh mục và sản phẩm; giữ khớp controller của từng trang cùng lời báo
                 //   và lời nhắc JSP.
-                if (image?.size > 5 * 1024 * 1024) check(field('imageFile'), 'Ảnh ' + (kind === 'category' ? 'danh mục' : 'sản phẩm') + ' không được lớn hơn 5 MB.');
+                else if (image?.size > 5 * 1024 * 1024) check(field('imageFile'), 'Ảnh ' + (kind === 'category' ? 'danh mục' : 'sản phẩm') + ' không được lớn hơn 5 MB.');
                 else if (image && !['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(image.type))
                     check(field('imageFile'), 'Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WebP.');
             }
@@ -119,12 +120,15 @@
                         const amount = row.querySelector('[name="' + amountField + '"]');
                         if (!name.value.trim() && !amount.value.trim()) return;
                         count++;
-                        check(name, requiredName(name.value, 'Tên ' + type, maxName));
-                        if (/[\\"'{}<>`]/.test(name.value)) check(name, 'Tên ' + type + ' chứa ký tự không được hỗ trợ.');
+                        check(name, requiredName(name.value, 'Tên ' + type + ' dòng ' + (index + 1), maxName));
+                        if (/[\\"'{}<>`]/.test(name.value)) check(name, 'Tên ' + type + ' dòng ' + (index + 1) + ' chứa ký tự không được hỗ trợ.');
                         const normalized = name.value.trim().toLowerCase();
-                        if (normalized && names.has(normalized)) check(name, 'Không được trùng tên ' + type + '.');
+                        if (normalized && names.has(normalized)) check(name, 'Không được trùng tên ' + type + ' (dòng ' + (index + 1) + ').');
                         names.add(normalized);
-                        const amountError = money(amount.value, amountLabel + ' dòng ' + (index + 1));
+                        const amountError = !amount.value.trim()
+                            ? 'Vui lòng nhập ' + amountLabel.toLocaleLowerCase('vi') + ' dòng ' + (index + 1)
+                                + (type === 'size' ? '; nhập 0 nếu không phụ thu.' : '; nhập 0 nếu miễn phí.')
+                            : money(amount.value, amountLabel + ' dòng ' + (index + 1));
                         check(amount, amountError);
                         if (!amountError && Number(amount.value) === 0) base = true;
                     });
@@ -159,7 +163,7 @@
                     if (!ingredient.value) check(ingredient, label + 'vui lòng chọn nguyên liệu.');
                     else if (seen.has(ingredient.value)) check(ingredient, label + 'nguyên liệu bị chọn trùng với dòng trước. Mỗi nguyên liệu chỉ chọn một lần.');
                     seen.add(ingredient.value);
-                    check(amount, quantity(amount.value, 'Định lượng dòng ' + (index + 1)));
+                    check(amount, !amount.value.trim() ? label + 'vui lòng nhập định lượng.' : quantity(amount.value, 'Định lượng dòng ' + (index + 1)));
                 });
                 if (!count) check(document.getElementById('addIngredient'), 'Công thức phải có ít nhất một nguyên liệu.');
                 // [SUA11-12] Luyện sửa: Đổi số nguyên liệu tối đa kiểm tra ngay trên form.
@@ -183,6 +187,12 @@
                     ['pointsStep', 'Số điểm cho mỗi lần đổi', 1, 1000000],
                     ['pointsStepValue', 'Số tiền giảm cho mỗi lần đổi', 0, 100000000]]
                     .forEach(([name, label, min, max]) => check(field(name), wholeNumber(field(name)?.value, label, min, max)));
+            }
+            if (kind === 'loyalty-lookup') {
+                const raw = field('phone')?.value || '';
+                const phone = raw.trim().replace(/[\s.()-]/g, '');
+                check(field('phone'), raw.length > 64 ? 'Số điện thoại sai định dạng.'
+                    : !phone ? 'Vui lòng nhập số điện thoại.' : !/^0[0-9]{9}$/.test(phone) ? 'Số điện thoại sai định dạng.' : '');
             }
             form.querySelectorAll('input:not([type="hidden"]),select,textarea,button').forEach(input => mark(input, errors.get(input) || ''));
             return errors;

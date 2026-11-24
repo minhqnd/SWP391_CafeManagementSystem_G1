@@ -301,6 +301,10 @@ public class AdminProductsController extends HttpServlet {
         //   WebP tối đa 5 MB; sai thì báo lỗi để người dùng sửa form.
         // ... Trong AdminProductsController.java, tiếp tục save sau phần đọc imageData; khi thông tin món cũng
         //   đúng, dữ liệu ảnh được truyền vào productDAO.saveProduct trong cùng lần lưu.
+        if (imagePart != null && imagePart.getSize() == 0
+                && trimToNull(imagePart.getSubmittedFileName()) != null) {
+            throw new IllegalArgumentException("Tệp ảnh đã chọn trống. Vui lòng chọn ảnh khác.");
+        }
         if (imagePart != null && imagePart.getSize() > 0) {
             if (imagePart.getSize() > MAX_IMAGE_SIZE) {
                 throw new IllegalArgumentException("Ảnh sản phẩm không được lớn hơn 5 MB.");
@@ -416,13 +420,13 @@ public class AdminProductsController extends HttpServlet {
                 String name = trimToNull(names[i]);
                 String rawDelta = deltas[i] == null ? "" : deltas[i].trim();
                 if (name == null) {
-                    if (!rawDelta.isEmpty()) throw new IllegalArgumentException("Dòng size có phụ thu nhưng chưa có tên size.");
+                    if (!rawDelta.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập tên size dòng " + (i + 1) + ".");
                     continue;
                 }
-                if (rawDelta.isEmpty()) throw new IllegalArgumentException("Mỗi size phải có phụ thu; nhập 0 nếu không phụ thu.");
-                if (name.length() > 30) throw new IllegalArgumentException("Tên size tối đa 30 ký tự.");
-                validateVariantName(name, "Tên size");
-                if (!sizeNames.add(name.toLowerCase(Locale.ROOT))) throw new IllegalArgumentException("Không được trùng tên size.");
+                if (rawDelta.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập phụ thu size dòng " + (i + 1) + "; nhập 0 nếu không phụ thu.");
+                if (name.length() > 30) throw new IllegalArgumentException("Tên size dòng " + (i + 1) + " tối đa 30 ký tự.");
+                validateVariantName(name, "Tên size dòng " + (i + 1));
+                if (!sizeNames.add(name.toLowerCase(Locale.ROOT))) throw new IllegalArgumentException("Không được trùng tên size (dòng " + (i + 1) + ").");
                 BigDecimal delta = parseNonNegative(rawDelta, "Phụ thu size dòng " + (i + 1));
                 if (delta.signum() == 0) hasBaseSize = true;
                 sizeEntries.add(jsonString(name) + ":" + delta.stripTrailingZeros().toPlainString());
@@ -444,13 +448,13 @@ public class AdminProductsController extends HttpServlet {
                 String name = trimToNull(toppingNames[i]);
                 String rawPrice = toppingPrices[i] == null ? "" : toppingPrices[i].trim();
                 if (name == null) {
-                    if (!rawPrice.isEmpty()) throw new IllegalArgumentException("Dòng topping có giá nhưng chưa có tên topping.");
+                    if (!rawPrice.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập tên topping dòng " + (i + 1) + ".");
                     continue;
                 }
-                if (rawPrice.isEmpty()) throw new IllegalArgumentException("Mỗi topping phải có giá; nhập 0 nếu miễn phí.");
-                if (name.length() > 50) throw new IllegalArgumentException("Tên topping tối đa 50 ký tự.");
-                validateVariantName(name, "Tên topping");
-                if (!toppingNamesSeen.add(name.toLowerCase(Locale.ROOT))) throw new IllegalArgumentException("Không được trùng tên topping.");
+                if (rawPrice.isEmpty()) throw new IllegalArgumentException("Vui lòng nhập giá topping dòng " + (i + 1) + "; nhập 0 nếu miễn phí.");
+                if (name.length() > 50) throw new IllegalArgumentException("Tên topping dòng " + (i + 1) + " tối đa 50 ký tự.");
+                validateVariantName(name, "Tên topping dòng " + (i + 1));
+                if (!toppingNamesSeen.add(name.toLowerCase(Locale.ROOT))) throw new IllegalArgumentException("Không được trùng tên topping (dòng " + (i + 1) + ").");
                 BigDecimal price = parseNonNegative(rawPrice, "Giá topping dòng " + (i + 1));
                 toppingEntries.add("{\"name\":" + jsonString(name) + ",\"price\":" + price.stripTrailingZeros().toPlainString() + "}");
             }

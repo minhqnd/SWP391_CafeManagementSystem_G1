@@ -163,7 +163,7 @@ WHERE phone=@phone AND id<>@user_id
 LIMIT 1;
 
 -- [SQL10-15] Đọc riêng số điểm của tài khoản khi cần làm mới thông tin đăng nhập.
--- Source: src/main/java/dao/UserDAO.java:403 | Hàm: getTotalPoints
+-- Source: src/main/java/dao/UserDAO.java:407 | Hàm: getTotalPoints
 -- Thứ tự dấu ?: 1=mã người dùng.
 -- Trang hồ sơ còn nhận total_points từ getActiveUserById; không phải mọi lần mở hồ sơ đều gọi hàm này.
 SELECT total_points
@@ -171,7 +171,7 @@ FROM users
 WHERE id = @user_id;
 
 -- [SQL10-16] Tab Lịch sử tích điểm trong hồ sơ: đọc giao dịch của người đang đăng nhập.
--- Source: src/main/java/dao/UserDAO.java:433 | Hàm: getLoyaltyHistoryByUserId
+-- Source: src/main/java/dao/UserDAO.java:437 | Hàm: getLoyaltyHistoryByUserId
 -- Thứ tự dấu ?: 1=mã người dùng.
 -- Sắp xếp theo thời gian mới trước; truy vấn này không tự tính số dư sau mỗi giao dịch.
 SELECT id, customer_id, order_id, points_change, transaction_type, created_at
@@ -180,7 +180,7 @@ WHERE customer_id = @user_id
 ORDER BY created_at DESC;
 
 -- [SQL10-17] Nút Xác minh OTP: Java đối chiếu mã và trạng thái khôi phục giữ trong phiên đăng nhập.
--- Source: src/main/java/service/PasswordRecoveryService.java:129 | Hàm: verify
+-- Source: src/main/java/service/PasswordRecoveryService.java:136 | Hàm: verify
 -- Không có câu SELECT OTP trong MySQL; hạn dùng và số lần nhập sai cũng được kiểm tra trong dịch vụ này.
 -- Đọc đoạn tính ngay dưới mã trong source. Không có câu SQL riêng cho thao tác/con số này.
 

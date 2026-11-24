@@ -56,7 +56,12 @@ public final class PasswordRecoveryService {
             if(error!=null)throw new utils.RecoveryFailure("email",error);
             long now=clock.getAsLong();reserve(email,source,now);session.setAttribute("lastOtpSentTime",now);
 
-            User user=users.findActiveAccountByEmail(email);
+            User user;
+            try {
+                user=users.findActiveAccountByEmail(email);
+            } catch (utils.AccountDataException e) {
+                throw new utils.RecoveryFailure(null,"Không kiểm tra được tài khoản lúc này. Chưa gửi OTP. Vui lòng thử lại sau 60 giây.");
+            }
             if(user==null)throw new utils.RecoveryFailure("email","Không tìm thấy tài khoản sử dụng email này. Vui lòng nhập đúng email đã liên kết với tài khoản.");
 
             String code=String.format("%06d",RANDOM.nextInt(1000000));
@@ -117,7 +122,9 @@ public final class PasswordRecoveryService {
         synchronized(session){
             State state=state(session);long now=clock.getAsLong();
             if(state.otp==null || state.verifiedAt!=null || now-state.sentAt>=TTL){clear(session);throw expired();}
-            if (input == null || !input.matches("[0-9]{6}"))
+            if (input == null || input.isBlank())
+                throw new utils.RecoveryFailure("otp", "Vui lòng nhập mã OTP.");
+            if (!input.matches("[0-9]{6}"))
                 throw new utils.RecoveryFailure("otp", "Mã OTP phải gồm đúng 6 chữ số.");
             // [OTN03]
             // . Ở verify (xác minh mã OTP) trong PasswordRecoveryService.java, em so sáu chữ số vừa nhập với OTP

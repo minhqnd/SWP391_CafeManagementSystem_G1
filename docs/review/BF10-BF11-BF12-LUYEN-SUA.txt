@@ -18,7 +18,7 @@ Tìm dòng: public static final long TTL =
 - TTL cũng giới hạn thời gian đặt lại mật khẩu sau xác minh; cập nhật lời nhắc 5 phút trong auth_modal.jsp và các comment mô tả thời hạn.
 
 [SUA10-02] Chỉ cho nhập sai OTP 3 lần thay vì 5 lần.
-Vị trí: src/main/java/service/PasswordRecoveryService.java:133
+Vị trí: src/main/java/service/PasswordRecoveryService.java:140
 Tìm dòng: if(!match){state.failures++;
 - Sửa điều kiện state.failures>=5, phép tính 5-state.failures và lời báo số lần trong cùng nhánh.
 - Thử sai liên tiếp đến giới hạn mới để kiểm tra mã bị hủy và phải yêu cầu gửi lại.
@@ -42,7 +42,7 @@ Tìm dòng: if (email == null || !email.matches(
 - Vẫn cần kiểm tra định dạng và email trùng; thay đuôi được nhận không thay thế việc tìm trùng trong users.
 
 [SUA10-06] Đổi đuôi email được nhận ngay trên form.
-Vị trí: src/main/webapp/assets/js/account-validation.js:198
+Vị trí: src/main/webapp/assets/js/account-validation.js:200
 Tìm dòng: if (!/^[A-Za-z0-9_+%-]+
 - Quy tắc ở đây phải giống AccountValidation.emailError; thử cả đăng ký, hồ sơ và quên mật khẩu sau khi thay đổi.
 
@@ -68,7 +68,7 @@ Tìm dòng: List<Product> productsList = productDAO.getBestSellingProducts(4);
 - Danh sách này được dùng cho banner và sản phẩm yêu thích; kiểm tra cả hai vùng và trường hợp database có ít món hơn giới hạn.
 
 [SUA11-02] Nhập giá sản phẩm 10000đ, khi lưu cộng thêm 20000đ.
-Vị trí: src/main/java/controller/AdminProductsController.java:353
+Vị trí: src/main/java/controller/AdminProductsController.java:357
 Tìm dòng: double basePrice = MenuValidation.money(
 - Đây là giá cơ bản được gán vào Product và lưu database; sửa ở đây sẽ ảnh hưởng các nơi đọc giá món.
 - Nếu cộng thêm tiền thì phải kiểm tra cả giá sau cộng. Yêu cầu chỉ tăng giá trong giỏ phải xử lý ở CartService, không đổi giá lưu ở đây.
@@ -122,18 +122,18 @@ Tìm dòng: const lineCost = amount * unitCost;
 - Sửa tương ứng phần tính trong AdminRecipeController; số xem trước trên trình duyệt chưa phải dữ liệu đã lưu.
 
 [SUA11-11] Đổi giới hạn số dòng size/topping kiểm tra trước khi gửi form.
-Vị trí: src/main/webapp/assets/js/admin-form-validation.js:131
+Vị trí: src/main/webapp/assets/js/admin-form-validation.js:135
 Tìm dòng: if (rows.length > 50) check(
 - Số 50 đang dùng chung cả hai loại; đổi cùng MAX_SIZES/MAX_TOPPINGS trong AdminProductsController.
 - Sửa cả vị trí rows[50] dùng gắn lỗi và lời báo; nếu hai loại có giới hạn khác nhau thì chọn theo type.
 
 [SUA11-12] Đổi số nguyên liệu tối đa kiểm tra ngay trên form.
-Vị trí: src/main/webapp/assets/js/admin-form-validation.js:165
+Vị trí: src/main/webapp/assets/js/admin-form-validation.js:169
 Tìm dòng: if (rows.length > 100) check(
 - Giới hạn 100 và lời báo phải giống MAX_RECIPE_LINES trong AdminRecipeController; thử trường hợp vừa đủ và vượt một dòng.
 
 [SUA11-13] Đổi giới hạn dung lượng ảnh kiểm tra trước khi gửi.
-Vị trí: src/main/webapp/assets/js/admin-form-validation.js:94
+Vị trí: src/main/webapp/assets/js/admin-form-validation.js:95
 Tìm dòng: if (image?.size > 5 * 1024 * 1024)
 - Đoạn này dùng chung danh mục và sản phẩm; giữ khớp controller của từng trang cùng lời báo và lời nhắc JSP.
 
@@ -190,11 +190,11 @@ Tìm dòng: private int pointsStep = 10;
 - Quy tắc hiện tại thay qua Lưu quy tắc; sửa mặc định riêng có thể không làm con số trên web thay đổi.
 
 [SUA12-08] Đổi điểm tối đa được nhập khi bấm Cộng/Trừ điểm.
-Vị trí: src/main/webapp/admin-loyalty.jsp:373
+Vị trí: src/main/webapp/admin-loyalty.jsp:379
 Tìm dòng: || !Number.isSafeInteger(points) || points <= 0 || points > 1000000)
 - Số 1000000 ở đây phải khớp giới hạn điều chỉnh trong controller và LoyaltyTransactionDAO; đây là kiểm tra trước khi gửi.
 
 [SUA12-09] Đổi khoảng được nhập trong ba ô quy tắc.
-Vị trí: src/main/webapp/assets/js/admin-form-validation.js:179
+Vị trí: src/main/webapp/assets/js/admin-form-validation.js:183
 Tìm dòng: [['pointsEarnUnit', 'Số tiền chi tiêu để nhận 1 điểm', 1, 100000000],
 - Đồng bộ từng min/max với AdminLoyaltyController.updateRules và LoyaltyValidation; tiền giảm hiện được phép bằng 0.

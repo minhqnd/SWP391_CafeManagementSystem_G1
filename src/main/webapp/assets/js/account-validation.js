@@ -164,6 +164,8 @@
                 // ... Đọc tiếp tại LoginController.java, tìm [DNTK03].
                 if (name === 'username' && !value) return 'Vui lòng nhập email hoặc số điện thoại.';
                 if (name === 'username' && value.length > 150) return 'Email hoặc số điện thoại tối đa 150 ký tự.';
+                if (name === 'password' && key === 'login' && raw.length > 255) return 'Mật khẩu không được vượt quá 255 ký tự.';
+                if (name === 'oldPassword' && raw.length > 255) return 'Mật khẩu hiện tại tối đa 255 ký tự.';
 
                 // [DKHT02]
                 // . Trong validate (kiểm tra giá trị của một ô nhập) của account-validation.js, em nhận fullname hoặc
@@ -227,6 +229,7 @@
                 //   Nếu đúng, form tới VerifyOtpController.doPost để gọi PasswordRecoveryService.verify (xác minh mã
                 //   OTP) kiểm tra mã thật đã gửi cho tài khoản này.
                 // ... Đọc tiếp tại PasswordRecoveryService.java, tìm [OTN03].
+                if (name === 'otp' && !value) return 'Vui lòng nhập mã OTP.';
                 if (name === 'otp' && !/^[0-9]{6}$/.test(raw)) return 'Mã OTP phải gồm đúng 6 chữ số.';
 
                 // [HSDC02]
@@ -293,6 +296,10 @@
 
                 const changed = () => {
                     serverErrors.delete(field.name || field.id);
+                    if (field.name === 'password' || field.name === 'newPassword') {
+                        serverErrors.delete('confirm_password');
+                        serverErrors.delete('confirmPassword');
+                    }
                     if (['birthDay', 'birthMonth', 'birthYear'].includes(field.name))
                         ['birthDay', 'birthMonth', 'birthYear'].forEach(name => serverErrors.delete(name));
                     if (field.dataset.feedbackRestore !== 'true') {

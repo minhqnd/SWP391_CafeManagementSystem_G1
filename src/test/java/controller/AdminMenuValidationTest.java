@@ -161,6 +161,29 @@ class AdminMenuValidationTest {
         assertTrue(error("product").contains("Nội dung tệp"));
         assertEquals(0, productSaves);
     }
+    @Test void selectedEmptyImageIsRejectedForBothFormsAndDraftsAreKept() throws Exception {
+        imagePart = image(0, "image/png", new byte[0]);
+        productPost(); categoryPost();
+        for (String prefix : List.of("product", "category")) {
+            assertEquals("Tệp ảnh đã chọn trống. Vui lòng chọn ảnh khác.", error(prefix));
+            assertNotNull(mock.sessionValues.get(prefix + "Draft"));
+            assertNull(mock.sessionValues.get(prefix + "Message"));
+        }
+        assertEquals(0, productSaves); assertEquals(0, categorySaves);
+    }
+
+    @Test void missingVariantFieldsIdentifyTheExactRowAndWhatToEnter() throws Exception {
+        arrays.put("sizeName", new String[]{"M", ""}); arrays.put("sizeDelta", new String[]{"0", "1"});
+        productPost(); assertEquals("Vui lòng nhập tên size dòng 2.", error("product"));
+        arrays.put("sizeName", new String[]{"M", "L"}); arrays.put("sizeDelta", new String[]{"0", ""});
+        productPost(); assertEquals("Vui lòng nhập phụ thu size dòng 2; nhập 0 nếu không phụ thu.", error("product"));
+        arrays.put("sizeName", new String[]{"M"}); arrays.put("sizeDelta", new String[]{"0"});
+        arrays.put("toppingName", new String[]{"Trân châu", ""}); arrays.put("toppingPrice", new String[]{"0", "1"});
+        productPost(); assertEquals("Vui lòng nhập tên topping dòng 2.", error("product"));
+        arrays.put("toppingName", new String[]{"Trân châu", "Thạch"}); arrays.put("toppingPrice", new String[]{"0", ""});
+        productPost(); assertEquals("Vui lòng nhập giá topping dòng 2; nhập 0 nếu miễn phí.", error("product"));
+        assertEquals(0, productSaves);
+    }
 
     private Part image(long size, String type, byte[] bytes) {
         return ServletMocks.proxy(Part.class, (p,m,a) -> switch (m.getName()) {

@@ -211,6 +211,10 @@ public class AdminCategoriesController extends HttpServlet {
         //   JPG, PNG, GIF hoặc WebP tối đa 5 MB; sai thì báo lỗi và dừng lưu.
         // .. Trường hợp chưa đọc được cả form đã được AdminFormFeedback.readMultipart xử lý trước khi vào save.
         // ... Nếu cần xem cách nhận biểu mẫu trước khi vào save, đọc AdminFormFeedback.java, tìm [DMAN04].
+        if (imagePart != null && imagePart.getSize() == 0
+                && trimToNull(imagePart.getSubmittedFileName()) != null) {
+            throw new IllegalArgumentException("Tệp ảnh đã chọn trống. Vui lòng chọn ảnh khác.");
+        }
         if (imagePart != null && imagePart.getSize() > 0) {
             if (imagePart.getSize() > MAX_IMAGE_SIZE) {
                 throw new IllegalArgumentException("Ảnh danh mục không được lớn hơn 5 MB.");
