@@ -28,9 +28,6 @@ public class ShopSettings implements Serializable {
     private double freeshipThreshold = 150000;  // tiền hàng tối thiểu để miễn phí giao hàng (0 = mọi đơn)
     private double deliveryFee = 25000;         // phí giao cố định cho mọi đơn giao tận nơi (chưa đạt freeship)
     private int deliveryMinutes = 30;           // thời gian giao dự kiến kể từ khi thanh toán
-    // [SUA12-07] Luyện sửa: Đổi mốc mặc định từ 10 điểm sang 20 điểm.
-    // . Giá trị ở đây là mặc định; getSettingsStrict đọc shop_settings và ghi đè nếu khóa đã có.
-    // . Quy tắc hiện tại thay qua Lưu quy tắc; sửa mặc định riêng có thể không làm con số trên web thay đổi.
     private int pointsStep = 10;                // mốc điểm: khách dùng 10, 20, 30... điểm
     private double pointsStepValue = 2000;      // số tiền giảm cho mỗi mốc điểm
     private double pointsEarnUnit = 10000;      // số tiền hàng sau giảm để nhận 1 điểm

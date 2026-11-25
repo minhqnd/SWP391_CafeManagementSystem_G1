@@ -168,7 +168,7 @@ class AdminLoyaltyControllerTest {
     @Test void invalidPhoneNeverQueriesCustomerOrSelectsDefaultCustomer() throws Exception {
         for(String raw:List.of("", "01111111111", "1234567890", "09123", "abc", "0".repeat(100))) {
             params.put("phone",raw);controller.doGet(request(),response());
-            assertEquals(raw.isEmpty() ? "Vui lòng nhập số điện thoại." : "Số điện thoại sai định dạng.",attributes.get("lookupError"));
+            assertEquals(raw.isEmpty() ? "Vui lòng nhập số điện thoại." : raw.length() > 64 ? "Số điện thoại tối đa 64 ký tự." : "Số điện thoại sai định dạng.",attributes.get("lookupError"));
         }
         assertEquals(0,phoneLookups);assertEquals(0,defaultLookups);
         params.put("phone","(096) 591-6512");controller.doGet(request(),response());assertEquals(1,phoneLookups);
@@ -181,6 +181,28 @@ class AdminLoyaltyControllerTest {
     }
 
     private void renew(){String token=UUID.randomUUID().toString();sessionValues.put("loyaltyOperationToken",token);params.put("operationToken",token);}
+    @Test void formattedPhoneAt64CharactersWorksBut65ReportsLengthInsteadOfWrongFormat() throws Exception {
+        for (int length : new int[]{63,64,65}) {
+            params.put("phone", "0965999999" + " ".repeat(length - 10));
+            int before = phoneLookups; controller.doGet(request(), response());
+            assertEquals(before + (length <= 64 ? 1 : 0), phoneLookups);
+            assertEquals(length > 64 ? "Số điện thoại tối đa 64 ký tự." : "Không tìm thấy khách hàng có số điện thoại 0965999999.", attributes.get("lookupError"));
+        }
+    }
+
+    @Test void adjustmentErrorsDescribeEmptyFractionAndOutOfRangeWithoutSaving() throws Exception {
+        String[][] cases = {{"", "Vui lòng nhập số điểm điều chỉnh."}, {"\u00a0", "Vui lòng nhập số điểm điều chỉnh."},
+                {"1.5", "Số điểm điều chỉnh phải là số nguyên từ 1 đến 1000000."},
+                {"-1", "Số điểm điều chỉnh phải là số nguyên từ 1 đến 1000000."},
+                {"0", "Số điểm điều chỉnh phải từ 1 đến 1000000."}, {"1000001", "Số điểm điều chỉnh phải từ 1 đến 1000000."},
+                {"9223372036854775808", "Số điểm điều chỉnh phải từ 1 đến 1000000."}};
+        for (String[] entry : cases) {
+            renew(); params.put("points", entry[0]); post();
+            assertEquals(entry[1], sessionValues.get("loyaltyError"));
+            assertNull(sessionValues.get("loyaltyMessage"));
+        }
+        assertEquals(0, adjustments.get());
+    }
     private void post() throws Exception { controller.doPost(request(),response()); }
     private HttpServletRequest request(){return proxy(HttpServletRequest.class,(p,m,a)->{
         switch(m.getName()){

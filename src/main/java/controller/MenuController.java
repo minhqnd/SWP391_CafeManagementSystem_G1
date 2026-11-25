@@ -23,12 +23,10 @@ public class MenuController extends HttpServlet {
 
     @Override
     // [MNM02]
-    // . Khi mở Menu, doGet trong MenuController.java gọi CategoryDAO.getAllActiveCategoriesWithCount (đọc
-    //   danh mục hoạt động kèm số món đang bán) để đọc danh mục hoạt động và ProductDAO.filterProducts (lọc
-    //   món còn bán theo danh mục và từ khóa) để lấy món theo danh mục, từ khóa. Em đưa kết quả về menu.jsp
-    //   để hiện những món khách được chọn mua.
-    // ... Trong MenuController.java, tiếp tục doGet tới productDAO.filterProducts rồi forward menu.jsp; kết thúc
-    //     mở Menu khi danh mục và các thẻ món đã hiện.
+    // . Hàm doGet trong MenuController nhận từ khóa và danh mục đang chọn. Em gọi CategoryDAO lấy nhóm hoạt
+    //   động, ProductDAO lọc món đang bán rồi đưa danh sách và điều kiện tìm về menu.jsp để hiển thị.
+    //
+    // Tra tiếp: ProductDAO.java / MNM03.
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -54,13 +52,6 @@ public class MenuController extends HttpServlet {
             }
         }
 
-        // [TCTK02]
-        // . Từ ô tìm trên header.jsp hoặc menu.jsp, doGet nhận keyword rồi em bỏ khoảng trắng hai đầu.
-        //   Trống thì không giới hạn theo từ khóa; có nội dung thì truyền keyword cùng categoryId cho
-        //   ProductDAO.filterProducts trong ProductDAO.java để tìm món còn bán trong danh mục hoạt động.
-        //   Danh sách trả về được đặt vào products và chuyển sang menu.jsp để hiện kết quả vừa tìm.
-        // ... Trong MenuController.java, đọc tiếp lời gọi productDAO.filterProducts ngay bên dưới rồi phần đặt
-        //     products; kết thúc tìm kiếm khi menu.jsp hiện danh sách theo từ khóa vừa nhận.
         String keyword = null;
         if (keywordParam != null && !keywordParam.trim().isEmpty()) {
             keyword = keywordParam.trim();
@@ -79,14 +70,11 @@ public class MenuController extends HttpServlet {
     }
 
     // [MNCT03]
-    // . Từ doGet với action=detail, em gọi handleProductDetailApi (đọc và trả thông tin món cho hộp lựa
-    //   chọn) ngay trong MenuController.java để nhận id và gọi ProductDAO.getAvailableProductById (đọc món
-    //   còn bán theo mã) đọc món còn bán. Em trả thông tin cùng cấu hình size/topping cho
-    //   openProductDetailModal (đọc thông tin rồi mở hộp lựa chọn món); mã sai, món không còn bán hoặc đọc
-    //   lỗi thì trả lỗi để trang báo không tải được món, không mở hộp với dữ liệu sản phẩm không hợp lệ.
-    // ... Quay lại product_detail_modal.jsp, trong openProductDetailModal sau khi nhận dữ liệu từ
-    //     /menu?action=detail; dựng lựa chọn rồi mở hộp món, hoặc hiện thông báo không tải được để kết thúc lần
-    //     mở.
+    // . Hàm handleProductDetailApi trong MenuController nhận mã món và gọi getAvailableProductById của
+    //   ProductDAO để đọc sản phẩm đang bán. Thông tin đọc được được trả cho openProductDetailModal để điền
+    //   đúng món vào hộp chi tiết.
+    //
+    // Tra tiếp: ProductDAO.java / MNCT04.
     private void handleProductDetailApi(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 

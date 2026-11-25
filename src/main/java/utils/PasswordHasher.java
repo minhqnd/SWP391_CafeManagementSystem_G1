@@ -8,29 +8,26 @@ import java.util.Base64;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+// [TKMK01]
+// . Em dùng PasswordHasher cho cả tạo, đổi và kiểm tra mật khẩu để các chức năng áp dụng cùng một cách. Hàm
+//   hash chuẩn bị giá trị để lưu; hàm verify đối chiếu nội dung vừa nhập với dữ liệu đang có.
+//
+// Tra cứu: Trở về ngay sau hash hoặc verify tại UserDAO.java / DKL03, UserDAO.java / DNL03, UserDAO.java /
+//          OTDM04 hoặc UserDAO.java / MKL03. Phần này hỗ trợ mật khẩu, không tự ghi tài khoản.
 public final class PasswordHasher {
     private static final int ITERATIONS = 210000;
     private static final SecureRandom RANDOM = new SecureRandom();
     private PasswordHasher() {}
     public static boolean encoded(String stored) { return stored != null && stored.startsWith("pbkdf2_sha256$"); }
-    // [BMKB01]
-    // . Ở hash (tạo chuỗi băm mật khẩu để lưu) trong PasswordHasher.java, em nhận mật khẩu từ các hàm tạo
-    //   hoặc đổi tài khoản của UserDAO.java. Em tạo chuỗi băm có phần ngẫu nhiên rồi trả lại hàm đang lưu để
-    //   ghi password_hash, thay vì ghi nguyên mật khẩu người dùng nhập.
-    // ... Quay lại hàm register, changePasswordById hoặc resetPasswordById trong UserDAO.java, ngay sau
-    //     PasswordHasher.hash; chuỗi trả về được gán cho password_hash trước khi thực hiện lệnh ghi.
+
+    // Chuẩn bị mật khẩu trước khi ghi tài khoản.
     public static String hash(String password) {
         byte[] salt = new byte[16]; RANDOM.nextBytes(salt);
         return "pbkdf2_sha256$" + ITERATIONS + "$" + Base64.getEncoder().encodeToString(salt) + "$"
                 + Base64.getEncoder().encodeToString(derive(password, salt, ITERATIONS));
     }
-    // [BMKXM01]
-    // . Ở verify (so mật khẩu nhập với giá trị đã lưu) trong PasswordHasher.java, em nhận mật khẩu vừa nhập
-    //   và giá trị đang lưu từ UserDAO.login (đối chiếu tài khoản để đăng nhập) hoặc changePasswordById (so
-    //   mật khẩu cũ rồi ghi mật khẩu mới). Em đối chiếu rồi trả đúng hoặc sai để hàm gọi quyết định cho đăng
-    //   nhập hoặc cho đổi mật khẩu.
-    // ... Quay lại UserDAO.java sau PasswordHasher.verify: trong login xét có trả User hay null; trong
-    //     changePasswordById xét có cho ghi mật khẩu mới hay báo mật khẩu cũ sai.
+
+    // Đối chiếu mật khẩu vừa nhập với giá trị tài khoản đang lưu.
     public static boolean verify(String password, String stored) {
         if (password == null || password.isBlank() || password.length() > 255 || stored == null || stored.matches("[A-Za-z]+_hash")) return false;
         if (!encoded(stored)) {

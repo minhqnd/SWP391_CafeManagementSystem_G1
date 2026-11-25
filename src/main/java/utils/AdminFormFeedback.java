@@ -6,23 +6,23 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 
+// [QLLOI01]
+// . Em dùng AdminFormFeedback để nhận thông tin từ các form có ảnh và đổi lỗi ghi dữ liệu thành lời báo
+//   phù hợp với thao tác. Các màn hình quản trị dùng chung phần này để người dùng biết yêu cầu chưa lưu
+//   được và cần xử lý phần nào.
+//
+// Tra cứu: Trở về AdminCategoriesController.java / DML03 hoặc AdminProductsController.java / SPL03 ngay sau
+//          lời gọi readMultipart hay databaseError, rồi mở lại trang và hiển thị admin-categories.jsp / DML07
+//          hoặc admin-products.jsp / SPL07.
 public final class AdminFormFeedback {
     private AdminFormFeedback() { }
 
-    // . Đầu doPost của trang sản phẩm hoặc danh mục, em gọi clear để bỏ kết quả và bản nhập dở của lần gửi
-    //   trước. Lần xử lý mới sẽ đặt đúng thông báo và giữ lại form của chính lần này nếu có lỗi.
     public static void clear(HttpSession session, String prefix) {
         session.removeAttribute(prefix + "Message");
         session.removeAttribute(prefix + "Error");
         session.removeAttribute(prefix + "Draft");
     }
 
-    // [DMAN04]
-    // . Trước khi đọc các ô và ảnh, controller gọi readMultipart trong AdminFormFeedback.java để đọc biểu
-    //   mẫu có tệp đính kèm. Quá giới hạn thì báo dung lượng; lỗi đọc khác thì báo chưa đọc được biểu mẫu.
-    //   Em trả false để controller quay về trang và chưa lưu, true thì controller tiếp tục nhận dữ liệu.
-    // ... Quay lại doPost trong AdminCategoriesController.java hoặc AdminProductsController.java ngay sau
-    //     AdminFormFeedback.readMultipart; false thì chuyển về trang báo lỗi, true mới đọc các ô để xử lý.
     public static boolean readMultipart(HttpServletRequest request, HttpSession session, String prefix) {
         if (request.getContentType() == null || !request.getContentType().toLowerCase(java.util.Locale.ROOT).startsWith("multipart/")) return true;
         try {
@@ -42,9 +42,6 @@ public final class AdminFormFeedback {
         }
     }
 
-    // . Khi lưu hoặc xóa gặp lỗi dữ liệu, controller gọi databaseError với thao tác và tên đối tượng.
-    //   Em phân biệt trùng tên, không xóa được vì có dữ liệu liên quan và lỗi lưu khác, rồi trả lời báo
-    //   phù hợp về controller để hiển thị; chi tiết lỗi kỹ thuật không được đưa ra cho người dùng.
     public static String databaseError(SQLException error, String action, String object) {
         if (error.getErrorCode() == 1062)
             return "Tên " + object + " đã tồn tại. Vui lòng chọn tên khác.";

@@ -125,13 +125,13 @@ public class Product implements Serializable {
         this.storedImage = storedImage;
     }
 
-    // [SPHA02]
-    // . Khi product_card.jsp đọc displayImageUrl, getDisplayImageUrl (chọn đường dẫn ảnh để hiển thị) trong
-    //   Product.java xem storedImage. Có ảnh trong cơ sở dữ liệu thì trả đường dẫn product-image kèm mã để
-    //   ProductImageController.doGet đọc ảnh bằng ProductDAO.getProductImage (đọc ảnh đang lưu của sản
-    //   phẩm); không có ảnh lưu thì trả imageUrl đang gắn với món.
-    // ... Nếu đường dẫn là product-image, đọc tiếp tại ProductImageController.java, tìm [SPAN03]; nếu là imageUrl
-    //     thì trình duyệt tải trực tiếp và kết thúc tại ảnh của thẻ món.
+    // [SPHT01]
+    // . Em dùng Product để cung cấp đường dẫn ảnh phù hợp và giá đã định dạng cho phần hiển thị. Nhờ cùng
+    //   lấy thông tin từ đây, thẻ món và phần chi tiết hiển thị ảnh, giá theo cùng một cách.
+    //
+    // Tra cứu: Các hàm getDisplayImageUrl và getFormattedPrice được dùng ở product_card.jsp / MNTHE01,
+    //          product-detail.jsp / MNTHE03 và phần trả chi tiết MenuController.java / MNCT03. Kết thúc việc
+    //          chuẩn bị giá/đường dẫn hiển thị; giá bán được lưu từ AdminProductsController.java / SPL04.
     public String getDisplayImageUrl() {
         return storedImage ? "product-image?id=" + id : imageUrl;
     }
@@ -174,13 +174,8 @@ public class Product implements Serializable {
     /**
      * Định dạng giá tiền dạng 45.000đ
      */
-    // [SPDINH02]
-    // . Khi các trang đọc formattedPrice, getFormattedPrice (định dạng giá tiền để hiển thị) trong
-    //   Product.java dùng basePrice của món, đặt dấu chấm phân cách hàng nghìn rồi thêm đ, ví dụ 45.000đ.
-    //   Mẫu này hiện giá tới đơn vị đồng, làm tròn phần lẻ nếu có; kết quả chỉ là chuỗi hiển thị, basePrice
-    //   vẫn giữ nguyên để xử lý số.
-    // ... Kết thúc định dạng khi chuỗi giá được trả về đúng vị trí đọc formattedPrice trên JSP và hiện thành giá
-    //     bán của món.
+
+    // Định dạng giá bán để thẻ món và trang chi tiết hiển thị thống nhất.
     public String getFormattedPrice() {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.getDefault());
         symbols.setGroupingSeparator('.');

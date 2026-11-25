@@ -1,6 +1,10 @@
 <%@ page contentType="application/json; charset=UTF-8" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ page import="model.Cart, model.CartItem, java.util.List" %>
 <%
+    // [GHDOC01]
+    // . Em lấy giỏ của lần sử dụng hiện tại để các phần giao diện biết món, số lượng và lựa chọn đang giữ.
+    //
+    // Tra cứu: Trả nội dung giỏ cho trang đang gọi thành phần này. Kết thúc phần đọc giỏ.
     Cart cart = (Cart) session.getAttribute(Cart.SESSION_KEY);
     if (cart == null) {
         cart = new Cart();

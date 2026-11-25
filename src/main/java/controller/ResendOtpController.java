@@ -14,21 +14,22 @@ public class ResendOtpController extends HttpServlet {
         utils.AccountFormFeedback.clear(request);
         try{
             // [OTGL02]
-            // . Khi nhận yêu cầu tại doPost trong ResendOtpController.java, em gọi resend trong
-            //   PasswordRecoveryService.java. Em truyền session và địa chỉ gửi yêu cầu để kiểm tra lần gửi trước,
-            //   bảo đảm đã đủ thời gian chờ rồi mới gửi lại OTP.
-            // ... Đọc tiếp tại PasswordRecoveryService.java, tìm [OTGL03].
+            // . Trong doPost của ResendOtpController, em gọi resend của PasswordRecoveryService để xử lý yêu
+            //   cầu gửi lại. Em dùng class khôi phục đang có để kiểm tra thời gian chờ và giữ lần gửi mới gắn
+            //   với cùng tài khoản.
+            //
+            // Tra tiếp: PasswordRecoveryService.java / OTGL03.
             PasswordRecoveryService.shared().resend(request.getSession(),request.getRemoteAddr());
 
             // [OTGL04]
-            // . Khi gửi lại mã thành công, chương trình quay về doPost trong ResendOtpController.java. Em đặt thông
-            //   báo rồi mở lại tab=otp để người dùng nhập mã mới trong auth_modal.jsp.
-            // ... Kết thúc lần Gửi lại khi auth_modal.jsp mở lại ô OTP cùng thông báo; muốn xác minh mã mới thì
-            //     người dùng bấm Xác nhận OTP.
+            // . Khi resend hoàn tất, em quay lại doPost của ResendOtpController để báo đã gửi mã mới và mở
+            //   lại form nhập mã. Người dùng tiếp tục bằng mã mới vừa nhận, thay vì bắt đầu lại từ bước nhập
+            //   email.
+            //
+            // Kết thúc: gửi lại khi form nhập mã được mở kèm thông báo.
             request.getSession().setAttribute("successMsg","Mã OTP mới đã được gửi đến email của bạn.");
         }catch(IllegalArgumentException e){request.getSession().setAttribute("errorMsg",e.getMessage());}
-        // . Em gọi nextTab trong PasswordRecoveryService.java để mở lại bước còn dùng được: gửi thành công
-        //   thì nhập OTP mới; không còn lần xác minh hợp lệ thì quay về email để yêu cầu lại.
+
         response.sendRedirect(request.getContextPath()+"/?tab="+PasswordRecoveryService.shared().nextTab(request.getSession()));
     }
 }

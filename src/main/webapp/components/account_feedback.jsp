@@ -18,12 +18,13 @@
     session.removeAttribute("accountFeedback");
 %>
 
-<%-- [BMTV02]
-     . Ở account_feedback.jsp, em nhận accountFeedback mà controller chuẩn bị qua AccountFormFeedback.flash
-       (giữ lỗi và các ô qua lần chuyển trang) hoặc show (hiện lỗi trên trang đang mở). Em đưa tên form,
-       lỗi và giá trị vào data-account-feedback để account-validation.js tìm đúng các ô, điền lại và hiển
-       thị lỗi khi trang mở ra.
-     ... Đọc tiếp tại account-validation.js, tìm [BMTV01] để xem cách nhận dữ liệu và điền lại form sau lỗi.
+<%-- [TKTB02]
+     . Trong account_feedback.jsp, em đưa các giá trị được phép giữ lại và lỗi theo từng ô vào trang, kèm
+       tên form cần hiển thị. Phần điền lại form trên trình duyệt dùng những thông tin này để người dùng
+       sửa tiếp sau lần gửi bị lỗi.
+
+     Tra cứu: Điền lại tại account-validation.js / TKTB03. Dữ liệu được phần xử lý chuẩn bị qua
+              AccountFormFeedback.java / TKTB04.
 --%>
 <c:if test="${not empty accountFeedback}">
     <div hidden data-account-feedback data-form="<c:out value='${accountFeedback.form}'/>">

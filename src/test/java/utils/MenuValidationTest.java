@@ -12,8 +12,9 @@ class MenuValidationTest {
         assertEquals("Giá không được âm.", error("-0.01", false));
         assertTrue(error("10000000000", false).contains("9.999.999.999,99"));
         assertTrue(error("1.001", false).contains("2 chữ số thập phân"));
-        for (String raw : new String[]{"NaN", "Infinity", "1e3", "1,5", "+1", "abc", "9".repeat(10000)})
+        for (String raw : new String[]{"NaN", "Infinity", "1e3", "1,5", "+1", "abc"})
             assertTrue(error(raw, false).contains("phải là số"), raw);
+        assertEquals("Giá tối đa 64 ký tự.", error("9".repeat(10000), false));
     }
 
     @Test void quantityAcceptsDecimalAndRejectsZeroOverflowAndExtraDecimalPlaces() {

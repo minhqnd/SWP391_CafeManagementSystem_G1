@@ -614,12 +614,13 @@
                         </div>
 
                         <!-- Product Name -->
-                        <%-- [MNTHE04]
-                             . Ở product-detail.jsp, em nhận product mà ProductDetailController.doGet đã đọc bằng
-                               ProductDAO.getAvailableProductById (đọc món còn bán theo mã). Trang dùng sản phẩm này để hiện
-                               tên, giá, ảnh và các lựa chọn, giúp chi tiết khớp đúng món người dùng vừa bấm.
-                             ... Kết thúc xem chi tiết khi product-detail.jsp hiện đúng thông tin món vừa chọn; thao
-                                 tác chọn mua tiếp theo đi sang phần đặt hàng.
+                        <%-- [MNTHE03]
+                             . Khi nhận sản phẩm đã đọc, product-detail.jsp hiển thị tên, giá, ảnh, mô tả
+                               và các lựa chọn của món. Khách dùng những thông tin này để xem lại đúng món
+                               trước khi đặt.
+
+                             Tra cứu: Kết thúc mở trang chi tiết; dữ liệu nguồn ở ProductDAO.java / MNCT04,
+                                      cách hiển thị giá và ảnh ở Product.java / SPHT01.
                         --%>
                         <h1 class="product-detail-name">${product.name}</h1>
 

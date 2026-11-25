@@ -53,10 +53,11 @@
             <li class="nav-item">
 
                 <%-- [DMM01]
-                     . Khi bấm Quản lý danh mục trong admin-sidebar.jsp, em mở /admin/categories. Yêu cầu tới doGet trong
-                       AdminCategoriesController.java để đọc danh mục và thống kê, rồi chuyển dữ liệu về
-                       admin-categories.jsp dựng màn hình quản lý.
-                     ... Đọc tiếp tại AdminCategoriesController.java, tìm [DMM02].
+                     . Khi Admin bấm Quản lý danh mục, trình duyệt gửi yêu cầu tới doGet của
+                       AdminCategoriesController. Hàm này đọc danh mục và các số liệu cần thiết rồi đưa về
+                       trang quản lý, để Admin xem danh sách hoặc thêm, sửa nhóm món.
+
+                     Tra tiếp: AdminCategoriesController.java / DMM02.
                 --%>
                 <a href="${ctx}/admin/categories" class="nav-link ${param.activeMenu == 'categories' ? 'active' : ''}">
                     <span class="material-symbols-outlined">category</span>
@@ -66,10 +67,11 @@
             <li class="nav-item">
 
                 <%-- [SPM01]
-                     . Khi bấm Quản lý sản phẩm trong admin-sidebar.jsp, em mở /admin/products. doGet trong
-                       AdminProductsController.java đọc sản phẩm, danh mục và thống kê rồi đưa dữ liệu về
-                       admin-products.jsp để người dùng quản lý món.
-                     ... Đọc tiếp tại AdminProductsController.java, tìm [SPM02].
+                     . Khi Admin bấm Quản lý sản phẩm, trình duyệt gửi yêu cầu tới doGet của
+                       AdminProductsController. Controller chuẩn bị danh mục, danh sách món và các số tổng
+                       rồi đưa về trang để Admin xem và quản lý sản phẩm.
+
+                     Tra tiếp: AdminProductsController.java / SPM02.
                 --%>
                 <a href="${ctx}/admin/products" class="nav-link ${param.activeMenu == 'products' ? 'active' : ''}">
                     <span class="material-symbols-outlined">coffee</span>
@@ -79,10 +81,11 @@
             <li class="nav-item">
 
                 <%-- [CTM01]
-                     . Khi bấm Quản lý công thức trong admin-sidebar.jsp, em mở /admin/recipes. doGet trong
-                       AdminRecipeController.java đọc sản phẩm, nguyên liệu, công thức và giá nhập rồi đưa về
-                       admin-recipes.jsp để hiển thị và chỉnh định mức.
-                     ... Đọc tiếp tại AdminRecipeController.java, tìm [CTM02].
+                     . Khi Admin bấm Quản lý công thức, trình duyệt gửi yêu cầu tới doGet của
+                       AdminRecipeController. Controller đọc món, nguyên liệu và công thức, tính chi phí
+                       rồi đưa về trang để Admin xem hoặc thiết lập định mức cho từng món.
+
+                     Tra tiếp: AdminRecipeController.java / CTM02.
                 --%>
                 <a href="${ctx}/admin/recipes" class="nav-link ${param.activeMenu == 'recipes' ? 'active' : ''}">
                     <span class="material-symbols-outlined">menu_book</span>
@@ -173,10 +176,11 @@
             <li class="nav-item">
 
                 <%-- [TDM01]
-                     . Khi bấm Quản lý tích điểm trong admin-sidebar.jsp, em mở /admin/loyalty. doGet trong
-                       AdminLoyaltyController.java đọc quy tắc, số liệu, khách và lịch sử rồi đưa về admin-loyalty.jsp để
-                       người dùng tra cứu hoặc điều chỉnh điểm.
-                     ... Đọc tiếp tại AdminLoyaltyController.java, tìm [TDM02].
+                     . Khi Admin bấm Quản lý tích điểm theo số điện thoại, trình duyệt gửi yêu cầu tới
+                       doGet của AdminLoyaltyController. Controller chuẩn bị quy tắc, số liệu tổng, khách
+                       hàng và lịch sử rồi đưa về cùng màn hình để Admin tra cứu hoặc điều chỉnh điểm.
+
+                     Tra tiếp: AdminLoyaltyController.java / TDM02.
                 --%>
                 <a href="${ctx}/admin/loyalty" class="nav-link ${param.activeMenu == 'loyalty' ? 'active' : ''}">
                     <span class="material-symbols-outlined">loyalty</span>
@@ -214,12 +218,12 @@
                     <div class="text-muted" style="font-size: 0.72rem;">Quản trị viên</div>
                 </div>
             </div>
-            <%-- [DNQA01]
-                 . Khi bấm Đăng xuất trong admin-sidebar.jsp, em mở /login?action=logout để doGet trong
-                   LoginController.java xử lý. Controller hủy phiên đăng nhập rồi chuyển về Trang chủ để kết thúc lần
-                   dùng tài khoản hiện tại.
-                 ... Kết thúc Đăng xuất tại Trang chủ sau khi doGet trong LoginController.java đã hủy phiên đăng
-                     nhập.
+            <%-- [DNX03]
+                 . Nút Đăng xuất của quản trị cũng gửi yêu cầu tới LoginController như phía khách hàng. Em
+                   dùng chung cách xử lý để cả hai nơi đều kết thúc tài khoản đang dùng rồi trở về trang
+                   chủ.
+
+                 Tra tiếp: LoginController.java / DNX02.
             --%>
             <a href="${ctx}/login?action=logout" class="btn-logout" title="Đăng xuất">
                 <span class="material-symbols-outlined fs-5">logout</span>
