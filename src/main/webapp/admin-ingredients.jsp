@@ -230,7 +230,7 @@
                             <input type="text" name="unit" id="modalIngredientUnit" class="form-control" required maxlength="20" placeholder="gram, ml, piece, lon...">
                         </div>
                         <div class="col-6">
-                            <label class="form-label fw-bold small text-secondary">Ngưỡng tối thiểu</label>
+                            <label class="form-label fw-bold small text-secondary">Ngưỡng cảnh báo</label>
                             <input type="number" step="0.001" min="0" max="999999999.999" name="minStockLevel" id="modalIngredientMinStock" class="form-control" value="0" placeholder="0">
                         </div>
                     </div>
