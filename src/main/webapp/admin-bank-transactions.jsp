@@ -139,6 +139,11 @@
             color: #64748b;
             border: 1px solid #e2e8f0;
         }
+        .badge-refunded {
+            background-color: #ecfeff;
+            color: #0e7490;
+            border: 1px solid #a5f3fc;
+        }
         .reconcile-subtext {
             font-size: 0.72rem;
             color: #64748b;
@@ -186,6 +191,14 @@
         </div>
     </header>
 
+    <c:if test="${not empty sessionScope.bankTxFlash}">
+        <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+            <c:out value="${sessionScope.bankTxFlash}" />
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <c:remove var="bankTxFlash" scope="session" />
+    </c:if>
+
     <!-- Thống kê biến động số dư -->
     <div class="row g-3 mb-4" id="statsContainer">
         <div class="col-md-4">
@@ -195,6 +208,11 @@
                     <div class="bank-stat-val text-success">
                         +<fmt:formatNumber value="${totalInAmount}" pattern="#,##0" /> đ
                     </div>
+                    <!-- <c:if test="${totalRefundedAmount > 0}">
+                        <small class="text-danger">
+                            Đã hoàn: -<fmt:formatNumber value="${totalRefundedAmount}" pattern="#,##0" /> đ (không tính doanh thu)
+                        </small>
+                    </c:if> -->
                 </div>
                 <div class="bank-icon-circle bg-success bg-opacity-10 text-success">
                     <span class="material-symbols-outlined">arrow_downward</span>
@@ -288,68 +306,101 @@
                                     </td>
                                     <td>
                                         <c:choose>
-                                            <c:when test="${tx.reconcileStatus eq 'MATCHED'}">
-                                                <span class="badge-reconcile badge-matched" title="Đã khớp chuẩn và thanh toán đủ số tiền đơn hàng">
-                                                    <span class="material-symbols-outlined" style="font-size: 15px;">verified</span>
-                                                    Khớp chuẩn: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
+                                            <c:when test="${tx.refunded}">
+                                                <span class="badge-reconcile badge-refunded">
+                                                    <span class="material-symbols-outlined" style="font-size: 15px;">assignment_return</span>
+                                                    Đã hoàn tiền (-${tx.formattedRefundedAmount})
                                                 </span>
-                                                <div class="reconcile-subtext text-success">
-                                                    <c:out value="${tx.reconcileNote}" />
-                                                </div>
-                                            </c:when>
-                                            <c:when test="${tx.reconcileStatus eq 'OVERPAID'}">
-                                                <span class="badge-reconcile badge-overpaid" title="Khách chuyển thừa tiền so với giá trị đơn hàng">
-                                                    <span class="material-symbols-outlined" style="font-size: 15px;">add_circle</span>
-                                                    Thừa tiền: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
-                                                </span>
-                                                <div class="reconcile-subtext" style="color: #6d28d9; font-weight: 500;">
-                                                    <c:out value="${tx.reconcileNote}" /> · <span class="fw-bold">Cần hoàn tiền thừa</span>
-                                                </div>
-                                            </c:when>
-                                            <c:when test="${tx.reconcileStatus eq 'UNDERPAID'}">
-                                                <span class="badge-reconcile badge-underpaid" title="Khách chuyển thiếu tiền">
-                                                    <span class="material-symbols-outlined" style="font-size: 15px;">warning</span>
-                                                    Thiếu tiền: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
-                                                </span>
-                                                <div class="reconcile-subtext" style="color: #c2410c; font-weight: 500;">
-                                                    <c:out value="${tx.reconcileNote}" /> · <span class="fw-bold">Chưa đủ đơn</span>
-                                                </div>
-                                            </c:when>
-                                            <c:when test="${tx.reconcileStatus eq 'DUPLICATE'}">
-                                                <span class="badge-reconcile badge-duplicate" title="Đơn đã được thanh toán đủ ở giao dịch trước, khách chuyển thêm hoặc chuyển trùng lần 2">
-                                                    <span class="material-symbols-outlined" style="font-size: 15px;">content_copy</span>
-                                                    Trùng đơn: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
-                                                </span>
-                                                <div class="reconcile-subtext text-danger" style="font-weight: 500;">
-                                                    <c:out value="${tx.reconcileNote}" /> · <span class="fw-bold">Cần hoàn lại</span>
-                                                </div>
-                                            </c:when>
-                                            <c:when test="${tx.reconcileStatus eq 'ORDER_CANCELLED'}">
-                                                <span class="badge-reconcile badge-cancelled" title="Đơn hàng đã bị hủy">
-                                                    <span class="material-symbols-outlined" style="font-size: 15px;">cancel</span>
-                                                    Đã hủy: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
-                                                </span>
-                                                <div class="reconcile-subtext text-secondary">
-                                                    <c:out value="${tx.reconcileNote}" />
-                                                </div>
-                                            </c:when>
-                                            <c:when test="${tx.reconcileStatus eq 'ORDER_NOT_FOUND'}">
-                                                <span class="badge-reconcile badge-notfound" title="Mã đơn trong nội dung chuyển khoản không tồn tại trên hệ thống">
-                                                    <span class="material-symbols-outlined" style="font-size: 15px;">search_off</span>
-                                                    Không có đơn #${tx.matchedOrderCode}
-                                                </span>
-                                                <div class="reconcile-subtext text-danger">
-                                                    <c:out value="${tx.reconcileNote}" />
+                                                <div class="reconcile-subtext" style="color: #0e7490;">
+                                                    <c:if test="${not empty tx.matchedOrderCode and tx.reconcileStatus ne 'ORDER_NOT_FOUND'}">
+                                                        Đơn <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a> ·
+                                                    </c:if>
+                                                    <c:if test="${not empty tx.refundNote}">
+                                                        <c:out value="${tx.refundNote}" /> ·
+                                                    </c:if>
+                                                    <c:out value="${tx.refundedAt}" />
                                                 </div>
                                             </c:when>
                                             <c:otherwise>
-                                                <span class="badge-reconcile badge-nocode" title="Nội dung chuyển khoản không tìm thấy cú pháp mã đơn hàng">
-                                                    <span class="material-symbols-outlined" style="font-size: 15px;">help_outline</span>
-                                                    Sai nội dung
-                                                </span>
-                                                <div class="reconcile-subtext text-muted">
-                                                    Không tìm thấy mã đơn hàng
-                                                </div>
+                                                <c:choose>
+                                                    <c:when test="${tx.reconcileStatus eq 'MATCHED'}">
+                                                        <span class="badge-reconcile badge-matched" title="Đã khớp chuẩn và thanh toán đủ số tiền đơn hàng">
+                                                            <span class="material-symbols-outlined" style="font-size: 15px;">verified</span>
+                                                            Khớp chuẩn: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
+                                                        </span>
+                                                        <div class="reconcile-subtext text-success">
+                                                            <c:out value="${tx.reconcileNote}" />
+                                                        </div>
+                                                    </c:when>
+                                                    <c:when test="${tx.reconcileStatus eq 'OVERPAID'}">
+                                                        <span class="badge-reconcile badge-overpaid" title="Khách chuyển thừa tiền so với giá trị đơn hàng">
+                                                            <span class="material-symbols-outlined" style="font-size: 15px;">add_circle</span>
+                                                            Thừa tiền: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
+                                                        </span>
+                                                        <div class="reconcile-subtext" style="color: #6d28d9; font-weight: 500;">
+                                                            <c:out value="${tx.reconcileNote}" /> · <span class="fw-bold">Cần hoàn tiền thừa</span>
+                                                        </div>
+                                                    </c:when>
+                                                    <c:when test="${tx.reconcileStatus eq 'UNDERPAID'}">
+                                                        <span class="badge-reconcile badge-underpaid" title="Khách chuyển thiếu tiền">
+                                                            <span class="material-symbols-outlined" style="font-size: 15px;">warning</span>
+                                                            Thiếu tiền: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
+                                                        </span>
+                                                        <div class="reconcile-subtext" style="color: #c2410c; font-weight: 500;">
+                                                            <c:out value="${tx.reconcileNote}" /> · <span class="fw-bold">Chưa đủ đơn</span>
+                                                        </div>
+                                                    </c:when>
+                                                    <c:when test="${tx.reconcileStatus eq 'DUPLICATE'}">
+                                                        <span class="badge-reconcile badge-duplicate" title="Đơn đã được thanh toán đủ ở giao dịch trước, khách chuyển thêm hoặc chuyển trùng lần 2">
+                                                            <span class="material-symbols-outlined" style="font-size: 15px;">content_copy</span>
+                                                            Trùng đơn: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
+                                                        </span>
+                                                        <div class="reconcile-subtext text-danger" style="font-weight: 500;">
+                                                            <c:out value="${tx.reconcileNote}" /> · <span class="fw-bold">Cần hoàn lại</span>
+                                                        </div>
+                                                    </c:when>
+                                                    <c:when test="${tx.reconcileStatus eq 'ORDER_CANCELLED'}">
+                                                        <span class="badge-reconcile badge-cancelled" title="Đơn hàng đã bị hủy">
+                                                            <span class="material-symbols-outlined" style="font-size: 15px;">cancel</span>
+                                                            Đã hủy: <a href="${ctx}/admin/orders?keyword=${tx.matchedOrderCode}" target="_blank" class="order-code-link">#${tx.matchedOrderCode}</a>
+                                                        </span>
+                                                        <div class="reconcile-subtext text-secondary">
+                                                            <c:out value="${tx.reconcileNote}" />
+                                                        </div>
+                                                    </c:when>
+                                                    <c:when test="${tx.reconcileStatus eq 'ORDER_NOT_FOUND'}">
+                                                        <span class="badge-reconcile badge-notfound" title="Mã đơn trong nội dung chuyển khoản không tồn tại trên hệ thống">
+                                                            <span class="material-symbols-outlined" style="font-size: 15px;">search_off</span>
+                                                            Không có đơn #${tx.matchedOrderCode}
+                                                        </span>
+                                                        <div class="reconcile-subtext text-danger">
+                                                            <c:out value="${tx.reconcileNote}" />
+                                                        </div>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="badge-reconcile badge-nocode" title="Nội dung chuyển khoản không tìm thấy cú pháp mã đơn hàng">
+                                                            <span class="material-symbols-outlined" style="font-size: 15px;">help_outline</span>
+                                                            Sai nội dung
+                                                        </span>
+                                                        <div class="reconcile-subtext text-muted">
+                                                            Không tìm thấy mã đơn hàng
+                                                        </div>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                                <c:if test="${sessionScope.user.role eq 'ADMIN' and (tx.reconcileStatus eq 'OVERPAID' or tx.reconcileStatus eq 'DUPLICATE' or tx.reconcileStatus eq 'ORDER_CANCELLED' or tx.reconcileStatus eq 'ORDER_NOT_FOUND' or tx.reconcileStatus eq 'NO_CODE' or tx.reconcileStatus eq 'UNDERPAID')}">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger mt-1 py-0 px-2"
+                                                            style="font-size: 0.74rem;"
+                                                            data-tx-key="${fn:escapeXml(tx.txKey)}"
+                                                            data-sepay-id="${tx.sepayId}"
+                                                            data-ref="${fn:escapeXml(tx.referenceCode)}"
+                                                            data-order-code="${fn:escapeXml(tx.matchedOrderCode)}"
+                                                            data-status="${fn:escapeXml(tx.reconcileStatus)}"
+                                                            data-amount="${tx.reconcileStatus eq 'OVERPAID' ? tx.diffAmount : tx.transferAmount}"
+                                                            onclick="openRefundModal(this)">
+                                                        Hoàn tiền
+                                                    </button>
+                                                </c:if>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
@@ -362,11 +413,64 @@
         </div>
     </section>
 </main>
+
+<div class="modal fade" id="refundModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="${ctx}/admin/bank-transactions">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Xác nhận đã hoàn tiền</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="txKey" id="rfTxKey" />
+                    <input type="hidden" name="sepayId" id="rfSepayId" />
+                    <input type="hidden" name="referenceCode" id="rfRef" />
+                    <input type="hidden" name="orderCode" id="rfOrderCode" />
+                    <input type="hidden" name="reconcileStatus" id="rfStatus" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Số tiền đã hoàn (VNĐ)</label>
+                        <input type="number" class="form-control" name="refundAmount" id="rfAmount" min="1" step="1" required />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Ghi chú / Mã giao dịch hoàn</label>
+                        <input type="text" class="form-control" name="refundNote" id="rfNote" placeholder="VD: Đã CK hoàn tiền thừa qua MBBank" maxlength="250" />
+                    </div>
+                    <small class="text-muted">Phần tiền hoàn sẽ được trừ khỏi tổng tiền đã nhận và không tính vào doanh thu.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger fw-semibold">Xác nhận đã hoàn tiền</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     let isFetching = false;
+    let isModalOpen = false;
     let countdown = 5;
     const COUNTDOWN_DEFAULT = 5;
+
+    const refundModalEl = document.getElementById('refundModal');
+    if (refundModalEl) {
+        refundModalEl.addEventListener('show.bs.modal', () => { isModalOpen = true; });
+        refundModalEl.addEventListener('hidden.bs.modal', () => { isModalOpen = false; });
+    }
+
+    function openRefundModal(btn) {
+        document.getElementById('rfTxKey').value = btn.dataset.txKey || '';
+        document.getElementById('rfSepayId').value = btn.dataset.sepayId || '0';
+        document.getElementById('rfRef').value = btn.dataset.ref || '';
+        document.getElementById('rfOrderCode').value = btn.dataset.orderCode || '';
+        document.getElementById('rfStatus').value = btn.dataset.status || '';
+        document.getElementById('rfAmount').value = Math.round(Number(btn.dataset.amount || 0));
+        document.getElementById('rfNote').value = '';
+        bootstrap.Modal.getOrCreateInstance(refundModalEl).show();
+    }
 
     function updateCountdownDisplay() {
         const cdElem = document.getElementById('countdownText');
@@ -423,7 +527,7 @@
 
     // Bộ đếm ngược chạy mỗi giây
     setInterval(() => {
-        if (document.hidden || isFetching) return;
+        if (document.hidden || isFetching || isModalOpen) return;
         countdown--;
         if (countdown <= 0) {
             fetchBankData(false);

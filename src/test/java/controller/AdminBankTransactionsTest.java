@@ -182,4 +182,47 @@ class AdminBankTransactionsTest {
         assertEquals("ORDER_CANCELLED", tx.getReconcileStatus());
         assertTrue(tx.getReconcileNote().contains("đã bị hủy"));
     }
+
+    @Test
+    @DisplayName("TC-PAY-10: Trừ tiền thừa đã hoàn khỏi tổng tiền thực nhận (doanh thu)")
+    void testNetInAmountWithOverpaidRefund() {
+        BankTransaction tx = new BankTransaction();
+        tx.setTransferAmount(100000.0);
+        tx.setRefunded(true);
+        tx.setRefundedAmount(30000.0);
+
+        List<BankTransaction> list = List.of(tx);
+        assertEquals(70000.0, controller.calculateNetInAmount(list));
+        assertEquals(30000.0, controller.calculateTotalRefunded(list));
+    }
+
+    @Test
+    @DisplayName("TC-PAY-11: Hoàn toàn bộ giao dịch thì tiền thực nhận bằng 0")
+    void testNetInAmountWithFullRefund() {
+        BankTransaction tx = new BankTransaction();
+        tx.setTransferAmount(70000.0);
+        tx.setRefunded(true);
+        tx.setRefundedAmount(70000.0);
+
+        List<BankTransaction> list = List.of(tx);
+        assertEquals(0.0, controller.calculateNetInAmount(list));
+        assertEquals(70000.0, controller.calculateTotalRefunded(list));
+    }
+
+    @Test
+    @DisplayName("TC-PAY-12: Đối soát không phân biệt hoa thường với mã đơn có chữ thường")
+    void testReconcileCaseInsensitiveOrderCode() {
+        BankTransaction tx = new BankTransaction();
+        tx.setContent("AURA2611161402cac5a CHUYEN TIEN THANH TOAN DON HANG");
+        tx.setTransferAmount(70000.0);
+
+        Map<String, OrderSummary> orders = Map.of(
+            "AURA2611161402cac5a", new OrderSummary(1, "AURA2611161402cac5a", 70000.0, "CONFIRMED")
+        );
+
+        List<BankTransaction> list = new ArrayList<>(List.of(tx));
+        controller.reconcileTransactionsWithOrders(list, orders);
+
+        assertEquals("MATCHED", tx.getReconcileStatus());
+    }
 }
