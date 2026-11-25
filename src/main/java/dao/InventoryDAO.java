@@ -148,6 +148,21 @@ public class InventoryDAO extends BaseDAO {
                     psUpdate.executeUpdate();
                 }
 
+                String storedReason = reason;
+                if ("ADJUSTMENT".equalsIgnoreCase(transactionType) && !isIncrease) {
+                    String cleanReason = storedReason == null ? "" : storedReason.trim();
+                    if (cleanReason.isEmpty()) {
+                        storedReason = "Giảm tồn kho";
+                    } else if (!cleanReason.startsWith("Giảm")) {
+                        storedReason = "Giảm: " + cleanReason;
+                    } else {
+                        storedReason = cleanReason;
+                    }
+                    if (storedReason.length() > 500) {
+                        storedReason = storedReason.substring(0, 500);
+                    }
+                }
+
                 try (PreparedStatement psTx = conn.prepareStatement(insertTxSql)) {
                     psTx.setInt(1, ingredientId);
                     psTx.setString(2, transactionType.toUpperCase());
@@ -158,7 +173,7 @@ public class InventoryDAO extends BaseDAO {
                     } else {
                         psTx.setNull(5, java.sql.Types.INTEGER);
                     }
-                    psTx.setString(6, reason);
+                    psTx.setString(6, storedReason);
                     psTx.executeUpdate();
                 }
 

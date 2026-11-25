@@ -170,29 +170,56 @@ public class IngredientDAO extends BaseDAO {
     }
 
     public int insertIngredient(Ingredient item) throws SQLException, ClassNotFoundException {
-        String sql = "INSERT INTO ingredients (supplier_id, name, unit, current_stock, min_stock_level) " +
-                     "VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        String insertIngredientSql = "INSERT INTO ingredients (supplier_id, name, unit, current_stock, min_stock_level) " +
+                                     "VALUES (?, ?, ?, ?, ?)";
+        String insertTxSql = "INSERT INTO inventory_transactions " +
+                             "(ingredient_id, transaction_type, quantity, reference_type, reference_id, reason) " +
+                             "VALUES (?, 'ADJUSTMENT', ?, 'ADJUSTMENT', NULL, ?)";
+        BigDecimal initialStock = item.getCurrentStock() != null ? item.getCurrentStock() : BigDecimal.ZERO;
 
-            if (item.getSupplierId() != null && item.getSupplierId() > 0) {
-                ps.setInt(1, item.getSupplierId());
-            } else {
-                ps.setNull(1, Types.INTEGER);
-            }
-            ps.setString(2, item.getName());
-            ps.setString(3, item.getUnit());
-            ps.setBigDecimal(4, item.getCurrentStock() != null ? item.getCurrentStock() : BigDecimal.ZERO);
-            ps.setBigDecimal(5, item.getMinStockLevel() != null ? item.getMinStockLevel() : BigDecimal.ZERO);
+        try (Connection conn = getConnection()) {
+            boolean autoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                int newId = 0;
+                try (PreparedStatement ps = conn.prepareStatement(insertIngredientSql, Statement.RETURN_GENERATED_KEYS)) {
+                    if (item.getSupplierId() != null && item.getSupplierId() > 0) {
+                        ps.setInt(1, item.getSupplierId());
+                    } else {
+                        ps.setNull(1, Types.INTEGER);
+                    }
+                    ps.setString(2, item.getName());
+                    ps.setString(3, item.getUnit());
+                    ps.setBigDecimal(4, initialStock);
+                    ps.setBigDecimal(5, item.getMinStockLevel() != null ? item.getMinStockLevel() : BigDecimal.ZERO);
 
-            ps.executeUpdate();
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
+                    ps.executeUpdate();
+                    try (ResultSet rs = ps.getGeneratedKeys()) {
+                        if (rs.next()) {
+                            newId = rs.getInt(1);
+                        }
+                    }
                 }
+
+                // Nếu tồn kho ban đầu > 0 thì ghi nhận 1 dòng vào lịch sử xuất nhập kho
+                if (newId > 0 && initialStock.compareTo(BigDecimal.ZERO) > 0) {
+                    try (PreparedStatement psTx = conn.prepareStatement(insertTxSql)) {
+                        psTx.setInt(1, newId);
+                        psTx.setBigDecimal(2, initialStock);
+                        psTx.setString(3, "Khởi tạo tồn kho ban đầu");
+                        psTx.executeUpdate();
+                    }
+                }
+
+                conn.commit();
+                return newId;
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(autoCommit);
             }
         }
-        return 0;
     }
 
     public boolean updateIngredient(Ingredient item) throws SQLException, ClassNotFoundException {

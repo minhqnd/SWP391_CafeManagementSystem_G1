@@ -15,7 +15,17 @@ public class InventoryTransaction implements Serializable {
     private BigDecimal quantity;
     private BigDecimal adjustmentDelta;
     public void setAdjustmentDelta(BigDecimal value){adjustmentDelta=value;}
-    public boolean isDecrease(){return adjustmentDelta!=null ? adjustmentDelta.signum()<0 : "OUT_ORDER".equalsIgnoreCase(transactionType)||"SPOILAGE".equalsIgnoreCase(transactionType);}
+    public boolean isDecrease() {
+        if (adjustmentDelta != null) {
+            return adjustmentDelta.signum() < 0;
+        }
+        if ("OUT_ORDER".equalsIgnoreCase(transactionType) || "SPOILAGE".equalsIgnoreCase(transactionType)) {
+            return true;
+        }
+        return "ADJUSTMENT".equalsIgnoreCase(transactionType)
+                && reason != null
+                && reason.trim().startsWith("Giảm");
+    }
     private String referenceType;   // 'ORDER', 'PURCHASE_ORDER', 'ADJUSTMENT'
     private Integer referenceId;
     private String reason;
