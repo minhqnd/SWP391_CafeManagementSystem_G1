@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -224,5 +225,100 @@ class AdminBankTransactionsTest {
         controller.reconcileTransactionsWithOrders(list, orders);
 
         assertEquals("MATCHED", tx.getReconcileStatus());
+    }
+
+    @Test
+    @DisplayName("TC-PAY-13: Validate hoàn tiền - Chấp nhận hoàn toàn bộ và hoàn một phần hợp lệ")
+    void testValidateRefundValidCases() {
+        assertNull(AdminBankTransactionsController.validateRefundInput(
+                "FT26329030480203", "FT26329030480203", "AURA261125105027B6F",
+                "ORDER_CANCELLED", "80000", "80000", "Hoàn tiền đơn hủy"
+        ));
+        assertNull(AdminBankTransactionsController.validateRefundInput(
+                "SEPAY-102401220", "", "",
+                "OVERPAID", "30000.50", "100000", ""
+        ));
+    }
+
+    @Test
+    @DisplayName("TC-PAY-14: Validate hoàn tiền - Chặn txKey rỗng hoặc vượt giới hạn")
+    void testValidateRefundTxKey() {
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "   ", "FT123", "", "NO_CODE", "50000", "50000", ""
+        ));
+        String tooLongKey = "K".repeat(AdminBankTransactionsController.MAX_TX_KEY_LENGTH + 1);
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                tooLongKey, "FT123", "", "NO_CODE", "50000", "50000", ""
+        ));
+    }
+
+    @Test
+    @DisplayName("TC-PAY-15: Validate hoàn tiền - Chặn số tiền rỗng, sai định dạng, <= 0, quá thập phân hoặc vượt MAX")
+    void testValidateRefundAmountBounds() {
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "", "NO_CODE", "", "50000", ""
+        ));
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "", "NO_CODE", "abc", "50000", ""
+        ));
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "", "NO_CODE", "0", "50000", ""
+        ));
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "", "NO_CODE", "-1000", "50000", ""
+        ));
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "", "NO_CODE", "1000.123", "50000", ""
+        ));
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "", "NO_CODE", "10000000000.00", "10000000000.00", ""
+        ));
+    }
+
+    @Test
+    @DisplayName("TC-PAY-16: Validate hoàn tiền - Chặn hoàn vượt quá số tiền giao dịch gốc")
+    void testValidateRefundExceedsTransferAmount() {
+        String err = AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "AURA1", "OVERPAID", "90000", "80000", "Hoàn quá tay"
+        );
+        assertNotNull(err);
+        assertTrue(err.contains("vượt quá số tiền của giao dịch"));
+
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "AURA1", "OVERPAID", "50000", "0", ""
+        ));
+    }
+
+    @Test
+    @DisplayName("TC-PAY-17: Validate hoàn tiền - Chặn ghi chú quá 255 ký tự và trạng thái đối soát lạ")
+    void testValidateRefundNoteAndStatus() {
+        String longNote = "N".repeat(AdminBankTransactionsController.MAX_REFUND_NOTE_LENGTH + 1);
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "", "NO_CODE", "50000", "50000", longNote
+        ));
+        assertNotNull(AdminBankTransactionsController.validateRefundInput(
+                "FT123", "FT123", "", "UNKNOWN_STATUS", "50000", "50000", "OK"
+        ));
+    }
+
+    @Test
+    @DisplayName("TC-PAY-18: Dịch lỗi SQL an toàn, không lộ thông tin kỹ thuật thô ra UI")
+    void testRefundErrorMessageTranslation() {
+        SQLException tooLong = new SQLException("Data truncation: Data too long for column 'refund_note'", "22001", 1406);
+        String msg1 = AdminBankTransactionsController.refundErrorMessage(tooLong);
+        assertFalse(msg1.contains("Data truncation"));
+        assertTrue(msg1.contains("độ dài"));
+
+        SQLException outOfRange = new SQLException("Out of range value for column 'refund_amount'", "22003", 1264);
+        String msg2 = AdminBankTransactionsController.refundErrorMessage(outOfRange);
+        assertFalse(msg2.contains("Out of range"));
+
+        SQLException constraint = new SQLException("Duplicate entry", "23000", 1062);
+        String msg3 = AdminBankTransactionsController.refundErrorMessage(constraint);
+        assertFalse(msg3.contains("Duplicate entry"));
+
+        RuntimeException generic = new RuntimeException("Communications link failure to jdbc:mysql://localhost:3306");
+        String msg4 = AdminBankTransactionsController.refundErrorMessage(generic);
+        assertFalse(msg4.contains("jdbc:mysql"));
     }
 }

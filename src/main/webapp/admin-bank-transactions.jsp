@@ -192,11 +192,18 @@
     </header>
 
     <c:if test="${not empty sessionScope.bankTxFlash}">
-        <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
             <c:out value="${sessionScope.bankTxFlash}" />
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         <c:remove var="bankTxFlash" scope="session" />
+    </c:if>
+    <c:if test="${not empty sessionScope.bankTxError}">
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <c:out value="${sessionScope.bankTxError}" />
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <c:remove var="bankTxError" scope="session" />
     </c:if>
 
     <!-- Thống kê biến động số dư -->
@@ -204,15 +211,15 @@
         <div class="col-md-4">
             <div class="bank-stat-card">
                 <div>
-                    <div class="bank-stat-title">Tiền vào (Đã nhận)</div>
+                    <div class="bank-stat-title">Tiền vào (Thực nhận)</div>
                     <div class="bank-stat-val text-success">
                         +<fmt:formatNumber value="${totalInAmount}" pattern="#,##0" /> đ
                     </div>
-                    <!-- <c:if test="${totalRefundedAmount > 0}">
-                        <small class="text-danger">
-                            Đã hoàn: -<fmt:formatNumber value="${totalRefundedAmount}" pattern="#,##0" /> đ (không tính doanh thu)
+                    <c:if test="${totalRefundedAmount > 0}">
+                        <small class="text-danger fw-medium">
+                            Đã hoàn: -<fmt:formatNumber value="${totalRefundedAmount}" pattern="#,##0" /> đ (đã trừ khỏi tổng)
                         </small>
-                    </c:if> -->
+                    </c:if>
                 </div>
                 <div class="bank-icon-circle bg-success bg-opacity-10 text-success">
                     <span class="material-symbols-outlined">arrow_downward</span>
@@ -294,7 +301,24 @@
                                         <div style="font-size: 0.72rem; color: #94a3b8;"><c:out value="${tx.gateway}" /></div>
                                     </td>
                                     <td class="text-end text-nowrap">
-                                        <span class="text-success fw-bold font-monospace fs-6">${tx.formattedAmount}</span>
+                                        <c:choose>
+                                            <c:when test="${tx.refunded}">
+                                                <c:set var="netAmt" value="${tx.transferAmount - tx.refundedAmount}" />
+                                                <c:if test="${netAmt < 0}"><c:set var="netAmt" value="0" /></c:if>
+                                                <span class="text-muted text-decoration-line-through font-monospace small d-block">${tx.formattedAmount}</span>
+                                                <c:choose>
+                                                    <c:when test="${netAmt > 0}">
+                                                        <span class="text-success fw-bold font-monospace fs-6">+<fmt:formatNumber value="${netAmt}" pattern="#,##0" /> đ</span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="text-secondary fw-bold font-monospace fs-6">0 đ</span>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="text-success fw-bold font-monospace fs-6">${tx.formattedAmount}</span>
+                                            </c:otherwise>
+                                        </c:choose>
                                     </td>
                                     <td>
                                         <div class="tx-content-box" title="${fn:escapeXml(tx.content)}">
@@ -396,6 +420,7 @@
                                                             data-ref="${fn:escapeXml(tx.referenceCode)}"
                                                             data-order-code="${fn:escapeXml(tx.matchedOrderCode)}"
                                                             data-status="${fn:escapeXml(tx.reconcileStatus)}"
+                                                            data-transfer-amount="${tx.transferAmount}"
                                                             data-amount="${tx.reconcileStatus eq 'OVERPAID' ? tx.diffAmount : tx.transferAmount}"
                                                             onclick="openRefundModal(this)">
                                                         Hoàn tiền
@@ -417,25 +442,30 @@
 <div class="modal fade" id="refundModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="post" action="${ctx}/admin/bank-transactions">
+            <form method="post" action="${ctx}/admin/bank-transactions" id="refundForm">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">Xác nhận đã hoàn tiền</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <input type="hidden" name="csrfToken" value="${sessionScope.bankTxCsrfToken}" />
                     <input type="hidden" name="txKey" id="rfTxKey" />
                     <input type="hidden" name="sepayId" id="rfSepayId" />
                     <input type="hidden" name="referenceCode" id="rfRef" />
                     <input type="hidden" name="orderCode" id="rfOrderCode" />
                     <input type="hidden" name="reconcileStatus" id="rfStatus" />
+                    <input type="hidden" name="transferAmount" id="rfTransferAmount" />
+
+                    <div id="rfErrorBox" class="alert alert-danger py-2 px-3 small d-none" role="alert"></div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Số tiền đã hoàn (VNĐ)</label>
-                        <input type="number" class="form-control" name="refundAmount" id="rfAmount" min="1" step="1" required />
+                        <label class="form-label fw-semibold" for="rfAmount">Số tiền đã hoàn (VNĐ)</label>
+                        <input type="number" class="form-control" name="refundAmount" id="rfAmount" min="1" max="9999999999" step="1" required />
+                        <small id="rfAmountHint" class="text-muted d-block mt-1"></small>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label fw-semibold">Ghi chú / Mã giao dịch hoàn</label>
-                        <input type="text" class="form-control" name="refundNote" id="rfNote" placeholder="VD: Đã CK hoàn tiền thừa qua MBBank" maxlength="250" />
+                        <label class="form-label fw-semibold" for="rfNote">Ghi chú / Mã giao dịch hoàn</label>
+                        <input type="text" class="form-control" name="refundNote" id="rfNote" placeholder="VD: Đã CK hoàn tiền thừa qua MBBank" maxlength="255" />
                     </div>
                     <small class="text-muted">Phần tiền hoàn sẽ được trừ khỏi tổng tiền đã nhận và không tính vào doanh thu.</small>
                 </div>
@@ -456,20 +486,74 @@
     const COUNTDOWN_DEFAULT = 5;
 
     const refundModalEl = document.getElementById('refundModal');
+    const refundFormEl = document.getElementById('refundForm');
     if (refundModalEl) {
         refundModalEl.addEventListener('show.bs.modal', () => { isModalOpen = true; });
         refundModalEl.addEventListener('hidden.bs.modal', () => { isModalOpen = false; });
     }
 
+    function showRefundError(msg) {
+        const box = document.getElementById('rfErrorBox');
+        if (!box) return;
+        if (!msg) {
+            box.textContent = '';
+            box.classList.add('d-none');
+        } else {
+            box.textContent = msg;
+            box.classList.remove('d-none');
+        }
+    }
+
     function openRefundModal(btn) {
+        const transferAmount = Number(btn.dataset.transferAmount || 0);
+        const suggestedAmount = Math.round(Number(btn.dataset.amount || 0));
+        const amountInput = document.getElementById('rfAmount');
+        const hintEl = document.getElementById('rfAmountHint');
+
         document.getElementById('rfTxKey').value = btn.dataset.txKey || '';
         document.getElementById('rfSepayId').value = btn.dataset.sepayId || '0';
         document.getElementById('rfRef').value = btn.dataset.ref || '';
         document.getElementById('rfOrderCode').value = btn.dataset.orderCode || '';
         document.getElementById('rfStatus').value = btn.dataset.status || '';
-        document.getElementById('rfAmount').value = Math.round(Number(btn.dataset.amount || 0));
+        document.getElementById('rfTransferAmount').value = transferAmount > 0 ? transferAmount : '';
         document.getElementById('rfNote').value = '';
+
+        amountInput.value = suggestedAmount > 0 ? suggestedAmount : '';
+        if (transferAmount > 0) {
+            amountInput.max = Math.round(transferAmount);
+            hintEl.textContent = 'Tối đa bằng số tiền giao dịch: ' + Math.round(transferAmount).toLocaleString('vi-VN') + ' đ';
+        } else {
+            amountInput.max = 9999999999;
+            hintEl.textContent = '';
+        }
+
+        showRefundError('');
         bootstrap.Modal.getOrCreateInstance(refundModalEl).show();
+    }
+
+    if (refundFormEl) {
+        refundFormEl.addEventListener('submit', (e) => {
+            const amount = Number(document.getElementById('rfAmount').value);
+            const transferAmount = Number(document.getElementById('rfTransferAmount').value || 0);
+            const note = (document.getElementById('rfNote').value || '').trim();
+
+            if (!Number.isFinite(amount) || amount <= 0) {
+                e.preventDefault();
+                showRefundError('Số tiền hoàn phải lớn hơn 0.');
+                return;
+            }
+            if (transferAmount > 0 && amount > transferAmount) {
+                e.preventDefault();
+                showRefundError('Số tiền hoàn không được vượt quá số tiền của giao dịch.');
+                return;
+            }
+            if (note.length > 255) {
+                e.preventDefault();
+                showRefundError('Ghi chú hoàn tiền không được vượt quá 255 ký tự.');
+                return;
+            }
+            showRefundError('');
+        });
     }
 
     function updateCountdownDisplay() {
