@@ -5,6 +5,7 @@ import model.PurchaseOrderItem;
 import org.junit.jupiter.api.Test;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,5 +38,30 @@ class AdminPurchaseControllerTest {
     @Test void rejectsCombinedTotalBeyondDatabaseMoneyRange() {
         assertThrows(IllegalArgumentException.class,()->AdminPurchaseController.parseItems(request(
                 new String[]{"1","2"},new String[]{"1","1"},new String[]{"9999999999.99","0.01"})));
+    }
+
+    @Test void validateQuantityMoneyAndReasonBounds() {
+        assertEquals("Số lượng đặt phải lớn hơn 0.",
+                AdminPurchaseController.validateQuantity(BigDecimal.ZERO, false, "Số lượng đặt"));
+        assertNull(AdminPurchaseController.validateQuantity(BigDecimal.ZERO, true, "Thực nhận"));
+        assertEquals("Số lượng đặt quá lớn (tối đa 999,999,999.999).",
+                AdminPurchaseController.validateQuantity(new BigDecimal("1000000000"), false, "Số lượng đặt"));
+        assertEquals("Tổng tiền lô không được nhỏ hơn 0.",
+                AdminPurchaseController.validateMoney(new BigDecimal("-1"), "Tổng tiền lô"));
+        assertEquals("Tổng tiền lô chỉ được có tối đa 2 chữ số thập phân.",
+                AdminPurchaseController.validateMoney(new BigDecimal("10.123"), "Tổng tiền lô"));
+        assertEquals("Lý do điều chỉnh phải từ 3 đến 500 ký tự.",
+                AdminPurchaseController.validateRequiredReason("ok", "Lý do điều chỉnh"));
+    }
+
+    @Test void purchaseErrorMessageHidesTechnicalDetails() {
+        assertTrue(AdminPurchaseController.purchaseErrorMessage(new SQLException("Out of range", "22003"))
+                .contains("giới hạn lưu trữ"));
+        assertTrue(AdminPurchaseController.purchaseErrorMessage(new SQLException("Too long", "22001"))
+                .contains("500 ký tự"));
+        assertTrue(AdminPurchaseController.purchaseErrorMessage(new SQLException("Check failed", "HY000", 3819))
+                .contains("ràng buộc"));
+        assertFalse(AdminPurchaseController.purchaseErrorMessage(new SQLException("secret SQL detail", "08000"))
+                .contains("secret"));
     }
 }

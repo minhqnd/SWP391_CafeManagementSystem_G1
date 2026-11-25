@@ -372,11 +372,11 @@
                             <div class="row g-2 mb-3">
                                 <div class="col-6">
                                     <label class="form-label fw-bold small text-secondary">Số lượng đặt (${po.items[0].unit}) <span class="text-danger">*</span></label>
-                                    <input class="form-control" name="quantity" value="${po.items[0].quantity}" type="number" step="0.001" min="0.001" required>
+                                    <input class="form-control" name="quantity" value="${po.items[0].quantity}" type="number" step="0.001" min="0.001" max="999999999.999" required>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label fw-bold small text-secondary">Tổng tiền (đ) <span class="text-danger">*</span></label>
-                                    <input class="form-control" name="totalPrice" value="${po.totalCost}" type="number" min="0" step="0.01" required>
+                                    <input class="form-control" name="totalPrice" value="${po.totalCost}" type="number" min="0" max="9999999999.99" step="0.01" required>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -385,7 +385,7 @@
                             </div>
                             <div>
                                 <label class="form-label fw-bold small text-secondary">Lý do chỉnh sửa</label>
-                                <input class="form-control" name="editReason" value="Cập nhật số lượng / đơn giá theo báo giá NCC" maxlength="500" required>
+                                <input class="form-control" name="editReason" value="Cập nhật số lượng / đơn giá theo báo giá NCC" minlength="3" maxlength="500" required>
                             </div>
                         </div>
                         <div class="modal-footer bg-light">
@@ -443,12 +443,12 @@
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small text-secondary">Số lượng NCC giao tới (${it.unit})</label>
                                             <input type="number" class="form-control delivered-input" name="delivered_${it.id}"
-                                                   min="0" step="0.001" value="${defaultRecv}" required oninput="updateReceiveDiff(this)">
+                                                   min="0" max="999999999.999" step="0.001" value="${defaultRecv}" required oninput="updateReceiveDiff(this)">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small text-success">Thực nhận đạt yêu cầu - Cộng vào kho (${it.unit}) <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control border-success fw-bold accepted-input" name="accepted_${it.id}"
-                                                   min="0" step="0.001" value="${defaultRecv}" required oninput="updateReceiveDiff(this)">
+                                                   min="0" max="999999999.999" step="0.001" value="${defaultRecv}" required oninput="updateReceiveDiff(this)">
                                         </div>
                                     </div>
                                     <div class="small mt-2 text-muted diff-detail-text"></div>
@@ -464,7 +464,7 @@
 
                             <div>
                                 <label class="form-label fw-bold small text-secondary">Ghi chú kiểm nhận (Tình trạng hàng hóa, lý do thừa/thiếu nếu có)</label>
-                                <input type="text" class="form-control" name="note" value="Hàng giao đạt tiêu chuẩn, nhập kho đầy đủ" maxlength="500" required>
+                                <input type="text" class="form-control" name="note" value="Hàng giao đạt tiêu chuẩn, nhập kho đầy đủ" minlength="3" maxlength="500" required>
                             </div>
                         </div>
                         <div class="modal-footer bg-light">
@@ -513,11 +513,11 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-secondary">Số lượng thay đổi (+ / -) <span class="text-danger">*</span></label>
-                                <input type="number" step="0.001" name="delta" class="form-control" placeholder="VD: -2 (trả lại 2 đơn vị) hoặc 1.5 (bổ sung)" required>
+                                <input type="number" step="0.001" min="-999999999.999" max="999999999.999" name="delta" class="form-control" placeholder="VD: -2 (trả lại 2 đơn vị) hoặc 1.5 (bổ sung)" required>
                             </div>
                             <div>
                                 <label class="form-label fw-bold small text-secondary">Lý do điều chỉnh / trả hàng <span class="text-danger">*</span></label>
-                                <input type="text" name="reason" class="form-control" placeholder="VD: Phát hiện 2 bịch rách bao bì trả lại NCC" maxlength="500" required>
+                                <input type="text" name="reason" class="form-control" placeholder="VD: Phát hiện 2 bịch rách bao bì trả lại NCC" minlength="3" maxlength="500" required>
                             </div>
                         </div>
                         <div class="modal-footer bg-light">
