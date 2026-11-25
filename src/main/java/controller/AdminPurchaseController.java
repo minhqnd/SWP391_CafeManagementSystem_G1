@@ -171,26 +171,32 @@ public class AdminPurchaseController extends HttpServlet {
 
                 for (String val : itemIds) {
                     int itemId = parsePositiveId(val, "Mã dòng nguyên liệu");
-                    BigDecimal delivered = parseDecimalParam(r.getParameter("delivered_" + itemId), "Số lượng NCC giao tới", true);
-                    BigDecimal accepted = parseDecimalParam(r.getParameter("accepted_" + itemId), "Số lượng thực nhận đạt", true);
-
-                    String delError = validateQuantity(delivered, true, "Số lượng NCC giao tới");
-                    if (delError != null) throw new IllegalArgumentException(delError);
-                    String accError = validateQuantity(accepted, true, "Số lượng thực nhận đạt");
+                    BigDecimal accepted = parseDecimalParam(r.getParameter("accepted_" + itemId), "Số lượng thực nhận", true);
+                    String accError = validateQuantity(accepted, true, "Số lượng thực nhận");
                     if (accError != null) throw new IllegalArgumentException(accError);
-
-                    if (delivered.scale() > MAX_QUANTITY_SCALE) delivered = delivered.stripTrailingZeros();
                     if (accepted.scale() > MAX_QUANTITY_SCALE) accepted = accepted.stripTrailingZeros();
 
-                    if (accepted.compareTo(delivered) > 0) {
-                        throw new IllegalArgumentException("Số lượng thực nhận đạt không được vượt quá số lượng NCC giao tới.");
+                    // Nếu form chỉ gửi 1 ô số lượng thực nhận thì tự lấy SL giao bằng SL thực nhận
+                    String rawDelivered = r.getParameter("delivered_" + itemId);
+                    BigDecimal delivered;
+                    if (rawDelivered == null || rawDelivered.isBlank()) {
+                        delivered = accepted;
+                    } else {
+                        delivered = parseDecimalParam(rawDelivered, "Số lượng NCC giao tới", true);
+                        String delError = validateQuantity(delivered, true, "Số lượng NCC giao tới");
+                        if (delError != null) throw new IllegalArgumentException(delError);
+                        if (delivered.scale() > MAX_QUANTITY_SCALE) delivered = delivered.stripTrailingZeros();
+                        if (accepted.compareTo(delivered) > 0) {
+                            throw new IllegalArgumentException("Số lượng thực nhận đạt không được vượt quá số lượng NCC giao tới.");
+                        }
                     }
+
                     totalDelivered = totalDelivered.add(delivered);
                     items.add(new PurchaseReceipt.Item(itemId, delivered, accepted));
                 }
 
                 if (totalDelivered.signum() <= 0) {
-                    throw new IllegalArgumentException("Cần có ít nhất một nguyên liệu có số lượng giao lớn hơn 0.");
+                    throw new IllegalArgumentException("Cần có ít nhất một nguyên liệu có số lượng thực nhận lớn hơn 0.");
                 }
 
                 String note = r.getParameter("note");

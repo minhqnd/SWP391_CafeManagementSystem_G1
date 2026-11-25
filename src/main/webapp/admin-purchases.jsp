@@ -371,11 +371,11 @@
                             <div class="row g-2 mb-3">
                                 <div class="col-6">
                                     <label class="form-label fw-bold small text-secondary">Số lượng đặt (${po.items[0].unit}) <span class="text-danger">*</span></label>
-                                    <input class="form-control" name="quantity" value="${po.items[0].quantity}" type="number" step="0.001" min="0.001" max="999999999.999" required>
+                                    <input class="form-control" name="quantity" value="${po.items[0].quantity.stripTrailingZeros().toPlainString()}" type="number" step="0.001" min="0.001" max="999999999.999" required>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label fw-bold small text-secondary">Tổng tiền (đ) <span class="text-danger">*</span></label>
-                                    <input class="form-control" name="totalPrice" value="${po.totalCost}" type="number" min="0" max="9999999999.99" step="0.01" required>
+                                    <input class="form-control" name="totalPrice" value="${po.totalCost.stripTrailingZeros().toPlainString()}" type="number" min="0" max="9999999999.99" step="0.01" required>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -397,10 +397,10 @@
         </div>
     </c:if>
 
-    <!-- MODAL KIỂM NHẬN HÀNG GIAO (XỬ LÝ ĐỦ / GIAO THIẾU / GIAO THỪA / HÀNG HỎNG) -->
+    <!-- MODAL KIỂM NHẬN HÀNG GIAO -->
     <c:if test="${po.status eq 'ORDERED' or po.status eq 'PARTIALLY_RECEIVED'}">
         <div class="modal fade" id="receiveModal-${po.id}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content border-0 shadow">
                     <form method="post" action="${ctx}/admin/purchases">
                         <input type="hidden" name="csrfToken" value="${sessionScope.inventoryWorkflowToken}">
@@ -409,68 +409,56 @@
                         <input type="hidden" name="poId" value="${po.id}">
                         <div class="modal-header bg-light">
                             <div>
-                                <h5 class="modal-title fw-bold mb-0">Kiểm nhận hàng &amp; Cộng tồn kho · PO-${po.id}</h5>
-                                <small class="text-muted">Nhà cung cấp: <c:out value="${po.supplierName}"/></small>
+                                <h5 class="modal-title fw-bold mb-0">Kiểm nhận hàng · PO-${po.id}</h5>
+                                <small class="text-muted">NCC: <c:out value="${po.supplierName}"/></small>
                             </div>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body p-4">
-                            <div class="alert alert-light border small mb-3">
-                                <strong>Hướng dẫn nhanh:</strong> Mặc định hệ thống điền sẵn <em>Số lượng cần nhận</em>.
-                                Nếu NCC <strong>giao thiếu</strong>, hãy giảm số lượng thực nhận. Nếu NCC <strong>giao thừa</strong>, hãy nhập số thực nhận lớn hơn số đặt. Nếu có <strong>hàng hỏng trả lại</strong>, nhập <em>SL thực nhận đạt</em> nhỏ hơn <em>SL giao tới</em>.
-                            </div>
-
                             <c:forEach var="it" items="${po.items}">
                                 <c:set var="defaultRecv" value="${it.remainingQuantity}" />
+                                <c:set var="defaultRecvPlain" value="${defaultRecv.stripTrailingZeros().toPlainString()}" />
                                 <div class="p-3 rounded-3 border bg-light mb-3 receive-item-card"
-                                     data-expected="${defaultRecv}" data-unit="${fn:escapeXml(it.unit)}">
+                                     data-expected="${defaultRecvPlain}" data-unit="${fn:escapeXml(it.unit)}">
                                     <input type="hidden" name="itemId" value="${it.id}">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                         <div>
-                                            <span class="fw-bold text-dark fs-6"><c:out value="${it.ingredientName}"/> (${it.unit})</span>
+                                            <div class="fw-bold text-dark"><c:out value="${it.ingredientName}"/> (${it.unit})</div>
                                             <div class="text-muted small">
-                                                Đặt mua: <strong><fmt:formatNumber value="${it.quantity}" pattern="#,##0.###" /></strong> ·
-                                                Đã nhận trước đó: <strong><fmt:formatNumber value="${it.receivedQuantity}" pattern="#,##0.###" /></strong> ·
-                                                Cần nhận đợt này: <strong class="text-primary"><fmt:formatNumber value="${defaultRecv}" pattern="#,##0.###" /> ${it.unit}</strong>
+                                                Đặt: <strong><fmt:formatNumber value="${it.quantity}" pattern="#,##0.###" /></strong> ·
+                                                Đã nhận: <strong><fmt:formatNumber value="${it.receivedQuantity}" pattern="#,##0.###" /></strong> ·
+                                                Còn thiếu: <strong class="text-primary"><fmt:formatNumber value="${defaultRecv}" pattern="#,##0.###" /> ${it.unit}</strong>
                                             </div>
                                         </div>
                                         <span class="badge bg-success-subtle text-success border border-success-subtle diff-status-badge">
-                                            ✔ Nhận đủ hàng
+                                            Nhận đủ
                                         </span>
                                     </div>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold small text-secondary">Số lượng NCC giao tới (${it.unit})</label>
-                                            <input type="number" class="form-control delivered-input" name="delivered_${it.id}"
-                                                   min="0" max="999999999.999" step="0.001" value="${defaultRecv}" required oninput="updateReceiveDiff(this)">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold small text-success">Thực nhận đạt yêu cầu - Cộng vào kho (${it.unit}) <span class="text-danger">*</span></label>
-                                            <input type="number" class="form-control border-success fw-bold accepted-input" name="accepted_${it.id}"
-                                                   min="0" max="999999999.999" step="0.001" value="${defaultRecv}" required oninput="updateReceiveDiff(this)">
-                                        </div>
+                                    <div>
+                                        <label class="form-label fw-bold small text-success">Số lượng thực nhận - cộng kho (${it.unit}) <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control border-success fw-bold accepted-input" name="accepted_${it.id}"
+                                               min="0" max="999999999.999" step="0.001" value="${defaultRecvPlain}" required oninput="updateReceiveDiff(this)">
                                     </div>
-                                    <div class="small mt-2 text-muted diff-detail-text"></div>
                                 </div>
                             </c:forEach>
 
                             <div class="form-check mb-3 p-3 rounded border bg-warning-subtle d-none short-delivery-box">
                                 <input class="form-check-input ms-0 me-2" type="checkbox" name="closeRemainder" value="yes" id="closeRem-${po.id}">
                                 <label class="form-check-label small fw-semibold text-dark" for="closeRem-${po.id}">
-                                    Chốt đóng phiếu luôn sau lần nhận này (Không yêu cầu nhà cung cấp giao bù phần còn thiếu)
+                                    Chốt đóng phiếu (không chờ giao bù phần thiếu)
                                 </label>
                             </div>
 
                             <div>
-                                <label class="form-label fw-bold small text-secondary">Ghi chú kiểm nhận (Tình trạng hàng hóa, lý do thừa/thiếu nếu có)</label>
-                                <input type="text" class="form-control" name="note" value="Hàng giao đạt tiêu chuẩn, nhập kho đầy đủ" minlength="3" maxlength="500" required>
+                                <label class="form-label fw-bold small text-secondary">Ghi chú kiểm nhận <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="note" value="Hàng giao đạt tiêu chuẩn, nhập kho đầy đủ" placeholder="Tình trạng hàng hóa, lý do thừa/thiếu..." minlength="3" maxlength="500" required>
                             </div>
                         </div>
                         <div class="modal-footer bg-light">
                             <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
                             <button type="submit" class="btn btn-success fw-bold d-flex align-items-center gap-1">
                                 <span class="material-symbols-outlined fs-5">check_circle</span>
-                                <span>Xác nhận &amp; Cộng tồn kho ngay</span>
+                                <span>Xác nhận nhập kho</span>
                             </button>
                         </div>
                     </form>
@@ -494,7 +482,7 @@
                         </div>
                         <div class="modal-body p-4">
                             <p class="small text-muted mb-3">
-                                Dùng khi phát hiện hàng lỗi trả lại nhà cung cấp hoặc kiểm đếm lệch sau khi phiếu đã nhập kho. Nhập số âm (VD: <code>-2</code>) để trừ kho trả hàng, số dương (VD: <code>+2</code>) để cộng thêm.
+                                Nhập số âm để trừ/trả hàng (VD: <code>-2</code>), số dương để cộng thêm (VD: <code>2</code>).
                             </p>
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-secondary">Nguyên liệu thuộc phiếu</label>
@@ -558,36 +546,28 @@
         if (!card) return;
         const expected = parseFloat(card.dataset.expected || '0');
         const unit = card.dataset.unit || '';
-        const deliveredInput = card.querySelector('.delivered-input');
         const acceptedInput = card.querySelector('.accepted-input');
         const badge = card.querySelector('.diff-status-badge');
-        const detail = card.querySelector('.diff-detail-text');
         const modal = card.closest('.modal-body');
         const shortBox = modal?.querySelector('.short-delivery-box');
 
-        const delivered = parseFloat(deliveredInput?.value || '0');
         const accepted = parseFloat(acceptedInput?.value || '0');
         const diff = accepted - expected;
-        const rejected = Math.max(0, delivered - accepted);
+        const fmt = val => val.toFixed(3).replace(/\.?0+$/, '');
 
-        let extraNote = rejected > 0 ? (' · Trả lại/Hàng hỏng từ chối: ' + rejected.toFixed(3).replace(/\.?0+$/, '') + ' ' + unit) : '';
-
+        badge.style.cssText = '';
         if (Math.abs(diff) < 0.0005) {
             badge.className = 'badge bg-success-subtle text-success border border-success-subtle diff-status-badge';
-            badge.innerText = '✔ Nhận đủ hàng (100%)';
-            detail.innerText = 'Khớp đúng số lượng cần nhận' + extraNote;
+            badge.innerText = 'Nhận đủ';
         } else if (diff < 0) {
-            const missing = Math.abs(diff).toFixed(3).replace(/\.?0+$/, '');
             badge.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle diff-status-badge';
-            badge.innerText = '⚠ Giao thiếu -' + missing + ' ' + unit;
-            detail.innerText = 'Thiếu ' + missing + ' ' + unit + ' so với số lượng đặt. Mặc định phiếu sẽ chuyển sang trạng thái "Nhận một phần (Chờ giao bù)"' + extraNote;
+            badge.innerText = 'Thiếu ' + fmt(Math.abs(diff)) + ' ' + unit;
         } else {
-            const excess = diff.toFixed(3).replace(/\.?0+$/, '');
             badge.className = 'badge diff-status-badge';
             badge.style.cssText = 'background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;';
-            badge.innerText = '⬆ Giao thừa +' + excess + ' ' + unit;
-            detail.innerText = 'Nhận vượt đơn đặt +' + excess + ' ' + unit + ' (Hệ thống sẽ cộng toàn bộ số thực nhận vào kho)' + extraNote;
+            badge.innerText = 'Thừa +' + fmt(diff) + ' ' + unit;
         }
+
         if (shortBox) {
             const hasShortDelivery = Array.from(modal.querySelectorAll('.receive-item-card')).some(line =>
                 Number(line.querySelector('.accepted-input').value) < Number(line.dataset.expected)

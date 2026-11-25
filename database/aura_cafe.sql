@@ -324,7 +324,7 @@ CREATE TABLE `ingredients` (
 
 LOCK TABLES `ingredients` WRITE;
 /*!40000 ALTER TABLE `ingredients` DISABLE KEYS */;
-INSERT INTO `ingredients` (`id`,`supplier_id`,`name`,`unit`,`current_stock`,`min_stock_level`) VALUES (1,1,'Coffee beans','gram',10000.000,2000.000),(2,2,'Fresh milk','ml',20000.000,5000.000),(3,2,'Peach syrup','ml',5000.000,1000.000),(4,2,'Black tea','gram',8000.000,1500.000),(5,2,'Tapioca pearls','gram',4000.000,1000.000),(6,3,'Cheesecake slice','piece',30.000,5.000),(7,2,'Orange','piece',100.000,20.000),(8,2,'Lemon','piece',80.000,15.000);
+INSERT INTO `ingredients` (`id`,`supplier_id`,`name`,`unit`,`current_stock`,`min_stock_level`) VALUES (1,1,'Hạt cà phê','gram',10000.000,2000.000),(2,2,'Sữa tươi','ml',20000.000,5000.000),(3,2,'Siro đào','ml',5000.000,1000.000),(4,2,'Trà đen','gram',8000.000,1500.000),(5,2,'Trân châu','gram',4000.000,1000.000),(6,3,'Bánh Cheesecake','miếng',30.000,5.000),(7,2,'Cam tươi','quả',100.000,20.000),(8,2,'Chanh tươi','quả',80.000,15.000);
 /*!40000 ALTER TABLE `ingredients` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -834,7 +834,7 @@ CREATE TABLE `suppliers` (
 
 LOCK TABLES `suppliers` WRITE;
 /*!40000 ALTER TABLE `suppliers` DISABLE KEYS */;
-INSERT INTO `suppliers` VALUES (1,'Fresh Bean Supplier','0911000001','Dong Da, Hanoi','ACTIVE'),(2,'Dairy and Syrup Co.','0911000002','Cau Giay, Hanoi','ACTIVE'),(3,'Bakery Ingredient Supply','0911000003','Ba Dinh, Hanoi','ACTIVE');
+INSERT INTO `suppliers` VALUES (1,'Công ty Cà Phê Nguyên Chất','0911000001','Đống Đa, Hà Nội','ACTIVE'),(2,'Công ty Sữa & Siro Pha Chế','0911000002','Cầu Giấy, Hà Nội','ACTIVE'),(3,'Xưởng Bánh Ngọt Hà Nội','0911000003','Ba Đình, Hà Nội','ACTIVE');
 /*!40000 ALTER TABLE `suppliers` ENABLE KEYS */;
 UNLOCK TABLES;
 

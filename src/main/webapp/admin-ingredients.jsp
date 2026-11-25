@@ -222,12 +222,12 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Tên nguyên liệu <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="modalIngredientName" class="form-control" required maxlength="150" placeholder="Ví dụ: Coffee beans, Fresh milk...">
+                        <input type="text" name="name" id="modalIngredientName" class="form-control" required maxlength="150" placeholder="Ví dụ: Hạt cà phê, Sữa tươi...">
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-bold small text-secondary">Đơn vị tính (ĐVT) <span class="text-danger">*</span></label>
-                            <input type="text" name="unit" id="modalIngredientUnit" class="form-control" required maxlength="20" placeholder="gram, ml, piece, lon...">
+                            <input type="text" name="unit" id="modalIngredientUnit" class="form-control" required maxlength="20" placeholder="gram, ml, miếng, quả, lon...">
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-bold small text-secondary">Ngưỡng cảnh báo</label>
