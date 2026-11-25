@@ -1,5 +1,6 @@
 package controller;
 
+import dao.OrderDAO;
 import model.Order;
 import model.OrderDetail;
 import org.junit.jupiter.api.DisplayName;
@@ -155,5 +156,17 @@ public class CounterOrderControllerTest {
         assertEquals(1, items.get(0).getProductId());
         assertEquals(2, items.get(0).getQuantity());
         assertEquals("Size M | Lưu ý: ly } \"riêng\"", items.get(0).getCustomization());
+    }
+
+    @Test
+    void counterCreateErrorMessageHandlesOutOfStockAndFallback() {
+        String detail = "Món Cà phê Muối đã hết hoặc không đủ số lượng cho giỏ hàng này.";
+        assertEquals(detail, CounterOrderController.counterCreateErrorMessage(OrderDAO.NOT_ENOUGH_STOCK, detail));
+
+        String fallback = CounterOrderController.counterCreateErrorMessage(OrderDAO.NOT_ENOUGH_STOCK, "  ");
+        assertTrue(fallback.contains("không đủ nguyên liệu"));
+
+        assertEquals("Không thể tạo đơn hàng. Vui lòng thử lại.",
+                CounterOrderController.counterCreateErrorMessage(-1, null));
     }
 }

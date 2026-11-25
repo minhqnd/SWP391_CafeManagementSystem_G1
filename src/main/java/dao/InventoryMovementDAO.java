@@ -10,10 +10,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import model.CartItem;
+import model.OrderDetail;
 
 /** Inventory movements that must commit atomically with order or purchase-order status changes. */
 final class InventoryMovementDAO {
     private InventoryMovementDAO() {}
+
+    // Tái sử dụng checkoutStockError để kiểm tra tồn kho nguyên liệu cho đơn tạo tại quầy (POS)
+    static String counterOrderStockError(Connection conn, List<OrderDetail> items, boolean lock)
+            throws SQLException {
+        if (items == null || items.isEmpty()) {
+            return "Đơn hàng phải có ít nhất 1 món.";
+        }
+        List<CartItem> stockItems = new ArrayList<>();
+        for (OrderDetail item : items) {
+            CartItem ci = new CartItem();
+            ci.setProductId(item.getProductId());
+            ci.setProductName(item.getProductName());
+            ci.setQuantity(item.getQuantity());
+            stockItems.add(ci);
+        }
+        return checkoutStockError(conn, stockItems, lock);
+    }
 
     // Combine all cart lines: different drinks can consume the same ingredient.
     static String checkoutStockError(Connection conn, List<CartItem> items, boolean lock)

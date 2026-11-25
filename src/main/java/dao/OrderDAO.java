@@ -299,6 +299,13 @@ public class OrderDAO extends BaseDAO {
         }
     }
 
+    /** Kiểm tra tồn kho nguyên liệu cho danh sách món tạo tại quầy (tái sử dụng InventoryMovementDAO). */
+    public String getCounterOrderStockError(List<OrderDetail> items) throws SQLException, ClassNotFoundException {
+        try (Connection conn = DBContext.getConnection()) {
+            return InventoryMovementDAO.counterOrderStockError(conn, items, false);
+        }
+    }
+
     /**
      * Tạo đơn hàng từ các món đã chọn ở Checkout trong cùng một transaction:
      * orders + order_items + trừ điểm Aura khách dùng (users.total_points + loyalty_transactions REDEEM gắn với đơn).
@@ -861,6 +868,12 @@ public class OrderDAO extends BaseDAO {
         try {
             conn = DBContext.getConnection();
             conn.setAutoCommit(false);
+
+            // Chặn tạo đơn tại quầy ngay nếu nguyên liệu trong kho không đủ pha chế
+            if (InventoryMovementDAO.counterOrderStockError(conn, items, true) != null) {
+                conn.rollback();
+                return NOT_ENOUGH_STOCK;
+            }
 
             if (order.getCustomerId() != null && pointsUsed > 0) {
                 try (PreparedStatement ps = conn.prepareStatement(

@@ -378,6 +378,17 @@ public class CounterOrderController extends HttpServlet {
         // .. Em gửi thông tin đã kiểm tra sang phần lưu đơn và thanh toán.
         // ... OrderDAO.createCounterOrder(đơn, món, cách trả, điểm dùng, ghi chú, quy tắc) [CT02].
         int orderId = orderDAO.createCounterOrder(order, items, paymentMethod, pointsUsed, paymentNote, settings);
+        if (orderId == OrderDAO.NOT_ENOUGH_STOCK) {
+            String stockDetail = null;
+            try {
+                stockDetail = orderDAO.getCounterOrderStockError(items);
+            } catch (Exception ignored) {
+            }
+            String errMsg = counterCreateErrorMessage(orderId, stockDetail);
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST,
+                    "{\"success\":false,\"error\":\"" + escapeJson(errMsg) + "\"}");
+            return;
+        }
 
         String qrUrl = "";
         if (orderId > 0 && "BANK_TRANSFER".equals(paymentMethod)) {
@@ -410,8 +421,21 @@ public class CounterOrderController extends HttpServlet {
             );
             sendJson(response, HttpServletResponse.SC_OK, json);
         } else {
-            sendJson(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "{\"success\":false,\"error\":\"Không thể tạo đơn hàng. Vui lòng thử lại.\"}");
+            String errMsg = counterCreateErrorMessage(orderId, null);
+            sendJson(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "{\"success\":false,\"error\":\"" + escapeJson(errMsg) + "\"}");
         }
+    }
+
+    // Trả thông báo lỗi phù hợp khi tạo đơn tại quầy thất bại (hết nguyên liệu hoặc lỗi hệ thống)
+    static String counterCreateErrorMessage(int orderId, String stockDetail) {
+        if (orderId == OrderDAO.NOT_ENOUGH_STOCK) {
+            if (stockDetail != null && !stockDetail.isBlank()) {
+                return stockDetail;
+            }
+            return "Có món trong đơn đã hết hoặc không đủ nguyên liệu trong kho. Vui lòng giảm số lượng hoặc chọn món khác.";
+        }
+        return "Không thể tạo đơn hàng. Vui lòng thử lại.";
     }
 
     private void handleCheckPayment(HttpServletRequest request, HttpServletResponse response) throws IOException {
