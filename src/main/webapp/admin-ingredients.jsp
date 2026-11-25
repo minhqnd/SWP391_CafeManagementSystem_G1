@@ -222,16 +222,16 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Tên nguyên liệu <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="modalIngredientName" class="form-control" required placeholder="Ví dụ: Coffee beans, Fresh milk...">
+                        <input type="text" name="name" id="modalIngredientName" class="form-control" required maxlength="150" placeholder="Ví dụ: Coffee beans, Fresh milk...">
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-bold small text-secondary">Đơn vị tính (ĐVT) <span class="text-danger">*</span></label>
-                            <input type="text" name="unit" id="modalIngredientUnit" class="form-control" required placeholder="gram, ml, piece, lon...">
+                            <input type="text" name="unit" id="modalIngredientUnit" class="form-control" required maxlength="20" placeholder="gram, ml, piece, lon...">
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-bold small text-secondary">Ngưỡng tối thiểu</label>
-                            <input type="number" step="0.001" name="minStockLevel" id="modalIngredientMinStock" class="form-control" value="0" placeholder="0">
+                            <input type="number" step="0.001" min="0" max="999999999.999" name="minStockLevel" id="modalIngredientMinStock" class="form-control" value="0" placeholder="0">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -245,7 +245,7 @@
                     </div>
                     <div class="mb-3" id="initialStockGroup">
                         <label class="form-label fw-bold small text-secondary">Tồn kho ban đầu</label>
-                        <input type="number" step="0.001" name="currentStock" id="modalIngredientStock" class="form-control" value="0">
+                        <input type="number" step="0.001" min="0" max="999999999.999" name="currentStock" id="modalIngredientStock" class="form-control" value="0">
                     </div>
                 </div>
                 <div class="modal-footer">

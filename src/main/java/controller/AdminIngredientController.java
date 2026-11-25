@@ -21,6 +21,12 @@ import java.util.UUID;
 @WebServlet(name = "AdminIngredientController", urlPatterns = {"/admin/ingredients"})
 public class AdminIngredientController extends HttpServlet {
 
+    // Giới hạn dữ liệu khớp với cấu trúc bảng `ingredients` trong MySQL
+    static final int MAX_NAME_LENGTH = 150;
+    static final int MAX_UNIT_LENGTH = 20;
+    static final BigDecimal MAX_STOCK_VALUE = new BigDecimal("999999999.999");
+    static final int MAX_STOCK_SCALE = 3;
+
     private final IngredientDAO ingredientDAO = new IngredientDAO();
     private final SupplierDAO supplierDAO = new SupplierDAO();
 
@@ -102,41 +108,51 @@ public class AdminIngredientController extends HttpServlet {
                     String stockParam = request.getParameter("currentStock");
                     String minStockParam = request.getParameter("minStockLevel");
 
-                    if (name == null || name.trim().isEmpty() || unit == null || unit.trim().isEmpty()) {
-                        session.setAttribute("ingredientError", "Tên nguyên liệu và đơn vị tính là bắt buộc.");
-                    } else {
-                        Integer supplierId = (supplierParam != null && !supplierParam.isBlank() && !supplierParam.equals("0"))
-                                ? Integer.parseInt(supplierParam) : null;
-                        BigDecimal currentStock = (stockParam != null && !stockParam.isBlank())
-                                ? new BigDecimal(stockParam.trim()) : BigDecimal.ZERO;
-                        BigDecimal minStockLevel = (minStockParam != null && !minStockParam.isBlank())
-                                ? new BigDecimal(minStockParam.trim()) : BigDecimal.ZERO;
-
-                        Ingredient item = new Ingredient(0, supplierId, name.trim(), unit.trim(), currentStock, minStockLevel);
-                        ingredientDAO.insertIngredient(item);
-                        session.setAttribute("ingredientMessage", "Thêm nguyên vật liệu mới thành công!");
+                    // Kiểm tra tên nguyên liệu và đơn vị tính trước khi xử lý số
+                    String error = validateText(name, "Tên nguyên liệu", MAX_NAME_LENGTH);
+                    if (error == null) {
+                        error = validateText(unit, "Đơn vị tính (ĐVT)", MAX_UNIT_LENGTH);
                     }
+                    if (error != null) {
+                        session.setAttribute("ingredientError", error);
+                        break;
+                    }
+
+                    // Kiểm tra nhà cung cấp, ngưỡng tối thiểu và tồn kho ban đầu
+                    Integer supplierId = parseSupplierId(supplierParam);
+                    BigDecimal minStockLevel = parseStockParam(minStockParam, "Ngưỡng tối thiểu");
+                    BigDecimal currentStock = parseStockParam(stockParam, "Tồn kho ban đầu");
+
+                    // Lưu nguyên liệu mới khi toàn bộ dữ liệu hợp lệ
+                    Ingredient item = new Ingredient(0, supplierId, name.trim(), unit.trim(), currentStock, minStockLevel);
+                    ingredientDAO.insertIngredient(item);
+                    session.setAttribute("ingredientMessage", "Thêm nguyên vật liệu mới thành công!");
                     break;
                 }
                 case "update": {
-                    int id = Integer.parseInt(request.getParameter("id"));
+                    int id = parseIngredientId(request.getParameter("id"));
                     String name = request.getParameter("name");
                     String unit = request.getParameter("unit");
                     String supplierParam = request.getParameter("supplierId");
                     String minStockParam = request.getParameter("minStockLevel");
 
-                    if (name == null || name.trim().isEmpty() || unit == null || unit.trim().isEmpty()) {
-                        session.setAttribute("ingredientError", "Tên nguyên liệu và đơn vị tính là bắt buộc.");
-                    } else {
-                        Integer supplierId = (supplierParam != null && !supplierParam.isBlank() && !supplierParam.equals("0"))
-                                ? Integer.parseInt(supplierParam) : null;
-                        BigDecimal minStockLevel = (minStockParam != null && !minStockParam.isBlank())
-                                ? new BigDecimal(minStockParam.trim()) : BigDecimal.ZERO;
-
-                        Ingredient item = new Ingredient(id, supplierId, name.trim(), unit.trim(), BigDecimal.ZERO, minStockLevel);
-                        ingredientDAO.updateIngredient(item);
-                        session.setAttribute("ingredientMessage", "Cập nhật nguyên vật liệu thành công!");
+                    // Kiểm tra tên nguyên liệu và đơn vị tính trước khi xử lý số
+                    String error = validateText(name, "Tên nguyên liệu", MAX_NAME_LENGTH);
+                    if (error == null) {
+                        error = validateText(unit, "Đơn vị tính (ĐVT)", MAX_UNIT_LENGTH);
                     }
+                    if (error != null) {
+                        session.setAttribute("ingredientError", error);
+                        break;
+                    }
+
+                    // Kiểm tra nhà cung cấp và ngưỡng tối thiểu (không sửa tồn kho trực tiếp ở đây)
+                    Integer supplierId = parseSupplierId(supplierParam);
+                    BigDecimal minStockLevel = parseStockParam(minStockParam, "Ngưỡng tối thiểu");
+
+                    Ingredient item = new Ingredient(id, supplierId, name.trim(), unit.trim(), BigDecimal.ZERO, minStockLevel);
+                    ingredientDAO.updateIngredient(item);
+                    session.setAttribute("ingredientMessage", "Cập nhật nguyên vật liệu thành công!");
                     break;
                 }
                 case "toggle": {
@@ -159,7 +175,13 @@ public class AdminIngredientController extends HttpServlet {
                     session.setAttribute("ingredientError", "Thao tác không được hỗ trợ.");
                     break;
             }
-        } catch (SQLException | ClassNotFoundException | NumberFormatException e) {
+        } catch (NumberFormatException e) {
+            getServletContext().log("Ingredient action error", e);
+            session.setAttribute("ingredientError", ingredientErrorMessage(e));
+        } catch (IllegalArgumentException e) {
+            // Thông báo lỗi validate cụ thể từng trường cho người dùng
+            session.setAttribute("ingredientError", e.getMessage());
+        } catch (SQLException | ClassNotFoundException e) {
             getServletContext().log("Ingredient action error", e);
             session.setAttribute("ingredientError", ingredientErrorMessage(e));
         }
@@ -167,13 +189,109 @@ public class AdminIngredientController extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/admin/ingredients");
     }
 
+    /**
+     * Kiểm tra chuỗi bắt buộc và độ dài tối đa sau khi cắt khoảng trắng đầu/cuối.
+     * Trả về thông báo lỗi nếu không hợp lệ, hoặc null nếu hợp lệ.
+     */
+    static String validateText(String rawValue, String fieldLabel, int maxLength) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return fieldLabel + " không được để trống.";
+        }
+        if (rawValue.trim().length() > maxLength) {
+            return fieldLabel + " không được vượt quá " + maxLength + " ký tự.";
+        }
+        return null;
+    }
+
+    /**
+     * Kiểm tra số lượng tồn kho / ngưỡng tối thiểu khớp với kiểu DECIMAL(12,3) trong DB:
+     * không âm, tối đa 999,999,999.999 và tối đa 3 chữ số thập phân.
+     */
+    static String validateStockNumber(BigDecimal value, String fieldLabel) {
+        if (value == null) {
+            return fieldLabel + " không hợp lệ.";
+        }
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
+            return fieldLabel + " không được nhỏ hơn 0.";
+        }
+        if (value.compareTo(MAX_STOCK_VALUE) > 0) {
+            return fieldLabel + " quá lớn (tối đa 999,999,999.999).";
+        }
+        if (value.stripTrailingZeros().scale() > MAX_STOCK_SCALE) {
+            return fieldLabel + " chỉ được có tối đa 3 chữ số thập phân.";
+        }
+        return null;
+    }
+
+    // Đọc và kiểm tra mã nguyên liệu khi cập nhật; ném IllegalArgumentException nếu sai định dạng hoặc <= 0.
+    private static int parseIngredientId(String rawId) {
+        if (rawId == null || rawId.isBlank()) {
+            throw new IllegalArgumentException("Mã nguyên liệu không hợp lệ.");
+        }
+        try {
+            int id = Integer.parseInt(rawId.trim());
+            if (id <= 0) {
+                throw new IllegalArgumentException("Mã nguyên liệu không hợp lệ.");
+            }
+            return id;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Mã nguyên liệu không hợp lệ.");
+        }
+    }
+
+    // Đọc và kiểm tra nhà cung cấp (tùy chọn); trả null nếu người dùng chọn "0" hoặc bỏ trống.
+    private static Integer parseSupplierId(String supplierParam) {
+        if (supplierParam == null || supplierParam.isBlank() || "0".equals(supplierParam.trim())) {
+            return null;
+        }
+        try {
+            int supplierId = Integer.parseInt(supplierParam.trim());
+            if (supplierId <= 0) {
+                throw new IllegalArgumentException("Nhà cung cấp được chọn không hợp lệ.");
+            }
+            return supplierId;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Nhà cung cấp được chọn không hợp lệ.");
+        }
+    }
+
+    // Chuyển chuỗi số tồn kho / ngưỡng tối thiểu sang BigDecimal (rỗng = 0) rồi kiểm tra giới hạn.
+    private static BigDecimal parseStockParam(String rawParam, String fieldLabel) {
+        if (rawParam == null || rawParam.isBlank()) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal value;
+        try {
+            value = new BigDecimal(rawParam.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(fieldLabel + " phải là một số hợp lệ.");
+        }
+        String error = validateStockNumber(value, fieldLabel);
+        if (error != null) {
+            throw new IllegalArgumentException(error);
+        }
+        return value;
+    }
+
     static String ingredientErrorMessage(Exception error) {
         if (error instanceof SQLException sql) {
-            if ("45000".equals(sql.getSQLState())) return sql.getMessage();
-            if ("23000".equals(sql.getSQLState())) {
+            String state = sql.getSQLState();
+            if ("45000".equals(state)) {
+                return sql.getMessage();
+            }
+            if ("23000".equals(state)) {
                 return "Không thể hoàn tất thao tác vì nguyên liệu còn liên kết với dữ liệu khác. Hãy tải lại danh sách và kiểm tra công thức, lịch sử kho hoặc phiếu nhập hàng.";
             }
-            return "Không thể cập nhật nguyên liệu. Vui lòng thử lại hoặc kiểm tra kết nối cơ sở dữ liệu.";
+            if ("22003".equals(state)) {
+                return "Giá trị số nhập vào quá lớn so với giới hạn lưu trữ (tối đa 999,999,999.999).";
+            }
+            if ("22001".equals(state)) {
+                return "Dữ liệu văn bản vượt quá độ dài cho phép (tên tối đa 150 ký tự, đơn vị tính tối đa 20 ký tự).";
+            }
+            if (sql.getErrorCode() == 3819) {
+                return "Dữ liệu không thỏa mãn điều kiện hợp lệ (tồn kho và ngưỡng tối thiểu phải lớn hơn hoặc bằng 0).";
+            }
+            return "Không thể lưu nguyên liệu. Vui lòng thử lại hoặc kiểm tra kết nối cơ sở dữ liệu.";
         }
         if (error instanceof NumberFormatException) return "Mã nguyên liệu, số lượng hoặc ngưỡng tồn không hợp lệ.";
         return "Không thể cập nhật nguyên liệu. Vui lòng liên hệ quản trị viên.";
