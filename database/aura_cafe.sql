@@ -73,6 +73,18 @@ CREATE TABLE IF NOT EXISTS purchase_receipt_adjustments (
  CHECK (quantity_delta <> 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS bank_transaction_refunds (
+ id INT AUTO_INCREMENT PRIMARY KEY,
+ tx_key VARCHAR(120) NOT NULL UNIQUE,
+ sepay_id BIGINT DEFAULT 0,
+ reference_code VARCHAR(150) DEFAULT NULL,
+ order_code VARCHAR(100) DEFAULT NULL,
+ refund_amount DECIMAL(12,2) NOT NULL,
+ refund_note VARCHAR(255) DEFAULT NULL,
+ refunded_by INT DEFAULT NULL,
+ refunded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 SELECT DATABASE() AS upgraded_database;
 SELECT COLUMN_TYPE FROM information_schema.COLUMNS
 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'purchase_order_items' AND COLUMN_NAME = 'unit_price';
@@ -982,4 +994,16 @@ CREATE TABLE IF NOT EXISTS purchase_receipt_adjustments (
  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY (receipt_item_id) REFERENCES purchase_receipt_items(id), FOREIGN KEY (actor_id) REFERENCES users(id),
  CHECK (quantity_delta <> 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS bank_transaction_refunds (
+ id INT AUTO_INCREMENT PRIMARY KEY,
+ tx_key VARCHAR(120) NOT NULL UNIQUE,
+ sepay_id BIGINT DEFAULT 0,
+ reference_code VARCHAR(150) DEFAULT NULL,
+ order_code VARCHAR(100) DEFAULT NULL,
+ refund_amount DECIMAL(12,2) NOT NULL,
+ refund_note VARCHAR(255) DEFAULT NULL,
+ refunded_by INT DEFAULT NULL,
+ refunded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -22,6 +22,10 @@ public class BankTransaction implements Serializable {
     private double diffAmount;
     private String orderStatus;
     private String recipientName;
+    private boolean refunded;
+    private double refundedAmount;
+    private String refundNote;
+    private String refundedAt;
 
     public BankTransaction() {
     }
@@ -73,6 +77,29 @@ public class BankTransaction implements Serializable {
 
     public String getRecipientName() { return recipientName; }
     public void setRecipientName(String recipientName) { this.recipientName = recipientName; }
+
+    public boolean isRefunded() { return refunded; }
+    public void setRefunded(boolean refunded) { this.refunded = refunded; }
+
+    public double getRefundedAmount() { return refundedAmount; }
+    public void setRefundedAmount(double refundedAmount) { this.refundedAmount = refundedAmount; }
+
+    public String getRefundNote() { return refundNote; }
+    public void setRefundNote(String refundNote) { this.refundNote = refundNote; }
+
+    public String getRefundedAt() { return refundedAt; }
+    public void setRefundedAt(String refundedAt) { this.refundedAt = refundedAt; }
+
+    public String getTxKey() {
+        if (referenceCode != null && !referenceCode.trim().isEmpty()) {
+            return referenceCode.trim().toUpperCase();
+        }
+        return "SEPAY-" + sepayId;
+    }
+
+    public String getFormattedRefundedAmount() {
+        return new DecimalFormat("###,###,###").format(refundedAmount).replace(",", ".") + " đ";
+    }
 
     public String getFormattedAmount() {
         return "+" + new DecimalFormat("###,###,###").format(transferAmount).replace(",", ".") + " đ";

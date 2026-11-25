@@ -54,6 +54,12 @@ public class AdminBankTransactionsController extends HttpServlet {
         }
     }
 
+    static class RefundRecord {
+        double amount;
+        String note;
+        String refundedAt;
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -66,21 +72,172 @@ public class AdminBankTransactionsController extends HttpServlet {
 
         // Đối soát chi tiết từng giao dịch với hệ thống đơn hàng
         reconcileTransactions(transactions);
+        applyRefundRecords(transactions);
 
-        // Tính tổng tiền vào và số giao dịch
-        double totalInAmount = 0;
-        for (BankTransaction tx : transactions) {
-            totalInAmount += tx.getTransferAmount();
-        }
+        // Tính tổng tiền vào thực nhận (trừ phần đã hoàn) và tổng đã hoàn
+        double totalInAmount = calculateNetInAmount(transactions);
+        double totalRefundedAmount = calculateTotalRefunded(transactions);
 
         request.setAttribute("transactions", transactions);
         request.setAttribute("totalInAmount", totalInAmount);
+        request.setAttribute("totalRefundedAmount", totalRefundedAmount);
         request.setAttribute("totalCount", transactions.size());
         request.setAttribute("bankAccountNo", settings.getPaymentAccountNo());
         request.setAttribute("bankName", settings.getPaymentBankName());
         request.setAttribute("gatewayUrl", gatewayUrl);
 
         request.getRequestDispatcher("/admin-bank-transactions.jsp").forward(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        if (!isAdmin(request, response)) return;
+
+        request.setCharacterEncoding("UTF-8");
+        User admin = (User) request.getSession(false).getAttribute("user");
+
+        String txKey = trimParam(request.getParameter("txKey"));
+        String referenceCode = trimParam(request.getParameter("referenceCode"));
+        String orderCode = trimParam(request.getParameter("orderCode"));
+        String refundNote = trimParam(request.getParameter("refundNote"));
+        String reconcileStatus = trimParam(request.getParameter("reconcileStatus"));
+
+        long sepayId = 0;
+        try {
+            sepayId = Long.parseLong(trimParam(request.getParameter("sepayId")));
+        } catch (Exception ignored) {
+        }
+
+        double refundAmount = 0;
+        try {
+            refundAmount = Double.parseDouble(trimParam(request.getParameter("refundAmount")));
+        } catch (Exception ignored) {
+        }
+
+        if (txKey.isEmpty() || refundAmount <= 0) {
+            request.getSession().setAttribute("bankTxFlash", "Dữ liệu hoàn tiền không hợp lệ.");
+            response.sendRedirect(request.getContextPath() + "/admin/bank-transactions");
+            return;
+        }
+
+        String upsertSql =
+                "INSERT INTO bank_transaction_refunds (tx_key, sepay_id, reference_code, order_code, refund_amount, refund_note, refunded_by) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE refund_amount = VALUES(refund_amount), refund_note = VALUES(refund_note), " +
+                "refunded_by = VALUES(refunded_by), refunded_at = CURRENT_TIMESTAMP";
+
+        try (Connection conn = DBContext.getConnection()) {
+            ensureRefundTable(conn);
+
+            try (PreparedStatement ps = conn.prepareStatement(upsertSql)) {
+                ps.setString(1, txKey);
+                ps.setLong(2, sepayId);
+                ps.setString(3, referenceCode);
+                ps.setString(4, orderCode);
+                ps.setDouble(5, refundAmount);
+                ps.setString(6, refundNote);
+                ps.setInt(7, admin.getId());
+                ps.executeUpdate();
+            }
+
+            // Nếu hoàn cả giao dịch của đơn bị hủy hoặc đơn hoàn toàn bộ -> đánh dấu payment FAILED để không tính doanh thu
+            if (!orderCode.isEmpty() && ("ORDER_CANCELLED".equals(reconcileStatus) || "MATCHED".equals(reconcileStatus))) {
+                String cancelPaySql =
+                        "UPDATE payments p JOIN orders o ON p.order_id = o.id " +
+                        "SET p.status = 'FAILED', p.payment_note = CONCAT(COALESCE(p.payment_note, ''), ' [Đã hoàn tiền]') " +
+                        "WHERE o.order_code = ? AND p.status = 'SUCCESS'";
+                try (PreparedStatement ps = conn.prepareStatement(cancelPaySql)) {
+                    ps.setString(1, orderCode);
+                    ps.executeUpdate();
+                }
+            }
+
+            request.getSession().setAttribute("bankTxFlash", "Đã xác nhận hoàn tiền thành công.");
+        } catch (Exception e) {
+            System.err.println("[AdminBankTransactionsController] Lỗi lưu hoàn tiền: " + e.getMessage());
+            request.getSession().setAttribute("bankTxFlash", "Lỗi lưu hoàn tiền: " + e.getMessage());
+        }
+
+        response.sendRedirect(request.getContextPath() + "/admin/bank-transactions");
+    }
+
+    private String trimParam(String val) {
+        return val == null ? "" : val.trim();
+    }
+
+    private void ensureRefundTable(Connection conn) throws Exception {
+        String sql = "CREATE TABLE IF NOT EXISTS bank_transaction_refunds (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "tx_key VARCHAR(120) NOT NULL UNIQUE, " +
+                "sepay_id BIGINT DEFAULT 0, " +
+                "reference_code VARCHAR(150) DEFAULT NULL, " +
+                "order_code VARCHAR(100) DEFAULT NULL, " +
+                "refund_amount DECIMAL(12,2) NOT NULL, " +
+                "refund_note VARCHAR(255) DEFAULT NULL, " +
+                "refunded_by INT DEFAULT NULL, " +
+                "refunded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.execute();
+        }
+    }
+
+    private void applyRefundRecords(List<BankTransaction> transactions) {
+        if (transactions == null || transactions.isEmpty()) return;
+
+        Map<String, RefundRecord> refundMap = new HashMap<>();
+        String sql = "SELECT tx_key, refund_amount, refund_note, DATE_FORMAT(refunded_at, '%Y-%m-%d %H:%i') AS refunded_at " +
+                     "FROM bank_transaction_refunds";
+        try (Connection conn = DBContext.getConnection()) {
+            ensureRefundTable(conn);
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    RefundRecord rec = new RefundRecord();
+                    rec.amount = rs.getDouble("refund_amount");
+                    rec.note = rs.getString("refund_note");
+                    rec.refundedAt = rs.getString("refunded_at");
+                    refundMap.put(rs.getString("tx_key"), rec);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[AdminBankTransactionsController] Lỗi tải lịch sử hoàn tiền: " + e.getMessage());
+        }
+
+        for (BankTransaction tx : transactions) {
+            RefundRecord rec = refundMap.get(tx.getTxKey());
+            if (rec != null) {
+                tx.setRefunded(true);
+                tx.setRefundedAmount(rec.amount);
+                tx.setRefundNote(rec.note);
+                tx.setRefundedAt(rec.refundedAt);
+            }
+        }
+    }
+
+    double calculateNetInAmount(List<BankTransaction> transactions) {
+        if (transactions == null) return 0;
+        double total = 0;
+        for (BankTransaction tx : transactions) {
+            if (tx.isRefunded()) {
+                total += Math.max(0, tx.getTransferAmount() - tx.getRefundedAmount());
+            } else {
+                total += tx.getTransferAmount();
+            }
+        }
+        return total;
+    }
+
+    double calculateTotalRefunded(List<BankTransaction> transactions) {
+        if (transactions == null) return 0;
+        double total = 0;
+        for (BankTransaction tx : transactions) {
+            if (tx.isRefunded()) {
+                total += tx.getRefundedAmount();
+            }
+        }
+        return total;
     }
 
     private void reconcileTransactions(List<BankTransaction> transactions) {
@@ -122,6 +279,14 @@ public class AdminBankTransactionsController extends HttpServlet {
             }
 
             OrderSummary order = orders != null ? orders.get(code) : null;
+            if (order == null && orders != null) {
+                for (Map.Entry<String, OrderSummary> entry : orders.entrySet()) {
+                    if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(code)) {
+                        order = entry.getValue();
+                        break;
+                    }
+                }
+            }
             if (order == null) {
                 tx.setReconcileStatus("ORDER_NOT_FOUND");
                 tx.setReconcileNote("Mã #" + code + " không có trên hệ thống");
@@ -204,7 +369,9 @@ public class AdminBankTransactionsController extends HttpServlet {
                     os.status = rs.getString("status");
                     os.paymentStatus = rs.getString("payment_status");
                     os.recipientName = rs.getString("recipient_name");
-                    map.put(os.orderCode, os);
+                    if (os.orderCode != null) {
+                        map.put(os.orderCode.toUpperCase(java.util.Locale.ROOT), os);
+                    }
                 }
             }
         } catch (Exception e) {
