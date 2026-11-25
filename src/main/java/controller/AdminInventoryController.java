@@ -21,6 +21,12 @@ import java.util.UUID;
 @WebServlet(name = "AdminInventoryController", urlPatterns = {"/admin/inventory"})
 public class AdminInventoryController extends HttpServlet {
 
+    // Giới hạn dữ liệu khớp với cột DECIMAL(12,3) và reason VARCHAR(500) trong DB
+    static final BigDecimal MAX_STOCK_VALUE = new BigDecimal("999999999.999");
+    static final int MAX_STOCK_SCALE = 3;
+    static final int MIN_REASON_LENGTH = 3;
+    static final int MAX_REASON_LENGTH = 500;
+
     private final InventoryDAO inventoryDAO = new InventoryDAO();
     private final IngredientDAO ingredientDAO = new IngredientDAO();
 
@@ -82,38 +88,163 @@ public class AdminInventoryController extends HttpServlet {
             return;
         }
 
+        session.removeAttribute("inventoryMessage");
+        session.removeAttribute("inventoryError");
+
         String action = request.getParameter("action");
         if ("adjust".equalsIgnoreCase(action)) {
             try {
-                int ingredientId = Integer.parseInt(request.getParameter("ingredientId"));
-                String txType = request.getParameter("transactionType"); // ADJUSTMENT or SPOILAGE
-                String direction = request.getParameter("direction");   // INCREASE or DECREASE
-                String qtyStr = request.getParameter("quantity");
-                String reason = request.getParameter("reason");
+                // Kiểm tra và chuẩn hóa từng trường nhập từ form
+                int ingredientId = parseIngredientId(request.getParameter("ingredientId"));
+                String txType = parseTransactionType(request.getParameter("transactionType"));
+                boolean isIncrease = parseDirection(txType, request.getParameter("direction"));
+                BigDecimal quantity = parseQuantityParam(request.getParameter("quantity"));
 
-                if (qtyStr == null || qtyStr.isBlank()) {
-                    session.setAttribute("inventoryError", "Vui lòng nhập số lượng điều chỉnh.");
+                String reason = request.getParameter("reason");
+                String reasonError = validateReason(reason);
+                if (reasonError != null) {
+                    session.setAttribute("inventoryError", reasonError);
                 } else {
-                    BigDecimal quantity = new BigDecimal(qtyStr.trim());
-                    if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
-                        session.setAttribute("inventoryError", "Số lượng phải lớn hơn 0.");
-                    } else {
-                        boolean isIncrease = "INCREASE".equalsIgnoreCase(direction) && !"SPOILAGE".equalsIgnoreCase(txType);
-                        if (reason == null || reason.trim().length() < 3 || reason.trim().length() > 500) {
-                            throw new IllegalArgumentException("Vui lòng nhập lý do điều chỉnh từ 3 đến 500 ký tự.");
-                        }
-                        inventoryDAO.recordStockAdjustment(ingredientId, txType, quantity, isIncrease,
-                                "ADJUSTMENT", null, reason.trim());
+                    boolean updated = inventoryDAO.recordStockAdjustment(
+                            ingredientId, txType, quantity, isIncrease, "ADJUSTMENT", null, reason.trim());
+                    if (updated) {
                         session.setAttribute("inventoryMessage", "Ghi nhận phiếu điều chỉnh tồn kho thành công!");
+                    } else {
+                        session.setAttribute("inventoryError", "Không tìm thấy nguyên liệu cần điều chỉnh. Hãy tải lại trang.");
                     }
                 }
-            } catch (SQLException | ClassNotFoundException | IllegalArgumentException e) {
+            } catch (NumberFormatException e) {
                 getServletContext().log("Inventory adjustment error", e);
+                session.setAttribute("inventoryError", inventoryErrorMessage(e));
+            } catch (IllegalArgumentException e) {
+                // Trả thông báo lỗi validate cụ thể từng trường cho người dùng
                 session.setAttribute("inventoryError", e.getMessage());
+            } catch (SQLException | ClassNotFoundException e) {
+                getServletContext().log("Inventory adjustment error", e);
+                session.setAttribute("inventoryError", inventoryErrorMessage(e));
             }
+        } else {
+            session.setAttribute("inventoryError", "Thao tác không được hỗ trợ.");
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/inventory");
+    }
+
+    /**
+     * Kiểm tra số lượng điều chỉnh khớp với DECIMAL(12,3):
+     * phải lớn hơn 0, tối đa 999,999,999.999 và tối đa 3 chữ số thập phân.
+     */
+    static String validateQuantity(BigDecimal value) {
+        if (value == null) {
+            return "Số lượng thay đổi không hợp lệ.";
+        }
+        if (value.compareTo(BigDecimal.ZERO) <= 0) {
+            return "Số lượng thay đổi phải lớn hơn 0.";
+        }
+        if (value.compareTo(MAX_STOCK_VALUE) > 0) {
+            return "Số lượng thay đổi quá lớn (tối đa 999,999,999.999).";
+        }
+        if (value.stripTrailingZeros().scale() > MAX_STOCK_SCALE) {
+            return "Số lượng thay đổi chỉ được có tối đa 3 chữ số thập phân.";
+        }
+        return null;
+    }
+
+    // Kiểm tra lý do / ghi chú bắt buộc từ 3 đến 500 ký tự.
+    static String validateReason(String rawReason) {
+        if (rawReason == null) {
+            return "Vui lòng nhập lý do điều chỉnh từ 3 đến 500 ký tự.";
+        }
+        int len = rawReason.trim().length();
+        if (len < MIN_REASON_LENGTH || len > MAX_REASON_LENGTH) {
+            return "Vui lòng nhập lý do điều chỉnh từ 3 đến 500 ký tự.";
+        }
+        return null;
+    }
+
+    // Chỉ chấp nhận 2 loại điều chỉnh trên form: ADJUSTMENT hoặc SPOILAGE.
+    static String parseTransactionType(String rawType) {
+        if (rawType == null) {
+            throw new IllegalArgumentException("Loại điều chỉnh không hợp lệ.");
+        }
+        String type = rawType.trim().toUpperCase();
+        if (!"ADJUSTMENT".equals(type) && !"SPOILAGE".equals(type)) {
+            throw new IllegalArgumentException("Loại điều chỉnh không hợp lệ.");
+        }
+        return type;
+    }
+
+    // Với hao hụt (SPOILAGE) luôn trừ kho; với cân kho (ADJUSTMENT) chỉ nhận INCREASE hoặc DECREASE.
+    static boolean parseDirection(String txType, String rawDirection) {
+        if ("SPOILAGE".equals(txType)) {
+            return false;
+        }
+        String dir = rawDirection != null ? rawDirection.trim() : "";
+        if ("INCREASE".equalsIgnoreCase(dir)) {
+            return true;
+        }
+        if ("DECREASE".equalsIgnoreCase(dir)) {
+            return false;
+        }
+        throw new IllegalArgumentException("Hướng điều chỉnh không hợp lệ.");
+    }
+
+    // Đọc mã nguyên liệu được chọn; bắt buộc là số nguyên > 0.
+    private static int parseIngredientId(String rawId) {
+        if (rawId == null || rawId.isBlank()) {
+            throw new IllegalArgumentException("Vui lòng chọn nguyên liệu cần điều chỉnh hợp lệ.");
+        }
+        try {
+            int id = Integer.parseInt(rawId.trim());
+            if (id <= 0) {
+                throw new IllegalArgumentException("Vui lòng chọn nguyên liệu cần điều chỉnh hợp lệ.");
+            }
+            return id;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Vui lòng chọn nguyên liệu cần điều chỉnh hợp lệ.");
+        }
+    }
+
+    // Đọc chuỗi số lượng điều chỉnh và kiểm tra điều kiện hợp lệ.
+    private static BigDecimal parseQuantityParam(String rawQty) {
+        if (rawQty == null || rawQty.isBlank()) {
+            throw new IllegalArgumentException("Vui lòng nhập số lượng điều chỉnh.");
+        }
+        BigDecimal value;
+        try {
+            value = new BigDecimal(rawQty.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Số lượng thay đổi phải là một số hợp lệ.");
+        }
+        String error = validateQuantity(value);
+        if (error != null) {
+            throw new IllegalArgumentException(error);
+        }
+        return value;
+    }
+
+    // Chuyển lỗi DB / định dạng sang thông báo tiếng Việt an toàn, không lộ chi tiết kỹ thuật.
+    static String inventoryErrorMessage(Exception error) {
+        if (error instanceof SQLException sql) {
+            String state = sql.getSQLState();
+            if ("45000".equals(state)) {
+                return sql.getMessage();
+            }
+            if ("22003".equals(state)) {
+                return "Giá trị số lượng hoặc tồn kho sau điều chỉnh vượt quá giới hạn lưu trữ (tối đa 999,999,999.999).";
+            }
+            if ("22001".equals(state)) {
+                return "Lý do / ghi chú vượt quá độ dài tối đa 500 ký tự.";
+            }
+            if (sql.getErrorCode() == 3819) {
+                return "Dữ liệu điều chỉnh không thỏa mãn điều kiện hợp lệ (số lượng phải lớn hơn 0 và tồn kho không được âm).";
+            }
+            return "Không thể ghi nhận phiếu điều chỉnh tồn kho. Vui lòng thử lại hoặc kiểm tra kết nối cơ sở dữ liệu.";
+        }
+        if (error instanceof NumberFormatException) {
+            return "Mã nguyên liệu hoặc số lượng điều chỉnh không hợp lệ.";
+        }
+        return "Không thể ghi nhận phiếu điều chỉnh tồn kho. Vui lòng liên hệ quản trị viên.";
     }
 
     private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
