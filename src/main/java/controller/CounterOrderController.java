@@ -43,6 +43,16 @@ import java.util.regex.Pattern;
 @WebServlet(name = "CounterOrderController", urlPatterns = {"/cashier", "/counter-order"})
 public class CounterOrderController extends HttpServlet {
 
+    // Giới hạn validate cho đơn bán tại quầy
+    static final int MAX_ITEM_LINES = 50;
+    static final int MAX_ITEM_QUANTITY = 99;
+    static final int MAX_TOTAL_QUANTITY = 200;
+    static final int MAX_ORDER_NOTE_LENGTH = 500;
+    static final int MAX_CUSTOMIZATION_LENGTH = 300;
+    static final int MAX_TABLE_LENGTH = 20;
+    static final int MAX_PHONE_LENGTH = 20;
+    static final double MAX_ORDER_AMOUNT = 9_999_999_999.99;
+
     private final ProductDAO productDAO = new ProductDAO();
     private final CategoryDAO categoryDAO = new CategoryDAO();
     private final OrderDAO orderDAO = new OrderDAO();
@@ -158,8 +168,10 @@ public class CounterOrderController extends HttpServlet {
 
     private void handleSearchCustomer(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String phone = request.getParameter("phone");
-        if (phone == null || phone.trim().isEmpty()) {
-            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Vui lòng nhập số điện thoại.\"}");
+        String phoneError = validateSearchPhone(phone);
+        if (phoneError != null) {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST,
+                    "{\"success\":false,\"error\":\"" + escapeJson(phoneError) + "\"}");
             return;
         }
 
@@ -243,13 +255,14 @@ public class CounterOrderController extends HttpServlet {
         String orderNote = "";
         String paymentMethod = "CASH";
         int pointsUsed = 0;
+        double cashGiven = Double.NaN;
         double discountAmount = 0.0;
         double finalAmount = 0.0;
         double totalAmount = 0.0;
         List<OrderDetail> items = new ArrayList<>();
 
-        if (rawBody != null && !rawBody.trim().isEmpty() && rawBody.startsWith("{")) {
-            // Parse thủ công từ JSON payload (nhẹ và an toàn)
+        if (rawBody != null && !rawBody.trim().isEmpty() && rawBody.trim().startsWith("{")) {
+            // Parse thủ công từ JSON payload (nhẹ và an toàn với ký tự đặc biệt)
             orderType = extractJsonString(rawBody, "orderType", "DINE_IN");
             tableNumber = extractJsonString(rawBody, "tableNumber", "");
             int cId = extractJsonInt(rawBody, "customerId", -1);
@@ -259,6 +272,7 @@ public class CounterOrderController extends HttpServlet {
             orderNote = extractJsonString(rawBody, "orderNote", "");
             paymentMethod = extractJsonString(rawBody, "paymentMethod", "CASH");
             pointsUsed = extractJsonInt(rawBody, "pointsUsed", 0);
+            cashGiven = extractJsonDouble(rawBody, "cashGiven", Double.NaN);
             discountAmount = extractJsonDouble(rawBody, "discountAmount", 0.0);
             totalAmount = extractJsonDouble(rawBody, "totalAmount", 0.0);
             finalAmount = extractJsonDouble(rawBody, "finalAmount", 0.0);
@@ -275,13 +289,22 @@ public class CounterOrderController extends HttpServlet {
             orderNote = request.getParameter("orderNote");
             paymentMethod = request.getParameter("paymentMethod");
             pointsUsed = parseInt(request.getParameter("pointsUsed"), 0);
+            String rawCashGiven = request.getParameter("cashGiven");
+            if (rawCashGiven != null && !rawCashGiven.isBlank()) {
+                cashGiven = parseDouble(rawCashGiven, -1.0);
+            }
             discountAmount = parseDouble(request.getParameter("discountAmount"), 0.0);
             totalAmount = parseDouble(request.getParameter("totalAmount"), 0.0);
             finalAmount = parseDouble(request.getParameter("finalAmount"), 0.0);
         }
 
-        if (items.isEmpty()) {
-            sendJson(response, HttpServletResponse.SC_BAD_REQUEST, "{\"success\":false,\"error\":\"Vui lòng chọn ít nhất 1 món ăn/thức uống.\"}");
+        // Kiểm tra ghi chú, số bàn và danh sách món trước khi tính giá
+        String validationError = validateOrderNote(orderNote);
+        if (validationError == null) validationError = validateTableNumber(tableNumber);
+        if (validationError == null) validationError = validateItemQuantities(items);
+        if (validationError != null) {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST,
+                    "{\"success\":false,\"error\":\"" + escapeJson(validationError) + "\"}");
             return;
         }
 
@@ -310,9 +333,28 @@ public class CounterOrderController extends HttpServlet {
         }
         totalAmount = items.stream().map(OrderDetail::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add).doubleValue();
+        String totalError = validateOrderTotal(totalAmount);
+        if (totalError != null) {
+            sendJson(response, HttpServletResponse.SC_BAD_REQUEST,
+                    "{\"success\":false,\"error\":\"" + escapeJson(totalError) + "\"}");
+            return;
+        }
         discountAmount = settings.getPointsDiscount(pointsUsed);
         finalAmount = Math.max(0, totalAmount - discountAmount);
         paymentMethod = "BANK_TRANSFER".equalsIgnoreCase(paymentMethod) ? "BANK_TRANSFER" : "CASH";
+
+        if ("CASH".equals(paymentMethod) && !Double.isNaN(cashGiven)) {
+            if (Double.isInfinite(cashGiven) || cashGiven < 0 || cashGiven > MAX_ORDER_AMOUNT) {
+                sendJson(response, HttpServletResponse.SC_BAD_REQUEST,
+                        "{\"success\":false,\"error\":\"Số tiền khách đưa vượt quá giới hạn cho phép.\"}");
+                return;
+            }
+            if (cashGiven + 0.001 < finalAmount) {
+                sendJson(response, HttpServletResponse.SC_BAD_REQUEST,
+                        "{\"success\":false,\"error\":\"Số tiền khách đưa chưa đủ để thanh toán đơn hàng.\"}");
+                return;
+            }
+        }
 
         String orderCode = CheckoutController.newOrderCode();
 
@@ -328,7 +370,7 @@ public class CounterOrderController extends HttpServlet {
         order.setRecipientName(recipientName != null && !recipientName.isEmpty() ? recipientName : "Khách tại quầy");
         order.setRecipientPhone(recipientPhone != null ? recipientPhone : "");
         order.setTableNumber(tableNumber != null && !tableNumber.trim().isEmpty() ? tableNumber.trim() : null);
-        order.setOrderNote(orderNote);
+        order.setOrderNote(orderNote != null ? orderNote.trim() : "");
 
         String paymentNote = "Thanh toán tại quầy qua " + ("BANK_TRANSFER".equals(paymentMethod) ? "VietQR" : "Tiền mặt");
 
@@ -525,64 +567,282 @@ public class CounterOrderController extends HttpServlet {
         return sb.toString();
     }
 
-    private String extractJsonString(String json, String key, String defaultValue) {
-        Pattern pattern = Pattern.compile("\"" + key + "\"\\s*:\\s*\"([^\"]*)\"");
-        Matcher matcher = pattern.matcher(json);
-        if (matcher.find()) {
-            return matcher.group(1);
+    // Kiểm tra số điện thoại tìm hội viên: bắt buộc, tối đa 20 ký tự, 8-15 chữ số.
+    static String validateSearchPhone(String rawPhone) {
+        if (rawPhone == null || rawPhone.isBlank()) {
+            return "Vui lòng nhập số điện thoại khách hàng.";
         }
-        return defaultValue;
+        String phone = rawPhone.trim();
+        if (phone.length() > MAX_PHONE_LENGTH) {
+            return "Số điện thoại không được vượt quá 20 ký tự.";
+        }
+        int digitCount = 0;
+        for (int i = 0; i < phone.length(); i++) {
+            char ch = phone.charAt(i);
+            if (ch >= '0' && ch <= '9') {
+                digitCount++;
+            } else if (ch == '+' && i == 0) {
+                // Cho phép dấu '+' ở đầu số quốc tế
+            } else if (ch != ' ' && ch != '-' && ch != '.') {
+                return "Số điện thoại không hợp lệ (chỉ gồm số, từ 8 đến 15 chữ số).";
+            }
+        }
+        if (digitCount < 8 || digitCount > 15) {
+            return "Số điện thoại không hợp lệ (chỉ gồm số, từ 8 đến 15 chữ số).";
+        }
+        return null;
     }
 
-    private int extractJsonInt(String json, String key, int defaultValue) {
-        Pattern pattern = Pattern.compile("\"" + key + "\"\\s*:\\s*(-?\\d+)");
-        Matcher matcher = pattern.matcher(json);
-        if (matcher.find()) {
-            try { return Integer.parseInt(matcher.group(1)); } catch (Exception ignored) {}
+    // Kiểm tra ghi chú chung của đơn (tối đa 500 ký tự).
+    static String validateOrderNote(String rawNote) {
+        if (rawNote != null && rawNote.trim().length() > MAX_ORDER_NOTE_LENGTH) {
+            return "Ghi chú đơn hàng không được vượt quá 500 ký tự.";
         }
-        return defaultValue;
+        return null;
     }
 
-    private double extractJsonDouble(String json, String key, double defaultValue) {
-        Pattern pattern = Pattern.compile("\"" + key + "\"\\s*:\\s*([0-9.]+)");
-        Matcher matcher = pattern.matcher(json);
-        if (matcher.find()) {
-            try { return Double.parseDouble(matcher.group(1)); } catch (Exception ignored) {}
+    // Kiểm tra số bàn (nếu có, tối đa 20 ký tự).
+    static String validateTableNumber(String rawTable) {
+        if (rawTable != null && rawTable.trim().length() > MAX_TABLE_LENGTH) {
+            return "Số bàn không được vượt quá 20 ký tự.";
         }
-        return defaultValue;
+        return null;
     }
 
-    private List<OrderDetail> parseOrderItemsFromJson(String json) {
+    // Kiểm tra tùy chọn / ghi chú từng món (tối đa 300 ký tự).
+    static String validateCustomization(String rawCustomization) {
+        if (rawCustomization != null && rawCustomization.trim().length() > MAX_CUSTOMIZATION_LENGTH) {
+            return "Tùy chọn / ghi chú món không được vượt quá 300 ký tự.";
+        }
+        return null;
+    }
+
+    // Kiểm tra danh sách món: 1-50 dòng, mỗi món 1-99 ly, tổng toàn đơn <= 200 ly.
+    static String validateItemQuantities(List<OrderDetail> items) {
+        if (items == null || items.isEmpty()) {
+            return "Vui lòng chọn ít nhất 1 món ăn/thức uống.";
+        }
+        if (items.size() > MAX_ITEM_LINES) {
+            return "Đơn hàng không được vượt quá 50 dòng món.";
+        }
+        int totalQty = 0;
+        for (OrderDetail item : items) {
+            if (item.getQuantity() < 1 || item.getQuantity() > MAX_ITEM_QUANTITY) {
+                return "Số lượng mỗi món phải từ 1 đến 99.";
+            }
+            String custError = validateCustomization(item.getCustomization());
+            if (custError != null) {
+                return custError;
+            }
+            totalQty += item.getQuantity();
+            if (totalQty > MAX_TOTAL_QUANTITY) {
+                return "Tổng số lượng món trong một đơn không được vượt quá 200.";
+            }
+        }
+        return null;
+    }
+
+    // Kiểm tra tổng tiền đơn hàng nằm trong giới hạn lưu trữ DB.
+    static String validateOrderTotal(double totalAmount) {
+        if (Double.isNaN(totalAmount) || Double.isInfinite(totalAmount)
+                || totalAmount < 0 || totalAmount > MAX_ORDER_AMOUNT) {
+            return "Tổng tiền đơn hàng vượt quá giới hạn cho phép.";
+        }
+        return null;
+    }
+
+    // Tìm vị trí bắt đầu giá trị của key ở cấp object hiện tại, bỏ qua nội dung bên trong chuỗi JSON.
+    private static int findJsonValueStart(String json, String key) {
+        if (json == null || key == null) return -1;
+        int len = json.length();
+        int depth = 0;
+        int i = 0;
+        while (i < len) {
+            char ch = json.charAt(i);
+            if (ch == '"') {
+                StringBuilder sb = new StringBuilder();
+                int nextIdx = readJsonStringEnd(json, i, sb);
+                if (depth <= 1 && key.equals(sb.toString())) {
+                    int k = skipWhitespace(json, nextIdx);
+                    if (k < len && json.charAt(k) == ':') {
+                        return skipWhitespace(json, k + 1);
+                    }
+                }
+                i = nextIdx;
+                continue;
+            }
+            if (ch == '{' || ch == '[') {
+                depth++;
+            } else if (ch == '}' || ch == ']') {
+                depth--;
+            }
+            i++;
+        }
+        return -1;
+    }
+
+    // Đọc chuỗi JSON bắt đầu từ dấu '"' tại openQuoteIdx; trả về vị trí ngay sau dấu '"' đóng.
+    private static int readJsonStringEnd(String json, int openQuoteIdx, StringBuilder out) {
+        int len = json.length();
+        int i = openQuoteIdx + 1;
+        while (i < len) {
+            char ch = json.charAt(i);
+            if (ch == '\\' && i + 1 < len) {
+                char next = json.charAt(i + 1);
+                if (next == '"' || next == '\\' || next == '/') {
+                    out.append(next);
+                } else if (next == 'n') {
+                    out.append('\n');
+                } else if (next == 'r') {
+                    out.append('\r');
+                } else if (next == 't') {
+                    out.append('\t');
+                } else {
+                    out.append(next);
+                }
+                i += 2;
+                continue;
+            }
+            if (ch == '"') {
+                return i + 1;
+            }
+            out.append(ch);
+            i++;
+        }
+        return len;
+    }
+
+    private static int skipWhitespace(String s, int i) {
+        int len = s.length();
+        while (i < len && Character.isWhitespace(s.charAt(i))) {
+            i++;
+        }
+        return i;
+    }
+
+    static String extractJsonString(String json, String key, String defaultValue) {
+        int valStart = findJsonValueStart(json, key);
+        if (valStart < 0 || valStart >= json.length() || json.charAt(valStart) != '"') {
+            return defaultValue;
+        }
+        StringBuilder sb = new StringBuilder();
+        readJsonStringEnd(json, valStart, sb);
+        return sb.toString();
+    }
+
+    static int extractJsonInt(String json, String key, int defaultValue) {
+        int valStart = findJsonValueStart(json, key);
+        if (valStart < 0 || valStart >= json.length()) {
+            return defaultValue;
+        }
+        int end = valStart;
+        while (end < json.length()) {
+            char ch = json.charAt(end);
+            if ((ch >= '0' && ch <= '9') || (end == valStart && ch == '-')) {
+                end++;
+            } else {
+                break;
+            }
+        }
+        if (end == valStart) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(json.substring(valStart, end));
+        } catch (NumberFormatException ignored) {
+            return defaultValue;
+        }
+    }
+
+    static double extractJsonDouble(String json, String key, double defaultValue) {
+        int valStart = findJsonValueStart(json, key);
+        if (valStart < 0 || valStart >= json.length()) {
+            return defaultValue;
+        }
+        int end = valStart;
+        while (end < json.length()) {
+            char ch = json.charAt(end);
+            if ((ch >= '0' && ch <= '9') || ch == '-' || ch == '+' || ch == '.' || ch == 'e' || ch == 'E') {
+                end++;
+            } else {
+                break;
+            }
+        }
+        if (end == valStart) {
+            return defaultValue;
+        }
+        try {
+            return Double.parseDouble(json.substring(valStart, end));
+        } catch (NumberFormatException ignored) {
+            return defaultValue;
+        }
+    }
+
+    static List<OrderDetail> parseOrderItemsFromJson(String json) {
         List<OrderDetail> items = new ArrayList<>();
-        // Tìm mảng "items": [...]
-        int itemsIndex = json.indexOf("\"items\"");
-        if (itemsIndex == -1) return items;
+        int arrStart = findJsonValueStart(json, "items");
+        if (arrStart < 0 || arrStart >= json.length() || json.charAt(arrStart) != '[') {
+            return items;
+        }
 
-        int startBracket = json.indexOf("[", itemsIndex);
-        int endBracket = json.lastIndexOf("]");
-        if (startBracket == -1 || endBracket == -1 || startBracket >= endBracket) return items;
+        int len = json.length();
+        boolean inString = false;
+        boolean escaped = false;
+        int bracketDepth = 0;
+        int braceDepth = 0;
+        int objStart = -1;
 
-        String itemsArrayStr = json.substring(startBracket + 1, endBracket);
-        // Tách các object {...}
-        Matcher m = Pattern.compile("\\{([^}]+)\\}").matcher(itemsArrayStr);
-        while (m.find()) {
-            String obj = m.group(1);
-            int productId = extractJsonInt(obj, "productId", 0);
-            String productName = extractJsonString(obj, "productName", "Sản phẩm");
-            int quantity = extractJsonInt(obj, "quantity", 1);
-            double unitPrice = extractJsonDouble(obj, "unitPrice", 0.0);
-            double subtotal = extractJsonDouble(obj, "subtotal", unitPrice * quantity);
-            String customization = extractJsonString(obj, "customization", "");
+        for (int i = arrStart; i < len; i++) {
+            char ch = json.charAt(i);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (ch == '\\') {
+                    escaped = true;
+                } else if (ch == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+            if (ch == '"') {
+                inString = true;
+                continue;
+            }
+            if (ch == '[') {
+                bracketDepth++;
+            } else if (ch == ']') {
+                bracketDepth--;
+                if (bracketDepth == 0) {
+                    break;
+                }
+            } else if (ch == '{') {
+                if (braceDepth == 0) {
+                    objStart = i;
+                }
+                braceDepth++;
+            } else if (ch == '}') {
+                braceDepth--;
+                if (braceDepth == 0 && objStart >= 0) {
+                    String obj = json.substring(objStart, i + 1);
+                    int productId = extractJsonInt(obj, "productId", 0);
+                    String productName = extractJsonString(obj, "productName", "Sản phẩm");
+                    int quantity = extractJsonInt(obj, "quantity", 0);
+                    double unitPrice = extractJsonDouble(obj, "unitPrice", 0.0);
+                    double subtotal = extractJsonDouble(obj, "subtotal", unitPrice * quantity);
+                    String customization = extractJsonString(obj, "customization", "");
 
-            if (productId > 0 && quantity > 0) {
-                OrderDetail item = new OrderDetail();
-                item.setProductId(productId);
-                item.setProductName(productName);
-                item.setQuantity(quantity);
-                item.setUnitPrice(BigDecimal.valueOf(unitPrice));
-                item.setSubtotal(BigDecimal.valueOf(subtotal));
-                item.setCustomization(customization);
-                items.add(item);
+                    if (productId > 0) {
+                        OrderDetail item = new OrderDetail();
+                        item.setProductId(productId);
+                        item.setProductName(productName);
+                        item.setQuantity(quantity);
+                        item.setUnitPrice(BigDecimal.valueOf(unitPrice));
+                        item.setSubtotal(BigDecimal.valueOf(subtotal));
+                        item.setCustomization(customization);
+                        items.add(item);
+                    }
+                    objStart = -1;
+                }
             }
         }
         return items;
@@ -596,6 +856,10 @@ public class CounterOrderController extends HttpServlet {
             String customization = raw.getCustomization() == null ? "" : raw.getCustomization();
             for (String part : customization.split("\\|")) {
                 String value = part.trim();
+                // Dừng tách size/topping khi tới phần ghi chú riêng để ghi chú không làm đổi giá
+                if (value.startsWith("Lưu ý:")) {
+                    break;
+                }
                 if (value.startsWith("Size ")) size = value.substring(5).trim();
                 if (value.startsWith("+ ")) {
                     for (String topping : value.substring(2).split(",")) {

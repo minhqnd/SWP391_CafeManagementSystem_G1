@@ -216,13 +216,13 @@
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">+ Thu tiền mặt</div>
                                             <div class="system-cash-val val-green">
-                                                <fmt:formatNumber value="${expectedCash}" pattern="#,##0" />đ
+                                                <fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ
                                             </div>
                                         </div>
                                         <div class="system-cash-item">
                                             <div class="system-cash-label">= Phải có trong két</div>
                                             <div class="system-cash-val val-maroon" id="expectedCashDisplay">
-                                                <fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ
+                                                <fmt:formatNumber value="${expectedCash}" pattern="#,##0" />đ
                                             </div>
                                         </div>
                                     </div>
@@ -277,7 +277,7 @@
                                     <div id="diffBox" class="diff-status-box diff-shortage">
                                         <span id="diffLabel">Thiếu tiền</span>
                                         <span id="diffAmount" class="diff-amount">
-                                            -<fmt:formatNumber value="${closePreview.cashSales}" pattern="#,##0" />đ
+                                            -<fmt:formatNumber value="${expectedCash}" pattern="#,##0" />đ
                                         </span>
                                     </div>
 

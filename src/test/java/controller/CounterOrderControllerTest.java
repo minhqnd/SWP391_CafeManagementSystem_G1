@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -103,5 +104,56 @@ public class CounterOrderControllerTest {
         // Mỗi 10.000đ tiền hàng = 1 điểm
         assertEquals(12, order.getRewardPoints());
         assertFalse(order.isDelivery());
+    }
+
+    @Test
+    void validateSearchPhoneChecksEmptyLengthAndFormat() {
+        assertEquals("Vui lòng nhập số điện thoại khách hàng.", CounterOrderController.validateSearchPhone("  "));
+        assertTrue(CounterOrderController.validateSearchPhone("0912").contains("không hợp lệ"));
+        assertTrue(CounterOrderController.validateSearchPhone("abc123456").contains("không hợp lệ"));
+        assertTrue(CounterOrderController.validateSearchPhone("0".repeat(21)).contains("20 ký tự"));
+        assertNull(CounterOrderController.validateSearchPhone("0900000004"));
+        assertNull(CounterOrderController.validateSearchPhone("+84 900-000.004"));
+    }
+
+    @Test
+    void validateOrderFieldsAndItemQuantities() {
+        assertEquals("Ghi chú đơn hàng không được vượt quá 500 ký tự.",
+                CounterOrderController.validateOrderNote("a".repeat(501)));
+        assertNull(CounterOrderController.validateOrderNote("Ít đá, thêm đường"));
+
+        assertEquals("Số bàn không được vượt quá 20 ký tự.",
+                CounterOrderController.validateTableNumber("a".repeat(21)));
+        assertNull(CounterOrderController.validateTableNumber("Bàn 05"));
+
+        OrderDetail badQty = new OrderDetail();
+        badQty.setProductId(1);
+        badQty.setQuantity(100);
+        assertEquals("Số lượng mỗi món phải từ 1 đến 99.",
+                CounterOrderController.validateItemQuantities(List.of(badQty)));
+
+        OrderDetail valid = new OrderDetail();
+        valid.setProductId(1);
+        valid.setQuantity(2);
+        valid.setCustomization("Size M | 100% đường | 100% đá");
+        assertNull(CounterOrderController.validateItemQuantities(List.of(valid)));
+
+        assertNotNull(CounterOrderController.validateOrderTotal(-1));
+        assertNotNull(CounterOrderController.validateOrderTotal(10_000_000_000.00));
+        assertNull(CounterOrderController.validateOrderTotal(150_000));
+    }
+
+    @Test
+    void jsonParserHandlesEscapedQuotesAndBracesInNotes() {
+        String payload = "{\"orderType\":\"DINE_IN\",\"orderNote\":\"Ghi chú \\\"đặc biệt\\\" } [test]\",\"cashGiven\":-5000,\"items\":[{\"productId\":1,\"productName\":\"Trà Đào\",\"quantity\":2,\"unitPrice\":45000,\"subtotal\":90000,\"customization\":\"Size M | Lưu ý: ly } \\\"riêng\\\"\"}]}";
+        assertEquals("Ghi chú \"đặc biệt\" } [test]",
+                CounterOrderController.extractJsonString(payload, "orderNote", ""));
+        assertEquals(-5000.0, CounterOrderController.extractJsonDouble(payload, "cashGiven", 0));
+
+        List<OrderDetail> items = CounterOrderController.parseOrderItemsFromJson(payload);
+        assertEquals(1, items.size());
+        assertEquals(1, items.get(0).getProductId());
+        assertEquals(2, items.get(0).getQuantity());
+        assertEquals("Size M | Lưu ý: ly } \"riêng\"", items.get(0).getCustomization());
     }
 }
