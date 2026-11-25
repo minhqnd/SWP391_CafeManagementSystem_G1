@@ -1949,7 +1949,7 @@
                 <!-- Customer Search / Loyalty -->
                 <div class="customer-loyalty-section">
                     <div class="cust-input-group" id="custSearchBox">
-                        <input type="text" id="custPhoneInput" class="cust-input" placeholder="Nhập SĐT khách hội viên..." onkeydown="if(event.key==='Enter') searchCustomer()">
+                        <input type="text" id="custPhoneInput" class="cust-input" maxlength="20" placeholder="Nhập SĐT khách hội viên..." onkeydown="if(event.key==='Enter') searchCustomer()">
                         <button class="cust-btn-search" onclick="searchCustomer()">Tìm</button>
                     </div>
                     <div id="custInfoBox" style="display: none;">
@@ -1982,7 +1982,7 @@
 
             <!-- Order Note -->
             <div class="cart-note-box">
-                <input type="text" id="orderNoteInput" class="cart-note-input" placeholder="Ghi chú chung cho toàn bộ đơn (nếu có)...">
+                <input type="text" id="orderNoteInput" class="cart-note-input" maxlength="500" placeholder="Ghi chú chung cho toàn bộ đơn (nếu có)...">
             </div>
 
             <!-- Cart Footer / Summary -->
@@ -2346,7 +2346,7 @@
 
                     <!-- Custom Note -->
                     <div class="opt-group-title mt-2">Ghi chú riêng cho món này</div>
-                    <input type="text" id="custModalNote" class="form-control form-control-sm" placeholder="Ví dụ: Mang ly cá nhân, sữa ít béo...">
+                    <input type="text" id="custModalNote" class="form-control form-control-sm" maxlength="200" placeholder="Ví dụ: Mang ly cá nhân, sữa ít béo...">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
@@ -2408,7 +2408,7 @@
                             </label>
                             <div class="input-cash-wrapper">
                                 <span class="material-symbols-outlined cash-input-icon">attach_money</span>
-                                <input type="number" id="inputCashGiven" class="input-cash-field" placeholder="0" oninput="calculateChange()">
+                                <input type="number" id="inputCashGiven" class="input-cash-field" min="0" max="9999999999" step="1000" placeholder="0" oninput="calculateChange()">
                                 <span class="cash-currency-tag">VNĐ</span>
                             </div>
                         </div>
@@ -2718,7 +2718,19 @@
             const size = document.querySelector('input[name="optSize"]:checked')?.value || 'Tiêu chuẩn';
             const sugar = document.getElementById('optSugar').value;
             const ice = document.getElementById('optIce').value;
-            const note = document.getElementById('custModalNote').value.trim();
+            let note = document.getElementById('custModalNote').value.trim();
+            if (note.length > 200) {
+                alert('Ghi chú riêng cho món không được vượt quá 200 ký tự.');
+                return;
+            }
+            // Tránh dấu '|' trùng với dấu phân tách tùy chọn khi gửi lên server
+            note = note.replace(/\|/g, '-');
+
+            const currentTotalQty = cartItems.reduce((sum, it) => sum + it.quantity, 0);
+            if (currentTotalQty >= 200) {
+                alert('Tổng số lượng món trong một đơn không được vượt quá 200.');
+                return;
+            }
 
             const toppingsArr = [];
             document.querySelectorAll('input[name="optTopping"]:checked').forEach(cb => {
@@ -2740,9 +2752,17 @@
             // Check if exact same item and customization exists in cart
             const existing = cartItems.find(it => it.productId === tempItem.id && it.customization === customStr);
             if (existing) {
+                if (existing.quantity >= 99) {
+                    alert('Số lượng mỗi món không được vượt quá 99.');
+                    return;
+                }
                 existing.quantity += 1;
                 existing.subtotal = existing.quantity * existing.unitPrice;
             } else {
+                if (cartItems.length >= 50) {
+                    alert('Đơn hàng không được vượt quá 50 dòng món.');
+                    return;
+                }
                 cartItems.push({
                     productId: tempItem.id,
                     productName: tempItem.name,
@@ -2819,7 +2839,19 @@
 
         function updateQty(index, delta) {
             if (!cartItems[index]) return;
-            cartItems[index].quantity += delta;
+            const nextQty = cartItems[index].quantity + delta;
+            if (delta > 0) {
+                if (nextQty > 99) {
+                    showToast('Số lượng mỗi món tối đa 99.');
+                    return;
+                }
+                const totalQty = cartItems.reduce((sum, it) => sum + it.quantity, 0);
+                if (totalQty + delta > 200) {
+                    showToast('Tổng số lượng trong 1 đơn tối đa 200 món.');
+                    return;
+                }
+            }
+            cartItems[index].quantity = nextQty;
             if (cartItems[index].quantity <= 0) {
                 cartItems.splice(index, 1);
             } else {
@@ -2874,7 +2906,16 @@
         async function searchCustomer() {
             const phone = document.getElementById('custPhoneInput').value.trim();
             if (!phone) {
-                alert('Vui lòng nhập số điện thoại hoặc email khách hàng.');
+                alert('Vui lòng nhập số điện thoại khách hàng.');
+                return;
+            }
+            if (phone.length > 20 || !/^\+?[0-9 .\-]+$/.test(phone)) {
+                alert('Số điện thoại không hợp lệ (chỉ gồm số, từ 8 đến 15 chữ số).');
+                return;
+            }
+            const digitCount = phone.replace(/\D/g, '').length;
+            if (digitCount < 8 || digitCount > 15) {
+                alert('Số điện thoại không hợp lệ (chỉ gồm số, từ 8 đến 15 chữ số).');
                 return;
             }
 
@@ -3003,11 +3044,19 @@
                 btnSubmit.className = 'btn-pay-submit';
                 if (btnSubmitIcon) btnSubmitIcon.textContent = 'receipt';
                 if (btnSubmitText) btnSubmitText.textContent = 'Hoàn tất & In hóa đơn';
+                calculateChange();
             } else {
                 btnQR.classList.add('active');
                 btnCash.classList.remove('active');
                 pCash.style.display = 'none';
                 pQR.style.display = 'block';
+
+                const orderNoteCheck = document.getElementById('orderNoteInput').value.trim();
+                if (orderNoteCheck.length > 500) {
+                    alert('Ghi chú đơn hàng không được vượt quá 500 ký tự.');
+                    selectPaymentMethod('CASH');
+                    return;
+                }
 
                 if (isQrPaid && currentQrOrder) {
                     // Đã thanh toán thành công
@@ -3235,14 +3284,32 @@
         function calculateChange() {
             const sub = cartItems.reduce((acc, it) => acc + it.subtotal, 0);
             const { finalTotal } = updateSummary(sub);
-            const given = Number(document.getElementById('inputCashGiven').value) || 0;
+            const rawVal = (document.getElementById('inputCashGiven').value || '').trim();
+            const given = rawVal === '' ? NaN : Number(rawVal);
             const changeEl = document.getElementById('lblCashChange');
             const titleEl = document.getElementById('titleCashChange');
             const subEl = document.getElementById('subCashChange');
             const iconEl = document.getElementById('iconCashChange');
             const boxEl = document.getElementById('boxCashChange');
+            const btnSubmit = document.getElementById('btnSubmitOrder');
 
-            if (given >= finalTotal) {
+            const isInvalidNumber = Number.isNaN(given) || !Number.isFinite(given) || given < 0 || given > 9999999999;
+
+            if (isInvalidNumber) {
+                changeEl.textContent = '0đ';
+                changeEl.className = 'cash-change-amount text-danger';
+                if (titleEl) titleEl.textContent = 'Số tiền không hợp lệ';
+                if (subEl) subEl.textContent = 'Nhập số tiền từ 0 đến 9.999.999.999đ';
+                if (iconEl) {
+                    iconEl.textContent = 'error';
+                    iconEl.className = 'material-symbols-outlined text-danger';
+                }
+                if (boxEl) {
+                    boxEl.style.borderColor = '#fecaca';
+                    boxEl.style.background = '#fef2f2';
+                }
+                if (btnSubmit && selectedPaymentMethod === 'CASH') btnSubmit.disabled = true;
+            } else if (given >= finalTotal) {
                 const change = given - finalTotal;
                 changeEl.textContent = formatCurrency(change);
                 changeEl.className = 'cash-change-amount text-success';
@@ -3256,6 +3323,7 @@
                     boxEl.style.borderColor = '#bbf7d0';
                     boxEl.style.background = '#f0fdf4';
                 }
+                if (btnSubmit && selectedPaymentMethod === 'CASH') btnSubmit.disabled = false;
             } else {
                 const missing = finalTotal - given;
                 changeEl.textContent = '-' + formatCurrency(missing);
@@ -3270,19 +3338,39 @@
                     boxEl.style.borderColor = '#fecaca';
                     boxEl.style.background = '#fef2f2';
                 }
+                if (btnSubmit && selectedPaymentMethod === 'CASH') btnSubmit.disabled = true;
             }
         }
 
         // 9. Submit Order via AJAX (Cho phương thức TIỀN MẶT)
         async function submitCounterOrder() {
-            const btnSubmit = document.getElementById('btnSubmitOrder');
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">hourglass_empty</span><span>Đang xử lý...</span>`;
+            if (cartItems.length === 0) {
+                alert('Vui lòng chọn ít nhất 1 món trước khi thanh toán.');
+                return;
+            }
 
             const sub = cartItems.reduce((acc, it) => acc + it.subtotal, 0);
             const { discount, finalTotal } = updateSummary(sub);
-
             const orderNote = document.getElementById('orderNoteInput').value.trim();
+            if (orderNote.length > 500) {
+                alert('Ghi chú đơn hàng không được vượt quá 500 ký tự.');
+                return;
+            }
+
+            const rawCash = (document.getElementById('inputCashGiven').value || '').trim();
+            const given = rawCash === '' ? NaN : Number(rawCash);
+            if (Number.isNaN(given) || !Number.isFinite(given) || given < 0 || given > 9999999999) {
+                alert('Số tiền khách đưa không hợp lệ.');
+                return;
+            }
+            if (given < finalTotal) {
+                alert('Số tiền khách đưa chưa đủ để thanh toán đơn hàng.');
+                return;
+            }
+
+            const btnSubmit = document.getElementById('btnSubmitOrder');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">hourglass_empty</span><span>Đang xử lý...</span>`;
 
             const payload = {
                 orderType: orderType,
@@ -3292,6 +3380,7 @@
                 recipientPhone: currentCustomer ? currentCustomer.phone : '',
                 orderNote: orderNote,
                 paymentMethod: 'CASH',
+                cashGiven: given,
                 pointsUsed: (usePoints && currentCustomer) ? Math.floor(discount / LOYALTY_STEP_VALUE) * LOYALTY_STEP : 0,
                 discountAmount: discount,
                 totalAmount: sub,

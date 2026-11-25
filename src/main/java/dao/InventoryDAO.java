@@ -13,6 +13,8 @@ import java.util.List;
 
 public class InventoryDAO extends BaseDAO {
 
+    private static final BigDecimal MAX_STOCK_VALUE = new BigDecimal("999999999.999");
+
     private final IngredientDAO ingredientDAO = new IngredientDAO();
 
     public List<Ingredient> getInventoryStockList(String filterStatus) {
@@ -134,13 +136,31 @@ public class InventoryDAO extends BaseDAO {
 
                 BigDecimal newStock = isIncrease ? currentStock.add(quantity) : currentStock.subtract(quantity);
                 if (newStock.compareTo(BigDecimal.ZERO) < 0) {
-                    throw new SQLException("Lượng trừ vượt quá tồn kho hiện tại (" + currentStock.stripTrailingZeros().toPlainString() + ")");
+                    throw new SQLException("Lượng trừ vượt quá tồn kho hiện tại (" + currentStock.stripTrailingZeros().toPlainString() + ").", "45000");
+                }
+                if (newStock.compareTo(MAX_STOCK_VALUE) > 0) {
+                    throw new SQLException("Tồn kho sau khi cộng thêm vượt quá giới hạn lưu trữ (tối đa 999,999,999.999).", "45000");
                 }
 
                 try (PreparedStatement psUpdate = conn.prepareStatement(updateSql)) {
                     psUpdate.setBigDecimal(1, newStock);
                     psUpdate.setInt(2, ingredientId);
                     psUpdate.executeUpdate();
+                }
+
+                String storedReason = reason;
+                if ("ADJUSTMENT".equalsIgnoreCase(transactionType) && !isIncrease) {
+                    String cleanReason = storedReason == null ? "" : storedReason.trim();
+                    if (cleanReason.isEmpty()) {
+                        storedReason = "Giảm tồn kho";
+                    } else if (!cleanReason.startsWith("Giảm")) {
+                        storedReason = "Giảm: " + cleanReason;
+                    } else {
+                        storedReason = cleanReason;
+                    }
+                    if (storedReason.length() > 500) {
+                        storedReason = storedReason.substring(0, 500);
+                    }
                 }
 
                 try (PreparedStatement psTx = conn.prepareStatement(insertTxSql)) {
@@ -153,7 +173,7 @@ public class InventoryDAO extends BaseDAO {
                     } else {
                         psTx.setNull(5, java.sql.Types.INTEGER);
                     }
-                    psTx.setString(6, reason);
+                    psTx.setString(6, storedReason);
                     psTx.executeUpdate();
                 }
 

@@ -266,11 +266,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Số lượng đề xuất <span class="text-danger">*</span></label>
-                        <input class="form-control" name="quantity" id="restockQtyInput" type="number" min="0.001" step="0.001" placeholder="VD: 10" required>
+                        <input class="form-control" name="quantity" id="restockQtyInput" type="number" min="0.001" max="999999999.999" step="0.001" placeholder="VD: 10" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Lý do đề xuất <span class="text-danger">*</span></label>
-                        <input class="form-control" name="reason" id="restockReasonInput" value="Bổ sung nguyên liệu sắp hết cho quầy pha chế" maxlength="500" required>
+                        <input class="form-control" name="reason" id="restockReasonInput" value="Bổ sung nguyên liệu sắp hết cho quầy pha chế" minlength="3" maxlength="500" required>
                     </div>
                     <div>
                         <label class="form-label fw-bold small text-secondary">Ghi chú thêm</label>
@@ -315,12 +315,12 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-bold small text-secondary">Số lượng cần</label>
-                                    <input class="form-control" name="quantity" type="number" step="0.001" min="0.001" value="${it.quantity}" required>
+                                    <input class="form-control" name="quantity" type="number" step="0.001" min="0.001" max="999999999.999" value="${it.quantity}" required>
                                 </div>
                             </c:forEach>
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-secondary">Lý do đề xuất</label>
-                                <input class="form-control" name="reason" value="<c:out value='${r.reason}'/>" maxlength="500" required>
+                                <input class="form-control" name="reason" value="<c:out value='${r.reason}'/>" minlength="3" maxlength="500" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-secondary">Ghi chú</label>

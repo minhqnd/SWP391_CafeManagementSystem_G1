@@ -175,15 +175,15 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Tên nhà cung cấp <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="modalSupplierName" class="form-control" required placeholder="Ví dụ: Công ty Cổ phần Sữa Ba Vì">
+                        <input type="text" name="name" id="modalSupplierName" class="form-control" required maxlength="150" placeholder="Ví dụ: Công ty Cổ phần Sữa Ba Vì">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Số điện thoại</label>
-                        <input type="text" name="phone" id="modalSupplierPhone" class="form-control" placeholder="Ví dụ: 0912345678">
+                        <input type="text" name="phone" id="modalSupplierPhone" class="form-control" maxlength="20" placeholder="Ví dụ: 0912345678">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Địa chỉ</label>
-                        <textarea name="address" id="modalSupplierAddress" class="form-control" rows="2" placeholder="Địa chỉ chi tiết kho/văn phòng"></textarea>
+                        <textarea name="address" id="modalSupplierAddress" class="form-control" rows="2" maxlength="500" placeholder="Địa chỉ chi tiết kho/văn phòng"></textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Trạng thái</label>

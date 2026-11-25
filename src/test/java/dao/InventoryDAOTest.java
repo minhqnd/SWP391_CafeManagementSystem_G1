@@ -66,5 +66,21 @@ public class InventoryDAOTest {
         txNeg.setUnit("gram");
         assertEquals("Xuất theo đơn bán", txNeg.getTypeDisplayName());
         assertEquals("-120 gram", txNeg.getFormattedQuantity());
+
+        InventoryTransaction adjDec = new InventoryTransaction();
+        adjDec.setTransactionType("ADJUSTMENT");
+        adjDec.setQuantity(new BigDecimal("50"));
+        adjDec.setUnit("ml");
+        adjDec.setReason("Giảm: Kiểm kho thiếu");
+        assertTrue(adjDec.isDecrease());
+        assertEquals("-50 ml", adjDec.getFormattedQuantity());
+
+        InventoryTransaction adjInc = new InventoryTransaction();
+        adjInc.setTransactionType("ADJUSTMENT");
+        adjInc.setQuantity(new BigDecimal("50"));
+        adjInc.setUnit("ml");
+        adjInc.setReason("Kiểm kho dư");
+        assertFalse(adjInc.isDecrease());
+        assertEquals("+50 ml", adjInc.getFormattedQuantity());
     }
 }

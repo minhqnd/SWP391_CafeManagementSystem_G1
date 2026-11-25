@@ -325,11 +325,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-secondary">Số lượng thay đổi <span class="text-danger">*</span></label>
-                        <input type="number" step="0.001" name="quantity" class="form-control" required placeholder="Nhập số lượng dương (ví dụ: 100, 50.5...)">
+                        <input type="number" step="0.001" min="0.001" max="999999999.999" name="quantity" class="form-control" required placeholder="Nhập số lượng dương (ví dụ: 100, 50.5...)">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold small text-secondary">Lý do / Ghi chú</label>
-                        <textarea name="reason" class="form-control" rows="2" placeholder="Ví dụ: Kiểm kho phát hiện dư, làm đổ bình syrup..."></textarea>
+                        <label class="form-label fw-bold small text-secondary">Lý do / Ghi chú <span class="text-danger">*</span></label>
+                        <textarea name="reason" class="form-control" rows="2" required minlength="3" maxlength="500" placeholder="Ví dụ: Kiểm kho phát hiện dư, làm đổ bình syrup..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -356,6 +356,7 @@
     function openAdjustForIngredient(ingredientId) {
         const sel = document.getElementById('adjustIngredientSelect');
         if (sel) sel.value = String(ingredientId);
+        toggleDirectionField();
         new bootstrap.Modal(document.getElementById('adjustmentModal')).show();
     }
 </script>

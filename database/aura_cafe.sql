@@ -324,7 +324,7 @@ CREATE TABLE `ingredients` (
 
 LOCK TABLES `ingredients` WRITE;
 /*!40000 ALTER TABLE `ingredients` DISABLE KEYS */;
-INSERT INTO `ingredients` (`id`,`supplier_id`,`name`,`unit`,`current_stock`,`min_stock_level`) VALUES (1,1,'Coffee beans','gram',10000.000,2000.000),(2,2,'Fresh milk','ml',20000.000,5000.000),(3,2,'Peach syrup','ml',5000.000,1000.000),(4,2,'Black tea','gram',8000.000,1500.000),(5,2,'Tapioca pearls','gram',4000.000,1000.000),(6,3,'Cheesecake slice','piece',30.000,5.000),(7,2,'Orange','piece',100.000,20.000),(8,2,'Lemon','piece',80.000,15.000);
+INSERT INTO `ingredients` (`id`,`supplier_id`,`name`,`unit`,`current_stock`,`min_stock_level`) VALUES (1,1,'Hạt cà phê','gram',10000.000,2000.000),(2,2,'Sữa tươi','ml',20000.000,5000.000),(3,2,'Siro đào','ml',5000.000,1000.000),(4,2,'Trà đen','gram',8000.000,1500.000),(5,2,'Trân châu','gram',4000.000,1000.000),(6,3,'Bánh Cheesecake','miếng',30.000,5.000),(7,2,'Cam tươi','quả',100.000,20.000),(8,2,'Chanh tươi','quả',80.000,15.000);
 /*!40000 ALTER TABLE `ingredients` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -349,7 +349,7 @@ CREATE TABLE `inventory_transactions` (
   KEY `idx_inventory_reference` (`reference_type`,`reference_id`),
   CONSTRAINT `fk_inventory_ingredient` FOREIGN KEY (`ingredient_id`) REFERENCES `ingredients` (`id`),
   CONSTRAINT `chk_inventory_quantity` CHECK ((`quantity` > 0))
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -358,7 +358,7 @@ CREATE TABLE `inventory_transactions` (
 
 LOCK TABLES `inventory_transactions` WRITE;
 /*!40000 ALTER TABLE `inventory_transactions` DISABLE KEYS */;
-INSERT INTO `inventory_transactions` VALUES (1,1,'IN_PURCHASE',5000.000,'PURCHASE_ORDER',1,NULL,'2026-10-01 10:00:00'),(2,2,'IN_PURCHASE',10000.000,'PURCHASE_ORDER',2,NULL,'2026-10-02 10:00:00'),(3,1,'OUT_ORDER',36.000,'ORDER',1,NULL,'2026-10-03 09:10:00'),(4,2,'OUT_ORDER',360.000,'ORDER',2,NULL,'2026-10-03 10:10:00'),(5,5,'SPOILAGE',100.000,'ADJUSTMENT',NULL,NULL,'2026-10-03 11:00:00'),(6,3,'ADJUSTMENT',50.000,'ADJUSTMENT',NULL,NULL,'2026-10-03 11:30:00'),(7,2,'IN_PURCHASE',10000.000,'PURCHASE_ORDER',4,NULL,'2026-10-04 09:00:00'),(8,3,'IN_PURCHASE',5000.000,'PURCHASE_ORDER',4,NULL,'2026-10-04 09:00:00'),(9,4,'IN_PURCHASE',8000.000,'PURCHASE_ORDER',4,NULL,'2026-10-04 09:00:00'),(10,5,'IN_PURCHASE',4000.000,'PURCHASE_ORDER',4,NULL,'2026-10-04 09:00:00'),(11,7,'IN_PURCHASE',100.000,'PURCHASE_ORDER',4,NULL,'2026-10-04 09:00:00'),(12,8,'IN_PURCHASE',80.000,'PURCHASE_ORDER',4,NULL,'2026-10-04 09:00:00'),(13,6,'IN_PURCHASE',20.000,'PURCHASE_ORDER',5,NULL,'2026-10-04 09:30:00');
+INSERT INTO `inventory_transactions` VALUES (1,1,'IN_PURCHASE',5000.000,'PURCHASE_ORDER',1,'Nhập hàng theo PO-1','2026-10-01 10:00:00'),(2,2,'IN_PURCHASE',10000.000,'PURCHASE_ORDER',2,'Nhập hàng theo PO-2','2026-10-02 10:00:00'),(3,1,'OUT_ORDER',36.000,'ORDER',1,NULL,'2026-10-03 09:10:00'),(4,2,'OUT_ORDER',360.000,'ORDER',2,NULL,'2026-10-03 10:10:00'),(5,5,'SPOILAGE',100.000,'ADJUSTMENT',NULL,'Hao hụt trân châu cuối ngày','2026-10-03 11:00:00'),(6,3,'ADJUSTMENT',50.000,'ADJUSTMENT',NULL,'Cân kho siro đào định kỳ','2026-10-03 11:30:00'),(7,3,'IN_PURCHASE',5000.000,'PURCHASE_ORDER',4,'Nhập hàng theo PO-4','2026-10-04 09:00:00'),(8,4,'IN_PURCHASE',8000.000,'PURCHASE_ORDER',5,'Nhập hàng theo PO-5','2026-10-04 09:05:00'),(9,5,'IN_PURCHASE',4000.000,'PURCHASE_ORDER',6,'Nhập hàng theo PO-6','2026-10-04 09:10:00'),(10,7,'IN_PURCHASE',100.000,'PURCHASE_ORDER',7,'Nhập hàng theo PO-7','2026-10-04 09:15:00'),(11,8,'IN_PURCHASE',80.000,'PURCHASE_ORDER',8,'Nhập hàng theo PO-8','2026-10-04 09:20:00'),(12,6,'IN_PURCHASE',20.000,'PURCHASE_ORDER',9,'Nhập hàng theo PO-9','2026-10-04 09:30:00');
 /*!40000 ALTER TABLE `inventory_transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -629,7 +629,7 @@ CREATE TABLE `purchase_order_items` (
   CONSTRAINT `fk_poi_order` FOREIGN KEY (`po_id`) REFERENCES `purchase_orders` (`id`) ON DELETE CASCADE,
   CONSTRAINT `chk_purchase_price` CHECK ((`unit_price` >= 0)),
   CONSTRAINT `chk_purchase_quantity` CHECK ((`quantity` > 0))
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -638,7 +638,7 @@ CREATE TABLE `purchase_order_items` (
 
 LOCK TABLES `purchase_order_items` WRITE;
 /*!40000 ALTER TABLE `purchase_order_items` DISABLE KEYS */;
-INSERT INTO `purchase_order_items` VALUES (1,1,1,5000.000,400.00),(2,2,2,10000.000,150.00),(3,2,3,5000.000,120.00),(4,3,6,20.000,40000.00),(5,4,2,10000.000,150.00),(6,4,3,5000.000,120.00),(7,4,4,8000.000,120.00),(8,4,5,4000.000,100.00),(9,4,7,100.000,5000.00),(10,4,8,80.000,3000.00),(11,5,6,20.000,40000.00);
+INSERT INTO `purchase_order_items` VALUES (1,1,1,5000.000,400.000000000000),(2,2,2,10000.000,150.000000000000),(3,3,6,20.000,40000.000000000000),(4,4,3,5000.000,120.000000000000),(5,5,4,8000.000,120.000000000000),(6,6,5,4000.000,100.000000000000),(7,7,7,100.000,5000.000000000000),(8,8,8,80.000,3000.000000000000),(9,9,6,20.000,40000.000000000000),(10,10,2,5000.000,150.000000000000);
 /*!40000 ALTER TABLE `purchase_order_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -668,7 +668,7 @@ CREATE TABLE `purchase_orders` (
   CONSTRAINT `fk_po_restock_request` FOREIGN KEY (`restock_request_id`) REFERENCES `restock_requests` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_po_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`),
   CONSTRAINT `chk_po_total` CHECK ((`total_cost` >= 0))
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -677,7 +677,7 @@ CREATE TABLE `purchase_orders` (
 
 LOCK TABLES `purchase_orders` WRITE;
 /*!40000 ALTER TABLE `purchase_orders` DISABLE KEYS */;
-INSERT INTO `purchase_orders` VALUES (1,1,1,NULL,2000000.00,'RECEIVED',NULL,'2026-10-01 08:00:00',NULL,NULL),(2,2,1,NULL,1500000.00,'ORDERED',NULL,'2026-10-02 09:00:00',NULL,NULL),(3,3,1,NULL,800000.00,'DRAFT',NULL,'2026-10-03 08:00:00',NULL,NULL),(4,2,1,NULL,4200000.00,'RECEIVED',NULL,'2026-10-04 08:00:00',NULL,NULL),(5,3,1,NULL,800000.00,'RECEIVED',NULL,'2026-10-04 08:30:00',NULL,NULL);
+INSERT INTO `purchase_orders` VALUES (1,1,1,NULL,2000000.00,'RECEIVED','Nhập hạt cà phê đầu tháng','2026-10-01 08:00:00','2026-10-01 08:05:00','2026-10-01 10:00:00'),(2,2,1,NULL,1500000.00,'RECEIVED','Nhập sữa tươi đợt 1','2026-10-02 09:00:00','2026-10-02 09:05:00','2026-10-02 10:00:00'),(3,3,1,NULL,800000.00,'DRAFT','Nháp đặt thêm bánh cheesecake','2026-10-03 08:00:00',NULL,NULL),(4,2,1,NULL,600000.00,'RECEIVED','Nhập siro đào','2026-10-04 08:00:00','2026-10-04 08:05:00','2026-10-04 09:00:00'),(5,2,1,NULL,960000.00,'RECEIVED','Nhập trà đen','2026-10-04 08:10:00','2026-10-04 08:15:00','2026-10-04 09:05:00'),(6,2,1,NULL,400000.00,'RECEIVED','Nhập trân châu','2026-10-04 08:20:00','2026-10-04 08:25:00','2026-10-04 09:10:00'),(7,2,1,NULL,500000.00,'RECEIVED','Nhập cam tươi','2026-10-04 08:30:00','2026-10-04 08:35:00','2026-10-04 09:15:00'),(8,2,1,NULL,240000.00,'RECEIVED','Nhập chanh tươi','2026-10-04 08:40:00','2026-10-04 08:45:00','2026-10-04 09:20:00'),(9,3,1,NULL,800000.00,'RECEIVED','Nhập bánh cheesecake','2026-10-04 08:50:00','2026-10-04 08:55:00','2026-10-04 09:30:00'),(10,2,1,NULL,750000.00,'ORDERED','Đặt thêm sữa tươi chờ giao','2026-10-05 08:00:00','2026-10-05 08:10:00',NULL);
 /*!40000 ALTER TABLE `purchase_orders` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -834,7 +834,7 @@ CREATE TABLE `suppliers` (
 
 LOCK TABLES `suppliers` WRITE;
 /*!40000 ALTER TABLE `suppliers` DISABLE KEYS */;
-INSERT INTO `suppliers` VALUES (1,'Fresh Bean Supplier','0911000001','Dong Da, Hanoi','ACTIVE'),(2,'Dairy and Syrup Co.','0911000002','Cau Giay, Hanoi','ACTIVE'),(3,'Bakery Ingredient Supply','0911000003','Ba Dinh, Hanoi','ACTIVE');
+INSERT INTO `suppliers` VALUES (1,'Công ty Cà Phê Nguyên Chất','0911000001','Đống Đa, Hà Nội','ACTIVE'),(2,'Công ty Sữa & Siro Pha Chế','0911000002','Cầu Giấy, Hà Nội','ACTIVE'),(3,'Xưởng Bánh Ngọt Hà Nội','0911000003','Ba Đình, Hà Nội','ACTIVE');
 /*!40000 ALTER TABLE `suppliers` ENABLE KEYS */;
 UNLOCK TABLES;
 

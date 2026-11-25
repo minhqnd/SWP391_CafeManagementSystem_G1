@@ -43,8 +43,6 @@
         .po-badge-received { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
         .po-badge-closed { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
         .po-badge-cancelled { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
-        .item-line-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; margin-bottom: 4px; font-size: 0.8rem; }
-        .item-line-box:last-child { margin-bottom: 0; }
         @media(max-width:991.98px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     </style>
 </head>
@@ -70,9 +68,9 @@
     <div class="overview-card">
         <div class="overview-heading">
             <div>
-                <span class="table-ref">Bảng: purchase_orders · purchase_receipts · inventory_transactions</span>
+                <span class="table-ref">Bảng: purchase_orders</span>
                 <h1 class="page-title">Phiếu nhập hàng &amp; Kiểm nhận kho</h1>
-                <p class="page-subtitle">Lập đơn mua nguyên liệu, sửa đơn, kiểm nhận hàng giao (đủ / thiếu / thừa / hàng hỏng) và cộng tồn kho trực tiếp.</p>
+                <p class="page-subtitle">Quản lý đơn nhập nguyên liệu và kiểm nhận vào kho.</p>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <a href="${ctx}/admin/restock-requests" class="btn btn-light border fw-semibold d-flex align-items-center gap-1" style="border-radius: 10px;">
@@ -107,16 +105,16 @@
 
     <div class="filter-card">
         <div class="row g-2 align-items-center">
-            <div class="col-md-7">
-                <input type="text" id="poSearchInput" class="form-control" placeholder="Tìm theo mã phiếu (PO-...), nhà cung cấp, nguyên liệu..." oninput="filterPoTable()">
+            <div class="col-md-8">
+                <input type="text" id="poSearchInput" class="form-control" placeholder="Tìm theo mã phiếu, nhà cung cấp, nguyên liệu..." oninput="filterPoTable()">
             </div>
-            <div class="col-md-5 d-flex gap-2">
+            <div class="col-md-4">
                 <select id="poStatusFilter" class="form-select" onchange="filterPoTable()">
                     <option value="ALL">Tất cả trạng thái</option>
-                    <option value="PENDING">Đang chờ nhận hàng (ORDERED / DRAFT)</option>
-                    <option value="PARTIALLY_RECEIVED">Giao thiếu - Chờ giao bù (PARTIALLY_RECEIVED)</option>
-                    <option value="COMPLETED">Đã hoàn tất nhập kho (RECEIVED / CLOSED)</option>
-                    <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+                    <option value="PENDING">Chờ nhận / Bản nháp</option>
+                    <option value="PARTIALLY_RECEIVED">Nhận 1 phần</option>
+                    <option value="COMPLETED">Đã hoàn tất</option>
+                    <option value="CANCELLED">Đã hủy</option>
                 </select>
             </div>
         </div>
@@ -127,12 +125,13 @@
             <table class="table po-table table-hover align-middle mb-0" id="poTable">
                 <thead>
                     <tr>
-                        <th style="width: 110px;">Mã phiếu</th>
-                        <th style="width: 200px;">Nhà cung cấp</th>
-                        <th style="min-width: 310px;">Nguyên liệu · Đặt mua vs Thực nhận</th>
-                        <th class="text-end" style="width: 140px;">Tổng tiền đặt</th>
-                        <th class="text-center" style="width: 165px;">Trạng thái</th>
-                        <th class="text-end" style="min-width: 240px;">Thao tác xử lý</th>
+                        <th style="width: 96px;">Mã phiếu</th>
+                        <th style="min-width: 190px;">Nhà cung cấp</th>
+                        <th style="min-width: 170px;">Nguyên liệu</th>
+                        <th class="text-end" style="width: 160px; white-space: nowrap;">Thực nhận / Đặt</th>
+                        <th class="text-end" style="width: 120px; white-space: nowrap;">Tổng tiền</th>
+                        <th class="text-center" style="width: 120px;">Trạng thái</th>
+                        <th class="text-end" style="white-space: nowrap;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -141,57 +140,55 @@
                             <td>
                                 <div class="fw-bold font-monospace text-danger">PO-${po.id}</div>
                                 <c:if test="${not empty po.restockRequestId}">
-                                    <span class="badge bg-light text-secondary border mt-1" style="font-size: 10px;">Từ đề xuất #RR-${po.restockRequestId}</span>
+                                    <span class="badge bg-light text-secondary border mt-1" style="font-size: 10px;">#RR-${po.restockRequestId}</span>
                                 </c:if>
-                                <div class="text-muted" style="font-size: 11px;">
-                                    <fmt:formatDate value="${po.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                                <div class="text-muted" style="font-size: 11px;" title="<fmt:formatDate value='${po.createdAt}' pattern='dd/MM/yyyy HH:mm' />">
+                                    <fmt:formatDate value="${po.createdAt}" pattern="dd/MM HH:mm" />
                                 </div>
                             </td>
                             <td>
-                                <div class="fw-bold text-dark"><c:out value="${po.supplierName}"/></div>
-                                <div class="text-muted small">Người lập: <c:out value="${po.creatorName}"/></div>
+                                <div class="fw-semibold text-dark" title="Người lập: <c:out value='${po.creatorName}'/>"><c:out value="${po.supplierName}"/></div>
                                 <c:if test="${not empty po.note}">
-                                    <div class="text-secondary fst-italic mt-1" style="font-size: 11.5px;"><c:out value="${po.note}"/></div>
+                                    <div class="text-muted text-truncate mt-1" style="max-width: 240px; font-size: 11.5px;" title="<c:out value='${po.note}'/>">
+                                        <c:out value="${po.note}"/>
+                                    </div>
                                 </c:if>
                             </td>
                             <td>
-                                <c:forEach var="it" items="${po.items}">
-                                    <div class="item-line-box d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                        <div>
-                                            <strong class="text-dark"><c:out value="${it.ingredientName}"/></strong>
-                                            <span class="text-muted">(${it.unit})</span>
-                                            <div class="text-muted" style="font-size: 11px;">
-                                                Đơn giá: <fmt:formatNumber value="${it.unitPrice}" pattern="#,##0.##" /> đ/${it.unit}
-                                            </div>
-                                        </div>
-                                        <div class="text-end font-monospace">
-                                            <div>Đặt: <strong><fmt:formatNumber value="${it.quantity}" pattern="#,##0.###" /></strong> · Đã nhận: <strong class="text-success"><fmt:formatNumber value="${it.receivedQuantity}" pattern="#,##0.###" /></strong></div>
-                                            <c:choose>
-                                                <c:when test="${po.status eq 'CANCELLED'}">
-                                                    <span class="badge bg-light text-secondary border">Đã hủy</span>
-                                                </c:when>
-                                                <c:when test="${it.receivedQuantity >= it.quantity and it.receivedQuantity > it.quantity}">
-                                                    <span class="badge" style="background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;">
-                                                        Nhận thừa +<fmt:formatNumber value="${it.receivedQuantity - it.quantity}" pattern="#,##0.###" /> ${it.unit}
-                                                    </span>
-                                                </c:when>
-                                                <c:when test="${it.receivedQuantity >= it.quantity}">
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Đã nhận đủ 100%</span>
-                                                </c:when>
-                                                <c:when test="${it.receivedQuantity > 0}">
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
-                                                        Còn thiếu <fmt:formatNumber value="${it.remainingQuantity}" pattern="#,##0.###" /> ${it.unit}
-                                                    </span>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <span class="badge bg-light text-secondary border">Chưa nhận hàng</span>
-                                                </c:otherwise>
-                                            </c:choose>
+                                <c:forEach var="it" items="${po.items}" varStatus="st">
+                                    <div class="${not st.last ? 'mb-2' : ''}">
+                                        <div class="fw-semibold text-dark"><c:out value="${it.ingredientName}"/></div>
+                                        <div class="text-muted" style="font-size: 11.5px;">
+                                            <fmt:formatNumber value="${it.unitPrice}" pattern="#,##0.##" />đ/${it.unit}
                                         </div>
                                     </div>
                                 </c:forEach>
                             </td>
-                            <td class="text-end font-monospace fw-bold text-dark">
+                            <td class="text-end font-monospace" style="white-space: nowrap;">
+                                <c:forEach var="it" items="${po.items}" varStatus="st">
+                                    <div class="${not st.last ? 'mb-2' : ''}">
+                                        <div>
+                                            <strong class="${it.receivedQuantity >= it.quantity ? 'text-success' : 'text-dark'}"><fmt:formatNumber value="${it.receivedQuantity}" pattern="#,##0.###" /></strong>
+                                            <span class="text-muted">/ <fmt:formatNumber value="${it.quantity}" pattern="#,##0.###" /> ${it.unit}</span>
+                                        </div>
+                                        <c:if test="${po.status ne 'CANCELLED'}">
+                                            <c:choose>
+                                                <c:when test="${it.receivedQuantity > it.quantity}">
+                                                    <div style="font-size: 11px; color: #7c3aed;">
+                                                        Thừa +<fmt:formatNumber value="${it.receivedQuantity - it.quantity}" pattern="#,##0.###" /> ${it.unit}
+                                                    </div>
+                                                </c:when>
+                                                <c:when test="${it.receivedQuantity > 0 and it.receivedQuantity < it.quantity}">
+                                                    <div class="text-warning-emphasis" style="font-size: 11px;">
+                                                        Thiếu <fmt:formatNumber value="${it.remainingQuantity}" pattern="#,##0.###" /> ${it.unit}
+                                                    </div>
+                                                </c:when>
+                                            </c:choose>
+                                        </c:if>
+                                    </div>
+                                </c:forEach>
+                            </td>
+                            <td class="text-end font-monospace fw-bold text-dark" style="white-space: nowrap;">
                                 <fmt:formatNumber value="${po.totalCost}" pattern="#,##0" /> đ
                             </td>
                             <td class="text-center">
@@ -200,37 +197,36 @@
                                         <span class="po-badge po-badge-draft">Bản nháp</span>
                                     </c:when>
                                     <c:when test="${po.status eq 'ORDERED'}">
-                                        <span class="po-badge po-badge-ordered">Chờ giao hàng</span>
+                                        <span class="po-badge po-badge-ordered">Đã đặt</span>
                                     </c:when>
                                     <c:when test="${po.status eq 'PARTIALLY_RECEIVED'}">
-                                        <span class="po-badge po-badge-partial">Giao thiếu (Nhận 1 phần)</span>
+                                        <span class="po-badge po-badge-partial">Nhận 1 phần</span>
                                     </c:when>
                                     <c:when test="${po.status eq 'RECEIVED'}">
-                                        <span class="po-badge po-badge-received">Đã nhập kho đủ</span>
+                                        <span class="po-badge po-badge-received">Đã nhận đủ</span>
                                     </c:when>
                                     <c:when test="${po.status eq 'CLOSED'}">
-                                        <span class="po-badge po-badge-closed">Đã chốt đóng phiếu</span>
+                                        <span class="po-badge po-badge-closed">Đã chốt</span>
                                     </c:when>
                                     <c:otherwise>
                                         <span class="po-badge po-badge-cancelled">Đã hủy</span>
                                     </c:otherwise>
                                 </c:choose>
                             </td>
-                            <td class="text-end">
-                                <div class="d-inline-flex flex-wrap justify-content-end gap-1">
+                            <td class="text-end" style="white-space: nowrap;">
+                                <div class="d-inline-flex align-items-center justify-content-end gap-1">
                                     <c:if test="${po.status eq 'ORDERED' or po.status eq 'PARTIALLY_RECEIVED'}">
                                         <button type="button" class="btn btn-sm btn-success fw-semibold d-inline-flex align-items-center gap-1"
                                                 data-bs-toggle="modal" data-bs-target="#receiveModal-${po.id}">
-                                            <span class="material-symbols-outlined" style="font-size: 16px;">inventory</span>
+                                            <span class="material-symbols-outlined" style="font-size: 15px;">inventory</span>
                                             <span>${po.status eq 'PARTIALLY_RECEIVED' ? 'Nhận bù' : 'Nhận hàng'}</span>
                                         </button>
                                     </c:if>
 
                                     <c:if test="${(po.status eq 'DRAFT' or po.status eq 'ORDERED') and fn:length(po.items) == 1}">
-                                        <button type="button" class="btn btn-sm btn-light border fw-semibold d-inline-flex align-items-center gap-1"
+                                        <button type="button" class="btn btn-sm btn-light border fw-semibold"
                                                 data-bs-toggle="modal" data-bs-target="#editModal-${po.id}" title="Sửa đơn nhập">
-                                            <span class="material-symbols-outlined" style="font-size: 16px;">edit</span>
-                                            <span>Sửa</span>
+                                            Sửa
                                         </button>
                                     </c:if>
 
@@ -248,16 +244,15 @@
                                             <input type="hidden" name="id" value="${po.id}">
                                             <input type="hidden" name="reason" value="Chốt đóng phần giao thiếu, không nhận thêm">
                                             <button type="submit" class="btn btn-sm btn-outline-secondary" name="action" value="close" title="Chốt phiếu, không chờ giao bù phần thiếu nữa">
-                                                Chốt đóng
+                                                Chốt
                                             </button>
                                         </form>
                                     </c:if>
 
                                     <c:if test="${po.status eq 'RECEIVED' or po.status eq 'PARTIALLY_RECEIVED' or po.status eq 'CLOSED'}">
-                                        <button type="button" class="btn btn-sm btn-light border text-secondary d-inline-flex align-items-center gap-1"
-                                                data-bs-toggle="modal" data-bs-target="#adjustModal-${po.id}" title="Điều chỉnh tăng/giảm hoặc trả hàng hỏng sau khi đã nhập">
-                                            <span class="material-symbols-outlined" style="font-size: 16px;">tune</span>
-                                            <span>Điều chỉnh</span>
+                                        <button type="button" class="btn btn-sm btn-light border text-secondary"
+                                                data-bs-toggle="modal" data-bs-target="#adjustModal-${po.id}" title="Điều chỉnh sau nhập kho">
+                                            Điều chỉnh
                                         </button>
                                     </c:if>
 
@@ -277,7 +272,7 @@
                     </c:forEach>
                     <c:if test="${empty purchaseOrders}">
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">Chưa có phiếu nhập hàng nào. Hãy nhấn "Lập phiếu nhập hàng" để tạo mới.</td>
+                            <td colspan="7" class="text-center py-5 text-muted">Chưa có phiếu nhập hàng nào. Hãy nhấn "Lập phiếu nhập hàng" để tạo mới.</td>
                         </tr>
                     </c:if>
                 </tbody>
@@ -318,7 +313,6 @@
                     </div>
 
 <div id="purchaseLines"><jsp:include page="/components/purchase-order-line.jsp"/></div>
-    <button type="button" class="btn btn-outline-secondary mb-3" id="addPurchaseLine">Thêm nguyên liệu</button>
 
                     <div>
                         <label class="form-label fw-bold small text-secondary">Ghi chú phiếu nhập</label>
@@ -372,11 +366,11 @@
                             <div class="row g-2 mb-3">
                                 <div class="col-6">
                                     <label class="form-label fw-bold small text-secondary">Số lượng đặt (${po.items[0].unit}) <span class="text-danger">*</span></label>
-                                    <input class="form-control" name="quantity" value="${po.items[0].quantity}" type="number" step="0.001" min="0.001" required>
+                                    <input class="form-control" name="quantity" value="${po.items[0].quantity.stripTrailingZeros().toPlainString()}" type="number" step="0.001" min="0.001" max="999999999.999" required>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label fw-bold small text-secondary">Tổng tiền (đ) <span class="text-danger">*</span></label>
-                                    <input class="form-control" name="totalPrice" value="${po.totalCost}" type="number" min="0" step="0.01" required>
+                                    <input class="form-control" name="totalPrice" value="${po.totalCost.stripTrailingZeros().toPlainString()}" type="number" min="0" max="9999999999.99" step="0.01" required>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -385,7 +379,7 @@
                             </div>
                             <div>
                                 <label class="form-label fw-bold small text-secondary">Lý do chỉnh sửa</label>
-                                <input class="form-control" name="editReason" value="Cập nhật số lượng / đơn giá theo báo giá NCC" maxlength="500" required>
+                                <input class="form-control" name="editReason" value="Cập nhật số lượng / đơn giá theo báo giá NCC" minlength="3" maxlength="500" required>
                             </div>
                         </div>
                         <div class="modal-footer bg-light">
@@ -398,10 +392,10 @@
         </div>
     </c:if>
 
-    <!-- MODAL KIỂM NHẬN HÀNG GIAO (XỬ LÝ ĐỦ / GIAO THIẾU / GIAO THỪA / HÀNG HỎNG) -->
+    <!-- MODAL KIỂM NHẬN HÀNG GIAO -->
     <c:if test="${po.status eq 'ORDERED' or po.status eq 'PARTIALLY_RECEIVED'}">
         <div class="modal fade" id="receiveModal-${po.id}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content border-0 shadow">
                     <form method="post" action="${ctx}/admin/purchases">
                         <input type="hidden" name="csrfToken" value="${sessionScope.inventoryWorkflowToken}">
@@ -410,68 +404,56 @@
                         <input type="hidden" name="poId" value="${po.id}">
                         <div class="modal-header bg-light">
                             <div>
-                                <h5 class="modal-title fw-bold mb-0">Kiểm nhận hàng &amp; Cộng tồn kho · PO-${po.id}</h5>
-                                <small class="text-muted">Nhà cung cấp: <c:out value="${po.supplierName}"/></small>
+                                <h5 class="modal-title fw-bold mb-0">Kiểm nhận hàng · PO-${po.id}</h5>
+                                <small class="text-muted">NCC: <c:out value="${po.supplierName}"/></small>
                             </div>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body p-4">
-                            <div class="alert alert-light border small mb-3">
-                                <strong>Hướng dẫn nhanh:</strong> Mặc định hệ thống điền sẵn <em>Số lượng cần nhận</em>.
-                                Nếu NCC <strong>giao thiếu</strong>, hãy giảm số lượng thực nhận. Nếu NCC <strong>giao thừa</strong>, hãy nhập số thực nhận lớn hơn số đặt. Nếu có <strong>hàng hỏng trả lại</strong>, nhập <em>SL thực nhận đạt</em> nhỏ hơn <em>SL giao tới</em>.
-                            </div>
-
                             <c:forEach var="it" items="${po.items}">
                                 <c:set var="defaultRecv" value="${it.remainingQuantity}" />
+                                <c:set var="defaultRecvPlain" value="${defaultRecv.stripTrailingZeros().toPlainString()}" />
                                 <div class="p-3 rounded-3 border bg-light mb-3 receive-item-card"
-                                     data-expected="${defaultRecv}" data-unit="${fn:escapeXml(it.unit)}">
+                                     data-expected="${defaultRecvPlain}" data-unit="${fn:escapeXml(it.unit)}">
                                     <input type="hidden" name="itemId" value="${it.id}">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                         <div>
-                                            <span class="fw-bold text-dark fs-6"><c:out value="${it.ingredientName}"/> (${it.unit})</span>
+                                            <div class="fw-bold text-dark"><c:out value="${it.ingredientName}"/> (${it.unit})</div>
                                             <div class="text-muted small">
-                                                Đặt mua: <strong><fmt:formatNumber value="${it.quantity}" pattern="#,##0.###" /></strong> ·
-                                                Đã nhận trước đó: <strong><fmt:formatNumber value="${it.receivedQuantity}" pattern="#,##0.###" /></strong> ·
-                                                Cần nhận đợt này: <strong class="text-primary"><fmt:formatNumber value="${defaultRecv}" pattern="#,##0.###" /> ${it.unit}</strong>
+                                                Đặt: <strong><fmt:formatNumber value="${it.quantity}" pattern="#,##0.###" /></strong> ·
+                                                Đã nhận: <strong><fmt:formatNumber value="${it.receivedQuantity}" pattern="#,##0.###" /></strong> ·
+                                                Còn thiếu: <strong class="text-primary"><fmt:formatNumber value="${defaultRecv}" pattern="#,##0.###" /> ${it.unit}</strong>
                                             </div>
                                         </div>
                                         <span class="badge bg-success-subtle text-success border border-success-subtle diff-status-badge">
-                                            ✔ Nhận đủ hàng
+                                            Nhận đủ
                                         </span>
                                     </div>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold small text-secondary">Số lượng NCC giao tới (${it.unit})</label>
-                                            <input type="number" class="form-control delivered-input" name="delivered_${it.id}"
-                                                   min="0" step="0.001" value="${defaultRecv}" required oninput="updateReceiveDiff(this)">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold small text-success">Thực nhận đạt yêu cầu - Cộng vào kho (${it.unit}) <span class="text-danger">*</span></label>
-                                            <input type="number" class="form-control border-success fw-bold accepted-input" name="accepted_${it.id}"
-                                                   min="0" step="0.001" value="${defaultRecv}" required oninput="updateReceiveDiff(this)">
-                                        </div>
+                                    <div>
+                                        <label class="form-label fw-bold small text-success">Số lượng thực nhận - cộng kho (${it.unit}) <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control border-success fw-bold accepted-input" name="accepted_${it.id}"
+                                               min="0" max="999999999.999" step="0.001" value="${defaultRecvPlain}" required oninput="updateReceiveDiff(this)">
                                     </div>
-                                    <div class="small mt-2 text-muted diff-detail-text"></div>
                                 </div>
                             </c:forEach>
 
                             <div class="form-check mb-3 p-3 rounded border bg-warning-subtle d-none short-delivery-box">
                                 <input class="form-check-input ms-0 me-2" type="checkbox" name="closeRemainder" value="yes" id="closeRem-${po.id}">
                                 <label class="form-check-label small fw-semibold text-dark" for="closeRem-${po.id}">
-                                    Chốt đóng phiếu luôn sau lần nhận này (Không yêu cầu nhà cung cấp giao bù phần còn thiếu)
+                                    Chốt đóng phiếu (không chờ giao bù phần thiếu)
                                 </label>
                             </div>
 
                             <div>
-                                <label class="form-label fw-bold small text-secondary">Ghi chú kiểm nhận (Tình trạng hàng hóa, lý do thừa/thiếu nếu có)</label>
-                                <input type="text" class="form-control" name="note" value="Hàng giao đạt tiêu chuẩn, nhập kho đầy đủ" maxlength="500" required>
+                                <label class="form-label fw-bold small text-secondary">Ghi chú kiểm nhận <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="note" value="Hàng giao đạt tiêu chuẩn, nhập kho đầy đủ" placeholder="Tình trạng hàng hóa, lý do thừa/thiếu..." minlength="3" maxlength="500" required>
                             </div>
                         </div>
                         <div class="modal-footer bg-light">
                             <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
                             <button type="submit" class="btn btn-success fw-bold d-flex align-items-center gap-1">
                                 <span class="material-symbols-outlined fs-5">check_circle</span>
-                                <span>Xác nhận &amp; Cộng tồn kho ngay</span>
+                                <span>Xác nhận nhập kho</span>
                             </button>
                         </div>
                     </form>
@@ -495,7 +477,7 @@
                         </div>
                         <div class="modal-body p-4">
                             <p class="small text-muted mb-3">
-                                Dùng khi phát hiện hàng lỗi trả lại nhà cung cấp hoặc kiểm đếm lệch sau khi phiếu đã nhập kho. Nhập số âm (VD: <code>-2</code>) để trừ kho trả hàng, số dương (VD: <code>+2</code>) để cộng thêm.
+                                Nhập số âm để trừ/trả hàng (VD: <code>-2</code>), số dương để cộng thêm (VD: <code>2</code>).
                             </p>
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-secondary">Nguyên liệu thuộc phiếu</label>
@@ -513,11 +495,11 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-secondary">Số lượng thay đổi (+ / -) <span class="text-danger">*</span></label>
-                                <input type="number" step="0.001" name="delta" class="form-control" placeholder="VD: -2 (trả lại 2 đơn vị) hoặc 1.5 (bổ sung)" required>
+                                <input type="number" step="0.001" min="-999999999.999" max="999999999.999" name="delta" class="form-control" placeholder="VD: -2 (trả lại 2 đơn vị) hoặc 1.5 (bổ sung)" required>
                             </div>
                             <div>
                                 <label class="form-label fw-bold small text-secondary">Lý do điều chỉnh / trả hàng <span class="text-danger">*</span></label>
-                                <input type="text" name="reason" class="form-control" placeholder="VD: Phát hiện 2 bịch rách bao bì trả lại NCC" maxlength="500" required>
+                                <input type="text" name="reason" class="form-control" placeholder="VD: Phát hiện 2 bịch rách bao bì trả lại NCC" minlength="3" maxlength="500" required>
                             </div>
                         </div>
                         <div class="modal-footer bg-light">
@@ -559,36 +541,28 @@
         if (!card) return;
         const expected = parseFloat(card.dataset.expected || '0');
         const unit = card.dataset.unit || '';
-        const deliveredInput = card.querySelector('.delivered-input');
         const acceptedInput = card.querySelector('.accepted-input');
         const badge = card.querySelector('.diff-status-badge');
-        const detail = card.querySelector('.diff-detail-text');
         const modal = card.closest('.modal-body');
         const shortBox = modal?.querySelector('.short-delivery-box');
 
-        const delivered = parseFloat(deliveredInput?.value || '0');
         const accepted = parseFloat(acceptedInput?.value || '0');
         const diff = accepted - expected;
-        const rejected = Math.max(0, delivered - accepted);
+        const fmt = val => val.toFixed(3).replace(/\.?0+$/, '');
 
-        let extraNote = rejected > 0 ? (' · Trả lại/Hàng hỏng từ chối: ' + rejected.toFixed(3).replace(/\.?0+$/, '') + ' ' + unit) : '';
-
+        badge.style.cssText = '';
         if (Math.abs(diff) < 0.0005) {
             badge.className = 'badge bg-success-subtle text-success border border-success-subtle diff-status-badge';
-            badge.innerText = '✔ Nhận đủ hàng (100%)';
-            detail.innerText = 'Khớp đúng số lượng cần nhận' + extraNote;
+            badge.innerText = 'Nhận đủ';
         } else if (diff < 0) {
-            const missing = Math.abs(diff).toFixed(3).replace(/\.?0+$/, '');
             badge.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle diff-status-badge';
-            badge.innerText = '⚠ Giao thiếu -' + missing + ' ' + unit;
-            detail.innerText = 'Thiếu ' + missing + ' ' + unit + ' so với số lượng đặt. Mặc định phiếu sẽ chuyển sang trạng thái "Nhận một phần (Chờ giao bù)"' + extraNote;
+            badge.innerText = 'Thiếu ' + fmt(Math.abs(diff)) + ' ' + unit;
         } else {
-            const excess = diff.toFixed(3).replace(/\.?0+$/, '');
             badge.className = 'badge diff-status-badge';
             badge.style.cssText = 'background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;';
-            badge.innerText = '⬆ Giao thừa +' + excess + ' ' + unit;
-            detail.innerText = 'Nhận vượt đơn đặt +' + excess + ' ' + unit + ' (Hệ thống sẽ cộng toàn bộ số thực nhận vào kho)' + extraNote;
+            badge.innerText = 'Thừa +' + fmt(diff) + ' ' + unit;
         }
+
         if (shortBox) {
             const hasShortDelivery = Array.from(modal.querySelectorAll('.receive-item-card')).some(line =>
                 Number(line.querySelector('.accepted-input').value) < Number(line.dataset.expected)
@@ -641,25 +615,14 @@
 (() => {
     const request = document.getElementById('purchaseRequest');
     const lines = document.getElementById('purchaseLines');
-    const add = document.getElementById('addPurchaseLine');
     const blank = document.getElementById('purchaseLineTemplate');
     function selectRequest() {
         const template = request.value
             ? document.getElementById('purchaseRequest-' + request.value) : blank;
         if (!template) return;
         lines.replaceChildren(template.content.cloneNode(true));
-        add.disabled = Boolean(request.value);
     }
     request.addEventListener('change', selectRequest);
-    add.addEventListener('click', () => {
-        if (!request.value && lines.querySelectorAll('.purchase-line').length < 100)
-            lines.appendChild(blank.content.cloneNode(true));
-    });
-    lines.addEventListener('click', event => {
-        const button = event.target.closest('[data-remove-line]');
-        if (button && !request.value && lines.querySelectorAll('.purchase-line').length > 1)
-            button.closest('.purchase-line').remove();
-    });
     // Reconcile a request selection restored by the browser after a refresh/back navigation.
     if (request.value) selectRequest();
 })();
