@@ -215,11 +215,11 @@
                     <div class="bank-stat-val text-success">
                         +<fmt:formatNumber value="${totalInAmount}" pattern="#,##0" /> đ
                     </div>
-                    <c:if test="${totalRefundedAmount > 0}">
+                    <!-- <c:if test="${totalRefundedAmount > 0}">
                         <small class="text-danger fw-medium">
                             Đã hoàn: -<fmt:formatNumber value="${totalRefundedAmount}" pattern="#,##0" /> đ (đã trừ khỏi tổng)
                         </small>
-                    </c:if>
+                    </c:if> -->
                 </div>
                 <div class="bank-icon-circle bg-success bg-opacity-10 text-success">
                     <span class="material-symbols-outlined">arrow_downward</span>
