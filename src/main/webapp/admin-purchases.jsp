@@ -318,7 +318,6 @@
                     </div>
 
 <div id="purchaseLines"><jsp:include page="/components/purchase-order-line.jsp"/></div>
-    <button type="button" class="btn btn-outline-secondary mb-3" id="addPurchaseLine">Thêm nguyên liệu</button>
 
                     <div>
                         <label class="form-label fw-bold small text-secondary">Ghi chú phiếu nhập</label>
@@ -641,25 +640,14 @@
 (() => {
     const request = document.getElementById('purchaseRequest');
     const lines = document.getElementById('purchaseLines');
-    const add = document.getElementById('addPurchaseLine');
     const blank = document.getElementById('purchaseLineTemplate');
     function selectRequest() {
         const template = request.value
             ? document.getElementById('purchaseRequest-' + request.value) : blank;
         if (!template) return;
         lines.replaceChildren(template.content.cloneNode(true));
-        add.disabled = Boolean(request.value);
     }
     request.addEventListener('change', selectRequest);
-    add.addEventListener('click', () => {
-        if (!request.value && lines.querySelectorAll('.purchase-line').length < 100)
-            lines.appendChild(blank.content.cloneNode(true));
-    });
-    lines.addEventListener('click', event => {
-        const button = event.target.closest('[data-remove-line]');
-        if (button && !request.value && lines.querySelectorAll('.purchase-line').length > 1)
-            button.closest('.purchase-line').remove();
-    });
     // Reconcile a request selection restored by the browser after a refresh/back navigation.
     if (request.value) selectRequest();
 })();
